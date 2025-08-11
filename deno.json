@@ -31,5 +31,8 @@
         "no-explicit-any"
       ]
     }
+  },
+  "compilerOptions": {
+    "lib": ["deno.ns", "dom", "dom.iterable", "dom.asynciterable"]
   }
 }
