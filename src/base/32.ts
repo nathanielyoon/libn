@@ -27,10 +27,10 @@ const binary = ($: string) => {
 const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const H32 = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
 /** Encodes binary -> base32 string. */
-export const en_b32 = encode(B32);
+export const en_b32: ReturnType<typeof encode> = encode(B32);
 /** Decodes base32 string -> binary. */
-export const de_b32 = decode(binary(B32));
+export const de_b32: ReturnType<typeof decode> = decode(binary(B32));
 /** Encodes binary -> base32hex string. */
-export const en_h32 = encode(H32);
+export const en_h32: ReturnType<typeof encode> = encode(H32);
 /** Decodes base32hex string -> binary. */
-export const de_h32 = decode(binary(H32));
+export const de_h32: ReturnType<typeof decode> = decode(binary(H32));
