@@ -16,7 +16,7 @@ const decode = (bin: Uint8Array) => ($: string): Uint8Array<ArrayBuffer> => {
     d = bin[b(++z)], a[y++] = c << 6 & 192 | bin[b(z++ - 1)] << 1 | d >> 4 & 1;
     e = bin[b(z++)], a[y++] = d << 4 & 240 | e >> 1 & 15, f = bin[b(++z)];
     a[y++] = e << 7 & 128 | bin[b(z++ - 1)] << 2 | f >> 3 & 7;
-    a[y++] = f << 5 & 96 | bin[b(z++)];
+    a[y++] = f << 5 & 224 | bin[b(z++)];
   }
   return a;
 };
