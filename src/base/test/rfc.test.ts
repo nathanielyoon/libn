@@ -2,7 +2,7 @@ import { de_b16, en_b16 } from "../16.ts";
 import { de_b32, de_h32, en_b32, en_h32 } from "../32.ts";
 import { de_b64, en_b64 } from "../64.ts";
 import { de_bin, en_bin } from "../main.ts";
-import vectors from "./vectors.json" with { type: "json" };
+import vectors from "./vectors/rfc.json" with { type: "json" };
 import { assertEquals } from "jsr:@std/assert@^1.0.13";
 
 const test = (
@@ -34,5 +34,8 @@ import.meta.main && await fetch("https://www.rfc-editor.org/rfc/rfc4648.txt")
       ], []),
     }), {})
   ).then(($) =>
-    Deno.writeTextFile(`${import.meta.dirname}/vectors.json`, JSON.stringify($))
+    Deno.writeTextFile(
+      `${import.meta.dirname}/vectors/rfc.json`,
+      JSON.stringify($),
+    )
   );
