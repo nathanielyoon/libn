@@ -4,7 +4,8 @@
   "version": "0.2.1",
   "exports": {
     "./base": "./src/base/main.ts",
-    "./crypto": "./src/crypto/main.ts"
+    "./crypto": "./src/crypto/main.ts",
+    "./types": "./src/types/main.ts"
   },
   "lint": {
     "rules": {
