@@ -19,9 +19,9 @@ const decode = (bin: Uint8Array) => ($: string): Uint8Array<ArrayBuffer> => {
   }
   return a;
 };
-const binary = ($: string) => {
+const map = ($: string) => {
   const a = new Uint8Array(256);
-  for (let z = 0, b; z < 32; ++z) a[b = $.charCodeAt(z) | 32] = a[b - 32] = z;
+  for (let z = 0, b; z < 32; ++z) a[b = $.charCodeAt(z) | 32] = a[b & 95] = z;
   return a;
 };
 const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -29,8 +29,8 @@ const H32 = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
 /** Encodes binary -> base32 string. */
 export const en_b32: ReturnType<typeof encode> = encode(B32);
 /** Decodes base32 string -> binary. */
-export const de_b32: ReturnType<typeof decode> = decode(binary(B32));
+export const de_b32: ReturnType<typeof decode> = decode(map(B32));
 /** Encodes binary -> base32hex string. */
 export const en_h32: ReturnType<typeof encode> = encode(H32);
 /** Decodes base32hex string -> binary. */
-export const de_h32: ReturnType<typeof decode> = decode(binary(H32));
+export const de_h32: ReturnType<typeof decode> = decode(map(H32));

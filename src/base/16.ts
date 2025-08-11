@@ -1,6 +1,6 @@
 const BIN = new Uint8Array(256), STR = Array<string>(256);
 for (let z = 0, a; z < 16; ++z) {
-  BIN[a = z.toString(16).charCodeAt(0)] = BIN[a - 32] = z;
+  BIN[a = z.toString(16).charCodeAt(0) | 32] = BIN[a & 95] = z;
 }
 for (let z = 0; z < 256; ++z) STR[z] = z.toString(16).padStart(2, "0");
 /** Encodes binary -> base16 string. */
