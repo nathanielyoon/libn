@@ -1,15 +1,7 @@
-import {
-  de_b16,
-  de_b32,
-  de_b64,
-  de_bin,
-  de_h32,
-  en_b16,
-  en_b32,
-  en_b64,
-  en_bin,
-  en_h32,
-} from "../main.ts";
+import { de_b16, en_b16 } from "../16.ts";
+import { de_b32, de_h32, en_b32, en_h32 } from "../32.ts";
+import { de_b64, en_b64 } from "../64.ts";
+import { de_bin, en_bin } from "../main.ts";
 import vectors from "./vectors.json" with { type: "json" };
 import { assertEquals } from "jsr:@std/assert@^1.0.13";
 

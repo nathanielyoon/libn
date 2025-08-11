@@ -1,12 +1,6 @@
-import {
-  de_b16,
-  de_b64,
-  de_bin,
-  en_b16,
-  en_b64,
-  en_bin,
-  en_key,
-} from "../main.ts";
+import { de_b16, en_b16 } from "../16.ts";
+import { de_b64, en_b64, en_key } from "../64.ts";
+import { de_bin, en_bin } from "../main.ts";
 import { assertEquals } from "jsr:@std/assert@^1.0.13";
 import fc from "npm:fast-check@^4.2.0";
 
