@@ -2,7 +2,9 @@
   "$schema": "https://raw.githubusercontent.com/denoland/deno/main/cli/schemas/config-file.v1.json",
   "name": "@nyoon/lib",
   "version": "0.1.0",
-  "exports": {},
+  "exports": {
+    "./base": "./src/base/main.ts"
+  },
   "lint": {
     "rules": {
       "include": [
