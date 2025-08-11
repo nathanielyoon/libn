@@ -1,0 +1,30 @@
+{
+  "$schema": "https://raw.githubusercontent.com/denoland/deno/main/cli/schemas/config-file.v1.json",
+  "name": "@nyoon/lib",
+  "version": "0.1.0",
+  "exports": {},
+  "lint": {
+    "rules": {
+      "include": [
+        "default-param-last",
+        "eqeqeq",
+        "explicit-module-boundary-types",
+        "guard-for-in",
+        "no-eval",
+        "no-inferrable-types",
+        "no-self-compare",
+        "no-sparse-arrays",
+        "no-useless-rename",
+        "prefer-ascii",
+        "triple-slash-reference",
+        "verbatim-module-syntax"
+      ],
+      "exclude": [
+        "ban-types",
+        "no-cond-assign",
+        "no-control-regex",
+        "no-explicit-any"
+      ]
+    }
+  }
+}
