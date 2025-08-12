@@ -6,6 +6,7 @@
     "./base": "./src/base/main.ts",
     "./crypto": "./src/crypto/main.ts",
     "./dom": "./src/dom/main.ts",
+    "./match": "./src/match/main.ts",
     "./types": "./src/types/main.ts"
   },
   "lint": {
