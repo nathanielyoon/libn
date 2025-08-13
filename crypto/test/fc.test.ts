@@ -1,7 +1,20 @@
-import { convert_public, convert_secret, generate, x25519 } from "../25519.ts";
 import { assertEquals } from "jsr:@std/assert@^1.0.13";
 import fc from "npm:fast-check@^4.2.0";
+import {
+  convert_public,
+  convert_secret,
+  generate,
+  sign,
+  verify,
+  x25519,
+} from "../25519.ts";
 
+Deno.test("verify", () =>
+  fc.assert(fc.property(
+    fc.uint8Array({ minLength: 32, maxLength: 32 }),
+    fc.uint8Array(),
+    (key, data) => verify(generate(key), data, sign(key, data)),
+  )));
 Deno.test("exchange", () =>
   fc.assert(fc.property(
     fc.uint8Array({ minLength: 32, maxLength: 32 }),

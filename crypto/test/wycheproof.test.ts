@@ -1,8 +1,9 @@
+import { assertEquals } from "jsr:@std/assert@^1.0.13";
 import { de_b16, en_b16 } from "../../base/16.ts";
+import { get_json, write } from "../../test.ts";
 import { verify, x25519 } from "../25519.ts";
 import { hkdf, hmac } from "../hash.ts";
 import vectors from "./vectors/wycheproof.json" with { type: "json" };
-import { assertEquals } from "jsr:@std/assert@^1.0.13";
 
 Deno.test("x25519", () =>
   vectors.x25519.forEach(($) =>
@@ -86,12 +87,7 @@ import.meta.main && await Promise.all([
       derived: $.result === "valid" ? $.okm : "",
     }))] as const,
 ].map(([name, get]) =>
-  fetch(
-    `https://raw.githubusercontent.com/C2SP/wycheproof/df4e933efef449fc88af0c06e028d425d84a9495/testvectors_v1/${name}_test.json`,
-  ).then(($) => $.json()).then(($) => $.testGroups.flatMap(get))
-)).then(([x25519, ed25519, hmac, hkdf]) =>
-  Deno.writeTextFile(
-    `${import.meta.dirname}/vectors/wycheproof.json`,
-    JSON.stringify({ x25519, ed25519, hmac, hkdf }),
-  )
-);
+  get_json(
+    `raw.githubusercontent.com/C2SP/wycheproof/df4e933efef449fc88af0c06e028d425d84a9495/testvectors_v1/${name}_test.json`,
+  ).then(($) => $.testGroups.flatMap(get))
+)).then(write(import.meta, ["x25519", "ed25519", "hmac", "hkdf"]));

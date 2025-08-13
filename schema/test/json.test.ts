@@ -1,3 +1,6 @@
+import { assertEquals } from "jsr:@std/assert@^1.0.13";
+import fc from "npm:fast-check@^4.2.0";
+import { fc_number, fc_string } from "../../test.ts";
 import {
   array,
   boolean,
@@ -10,20 +13,12 @@ import {
   type Type,
   type Typer,
 } from "../json.ts";
-import { assertEquals } from "jsr:@std/assert@^1.0.13";
-import fc from "npm:fast-check@^4.2.0";
 
-const fc_number = ($?: fc.DoubleConstraints) =>
-  fc.double({ noDefaultInfinity: true, noNaN: true, ...$ });
-const fc_string = ($?: fc.StringConstraints) =>
-  fc.string({ unit: "grapheme", size: "medium", ...$ });
 const fc_setter = <A>($: fc.Arbitrary<A>) =>
   fc.uniqueArray($, {
     minLength: 2,
     comparator: "SameValueZero",
   }) as fc.Arbitrary<[A, ...A[]]>;
-const fc_pairer = <A>($: fc.Arbitrary<A>) =>
-  fc.uniqueArray($, { minLength: 2, maxLength: 2 }) as fc.Arbitrary<[A, A]>;
 const test = <A extends Type["kind"]>(
   kind: A,
   all: {
@@ -102,13 +97,14 @@ test("number", {
         fc.constantFrom(...upper).map(fail("max_value", max)),
       )
     ),
-  step: fc_pairer(OK.number()).filter(($) => Boolean($[1] % $[0])).chain(($) =>
-    fc.tuple(
-      fc.constant(number().step($[0])),
-      fc.constant($[0]),
-      fc.constant($[1]).map(fail("step", $[0])),
-    )
-  ),
+  step: fc.uniqueArray(OK.number(), { minLength: 2, maxLength: 2 })
+    .filter(($) => Boolean($[1] % $[0])).chain(($) =>
+      fc.tuple(
+        fc.constant(number().step($[0])),
+        fc.constant($[0]),
+        fc.constant($[1]).map(fail("step", $[0])),
+      )
+    ),
 });
 test("string", {
   kind: fc.tuple(fc.constant(string()), OK.string(), rest("string")),

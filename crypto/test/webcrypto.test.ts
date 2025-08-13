@@ -1,7 +1,7 @@
-import { sign, x25519 } from "../25519.ts";
-import { hkdf, hmac, sha256, sha512 } from "../hash.ts";
 import { assertEquals } from "jsr:@std/assert@^1.0.13";
 import fc from "npm:fast-check@^4.2.0";
+import { sign, x25519 } from "../25519.ts";
+import { hkdf, hmac, sha256, sha512 } from "../hash.ts";
 
 const pkcs8 = ($: Uint8Array, type: 110 | 112, name: string, usage: KeyUsage) =>
   crypto.subtle.importKey(

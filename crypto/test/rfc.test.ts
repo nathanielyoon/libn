@@ -1,7 +1,8 @@
+import { assert, assertEquals } from "jsr:@std/assert@^1.0.13";
 import { de_b16, en_b16 } from "../../base/16.ts";
+import { get_text, write } from "../../test.ts";
 import { generate, sign, verify, x25519 } from "../25519.ts";
 import vectors from "./vectors/rfc.json" with { type: "json" };
-import { assert, assertEquals } from "jsr:@std/assert@^1.0.13";
 
 Deno.test("rfc7748", () =>
   vectors.rfc7748.forEach(($) =>
@@ -72,18 +73,12 @@ import.meta.main && await Promise.all([
     signature: $.slice(4764, 4904),
   }]] as const,
 ].map(([rfc, start, get]) =>
-  fetch(`https://www.rfc-editor.org/rfc/rfc${rfc}.txt`)
-    .then(($) => $.text()).then((text) =>
-      get(text.slice(start)).map(($) =>
-        (Object.keys($) as (keyof typeof $)[]).reduce((all, key) => ({
-          ...all,
-          [key]: $[key].match(/[\dA-Fa-f]{2}/g)?.join("") ?? "",
-        }), {})
-      )
+  get_text(rfc, start).then((text) =>
+    get(text).map(($) =>
+      (Object.keys($) as (keyof typeof $)[]).reduce((all, key) => ({
+        ...all,
+        [key]: $[key].match(/[\dA-Fa-f]{2}/g)?.join("") ?? "",
+      }), {})
     )
-)).then(([rfc7748, rfc8032]) =>
-  Deno.writeTextFile(
-    `${import.meta.dirname}/vectors/rfc.json`,
-    JSON.stringify({ rfc7748, rfc8032 }),
   )
-);
+)).then(write(import.meta, ["rfc7748", "rfc8032"]));
