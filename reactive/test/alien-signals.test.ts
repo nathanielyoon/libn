@@ -17,7 +17,7 @@ import {
   scoper,
   set_point,
   signal,
-} from "../reactivity.ts";
+} from "../alien-signals.ts";
 
 Deno.test("computed", () => {
   {

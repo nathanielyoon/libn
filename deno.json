@@ -3,11 +3,12 @@
   "name": "@nyoon/lib",
   "version": "0.3.0",
   "exports": {
-    "./base": "./src/base/main.ts",
-    "./crypto": "./src/crypto/main.ts",
-    "./dom": "./src/dom/main.ts",
-    "./match": "./src/match/main.ts",
-    "./types": "./src/types/main.ts"
+    "./base": "./base/main.ts",
+    "./crypto": "./crypto/main.ts",
+    "./match": "./match/main.ts",
+    "./query": "./query.ts",
+    "./reactive": "./reactive/main.ts",
+    "./schema": "./schema/main.ts"
   },
   "lint": {
     "rules": {
