@@ -29,7 +29,8 @@
         "ban-types",
         "no-cond-assign",
         "no-control-regex",
-        "no-explicit-any"
+        "no-explicit-any",
+        "no-invalid-regexp"
       ]
     }
   },
