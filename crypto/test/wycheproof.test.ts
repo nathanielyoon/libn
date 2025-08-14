@@ -3,36 +3,43 @@ import { de_b16, en_b16 } from "../../base/16.ts";
 import { get_json, write } from "../../test.ts";
 import { verify, x25519 } from "../25519.ts";
 import { hkdf, hmac } from "../hash.ts";
-import vectors from "./vectors/wycheproof.json" with { type: "json" };
 
 Deno.test("x25519", () =>
-  vectors.x25519.forEach(($) =>
-    assertEquals(
-      x25519(de_b16($.secret_key), de_b16($.public_key)),
-      $.shared_secret && de_b16($.shared_secret),
+  import("./vectors/wycheproof.json", { with: { type: "json" } }).then(($) =>
+    $.default.x25519.forEach(($) =>
+      assertEquals(
+        x25519(de_b16($.secret_key), de_b16($.public_key)),
+        $.shared_secret && de_b16($.shared_secret),
+      )
     )
   ));
 Deno.test("ed25519", () =>
-  vectors.ed25519.forEach(($) =>
-    assertEquals(
-      verify(de_b16($.public_key), de_b16($.data), de_b16($.signature)),
-      $.result,
+  import("./vectors/wycheproof.json", { with: { type: "json" } }).then(($) =>
+    $.default.ed25519.forEach(($) =>
+      assertEquals(
+        verify(de_b16($.public_key), de_b16($.data), de_b16($.signature)),
+        $.result,
+      )
     )
   ));
 Deno.test("hmac", () =>
-  vectors.hmac.forEach(($) =>
-    assertEquals(
-      en_b16(
-        hmac(de_b16($.key), de_b16($.data)).subarray(0, $.tag.length >> 1),
-      ) === $.tag,
-      $.result,
+  import("./vectors/wycheproof.json", { with: { type: "json" } }).then(($) =>
+    $.default.hmac.forEach(($) =>
+      assertEquals(
+        en_b16(
+          hmac(de_b16($.key), de_b16($.data)).subarray(0, $.tag.length >> 1),
+        ) === $.tag,
+        $.result,
+      )
     )
   ));
 Deno.test("hkdf", () =>
-  vectors.hkdf.forEach(($) =>
-    assertEquals(
-      hkdf(de_b16($.key), de_b16($.info), de_b16($.salt), $.out),
-      de_b16($.derived),
+  import("./vectors/wycheproof.json", { with: { type: "json" } }).then(($) =>
+    $.default.hkdf.forEach(($) =>
+      assertEquals(
+        hkdf(de_b16($.key), de_b16($.info), de_b16($.salt), $.out),
+        de_b16($.derived),
+      )
     )
   ));
 

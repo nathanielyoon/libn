@@ -2,23 +2,27 @@ import { assert, assertEquals } from "jsr:@std/assert@^1.0.13";
 import { de_b16, en_b16 } from "../../base/16.ts";
 import { get_text, write } from "../../test.ts";
 import { generate, sign, verify, x25519 } from "../25519.ts";
-import vectors from "./vectors/rfc.json" with { type: "json" };
 
 Deno.test("rfc7748", () =>
-  vectors.rfc7748.forEach(($) =>
-    assertEquals(
-      x25519(de_b16($.secret_key), de_b16($.public_key)),
-      de_b16($.shared_secret),
+  import("./vectors/rfc.json", { with: { type: "json" } }).then(($) =>
+    $.default.rfc7748.forEach(($) =>
+      assertEquals(
+        x25519(de_b16($.secret_key), de_b16($.public_key)),
+        de_b16($.shared_secret),
+      )
     )
   ));
 Deno.test("rfc8032", () =>
-  vectors.rfc8032.forEach(($) => {
-    const secret_key = de_b16($.secret_key), public_key = de_b16($.public_key);
-    assertEquals(generate(secret_key), public_key);
-    const message = de_b16($.data), signature = sign(secret_key, message);
-    assertEquals(en_b16(signature), $.signature);
-    assert(verify(public_key, message, signature));
-  }));
+  import("./vectors/rfc.json", { with: { type: "json" } }).then(($) =>
+    $.default.rfc8032.forEach(($) => {
+      const secret_key = de_b16($.secret_key),
+        public_key = de_b16($.public_key);
+      assertEquals(generate(secret_key), public_key);
+      const message = de_b16($.data), signature = sign(secret_key, message);
+      assertEquals(en_b16(signature), $.signature);
+      assert(verify(public_key, message, signature));
+    })
+  ));
 Deno.test("bad points", () => {
   const big = de_b16((1n | 1n << 255n).toString(16)).reverse();
   const empty = new Uint8Array(32);
