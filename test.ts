@@ -9,16 +9,16 @@ export const get_text = (url: string | number, start?: number, end?: number) =>
   get(typeof url === "string" ? url : `www.rfc-editor.org/rfc/rfc${url}.txt`)
     .then(($) => $.text()).then(($) => $.slice(start, end));
 /** Writes JSON to a relative path. */
-export const write = (meta: ImportMeta, keys?: string[]) => ($: any) =>
-  Deno.writeTextFile(
-    meta.url.replace(
-      /^file:\/\/(.+?)\/([^/]+)\.test\.ts$/,
-      "$1/vectors/$2.json",
-    ),
+export const write = (meta: ImportMeta, keys?: string[]) => async ($: any) => {
+  const a = meta.url.lastIndexOf("/"), b = `${meta.url.slice(7, a)}/vectors`;
+  await Deno.mkdir(b, { recursive: true });
+  await Deno.writeTextFile(
+    `${b}/${meta.url.slice(a + 1, -8)}.json`,
     JSON.stringify(
       keys?.reduce((all, key, z) => ({ ...all, [key]: $[z] }), {}) ?? $,
     ),
   );
+};
 /** Default number arbitrary. */
 export const fc_number = ($?: fc.DoubleConstraints) =>
   fc.double({ noDefaultInfinity: true, noNaN: true, ...$ });
