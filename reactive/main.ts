@@ -1,2 +1,1 @@
-export * from "./query.ts";
-export * from "./reactivity.ts";
+export * from "./alien-signals.ts";
