@@ -87,3 +87,6 @@ export type Fail<A extends Schema, B extends string = ""> = {
     }
     : never;
 }[keyof A] extends infer C ? C extends {} ? C : never : never;
+/** Utility type to convert a union to an intersection. */
+export type Intersect<A> = (A extends never ? never : (_: A) => void) extends
+  (_: infer B) => void ? B : never;
