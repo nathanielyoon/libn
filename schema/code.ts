@@ -86,16 +86,16 @@ const code = ($: Type) => CODE[$.type]($ as never);
 /** Creates encoding and decoding functions. */
 export const coder = <A extends Type>($: A): {
   size: number;
-  encode: ($: (string | null)[]) => unknown;
-  decode: ($: Data<A>) => (string | null)[];
+  encode: ($: Data<A>) => (string | null)[];
+  decode: ($: (string | null)[]) => unknown;
 } => {
   const a = CODE[$.type]($ as never);
   return {
     size: a[0],
-    encode: Function("I", `let F=0,O;${a[1]}return O`) as any,
-    decode: Function(
+    encode: Function(
       "I",
       `const O=Array(${a[0]});let F=0;${a[2]}return O`,
     ) as any,
+    decode: Function("I", `let F=0,O;${a[1]}return O`) as any,
   };
 };
