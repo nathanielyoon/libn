@@ -1,5 +1,14 @@
 import type { Data, Type } from "./json.ts";
 
+const iso = '{const i=new Date(I[F++]||"");O=isNaN(i)?I[F-1]:i.toISOString()}';
+const FORMAT = {
+  date: iso.replace("}", ".slice(0,10)}"),
+  time: iso.replace("}", ".slice(11)"),
+  "date-time": iso,
+  uuid: "O=I[F++].toLowerCase();",
+  pkey: 'O=I[F++].replace(/^(?![.~])/, "~");',
+  skey: 'O=I[F++].replace(/^(?![.~])/, ".");',
+};
 const CODE: { [A in Type as A["type"]]: ($: A) => [number, string, string] } = {
   boolean: () => [
     1,
@@ -16,7 +25,11 @@ const CODE: { [A in Type as A["type"]]: ($: A) => [number, string, string] } = {
     "{const i=I[F++];O=i==null?null:+i}",
     "O[F++]=I==null?null:`${I}`;",
   ],
-  string: () => [1, "O=I[F++];", "O[F++]=I??null;"],
+  string: ($) => [
+    1,
+    FORMAT[($ as { format: keyof typeof FORMAT }).format] ?? "O=I[F++];",
+    "O[F++]=I??null;",
+  ],
   array: ($) => {
     const a = code($.items);
     switch ($.items.type) {
