@@ -77,6 +77,13 @@ export type Fail<A extends Schema, B extends string = ""> = {
     ? D extends Schema ? Fail<D, `${B}/${number}`>
     : D extends { [key: string]: Schema }
       ? { [E in keyof D]: Fail<D[E], `${B}/${E & string}`> }[keyof D]
-    : { where: B; what: unknown; why: [C, D] }
+    : {
+      where: B;
+      what: unknown;
+      why: [
+        C,
+        C extends "required" ? D extends readonly any[] ? D[number] : never : D,
+      ];
+    }
     : never;
 }[keyof A] extends infer C ? C extends {} ? C : never : never;
