@@ -27,7 +27,7 @@ const CODE: { [A in Type as A["type"]]: ($: A) => [number, string, string] } = {
       case "number":
         return [
           1,
-          `if(I[F]!=null)for(let i=I[F++].split(/, /),o=O=Array(i.length),z=0;z<i.length;++z){let I=i,F=z,O;${
+          `if(I[F]!=null)for(let i=I[F++].split(", "),o=O=Array(i.length),z=0;z<i.length;++z){let I=i,F=z,O;${
             a[1]
           }o[z]=O}else ++F;`,
           'O[F++]=I?.join(", ")??null;',
