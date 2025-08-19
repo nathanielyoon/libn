@@ -66,6 +66,7 @@ const CODE: { [A in Type as A["type"]]: ($: A) => [number, string, string] } = {
   },
 };
 const code = ($: Type) => CODE[$.type]($ as never);
+/** Creates encoding and decoding functions. */
 export const coder = <A extends Type>($: A): {
   size: number;
   en: ($: (string | null)[]) => unknown;
