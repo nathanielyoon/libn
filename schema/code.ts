@@ -44,17 +44,17 @@ const CODE: { [A in Type as A["type"]]: ($: A) => [number, string, string] } = {
           1,
           `if(I[F]!=null)for(let i=I[F++].split(", "),o=O=Array(i.length),z=0;z<i.length;++z){let I=i,F=z,O;${
             a[1]
-          }o[z]=O}else ++F;`,
+          }o[z]=O}else ++F,O=null;`,
           'O[F++]=I?.join(", ")??null;',
         ];
     }
-    const b = a[0] * $.maxItems!;
+    const b = a[0] * $.maxItems! + 1;
     return [
-      b + 1,
-      `{for(let o=O=Array(Math.max(+I[F++]||0,${$.maxItems})),f=F,z=0;z<O.length;++z){let O,F=f+${
+      b,
+      `{for(let o=O=Array(Math.min(+I[F++]||0,${$.maxItems})),f=F,z=0;z<O.length;++z){let O,F=f+${
         a[0]
-      }*z;${a[1]}}F+=${b}}`,
-      `{O[F++]=I.length;for(let i=I,f=F,z=0;z<i.length;++z){const I=i[z];let F=f+${
+      }*z;${a[1]}o[z]=O}F+=${b}}`,
+      `{O[F++]=\`\${I.length}\`,O.fill(null,F,F+${b});for(let i=I,f=F,z=0;z<i.length;++z){const I=i[z];let F=f+${
         a[0]
       }*z;${a[2]}}F+=${b}}`,
     ];
@@ -79,7 +79,7 @@ const CODE: { [A in Type as A["type"]]: ($: A) => [number, string, string] } = {
       a += e[0], b += `{let O;${e[1]}if(O!=null)o[${f}]=O}`;
       c += `{const I=i[${f}];if(I!=null)${e[2]}else F+=${e[0]}}`;
     }
-    return [a, `{const o=O={};${b}}`, `{const i=I;${c}}`];
+    return [a, `{const o=O={};${b}}`, `{O.fill(null,F,F+${a});const i=I;${c}}`];
   },
 };
 const code = ($: Type) => CODE[$.type]($ as never);
