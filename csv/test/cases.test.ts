@@ -1,5 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@^1.0.13";
 import { de_csv, en_csv } from "../csv.ts";
+import { de_header } from "../header.ts";
 
 Deno.test("de_csv", () => {
   for (
@@ -31,3 +32,5 @@ Deno.test("en_csv", () => {
     assertEquals(en_csv([[json]], ($) => $ === null), csv);
   }
 });
+Deno.test("header", () =>
+  assertEquals(de_header([["__proto__"], [""]]), [{ ["__proto__"]: "" }]));
