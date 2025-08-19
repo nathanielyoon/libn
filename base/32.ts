@@ -1,4 +1,4 @@
-const encode = (str: string) => ($: Uint8Array): string => {
+const encode = (str: string) => ($: Uint8Array) => {
   let a = "", b, c, d, e, f, z = 0;
   while (z < $.length) {
     b = $[z++], c = $[z++], d = $[z++], e = $[z++], f = $[z++];
@@ -8,7 +8,7 @@ const encode = (str: string) => ($: Uint8Array): string => {
   }
   return a.slice(0, Math.ceil($.length / 5 * 8));
 };
-const decode = (bin: Uint8Array) => ($: string): Uint8Array<ArrayBuffer> => {
+const decode = (bin: Uint8Array) => ($: string) => {
   const a = new Uint8Array($.length * 5 >> 3), b = $.charCodeAt.bind($);
   let c, d, e, f, z = 0, y = 0;
   while (z < $.length) {
@@ -28,10 +28,10 @@ const map = ($: string) => {
 const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const H32 = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
 /** Encodes binary -> base32 string. */
-export const en_b32: ReturnType<typeof encode> = encode(B32);
+export const en_b32: ($: Uint8Array) => string = encode(B32);
 /** Decodes base32 string -> binary. */
-export const de_b32: ReturnType<typeof decode> = decode(map(B32));
+export const de_b32: ($: string) => Uint8Array<ArrayBuffer> = decode(map(B32));
 /** Encodes binary -> base32hex string. */
-export const en_h32: ReturnType<typeof encode> = encode(H32);
+export const en_h32: ($: Uint8Array) => string = encode(H32);
 /** Decodes base32hex string -> binary. */
-export const de_h32: ReturnType<typeof decode> = decode(map(H32));
+export const de_h32: ($: string) => Uint8Array<ArrayBuffer> = decode(map(H32));
