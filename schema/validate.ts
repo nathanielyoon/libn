@@ -45,7 +45,7 @@ const KEYWORDS: {
     ),
     ...infix({ minLength: ".length<", maxLength: ".length>" }),
     format: ($) => `!${FORMAT[$]}.test(I)`,
-    pattern: ($) => `!${$}.test(I)`,
+    pattern: ($) => `!${RegExp($)}.test(I)`,
   },
   array: {
     type: () => "!Array.isArray(I)",
