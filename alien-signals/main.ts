@@ -1,3 +1,21 @@
+/**
+ * Reactive data.
+ *
+ * @example
+ * ```ts
+ * import * as $ from "@nyoon/lib/alien-signals";
+ * import { assertEquals } from "jsr:@std/assert@^1.0.14";
+ *
+ * const counter = atom(0);
+ * const doubled = from(() => counter() * 2);
+ * const dispose = user(() => assertEquals(doubled(), counter() * 2));
+ * counter(1);
+ * counter((old) => old + 1);
+ * ```
+ *
+ * @see <https://github.com/stackblitz/alien-signals>
+ */
+
 const enum Flag {
   MAYBE = 1 << 0,
   WATCH = 1 << 1,
