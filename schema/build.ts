@@ -14,9 +14,7 @@ export type Builder<A extends Type> =
             ? () => Builder<With<A, C, true>>
             : C extends "required"
               ? A extends { properties: infer D }
-                ? <const E extends readonly (keyof D)[]>(
-                  $: E,
-                ) => Builder<
+                ? <const E extends readonly (keyof D)[]>($: E) => Builder<
                   With<A, C, E extends readonly [] ? Tuple<keyof D> : E>
                 >
               : never
@@ -56,11 +54,11 @@ export const vec = <
   const A extends
     | Type<"boolean" | "integer" | "number">
     | Type<"string"> & { format: keyof typeof FORMAT },
->(items: Builder<A>): Builder<{ type: "array"; items: A }> =>
+>(items: { type: A }): Builder<{ type: "array"; items: A }> =>
   builder({ type: "array", items: items.type });
 /** Creates an array schema builder. */
 export const arr = <const A extends Type, const B extends number>(
-  items: Builder<A>,
+  items: { type: A },
   max: B,
 ): Builder<{ type: "array"; items: A; maxItems: B }> =>
   builder({ type: "array", items: items.type, maxItems: max });
@@ -68,7 +66,7 @@ export const arr = <const A extends Type, const B extends number>(
 export const map = <
   const A extends Type,
   const B extends number,
->(key: RegExp, value: Builder<A>, max: B): Builder<{
+>(key: RegExp, value: { type: A }, max: B): Builder<{
   type: "object";
   patternProperties: { [pattern: string]: A };
   additionalProperties: false;
@@ -82,7 +80,7 @@ export const map = <
   });
 /** Creates an object schema builder. */
 export const obj = <const A extends { [key: string]: Type }>(
-  properties: { [B in keyof A]: Builder<A[B]> },
+  properties: { readonly [B in keyof A]: { type: A[B] } },
 ): Builder<{ type: "object"; properties: A; additionalProperties: false }> =>
   builder({
     type: "object",
