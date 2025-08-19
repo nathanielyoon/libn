@@ -19,17 +19,19 @@ const CODE: { [A in Type as A["type"]]: ($: A) => [number, string, string] } = {
   string: () => [1, "O=I[F++];", "O[F++]=I??null;"],
   array: ($) => {
     const a = code($.items);
-    if (
-      $.items.type === "boolean" || $.items.type === "number" ||
-      $.items.type === "string" && "format" in $.items
-    ) {
-      return [
-        1,
-        `if(I[F]!=null)for(let i=I[F++].split(/,\\s*/),o=O=Array(i.length),z=0;z<i.length;++z){let I=$[z],O;${
-          a[1]
-        }}else ++F;`,
-        "O[F++]=I?.join()??null;",
-      ];
+    switch ($.items.type) {
+      case "string":
+        if (!("format" in $.items)) break;
+      case "boolean":
+      case "integer":
+      case "number":
+        return [
+          1,
+          `if(I[F]!=null)for(let i=I[F++].split(/,\\s*/),o=O=Array(i.length),z=0;z<i.length;++z){let I=i,F=z,O;${
+            a[1]
+          }o[z]=O}else ++F;`,
+          "O[F++]=I?.join()??null;",
+        ];
     }
     const b = a[0] * $.maxItems!;
     return [
@@ -45,15 +47,15 @@ const CODE: { [A in Type as A["type"]]: ($: A) => [number, string, string] } = {
   object: ($) => {
     if ("patternProperties" in $) {
       const a = code($.patternProperties[Object.keys($.patternProperties)[0]]);
-      const b = a[0] * $.maxProperties;
+      const b = (a[0] + 1) * $.maxProperties;
       return [
         b,
-        `{for(let o=O={},f=F,z=0;z<${$.maxProperties}&&I[F]!=null;++z){let O,F=f+${
+        `{for(let o=O={},f=F,z=0;z<${$.maxProperties}&&I[f]!=null;f+=${
+          a[0] + 1
+        },++z){let O,F=f;const $=I[F++];${a[1]}o[$]=O}F+=${b}}`,
+        `{O.fill(null,F,F+${b});for(let i=I,$=Object.keys(i),f=F,z=0;z<$.length;++z){let F=f+${
           a[0]
-        }*z;const $=I[F++];${a[1]}o[$]=O}F+=${b}}`,
-        `{O.fill(null,F,F+${b});for(let i=I,$=Object.keys(i),f=F,z=0;z<$.length;++z){const I=i[$[z]];let F=f+${
-          a[0]
-        }*z;${a[2]}}F+=${b}}`,
+        }*z;const I=i[O[F++]=$[z]];${a[2]}}F+=${b}}`,
       ];
     }
     let a = 0, b = "", c = "";
@@ -69,13 +71,16 @@ const code = ($: Type) => CODE[$.type]($ as never);
 /** Creates encoding and decoding functions. */
 export const coder = <A extends Type>($: A): {
   size: number;
-  en: ($: (string | null)[]) => unknown;
-  de: ($: Data<A>) => (string | null)[];
+  encode: ($: (string | null)[]) => unknown;
+  decode: ($: Data<A>) => (string | null)[];
 } => {
   const a = CODE[$.type]($ as never);
   return {
     size: a[0],
-    en: Function("I", `let F=0,O;${a[1]}return O`) as any,
-    de: Function("I", `const O=Array(${a[0]});let F=0;${a[2]}return O`) as any,
+    encode: Function("I", `let F=0,O;${a[1]}return O`) as any,
+    decode: Function(
+      "I",
+      `const O=Array(${a[0]});let F=0;${a[2]}return O`,
+    ) as any,
   };
 };
