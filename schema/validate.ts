@@ -95,5 +95,5 @@ export const validator = <A extends Type>(
   $: A,
 ): (
   $: unknown,
-) => Data<A> | Fail<A> =>
+) => Data<A> | Set<Fail<A>> =>
   Function("I", `const E=new Set();let P="";${all($)}return E.size?E:I`) as any;
