@@ -1,7 +1,7 @@
 import { assertEquals } from "jsr:@std/assert@^1.0.13";
 import fc from "npm:fast-check@^4.2.0";
 import { fc_number, fc_string } from "../../test.ts";
-import { type Fail, FORMAT, type Infer, type Schema } from "../json.ts";
+import { type Data, type Fail, FORMAT, type Type } from "../json.ts";
 import { bit, type Builder } from "../build.ts";
 
 const fc_setter = <A>($: fc.Arbitrary<A>) =>
@@ -9,13 +9,13 @@ const fc_setter = <A>($: fc.Arbitrary<A>) =>
     minLength: 2,
     comparator: "SameValueZero",
   }) as fc.Arbitrary<[A, ...A[]]>;
-const test = <A extends Schema["type"]>(
+const test = <A extends Type["type"]>(
   kind: A,
   all: {
-    [B in keyof Schema<A>]:
-      Schema<A> & { [C in B]-?: Exclude<Schema<A>[C], false> } extends
-        infer C extends Schema
-        ? fc.Arbitrary<[Builder<C>, Infer<C>, Fail<C>?, any?]>
+    [B in keyof Type<A>]:
+      Type<A> & { [C in B]-?: Exclude<Type<A>[C], false> } extends
+        infer C extends Type
+        ? fc.Arbitrary<[Builder<C>, Data<C>, Fail<C>?, any?]>
         : never;
   },
 ) =>

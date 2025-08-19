@@ -26,29 +26,29 @@ type Meta = {
   };
   array: {
     items:
-      | Schema<"boolean" | "number">
-      | Schema<"string"> & { format: keyof typeof FORMAT };
+      | Type<"boolean" | "number">
+      | Type<"string"> & { format: keyof typeof FORMAT };
     minItems?: number;
     maxItems?: number;
     uniqueItems?: boolean;
-  } | { items: Schema; minItems?: number; maxItems: number };
+  } | { items: Type; minItems?: number; maxItems: number };
   object: {
-    patternProperties: { [pattern: string]: Schema };
+    patternProperties: { [pattern: string]: Type };
     additionalProperties: false;
     minProperties?: number;
     maxProperties: number;
   } | {
-    properties: { [key: string]: Schema };
+    properties: { [key: string]: Type };
     additionalProperties: false;
     required?: readonly string[];
   };
 };
 /** JSON schema (restricted subset). */
-export type Schema<A extends keyof Meta = keyof Meta> = A extends string
+export type Type<A extends keyof Meta = keyof Meta> = A extends string
   ? { type: A } & Meta[A]
   : never;
 /** Schema-defined data. */
-export type Infer<A extends Schema> = Schema extends A ? Json
+export type Data<A extends Type> = Type extends A ? Json
   : A extends { const: infer B } | { enum: readonly (infer B)[] } ? B
   : A["type"] extends "boolean" ? boolean
   : A["type"] extends "number" | "integer" ? number
@@ -59,23 +59,23 @@ export type Infer<A extends Schema> = Schema extends A ? Json
     : B extends `${infer C}key` ? `${C extends "p" ? "~" : "."}${string}`
     : never
   : A["type"] extends "string" ? string
-  : A extends { items: infer B extends Schema } ? readonly Infer<B>[]
+  : A extends { items: infer B extends Type } ? readonly Data<B>[]
   : A extends { patternProperties: { [pattern: string]: infer B } }
-    ? B extends Schema ? { [key: string]: Infer<B> } : never
-  : A extends { properties: infer B extends { [key: string]: Schema } }
+    ? B extends Type ? { [key: string]: Data<B> } : never
+  : A extends { properties: infer B extends { [key: string]: Type } }
     ? A extends { required: readonly (infer C extends string)[] } ? (
-        & { [D in Extract<keyof B, C>]: Infer<B[D]> }
-        & { [D in Exclude<keyof B, C>]?: Infer<B[D]> }
+        & { [D in Extract<keyof B, C>]: Data<B[D]> }
+        & { [D in Exclude<keyof B, C>]?: Data<B[D]> }
       ) extends infer E ? { [F in keyof E]: E[F] } : never
-    : { [C in keyof B]?: Infer<B[C]> }
+    : { [C in keyof B]?: Data<B[C]> }
   : never;
 type Esc<A extends PropertyKey, B extends number, C> = C extends
   `${infer D}${A & string}${infer F}` ? `${D}~${B}${Esc<A, B, F>}` : C & string;
 /** Union of error indicators. */
-export type Fail<A extends Schema, B extends string = ""> = {
+export type Fail<A extends Type, B extends string = ""> = {
   [C in keyof A]: A[C] extends infer D
-    ? D extends Schema ? Fail<D, `${B}/${number}`>
-    : D extends { [key: string]: Schema }
+    ? D extends Type ? Fail<D, `${B}/${number}`>
+    : D extends { [key: string]: Type }
       ? { [E in keyof D]: Fail<D[E], `${B}/${E & string}`> }[keyof D]
     : {
       where: B;
