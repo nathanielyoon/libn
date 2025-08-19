@@ -32,7 +32,8 @@ type Node = Signal | Cached | Effect;
 const queue: Node[] = [];
 let version = 0, notify = 0, length = 0, active: Node | undefined;
 /** Manually sets the current subscriber (exported for testing). */
-export const set = (sub?: Node) => ([active, sub] = [sub, active])[1];
+export const set = (sub?: Node): Node | undefined =>
+  ([active, sub] = [sub, active])[1];
 const enlink = (dep: Node) => {
   if (!active) return;
   const a = active.head;
@@ -71,7 +72,7 @@ const close = (sub: Node) => {
   sub.flags &= ~Flag.CHECK;
 };
 const reset = ($: Node) =>
-  $.kind == Kind.SIGNAL && ($.flags = Flag.MAYBE, $.old !== ($.old = $.has));
+  $.kind === Kind.SIGNAL && ($.flags = Flag.MAYBE, $.old !== ($.old = $.has));
 const reget = ($: Node) => {
   if ($.kind !== Kind.CACHED) return false;
   const a = set($);
