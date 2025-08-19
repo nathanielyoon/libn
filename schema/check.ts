@@ -90,7 +90,7 @@ const all = ($: Type) =>
       ? `${to}if(${b})${add(key, a)}`
       : to + b;
   }, "");
-export const check = <A extends Type>(
+export const checker = <A extends Type>(
   $: A,
 ): ($: unknown) => Data<A> | Fail<A> =>
   Function("I", `const E=new Set();let P="";${all($)}return E.size?E:I`) as any;
