@@ -154,7 +154,7 @@ export type Atom<A> = {
   (): A;
   <const B extends A>(value: B | ((old: B) => B)): B;
 };
-/** Creates a reactive value. */
+/** Creates a reactive (non-function) value. */
 export const atom = ((initial: unknown) => {
   const a: Signal = {
     kind: Kind.SIGNAL,
@@ -180,10 +180,7 @@ export const atom = ((initial: unknown) => {
     }
     return a.has;
   };
-}) as {
-  <A>(): A extends Function ? never : Atom<A | undefined>;
-  <A>(initial: A): A extends Function ? never : Atom<A>;
-};
+}) as { <A>(): Atom<A | undefined>; <A>(initial: A): Atom<A> };
 /** Creates a derived computation. */
 export const from = ((get: (old?: unknown) => unknown, initial?: unknown) => {
   const a: Cached = {
