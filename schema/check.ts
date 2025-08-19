@@ -50,14 +50,14 @@ const KEYWORDS: {
   array: {
     type: () => "!Array.isArray(I)",
     items: ($) =>
-      `for(let z=0,p=P,i=I;z<i.length;++z){const P=p+"/"+z,I=i[z];${all($)}}`,
+      `for(let p=P,i=I,z=0;z<i.length;++z){const P=p+"/"+z,I=i[z];${all($)}}`,
     ...infix({ minItems: ".length<", maxItems: ".length>" }),
     uniqueItems: () => "new Set(I).size!==I.length", // only primitives
   },
   object: {
     type: () => 'typeof I!=="object"||!I||Array.isArray(I)',
     patternProperties: ($) =>
-      `for(let z=0,p=P,i=I,$=Object.keys(i);z<$.length;++z)if(/${
+      `for(let p=P,i=I,$=Object.keys(i),z=0;z<$.length;++z)if(/${
         Object.keys($)[0]
       }/.test($[z])){const P=p+"/"+$[z].replaceAll("~","~0").replaceAll("/","~1"),I=i[$[z]];${
         all($[Object.keys($)[0]])
