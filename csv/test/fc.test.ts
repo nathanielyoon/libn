@@ -1,4 +1,4 @@
-import { assertEquals } from "jsr:@std/assert@^1.0.13";
+import { assertEquals } from "jsr:@std/assert@^1.0.14";
 import fc from "npm:fast-check@^4.2.0";
 import { fc_string } from "../../test.ts";
 import { de_header, en_header } from "../header.ts";

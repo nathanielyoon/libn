@@ -1,4 +1,4 @@
-import { assertEquals } from "jsr:@std/assert@^1.0.13";
+import { assertEquals } from "jsr:@std/assert@^1.0.14";
 import { get_text, write } from "../../test.ts";
 import { de_csv } from "../csv.ts";
 

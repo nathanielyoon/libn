@@ -1,4 +1,4 @@
-import { assertEquals } from "jsr:@std/assert@^1.0.13";
+import { assertEquals } from "jsr:@std/assert@^1.0.14";
 import fc from "npm:fast-check@^4.2.0";
 import { sign, x25519 } from "../25519.ts";
 import { hkdf, hmac, sha256, sha512 } from "../hash.ts";

@@ -1,4 +1,4 @@
-import { assertEquals } from "jsr:@std/assert@^1.0.13";
+import { assertEquals } from "jsr:@std/assert@^1.0.14";
 import fc from "npm:fast-check@^4.2.0";
 import { fc_binary } from "../../test.ts";
 import { de_b16, en_b16 } from "../16.ts";

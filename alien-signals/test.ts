@@ -3,12 +3,12 @@ import {
   assertLess,
   assertNotEquals,
   assertThrows,
-} from "jsr:@std/assert@^1.0.13";
+} from "jsr:@std/assert@^1.0.14";
 import {
   assertSpyCall,
   assertSpyCalls,
   spy,
-} from "jsr:@std/testing@^1.0.14/mock";
+} from "jsr:@std/testing@^1.0.15/mock";
 import { atom, from, set, user } from "./main.ts";
 
 Deno.test("computed", () => {

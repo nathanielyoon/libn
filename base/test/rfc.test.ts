@@ -1,4 +1,4 @@
-import { assertEquals } from "jsr:@std/assert@^1.0.13";
+import { assertEquals } from "jsr:@std/assert@^1.0.14";
 import { get_text, write } from "../../test.ts";
 import { de_b16, en_b16 } from "../16.ts";
 import { de_b32, de_h32, en_b32, en_h32 } from "../32.ts";
