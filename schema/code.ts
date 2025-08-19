@@ -1,14 +1,16 @@
-import type { Data, Type } from "./json.ts";
+import type { Data, Format, Type } from "./json.ts";
 
 const iso = '{const i=new Date(I[F++]||"");O=isNaN(i)?I[F-1]:i.toISOString()}';
 const FORMAT = {
   date: iso.replace("}", ".slice(0,10)}"),
   time: iso.replace("}", ".slice(11)"),
   "date-time": iso,
-  uuid: "O=I[F++].toLowerCase();",
-  pkey: 'O=I[F++].replace(/^(?![.~])/, "~");',
-  skey: 'O=I[F++].replace(/^(?![.~])/, ".");',
-};
+  email: "O=I[F++].trim();",
+  uri: "O=I[F++].trim();",
+  uuid: "O=I[F++].trim().toLowerCase();",
+  pkey: 'O=I[F++].trim().replace(/^(?![.~])/, "~");',
+  skey: 'O=I[F++].trim().replace(/^(?![.~])/, ".");',
+} satisfies { [_ in Format]: string };
 const CODE: { [A in Type as A["type"]]: ($: A) => [number, string, string] } = {
   boolean: () => [
     1,

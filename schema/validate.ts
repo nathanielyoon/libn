@@ -1,10 +1,4 @@
-import {
-  type Data,
-  type Fail,
-  FORMAT,
-  type Intersect,
-  type Type,
-} from "./json.ts";
+import type { Data, Fail, Intersect, Type } from "./json.ts";
 
 const add = (key: string, value: unknown) =>
   `E.add({where:P,what:I,why:${JSON.stringify([key, value])}});`;
@@ -19,6 +13,18 @@ const infix = <A extends { [operation: string]: string }>(operations: A) =>
     to[key] = ($: number) => `I${operations[key]}${$}`;
     return to;
   }, {} as { [_ in keyof A]: ($: number) => string });
+const date = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
+const time = /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{3}Z$/;
+const FORMAT = {
+  date,
+  time,
+  "date-time": RegExp(`${date.source.slice(0, -1)}T${time.source.slice(1)}$`),
+  email: /^[\w'+-](?:\.?[\w'+-])*@(?:[\dA-Za-z][\dA-Za-z-]*\.)+[A-Za-z]{2,}$/,
+  uri: /^[^#/:?]+:(?:\/\/[^\/?#]*)?[^#?]*(?:\?[^#]*)?(?:#.*)?$/,
+  uuid: /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/,
+  pkey: /^~[-\w]{43}$/,
+  skey: /^\.[-\w]{43}$/,
+};
 const KEYWORDS: {
   [A in Type as A["type"]]: Intersect<
     A extends {} ? { [B in keyof A]-?: ($: NonNullable<A[B]>) => string }

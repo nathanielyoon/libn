@@ -2,19 +2,15 @@
 export type Json = undefined | boolean | number | string | Json[] | {
   [key: string]: Json;
 };
-const date = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
-const time = /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{3}Z$/;
-/** Format patterns. */
-export const FORMAT = {
-  date,
-  time,
-  "date-time": RegExp(`${date.source.slice(0, -1)}T${time.source.slice(1)}$`),
-  email: /^[\w'+-](?:\.?[\w'+-])*@(?:[\dA-Za-z][\dA-Za-z-]*\.)+[A-Za-z]{2,}$/,
-  uri: /^[^#/:?]+:(?:\/\/[^\/?#]*)?[^#?]*(?:\?[^#]*)?(?:#.*)?$/,
-  uuid: /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/,
-  pkey: /^~[-\w]{43}$/,
-  skey: /^\.[-\w]{43}$/,
-};
+export type Format =
+  | "date"
+  | "time"
+  | "date-time"
+  | "email"
+  | "uri"
+  | "uuid"
+  | "pkey"
+  | "skey";
 type Numeric =
   | { const: number }
   | { enum: readonly [number, ...number[]] }
@@ -26,13 +22,13 @@ type Meta = {
   string: { const: string } | { enum: readonly [string, ...string[]] } | {
     minLength?: number;
     maxLength?: number;
-    format?: keyof typeof FORMAT;
+    format?: Format;
     pattern?: string;
   };
   array: {
     items:
       | Type<"boolean" | "integer" | "number">
-      | Type<"string"> & { format: keyof typeof FORMAT };
+      | Type<"string"> & { format: Format };
     minItems?: number;
     maxItems?: number;
     uniqueItems?: boolean;
@@ -84,8 +80,9 @@ type Esc<A extends PropertyKey, B extends number, C> = C extends
 export type Fail<A extends Type, B extends string = ""> = {
   [C in keyof A]: A[C] extends infer D
     ? D extends Type ? Fail<D, `${B}/${number}`>
-    : D extends { [key: string]: Type }
-      ? { [E in keyof D]: Fail<D[E], `${B}/${E & string}`> }[keyof D]
+    : D extends { [key: string]: Type } ? {
+        [E in keyof D]: Fail<D[E], `${B}/${Esc<"/", 1, Esc<"~", 0, E>>}`>;
+      }[keyof D]
     : {
       where: B;
       what: unknown;
