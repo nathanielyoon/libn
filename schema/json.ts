@@ -2,11 +2,16 @@
 export type Json = undefined | boolean | number | string | Json[] | {
   [key: string]: Json;
 };
+const date = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
+const time = /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{3}Z$/;
 /** Format patterns. */
 export const FORMAT = {
+  date,
+  time,
+  "date-time": RegExp(`${date.source.slice(0, -1)}T${time.source.slice(1)}$`),
   email: /^[\w'+-](?:\.?[\w'+-])*@(?:[\dA-Za-z][\dA-Za-z-]*\.)+[A-Za-z]{2,}$/,
-  "date-time":
-    /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{3}Z$/,
+  uri: /^[^#/:?]+:(?:\/\/[^\/?#]*)?[^#?]*(?:\?[^#]*)?(?:#.*)?$/,
+  uuid: /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/,
   pkey: /^~[-\w]{43}$/,
   skey: /^\.[-\w]{43}$/,
 };
@@ -53,9 +58,13 @@ export type Data<A extends Type> = Type extends A ? Json
   : A["type"] extends "boolean" ? boolean
   : A["type"] extends "integer" | "number" ? number
   : A extends { format: infer B }
-    ? B extends "email" ? `${string}@${string}.${string}`
+    ? A extends "date" ? `${number}-${number}-${number}`
+    : A extends "time" ? `${number}:${number}:${number}.${number}Z`
     : A extends "date-time"
       ? `${number}-${number}-${number}T${number}:${number}:${number}.${number}Z`
+    : B extends "email" ? `${string}@${string}.${string}`
+    : B extends "uri" ? `${string}:${string}`
+    : B extends "uuid" ? `${string}-${string}-${string}-${string}-${string}`
     : B extends `${infer C}key` ? `${C extends "p" ? "~" : "."}${string}`
     : never
   : A["type"] extends "string" ? string
