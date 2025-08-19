@@ -150,7 +150,10 @@ const run = ($: Node, flags: Flag) => {
   }
 };
 /** Reactive value. */
-export type Atom<A> = { (): A; <const B extends A>(value: B): B };
+export type Atom<A> = {
+  (): A;
+  <const B extends A>(value: B | ((old: B) => B)): B;
+};
 /** Creates a reactive value. */
 export const atom = ((initial: unknown) => {
   const a: Signal = {
@@ -166,7 +169,10 @@ export const atom = ((initial: unknown) => {
   return (...$: [unknown]) => {
     if (!$.length) {
       a.flags & Flag.DIRTY && reset(a) && a.subs && flat(a.subs), enlink(a);
-    } else if (a.has !== (a.has = $[0]) && (a.flags = Flag.CLEAR, a.subs)) {
+    } else if (
+      a.has !== (a.has = typeof $[0] === "function" ? $[0](a.has) : $[0]) &&
+      (a.flags = Flag.CLEAR, a.subs)
+    ) {
       for (deep(a.subs); notify < length; ++notify) {
         run(queue[notify], queue[notify].flags &= ~Flag.QUEUE);
       }
@@ -174,7 +180,10 @@ export const atom = ((initial: unknown) => {
     }
     return a.has;
   };
-}) as { <A>(): Atom<A | undefined>; <A>(initial: A): Atom<A> };
+}) as {
+  <A>(): A extends Function ? never : Atom<A | undefined>;
+  <A>(initial: A): A extends Function ? never : Atom<A>;
+};
 /** Creates a derived computation. */
 export const from = ((get: (old?: unknown) => unknown, initial?: unknown) => {
   const a: Cached = {
