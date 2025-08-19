@@ -46,7 +46,7 @@ export const str = (): Builder<{ type: "string" }> =>
 /** Creates a vector schema builder. */
 export const vec = <
   const A extends
-    | Type<"boolean" | "number">
+    | Type<"boolean" | "integer" | "number">
     | Type<"string"> & { format: keyof typeof FORMAT },
 >(items: Builder<A>): Builder<{ type: "array"; items: A }> =>
   builder({ type: "array", items: items.type });
