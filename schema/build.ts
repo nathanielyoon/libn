@@ -11,10 +11,10 @@ export type Builder<A extends Type> =
           [C in keyof Omit<B, keyof A>]-?: C extends "uniqueItems"
             ? () => Builder<With<A, C, true>>
             : C extends "required"
-              ? B extends { properties: {} }
-                ? <const D extends readonly (keyof B["properties"])[]>(
-                  $: D,
-                ) => Builder<With<A, C, D>>
+              ? A extends { properties: infer D }
+                ? <const E extends readonly (keyof D)[]>(
+                  $: E,
+                ) => Builder<With<A, C, E>>
               : never
             : <const D extends NonNullable<B[C]>>(
               $: D,
