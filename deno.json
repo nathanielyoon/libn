@@ -1,10 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/denoland/deno/main/cli/schemas/config-file.v1.json",
   "name": "@nyoon/lib",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "exports": {
     "./base": "./base/main.ts",
     "./crypto": "./crypto/main.ts",
+    "./csv": "./csv/main.ts",
     "./match": "./match/main.ts",
     "./query": "./query.ts",
     "./reactive": "./reactive/main.ts",
