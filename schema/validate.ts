@@ -85,13 +85,15 @@ const all = ($: Type) =>
   Object.keys($).reduce((to, key) => { // @ts-expect-error: union is too narrow
     const a = $[key], b = KEYWORDS[$.type][key](a);
     return key === "type"
-      ? `${b}else{${to}}`
-      : typeof a !== "object" || key === "enum"
-      ? `${to}if(${b})${add(key, a)}`
-      : to + b;
+      ? `if(${b})${add(key, a)}else{${to}}`
+      : typeof a === "object" && key !== "enum" || !b
+      ? to + b
+      : `${to}if(${b})${add(key, a)}`;
   }, "");
 /** Creates a validating function. */
 export const validator = <A extends Type>(
   $: A,
-): ($: unknown) => Data<A> | Fail<A> =>
+): (
+  $: unknown,
+) => Data<A> | Fail<A> =>
   Function("I", `const E=new Set();let P="";${all($)}return E.size?E:I`) as any;
