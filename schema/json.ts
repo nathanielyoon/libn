@@ -26,7 +26,7 @@ type Meta = {
   };
   array: {
     items:
-      | Type<"boolean" | "number">
+      | Type<"boolean" | "integer" | "number">
       | Type<"string"> & { format: keyof typeof FORMAT };
     minItems?: number;
     maxItems?: number;
