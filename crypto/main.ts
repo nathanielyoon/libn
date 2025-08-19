@@ -4,7 +4,7 @@
  * @example
  * ```ts
  * import * as $ from "@nyoon/lib/crypto";
- * import { assert, assertEquals } from "jsr:@std/assert";
+ * import { assert, assertEquals } from "jsr:@std/assert@^1.0.14";
  *
  * const key_1 = crypto.getRandomValues(new Uint8Array(32));
  * const key_2 = crypto.getRandomValues(new Uint8Array(32));

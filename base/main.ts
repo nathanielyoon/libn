@@ -4,7 +4,7 @@
  * @example
  * ```ts
  * import * as $ from "jsr:@nyoon/lib/base";
- * import { assertEquals } from "jsr:@std/assert";
+ * import { assertEquals } from "jsr:@std/assert@^1.0.14";
  *
  * const data = crypto.getRandomValues(new Uint8Array(100));
  * assertEquals($.de_b16($.en_b16(data)), data);
