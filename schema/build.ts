@@ -78,9 +78,9 @@ export const obj = <const A extends { [key: string]: Type }>(
 ): Builder<{ type: "object"; properties: A; additionalProperties: false }> =>
   builder({
     type: "object",
-    properties: Object.keys(properties).reduce(
-      (to, key) => ({ ...to, [key]: properties[key].type }),
-      {},
-    ),
+    properties: Object.keys(properties).reduce((to, key) => {
+      to[key] = properties[key].type;
+      return to;
+    }, {} as { [key: string]: Type }),
     additionalProperties: false,
   });
