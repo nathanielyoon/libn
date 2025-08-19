@@ -51,7 +51,7 @@ export type Type<A extends keyof Meta = keyof Meta> = A extends string
 export type Data<A extends Type> = Type extends A ? Json
   : A extends { const: infer B } | { enum: readonly (infer B)[] } ? B
   : A["type"] extends "boolean" ? boolean
-  : A["type"] extends "number" | "integer" ? number
+  : A["type"] extends "integer" | "number" ? number
   : A extends { format: infer B }
     ? B extends "email" ? `${string}@${string}.${string}`
     : A extends "date-time"
