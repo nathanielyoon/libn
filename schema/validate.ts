@@ -70,7 +70,7 @@ const KEYWORDS: {
           const a = JSON.stringify(key);
           return `${to}{const P=p+${
             a.replaceAll("~", "~0").replaceAll("/", "~1").replace('"', '"/')
-          },I=i[${a}];if(I!=null)${all($[key])}$.delete(${a})}`;
+          },I=i[${a}];if(I!=null){${all($[key])}}$.delete(${a})}`;
         }, "")
       }$.size&&${add("additionalProperties", false)}}`,
     required: ($) =>

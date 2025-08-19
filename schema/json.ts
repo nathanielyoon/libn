@@ -40,7 +40,7 @@ type Meta = {
   } | {
     properties: { [key: string]: Type };
     additionalProperties: false;
-    required?: readonly string[];
+    required?: readonly [string, ...string[]];
   };
 };
 /** JSON schema (restricted subset). */

@@ -4,6 +4,8 @@ type With<A extends Type, B extends PropertyKey, C> =
   Omit<A, B> & { [_ in B]-?: C } extends infer D
     ? D extends {} ? { [E in keyof D]: D[E] } : never
     : never;
+type Tuple<A> = Intersect<A extends never ? never : (_: A) => A> extends
+  (_: never) => infer B ? [...Tuple<Exclude<A, B>>, B] : [];
 /** JSON schema builder. */
 export type Builder<A extends Type> =
   & Intersect<
@@ -14,7 +16,9 @@ export type Builder<A extends Type> =
               ? A extends { properties: infer D }
                 ? <const E extends readonly (keyof D)[]>(
                   $: E,
-                ) => Builder<With<A, C, E>>
+                ) => Builder<
+                  With<A, C, E extends readonly [] ? Tuple<keyof D> : E>
+                >
               : never
             : <const D extends NonNullable<B[C]>>(
               $: D,
@@ -29,7 +33,11 @@ export type Builder<A extends Type> =
 const builder = (base: any) =>
   new Proxy(base, {
     get: (target, key, proxy) =>
-      key === "type" ? target : (value: any) => (target[key] = value, proxy),
+      key === "type" ? target : (value: any) => (
+        target[key] = key !== "required" || value.length
+          ? value
+          : Object.keys(target.properties), proxy
+      ),
   });
 /** Creates a boolean schema builder. */
 export const bit = (): Builder<{ type: "boolean" }> =>
