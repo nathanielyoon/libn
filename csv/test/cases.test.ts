@@ -4,10 +4,11 @@ import { de_csv, en_csv } from "../csv.ts";
 Deno.test("de_csv", () => {
   for (
     const [csv, json] of [
-      ['""', [[""]]],
       ['"', null],
       ['a"', null],
       ['"a', null],
+      ["\ufeff", [[""]]],
+      ['""', [[""]]],
       [",a", [["", "a"]]],
       ["a\r\n", [["a"]]],
     ] satisfies [any, any][]
@@ -16,14 +17,17 @@ Deno.test("de_csv", () => {
 Deno.test("en_csv", () => {
   for (
     const [json, csv] of [
-      [null, ""],
-      ["", ""],
-      ["\r", "\r"],
-      ["\r\n", '"\r\n"'],
-      ["\n", '"\n"'],
-      ['"', '""""'],
-      [",", '","'],
-      ["ok", "ok"],
+      [null, "\n"],
+      ["", "\n"],
+      ["\r", "\r\n"],
+      ["\r\n", '"\r\n"\n'],
+      ["\n", '"\n"\n'],
+      ['"', '""""\n'],
+      [",", '","\n'],
+      ["ok", "ok\n"],
     ] satisfies [any, any][]
-  ) assertEquals(en_csv([[json]], ($) => $ === null), csv + "\n");
+  ) {
+    assertEquals(en_csv([[json]]), csv);
+    assertEquals(en_csv([[json]], ($) => $ === null), csv);
+  }
 });
