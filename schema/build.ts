@@ -58,20 +58,17 @@ export const arr = <const A extends Type, const B extends number>(
   builder({ type: "array", items: items.type, maxItems: max });
 /** Creates a map schema builder. */
 export const map = <
-  const A extends { [pattern: string]: Type },
+  const A extends Type,
   const B extends number,
->(patterns: { [C in keyof A]: Builder<A[C]> }, max: B): Builder<{
+>(key: RegExp, value: Builder<A>, max: B): Builder<{
   type: "object";
-  patternProperties: A;
+  patternProperties: { [pattern: string]: A };
   additionalProperties: false;
   maxProperties: B;
 }> =>
   builder({
     type: "object",
-    patternProperties: Object.keys(patterns).reduce(
-      (to, key) => ({ ...to, [key]: patterns[key].type }),
-      {},
-    ),
+    patternProperties: { [key.source]: value.type },
     additionalProperties: false,
     maxProperties: max,
   });
