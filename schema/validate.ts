@@ -1,13 +1,9 @@
-import type { Data, Fail, Intersect, Type } from "./json.ts";
+import type { Data, Fail, Intersect, Kind, Type } from "./json.ts";
 
 const add = (key: string, value: unknown) =>
-  `E.add({where:P,what:I,why:${JSON.stringify([key, value])}});`;
-const base = <A extends Type>(not: string, map: ($: Data<A>) => string) => ({
-  type: () => not,
-  const: ($: Data<A>) => `I!==${JSON.stringify($)}`,
-  enum: ($: readonly Data<A>[]) =>
-    `!${RegExp("^(?:" + $.map(map).join("|") + ")$")}.test(JSON.stringify(I))`,
-});
+  `E.add({expected:${JSON.stringify([key, value])},received:[P,I]});`;
+const enumer = <A>(map: ($: A) => string) => ($: readonly A[]) =>
+  `!${RegExp("^(?:" + $.map(map).join("|") + ")$")}.test(JSON.stringify(I))`;
 const infix = <A extends { [operation: string]: string }>(operations: A) =>
   (Object.keys(operations) as (keyof A)[]).reduce((to, key) => {
     to[key] = ($: number) => `I${operations[key]}${$}`;
@@ -15,7 +11,7 @@ const infix = <A extends { [operation: string]: string }>(operations: A) =>
   }, {} as { [_ in keyof A]: ($: number) => string });
 const date = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
 const time = /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{3}Z$/;
-const FORMAT = {
+const REGEXES = {
   date,
   time,
   "date-time": RegExp(`${date.source.slice(0, -1)}T${time.source.slice(1)}$`),
@@ -26,57 +22,82 @@ const FORMAT = {
   skey: /^\.[-\w]{43}$/,
 };
 const KEYWORDS: {
-  [A in Type as A["type"]]: Intersect<
-    A extends {} ? { [B in keyof A]-?: ($: NonNullable<A[B]>) => string }
-      : never
-  >;
+  [A in Kind]: Type<A> extends infer B ? B extends {} ? Intersect<
+        {
+          [C in Exclude<keyof B, "title" | "description" | "kind">]-?: (
+            $: NonNullable<B[C]>,
+          ) => string;
+        }
+      >
+    : never
+    : never;
 } = {
-  boolean: base('typeof I!=="boolean"', ($) => `${$}`),
-  integer: {
-    ...base("!Number.isInteger(I)", ($) => `${$}`.replaceAll("+", "\\+")),
+  bit: { type: () => 'typeof I!=="boolean"', enum: ($) => `I!==${$}` },
+  int: {
+    type: () => "!Number.isSafeInteger(I)",
+    enum: enumer(($) => `${$}`.replaceAll("+", "\\+")),
     ...infix({ minimum: "<", maximum: ">", multipleOf: "%" }),
   },
-  number: {
-    ...base("!Number.isFinite(I)", ($) => `${$}`.replace(/[+.]/g, "\\$&")),
+  num: {
+    type: () => "!Number.isFinite(I)",
+    enum: enumer(($) => `${$}`.replace(/[+.]/g, "\\$&")),
     ...infix({ minimum: "<", maximum: ">", multipleOf: "%" }),
   },
-  string: {
-    ...base(
-      'typeof I!=="string"',
-      ($) =>
-        JSON.stringify($).replace(/[$(-+./?[-^{|}]/g, "\\$&").replace(
-          /[\p{C}\p{Z}]/gu,
-          ($) => `\\u${$.charCodeAt(0).toString(16).padStart(4, "0")}`,
-        ),
-    ),
+  str: {
+    type: () => 'typeof I!=="string"||I!==I.normalize("NFC")',
     ...infix({ minLength: ".length<", maxLength: ".length>" }),
-    format: ($) => `!${FORMAT[$]}.test(I)`,
+    format: ($) => `!${REGEXES[$]}.test(I)`,
     pattern: ($) => `!${RegExp($)}.test(I)`,
   },
-  array: {
+  txt: {
+    type: () => 'typeof I!=="string"||I!==I.normalize("NFC")',
+    enum: enumer(($) =>
+      JSON.stringify($).replace(/[$(-+./?[-^{|}]/g, "\\$&").replace(
+        /[\p{C}\p{Z}]/gu,
+        ($) => `\\u${$.charCodeAt(0).toString(16).padStart(4, "0")}`,
+      )
+    ),
+    ...infix({ minLength: ".length<", maxLength: ".length>" }),
+    pattern: ($) => `!${RegExp($)}.test(I)`,
+  },
+  vec: {
     type: () => "!Array.isArray(I)",
     items: ($) =>
-      `for(let p=P,i=I,z=0;z<i.length;++z){const P=p+"/"+z,I=i[z];${all($)}}`,
+      `for(let p=P,i=I,z=0;z<i.length;++z){const P=p+"/"+z,I=i[z];${
+        keywords($)
+      }}`,
     ...infix({ minItems: ".length<", maxItems: ".length>" }),
     uniqueItems: () => "new Set(I).size!==I.length", // only primitives
   },
-  object: {
+  arr: {
+    type: () => "!Array.isArray(I)",
+    items: ($) =>
+      `for(let p=P,i=I,z=0;z<i.length;++z){const P=p+"/"+z,I=i[z];${
+        keywords($)
+      }}`,
+    ...infix({ minItems: ".length<", maxItems: ".length>" }),
+  },
+  map: {
     type: () => 'typeof I!=="object"||!I||Array.isArray(I)',
     patternProperties: ($) =>
       `for(let p=P,i=I,$=Object.keys(i),z=0;z<$.length;++z)if(/${
         Object.keys($)[0]
       }/.test($[z])){const P=p+"/"+$[z].replaceAll("~","~0").replaceAll("/","~1"),I=i[$[z]];${
-        all($[Object.keys($)[0]])
+        keywords($[Object.keys($)[0]])
       }}else ${add("additionalProperties", false)}`,
     minProperties: ($) => `Object.keys(I).length<${$}`,
     maxProperties: ($) => `Object.keys(I).length>${$}`,
+    additionalProperties: () => "", // checked by patternProperties
+  },
+  obj: {
+    type: () => 'typeof I!=="object"||!I||Array.isArray(I)',
     properties: ($) =>
       `{const p=P,i=I,$=new Set(Object.keys(i));${
         Object.keys($).reduce((to, key) => {
           const a = JSON.stringify(key);
           return `${to}{const P=p+${
             a.replaceAll("~", "~0").replaceAll("/", "~1").replace('"', '"/')
-          },I=i[${a}];if(I!=null){${all($[key])}}$.delete(${a})}`;
+          },I=i[${a}];if(I!=null){${keywords($[key])}}$.delete(${a})}`;
         }, "")
       }$.size&&${add("additionalProperties", false)}}`,
     required: ($) =>
@@ -84,12 +105,12 @@ const KEYWORDS: {
         (to, key) => `${to}I[${JSON.stringify(key)}]??${add("required", key)}`,
         "",
       ),
-    additionalProperties: () => "", // checked by other keywords
+    additionalProperties: () => "", // checked by properties
   },
 };
-const all = ($: Type) =>
+const keywords = ($: Type) =>
   Object.keys($).reduce((to, key) => { // @ts-expect-error: union is too narrow
-    const a = $[key], b = KEYWORDS[$.type][key](a);
+    const a = $[key], b = KEYWORDS[$.kind][key]?.(a);
     return key === "type"
       ? `if(${b})${add(key, a)}else{${to}}`
       : typeof a === "object" && key !== "enum" || !b
@@ -99,7 +120,8 @@ const all = ($: Type) =>
 /** Creates a validating function. */
 export const validator = <A extends Type>(
   $: A,
-): (
-  $: unknown,
-) => Data<A> | Set<Fail<A>> =>
-  Function("I", `const E=new Set();let P="";${all($)}return E.size?E:I`) as any;
+): ($: unknown) => Data<A> | Set<Fail<A>> =>
+  Function(
+    "I",
+    `const E=new Set();let P="";${keywords($)}return E.size?E:I`,
+  ) as any;

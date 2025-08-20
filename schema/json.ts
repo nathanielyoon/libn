@@ -16,47 +16,82 @@ export type Formats = {
   pkey: `~${string}`;
   skey: `.${string}`;
 };
-type Meta =
-  & {
-    boolean: { const: boolean } | { enum: readonly [boolean] } | {};
-    string: { const: string } | { enum: readonly [string, ...string[]] } | {
+type Meta = {
+  boolean: { bit: { enum?: readonly [boolean] } };
+  integer: {
+    int: {
+      enum?: readonly [number, ...number[]];
+      minimum?: number;
+      maximum?: number;
+      multipleOf?: number;
+    };
+  };
+  number: {
+    num: {
+      enum?: readonly [number, ...number[]];
+      minimum?: number;
+      maximum?: number;
+      multipleOf?: number;
+    };
+  };
+  string: {
+    str: {
       minLength?: number;
       maxLength?: number;
-      format?: keyof Formats;
+      format: keyof Formats;
       pattern?: string;
     };
-    array: {
-      items:
-        | Type<"boolean" | "integer" | "number">
-        | Type<"string"> & { format: keyof Formats };
+    txt: {
+      enum?: readonly [string, ...string[]];
+      minLength?: number;
+      maxLength?: number;
+      pattern?: string;
+    };
+  };
+  array: {
+    vec: {
+      items: Type<"bit" | "int" | "num" | "str">;
       minItems?: number;
       maxItems?: number;
       uniqueItems?: boolean;
-    } | { items: Type; minItems?: number; maxItems: number };
-    object: {
+    };
+    arr: { items: Type; minItems?: number; maxItems: number };
+  };
+  object: {
+    map: {
       patternProperties: { [pattern: string]: Type };
-      additionalProperties: false;
       minProperties?: number;
       maxProperties: number;
-    } | {
-      properties: { [key: string]: Type };
       additionalProperties: false;
-      required?: readonly [string, ...string[]];
     };
-  }
-  & {
-    [_ in "integer" | "number"]:
-      | { const: number }
-      | { enum: readonly [number, ...number[]] }
-      | { minimum?: number; maximum?: number; multipleOf?: number };
+    obj: {
+      properties: { [key: string]: Type };
+      required: readonly [string, ...string[]];
+      additionalProperties: false;
+    };
   };
-/** JSON schema (restricted subset). */
-export type Type<A extends keyof Meta = keyof Meta> = A extends string
-  ? { type: A } & Meta[A]
+};
+/** JSON subtypes. */
+export type Kind<A extends keyof Meta = keyof Meta> = A extends {}
+  ? keyof Meta[A]
+  : never;
+/** JSON schema subset. */
+export type Type<A extends Kind = Kind> = keyof Meta extends infer B
+  ? B extends keyof Meta
+    ? Meta[B] extends infer C
+      ? C extends {}
+        ? Extract<keyof C, A> extends infer D
+          ? D extends keyof C
+            ? { title?: string; description?: string; kind: D; type: B } & C[D]
+          : never
+        : never
+      : never
+    : never
+  : never
   : never;
 /** Schema-defined data. */
 export type Data<A extends Type> = Type extends A ? Json
-  : A extends { const: infer B } | { enum: readonly (infer B)[] } ? B
+  : A extends { enum: readonly (infer B)[] } ? B
   : A["type"] extends "boolean" ? boolean
   : A["type"] extends "integer" | "number" ? number
   : A extends { format: infer B extends keyof Formats } ? Formats[B]
@@ -64,12 +99,13 @@ export type Data<A extends Type> = Type extends A ? Json
   : A extends { items: infer B extends Type } ? readonly Data<B>[]
   : A extends { patternProperties: { [pattern: string]: infer B } }
     ? B extends Type ? { [key: string]: Data<B> } : never
-  : A extends { properties: infer B extends { [key: string]: Type } }
-    ? A extends { required: readonly (infer C extends string)[] } ? (
-        & { [D in Extract<keyof B, C>]: Data<B[D]> }
-        & { [D in Exclude<keyof B, C>]?: Data<B[D]> }
-      ) extends infer E ? { [F in keyof E]: E[F] } : never
-    : { [C in keyof B]?: Data<B[C]> }
+  : A extends {
+    properties: infer B extends { [key: string]: Type };
+    required: readonly (infer C extends string)[];
+  } ? (
+      & { [D in Extract<keyof B, C>]: Data<B[D]> }
+      & { [D in Exclude<keyof B, C>]?: Data<B[D]> }
+    ) extends infer E ? { [F in keyof E]: E[F] } : never
   : never;
 type Esc<A extends PropertyKey, B extends number, C> = C extends
   `${infer D}${A & string}${infer F}` ? `${D}~${B}${Esc<A, B, F>}` : C & string;
@@ -77,16 +113,14 @@ type Esc<A extends PropertyKey, B extends number, C> = C extends
 export type Fail<A extends Type, B extends string = ""> = {
   [C in keyof A]: A[C] extends infer D
     ? D extends Type ? Fail<D, `${B}/${number}`>
-    : D extends { [key: string]: Type } ? {
-        [E in keyof D]: Fail<D[E], `${B}/${Esc<"/", 1, Esc<"~", 0, E>>}`>;
-      }[keyof D]
+    : D extends { [key: string]: Type }
+      ? { [E in keyof D]: Fail<D[E], `${B}/${Esc<"/", 1, Esc<"~", 0, E>>}`> }
     : {
-      where: B;
-      what: unknown;
-      why: [
+      expected: [
         C,
         C extends "required" ? D extends readonly any[] ? D[number] : never : D,
       ];
+      received: [B, unknown];
     }
     : never;
 }[keyof A] extends infer C ? C extends {} ? C : never : never;

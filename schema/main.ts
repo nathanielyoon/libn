@@ -6,7 +6,7 @@
  * import { assert, assertEquals } from "jsr:@std/assert@^1.0.14";
  * import * as $ from "@nyoon/lib/schema";
  * const { type } = $.obj({
- *   true: $.bit().const(true),
+ *   true: $.bit().enum([true]),
  *   digits: $.vec($.int().enum([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])).uniqueItems(),
  *   number: $.num().minimum(0).maximum(30).multipleOf(0.25),
  *   strings: $.arr(
@@ -34,9 +34,7 @@
  *   null,
  *   null,
  * ];
- * const result = validate(decode(data));
- * assert(!(result instanceof Set));
- * assertEquals(encode(result), data);
+ * assertEquals(encode(validate(decode(data))), data);
  * ```
  *
  * @see [JSON Schema](https://json-schema.org/draft/2020-12)

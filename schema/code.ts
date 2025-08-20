@@ -1,101 +1,73 @@
-import type { Data, Formats, Type } from "./json.ts";
+import type { Data, Formats, Kind, Type } from "./json.ts";
 
-const iso = '{const i=new Date(I[F++]||"");O=isNaN(i)?I[F-1]:i.toISOString()}';
-const FORMAT = {
+const iso = "{const i=new Date(I[F]);O=isNaN(i)?I[F]:i.toISOString()}";
+const COERCERS: { [_ in keyof Formats]: string } = {
   date: iso.replace("}", ".slice(0,10)}"),
   time: iso.replace("}", ".slice(11)"),
   "date-time": iso,
-  email: "O=I[F++].trim();",
-  uri: "O=I[F++].trim();",
-  uuid: "O=I[F++].trim().toLowerCase();",
-  pkey: 'O=I[F++].trim().replace(/^(?![.~])/, "~");',
-  skey: 'O=I[F++].trim().replace(/^(?![.~])/, ".");',
-} satisfies { [_ in keyof Formats]: string };
-const CODE: { [A in Type as A["type"]]: ($: A) => [number, string, string] } = {
-  boolean: () => [
+  email: 'O=I[F].trim().normalize("NFC");',
+  uri: 'O=I[F].trim().normalize("NFC");',
+  uuid: 'O=I[F].trim().normalize("NFC").toLowerCase();',
+  pkey: 'O=I[F].trim().normalize("NFC").replace(/^(?![.~])/, "~");',
+  skey: 'O=I[F].trim().normalize("NFC").replace(/^(?![.~])/, ".");',
+};
+const CODERS: { [A in Kind]: ($: Type<A>) => [number, string, string] } = {
+  bit: () => [
     1,
-    '{const i=I[F++];O=i==="false"?false:i==="true"||null;}',
+    'O=I[F]==="false"?false:I[F]==="true"||null;++F;',
     "O[F++]=`${I}`;",
   ],
-  integer: () => [
+  int: () => [1, "if(I[F]==null)O=null;else O=+I[F];++F;", "O[F++]=`${I}`;"],
+  num: () => [1, "if(I[F]==null)O=null;else O=+I[F];++F;", "O[F++]=`${I}`;"],
+  str: ($) => [1, COERCERS[$.format] + "++F;", "O[F++]=I;"],
+  txt: () => [1, 'O=I[F++].normalize("NFC");', "O[F++]=I;"],
+  vec: ($) => [
     1,
-    "{const i=I[F++];O=i==null?null:+i}",
-    "O[F++]=I==null?null:`${I}`;",
+    `if(I[F])for(let i=I[F++].split(", "),o=O=Array(i.length),z=0;z<i.length;++z){let I=i,O,F=z;${
+      coders($.items)[1]
+    }o[z]=O}else O=I[F++]==null?null:[];`,
+    'O[F++]=I.join(", ");',
   ],
-  number: () => [
-    1,
-    "{const i=I[F++];O=i==null?null:+i}",
-    "O[F++]=I==null?null:`${I}`;",
-  ],
-  string: ($) => [
-    1,
-    FORMAT[($ as { format: keyof typeof FORMAT }).format] ?? "O=I[F++];",
-    "O[F++]=I??null;",
-  ],
-  array: ($) => {
-    const a = code($.items);
-    switch ($.items.type) {
-      case "string":
-        if (!("format" in $.items)) break;
-      case "boolean":
-      case "integer":
-      case "number":
-        return [
-          1,
-          `if(I[F]!=null)for(let i=I[F++].split(", "),o=O=Array(i.length),z=0;z<i.length;++z){let I=i,F=z,O;${
-            a[1]
-          }o[z]=O}else ++F,O=null;`,
-          'O[F++]=I?.join(", ")??null;',
-        ];
-    }
-    const b = a[0] * $.maxItems! + 1;
+  arr: ($) => {
+    const [a, b, c] = coders($.items), d = a * $.maxItems;
     return [
-      b,
-      `{for(let o=O=Array(Math.min(+I[F++]||0,${$.maxItems})),f=F,z=0;z<O.length;++z){let O,F=f+${
-        a[0]
-      }*z;${a[1]}o[z]=O}F+=${b}}`,
-      `{O[F++]=\`\${I.length}\`,O.fill(null,F,F+${b});for(let i=I,f=F,z=0;z<i.length;++z){const I=i[z];let F=f+${
-        a[0]
-      }*z;${a[2]}}F+=${b}}`,
+      d + 1,
+      `{for(let i=Math.min(+I[F++]||0,${$.maxItems}),o=O=Array(i),f=F,z=0;z<i;f+=${a},++z){let O,F=f;${b}o[z]=O}F+=${d}}`,
+      `{O[F++]=\`\${I.length}\`,O.fill(null,F,F+${d});for(let i=I,f=F,z=0;z<i.length;f+=${a},++z){const I=i[z];let F=f;${c}}F+=${d}}`,
     ];
   },
-  object: ($) => {
-    if ("patternProperties" in $) {
-      const a = code($.patternProperties[Object.keys($.patternProperties)[0]]);
-      const b = (a[0] + 1) * $.maxProperties;
-      return [
-        b,
-        `{for(let o=O={},f=F,z=0;z<${$.maxProperties}&&I[f]!=null;f+=${
-          a[0] + 1
-        },++z){let O,F=f;const $=I[F++];${a[1]}o[$]=O}F+=${b}}`,
-        `{O.fill(null,F,F+${b});for(let i=I,$=Object.keys(i),f=F,z=0;z<$.length;++z){let F=f+${
-          a[0]
-        }*z;const I=i[O[F++]=$[z]];${a[2]}}F+=${b}}`,
-      ];
-    }
+  map: ($) => {
+    const [a, b, c] = coders(
+      $.patternProperties[Object.keys($.patternProperties)[0]],
+    );
+    const d = a + 1, e = d * $.maxProperties;
+    return [
+      e,
+      `{for(let o=O={},f=F,z=0;z<${$.maxProperties}&&I[f]!=null;f+=${d},++z){let O,F=f;const $=I[F++];${b}o[$]=O}F+=${e}}`,
+      `{O.fill(null,F,F+${e});for(let i=I,$=Object.keys(i),f=F,z=0;z<$.length;f+=${d},++z){let F=f;const I=i[O[F++]=$[z]];${c}}F+=${e}}`,
+    ];
+  },
+  obj: ($) => {
     let a = 0, b = "", c = "";
     for (let d = Object.keys($.properties), z = 0; z < d.length; ++z) {
-      const e = code($.properties[d[z]]), f = JSON.stringify(d[z]);
-      a += e[0], b += `{let O;${e[1]}if(O!=null)o[${f}]=O}`;
-      c += `{const I=i[${f}];if(I!=null)${e[2]}else F+=${e[0]}}`;
+      const [e, f, g] = coders($.properties[d[z]]), h = JSON.stringify(d[z]);
+      a += e, b += `{let O;${f}if(O!=null)o[${h}]=O}`;
+      c += `{const I=i[${h}];if(I!=null)${g}else F+=${e}}`;
     }
     return [a, `{const o=O={};${b}}`, `{O.fill(null,F,F+${a});const i=I;${c}}`];
   },
 };
-const code = ($: Type) => CODE[$.type]($ as never);
+const coders = ($: Type) => CODERS[$.kind]($ as never);
 /** Creates encoding and decoding functions. */
 export const coder = <A extends Type>($: A): {
-  size: number;
-  encode: ($: Data<A>) => (string | null)[];
+  length: number;
   decode: ($: (string | null)[]) => unknown;
+  encode: ($: Data<A>) => (string | null)[];
 } => {
-  const a = CODE[$.type]($ as never);
+  const [a, b, c] = coders($);
   return {
-    size: a[0],
-    encode: Function(
-      "I",
-      `const O=Array(${a[0]});let F=0;${a[2]}return O`,
-    ) as any,
-    decode: Function("I", `let F=0,O;${a[1]}return O`) as any,
+    length: a,
+    decode: Function("I", `let O,F=0;${b}return O`) as any,
+    encode: Function("I", `const O=Array(${a});let F=0;${c}return O`) as any,
   };
 };
