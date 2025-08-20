@@ -12,16 +12,17 @@ export const keys = Object.keys as unknown as <
   A extends Type<"obj"> = never,
 >($: Data<A>) => Keys<typeof $>;
 /** JSON schema builder. */
-export type Typer<A extends Type> = Type<A["kind"]> extends infer B
-  ? B extends {} ? Intersect<
-      {
-        [C in keyof Omit<B, keyof A>]-?: C extends "uniqueItems"
-          ? () => Typer<With<A, C, true>>
-          : <const D extends NonNullable<B[C]>>($: D) => Typer<With<A, C, D>>;
-      }
-    >
-  : never
-  : never & { type: A };
+export type Typer<A extends Type> =
+  & (Type<A["kind"]> extends infer B ? B extends {} ? Intersect<
+        {
+          [C in keyof Omit<B, keyof A>]-?: C extends "uniqueItems"
+            ? () => Typer<With<A, C, true>>
+            : <const D extends NonNullable<B[C]>>($: D) => Typer<With<A, C, D>>;
+        }
+      >
+    : never
+    : never)
+  & { type: A };
 const typer = (base: any) =>
   new Proxy(base, {
     get: (target, key, proxy) =>
