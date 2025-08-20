@@ -110,17 +110,21 @@ export type Data<A extends Type> = Type extends A ? Json
 type Esc<A extends PropertyKey, B extends number, C> = C extends
   `${infer D}${A & string}${infer F}` ? `${D}~${B}${Esc<A, B, F>}` : C & string;
 /** Union of error indicators. */
-export type Fail<A extends Type, B extends string = ""> = {
-  [C in keyof A]: A[C] extends infer D
-    ? D extends Type ? Fail<D, `${B}/${number}`>
-    : D extends { [key: string]: Type }
-      ? { [E in keyof D]: Fail<D[E], `${B}/${Esc<"/", 1, Esc<"~", 0, E>>}`> }
-    : {
-      expected: [
-        C,
-        C extends "required" ? D extends readonly any[] ? D[number] : never : D,
-      ];
-      received: [B, unknown];
-    }
+export type Fail<A extends Type, B extends string = ""> =
+  Exclude<keyof A, "title" | "description" | "kind"> extends infer C
+    ? C extends keyof A
+      ? A[C] extends infer D ? D extends Type ? Fail<D, `${B}/${number}`>
+        : D extends { [key: string]: Type }
+          ? keyof D extends infer E
+            ? E extends keyof D
+              ? Fail<D[E], `${B}/${Esc<"/", 1, Esc<"~", 0, E>>}`>
+            : never
+          : never
+        : {
+          expected: [C, D] extends ["required", readonly (infer E)[]] ? [C, E]
+            : [C, D];
+          received: [B, unknown];
+        }
+      : never
+    : never
     : never;
-}[keyof A] extends infer C ? C extends {} ? C : never : never;
