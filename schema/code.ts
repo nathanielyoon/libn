@@ -1,4 +1,4 @@
-import type { Data, Format, Type } from "./json.ts";
+import type { Data, Formats, Type } from "./json.ts";
 
 const iso = '{const i=new Date(I[F++]||"");O=isNaN(i)?I[F-1]:i.toISOString()}';
 const FORMAT = {
@@ -10,7 +10,7 @@ const FORMAT = {
   uuid: "O=I[F++].trim().toLowerCase();",
   pkey: 'O=I[F++].trim().replace(/^(?![.~])/, "~");',
   skey: 'O=I[F++].trim().replace(/^(?![.~])/, ".");',
-} satisfies { [_ in Format]: string };
+} satisfies { [_ in keyof Formats]: string };
 const CODE: { [A in Type as A["type"]]: ($: A) => [number, string, string] } = {
   boolean: () => [
     1,

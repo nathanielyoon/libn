@@ -13,7 +13,7 @@
  *     $.obj({
  *       emails: $.map(/^[A-Za-z]+$/, $.str().format("email"), 2),
  *       datetime: $.str().format("date-time"),
- *     }),
+ *     }).required([]),
  *     2,
  *   ),
  * }).required(["digits", "number", "strings"]);

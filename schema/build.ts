@@ -1,4 +1,4 @@
-import type { Format, Intersect, Type } from "./json.ts";
+import type { Formats, Intersect, Type } from "./json.ts";
 
 type With<A extends Type, B extends PropertyKey, C> =
   Omit<A, B> & { [_ in B]-?: C } extends infer D
@@ -53,7 +53,7 @@ export const str = (): Builder<{ type: "string" }> =>
 export const vec = <
   const A extends
     | Type<"boolean" | "integer" | "number">
-    | Type<"string"> & { format: Format },
+    | Type<"string"> & { format: keyof Formats },
 >(items: { type: A }): Builder<{ type: "array"; items: A }> =>
   builder({ type: "array", items: items.type });
 /** Creates an array schema builder. */

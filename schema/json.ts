@@ -2,48 +2,54 @@
 export type Json = undefined | boolean | number | string | Json[] | {
   [key: string]: Json;
 };
-export type Format =
-  | "date"
-  | "time"
-  | "date-time"
-  | "email"
-  | "uri"
-  | "uuid"
-  | "pkey"
-  | "skey";
-type Numeric =
-  | { const: number }
-  | { enum: readonly [number, ...number[]] }
-  | { minimum?: number; maximum?: number; multipleOf?: number };
-type Meta = {
-  boolean: { const: boolean } | { enum: readonly [boolean] } | {};
-  integer: Numeric;
-  number: Numeric;
-  string: { const: string } | { enum: readonly [string, ...string[]] } | {
-    minLength?: number;
-    maxLength?: number;
-    format?: Format;
-    pattern?: string;
-  };
-  array: {
-    items:
-      | Type<"boolean" | "integer" | "number">
-      | Type<"string"> & { format: Format };
-    minItems?: number;
-    maxItems?: number;
-    uniqueItems?: boolean;
-  } | { items: Type; minItems?: number; maxItems: number };
-  object: {
-    patternProperties: { [pattern: string]: Type };
-    additionalProperties: false;
-    minProperties?: number;
-    maxProperties: number;
-  } | {
-    properties: { [key: string]: Type };
-    additionalProperties: false;
-    required?: readonly [string, ...string[]];
-  };
+/** Utility type to convert a union to an intersection. */
+export type Intersect<A> = (A extends never ? never : (_: A) => void) extends
+  (_: infer B) => void ? B : never;
+/** String format types. */
+export type Formats = {
+  date: `${number}-${number}-${number}`;
+  time: `${number}:${number}:${number}.${number}Z`;
+  "date-time": `${Formats["date"]}T${Formats["time"]}`;
+  email: `${string}@${string}.${string}`;
+  uri: `${string}:${string}`; // https://www.rfc-editor.org/rfc/rfc3986.html#appendix-B + required scheme
+  uuid: `${string}-${string}-${string}-${string}-${string}`;
+  pkey: `~${string}`;
+  skey: `.${string}`;
 };
+type Meta =
+  & {
+    boolean: { const: boolean } | { enum: readonly [boolean] } | {};
+    string: { const: string } | { enum: readonly [string, ...string[]] } | {
+      minLength?: number;
+      maxLength?: number;
+      format?: keyof Formats;
+      pattern?: string;
+    };
+    array: {
+      items:
+        | Type<"boolean" | "integer" | "number">
+        | Type<"string"> & { format: keyof Formats };
+      minItems?: number;
+      maxItems?: number;
+      uniqueItems?: boolean;
+    } | { items: Type; minItems?: number; maxItems: number };
+    object: {
+      patternProperties: { [pattern: string]: Type };
+      additionalProperties: false;
+      minProperties?: number;
+      maxProperties: number;
+    } | {
+      properties: { [key: string]: Type };
+      additionalProperties: false;
+      required?: readonly [string, ...string[]];
+    };
+  }
+  & {
+    [_ in "integer" | "number"]:
+      | { const: number }
+      | { enum: readonly [number, ...number[]] }
+      | { minimum?: number; maximum?: number; multipleOf?: number };
+  };
 /** JSON schema (restricted subset). */
 export type Type<A extends keyof Meta = keyof Meta> = A extends string
   ? { type: A } & Meta[A]
@@ -53,16 +59,7 @@ export type Data<A extends Type> = Type extends A ? Json
   : A extends { const: infer B } | { enum: readonly (infer B)[] } ? B
   : A["type"] extends "boolean" ? boolean
   : A["type"] extends "integer" | "number" ? number
-  : A extends { format: infer B }
-    ? A extends "date" ? `${number}-${number}-${number}`
-    : A extends "time" ? `${number}:${number}:${number}.${number}Z`
-    : A extends "date-time"
-      ? `${number}-${number}-${number}T${number}:${number}:${number}.${number}Z`
-    : B extends "email" ? `${string}@${string}.${string}`
-    : B extends "uri" ? `${string}:${string}`
-    : B extends "uuid" ? `${string}-${string}-${string}-${string}-${string}`
-    : B extends `${infer C}key` ? `${C extends "p" ? "~" : "."}${string}`
-    : never
+  : A extends { format: infer B extends keyof Formats } ? Formats[B]
   : A["type"] extends "string" ? string
   : A extends { items: infer B extends Type } ? readonly Data<B>[]
   : A extends { patternProperties: { [pattern: string]: infer B } }
@@ -93,6 +90,3 @@ export type Fail<A extends Type, B extends string = ""> = {
     }
     : never;
 }[keyof A] extends infer C ? C extends {} ? C : never : never;
-/** Utility type to convert a union to an intersection. */
-export type Intersect<A> = (A extends never ? never : (_: A) => void) extends
-  (_: infer B) => void ? B : never;
