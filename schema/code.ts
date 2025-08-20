@@ -51,10 +51,14 @@ const CODERS: { [A in Kind]: ($: Type<A>) => [number, string, string] } = {
     let a = 0, b = "", c = "";
     for (let d = Object.keys($.properties), z = 0; z < d.length; ++z) {
       const [e, f, g] = coders($.properties[d[z]]), h = JSON.stringify(d[z]);
-      a += e, b += `{let O;${f}if(O!=null)o[${h}]=O}`;
+      a += e, b += `{let O;${f}if(O!=null)o[${h}]=O,++$}`;
       c += `{const I=i[${h}];if(I!=null)${g}else F+=${e}}`;
     }
-    return [a, `{const o=O={};${b}}`, `{O.fill(null,F,F+${a});const i=I;${c}}`];
+    return [
+      a,
+      `{const o={};let $=0;${b}O=$?o:null}`,
+      `{O.fill(null,F,F+${a});const i=I;${c}}`,
+    ];
   },
 };
 const coders = ($: Type) => CODERS[$.kind]($ as never);
