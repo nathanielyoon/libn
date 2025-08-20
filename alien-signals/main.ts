@@ -7,7 +7,7 @@
  * import { assertEquals } from "jsr:@std/assert@^1.0.14";
  *
  * const counter = $.signal(0);
- * const doubled = $.cached(() => counter() * 2);
+ * const doubled = $.signal(() => counter() * 2);
  * const dispose = $.effect(() => assertEquals(doubled(), counter() * 2));
  * counter(1);
  * counter((old) => old + 1);
@@ -43,10 +43,10 @@ type Link = {
 type Noder<A extends Kind> =
   & { kind: A; flags: Flag }
   & { [_ in "head" | "deps" | "subs" | "tail"]: Link | undefined };
-type Signaler<A = any> = Noder<Kind.SIGNAL> & { old: A; has: A };
-type Cacheder<A = any> = Noder<Kind.CACHED> & { has?: A; get: (old?: A) => A };
-type Effecter = Noder<Kind.EFFECT> & { run: () => void };
-type Node = Signaler | Cacheder | Effecter;
+type Signal<A = any> = Noder<Kind.SIGNAL> & { old: A; has: A };
+type Derive<A = any> = Noder<Kind.CACHED> & { has?: A; get: (old?: A) => A };
+type Effect = Noder<Kind.EFFECT> & { run: () => void };
+type Node = Signal | Derive | Effect;
 const queue: Node[] = [];
 let version = 0, notify = 0, length = 0, active: Node | undefined;
 /** Manually sets the current subscriber (exported for testing). */
@@ -82,8 +82,8 @@ const delink = (link: Link, sub: Node) => {
   }
   return c;
 };
-const track = (sub: Node) => { // 56 = RECUR | DIRTY | READY
-  ++version, sub.head = undefined, sub.flags = sub.flags & ~56 | Flag.CHECK;
+const track = (sub: Node) => {
+  ++version, sub.head = undefined, sub.flags = sub.flags & ~56 | Flag.CHECK; // 56 = RECUR | DIRTY | READY
 };
 const close = (sub: Node) => {
   for (let a = sub.head ? sub.head.dep_next : sub.deps; a; a = delink(a, sub));
@@ -157,7 +157,7 @@ const run = ($: Node, flags: Flag) => {
   if (flags & Flag.DIRTY || flags & Flag.READY && check($.deps!, $)) {
     const a = set($);
     try {
-      track($), ($ as Effecter).run();
+      track($), ($ as Effect).run();
     } finally {
       set(a), close($);
     }
@@ -167,60 +167,59 @@ const run = ($: Node, flags: Flag) => {
     a.dep.flags & Flag.QUEUE && run(a.dep, a.dep.flags &= ~Flag.QUEUE);
   }
 };
-/** Reactive value. */
-export type Signal<A> = { (): A; <const B extends A>($: B | (($: B) => B)): B };
-/** Creates a reactive (non-function) value. */
-export const signal = ((initial: unknown) => {
-  const a: Signaler = {
-    kind: Kind.SIGNAL,
-    flags: Flag.MAYBE,
-    head: undefined,
-    deps: undefined,
-    subs: undefined,
-    tail: undefined,
-    old: initial,
-    has: initial,
-  };
-  return (...$: [unknown]) => {
-    if (!$.length) {
-      a.flags & Flag.DIRTY && reset(a) && a.subs && flat(a.subs), enlink(a);
-    } else if (
-      a.has !== (a.has = typeof $[0] === "function" ? $[0](a.has) : $[0]) &&
-      (a.flags = Flag.CLEAR, a.subs)
-    ) {
-      for (deep(a.subs); notify < length; ++notify) {
-        run(queue[notify], queue[notify].flags &= ~Flag.QUEUE);
+/** Creates a reactive value. */
+export const signal = ((initial: any, maybe_initial?: any) => {
+  if (typeof initial !== "function") {
+    const a: Signal = {
+      kind: Kind.SIGNAL,
+      flags: Flag.MAYBE,
+      head: undefined,
+      deps: undefined,
+      subs: undefined,
+      tail: undefined,
+      old: initial,
+      has: initial,
+    };
+    return (...$: [unknown]) => {
+      if (!$.length) {
+        a.flags & Flag.DIRTY && reset(a) && a.subs && flat(a.subs), enlink(a);
+      } else if (
+        a.has !== (a.has = typeof $[0] === "function" ? $[0](a.has) : $[0]) &&
+        (a.flags = Flag.CLEAR, a.subs)
+      ) {
+        for (deep(a.subs); notify < length; ++notify) {
+          run(queue[notify], queue[notify].flags &= ~Flag.QUEUE);
+        }
+        queue.length = notify = length = 0;
       }
-      queue.length = notify = length = 0;
-    }
-    return a.has;
-  };
-}) as { <A>(): Signal<A | undefined>; <A>(initial: A): Signal<A> };
-/** Creates a derived computation. */
-export const cached = ((get: (old?: unknown) => unknown, initial?: unknown) => {
-  const a: Cacheder = {
-    kind: Kind.CACHED,
-    flags: Flag.CLEAR,
-    head: undefined,
-    deps: undefined,
-    subs: undefined,
-    tail: undefined,
-    get, // <https://github.com/microsoft/TypeScript/issues/47599>
-    has: initial,
-  };
-  return () => {
-    if (a.flags & Flag.DIRTY || a.flags & Flag.READY && check(a.deps!, a)) {
-      reget(a) && a.subs && flat(a.subs);
-    } else if (a.flags & Flag.READY) a.flags &= ~Flag.READY;
-    return enlink(a), a.has;
-  };
+      return a.has;
+    };
+  } else {
+    const a: Derive = {
+      kind: Kind.CACHED,
+      flags: Flag.CLEAR,
+      head: undefined,
+      deps: undefined,
+      subs: undefined,
+      tail: undefined,
+      get: initial, // <https://github.com/microsoft/TypeScript/issues/47599>
+      has: maybe_initial,
+    };
+    return () => {
+      if (a.flags & Flag.DIRTY || a.flags & Flag.READY && check(a.deps!, a)) {
+        reget(a) && a.subs && flat(a.subs);
+      } else if (a.flags & Flag.READY) a.flags &= ~Flag.READY;
+      return enlink(a), a.has;
+    };
+  }
 }) as {
-  <A>($: (old?: A) => A): () => A;
-  <A>($: (old: A) => A, initial: A): () => A;
+  <A>(deriver: (old?: A) => A): () => A;
+  <A>(deriver: (old: A) => A, initial: A): () => A;
+  <A>(initial: A): { (): A; <const B extends A>($: B | (($: B) => B)): B };
 };
 /** Creates a side effect and returns a disposer. */
 export const effect = (run: () => void): () => void => {
-  const a: Effecter = {
+  const a: Effect = {
     kind: Kind.EFFECT,
     flags: Flag.WATCH,
     head: undefined,

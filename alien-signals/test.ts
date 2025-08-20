@@ -9,35 +9,35 @@ import {
   assertSpyCalls,
   spy,
 } from "jsr:@std/testing@^1.0.15/mock";
-import { cached, effect, set, signal } from "./main.ts";
+import { effect, set, signal } from "./main.ts";
 
 Deno.test("computed", () => {
   {
     const src = signal(0);
-    const c1 = cached(() => src() % 2);
-    const c2 = cached(() => c1());
-    const c3 = cached(() => c2());
+    const c1 = signal(() => src() % 2);
+    const c2 = signal(() => c1());
+    const c3 = signal(() => c2());
     c3(), src(1), c2(), src(3), assertEquals(c3(), 1);
   }
   {
     const src = signal(0);
-    const a = cached(() => src());
-    const b = cached(() => a() % 2);
-    const c = cached(() => src());
-    const d = cached(() => b() + c());
+    const a = signal(() => src());
+    const b = signal(() => a() % 2);
+    const c = signal(() => src());
+    const d = signal(() => b() + c());
     assertEquals(d(), 0), src(2), assertEquals(d(), 2);
   }
   {
     const a = signal(false);
-    const b = cached(() => a());
-    const c = cached(() => (b(), 0));
-    const d = cached(() => (c(), b()));
+    const b = signal(() => a());
+    const c = signal(() => (b(), 0));
+    const d = signal(() => (c(), b()));
     assertEquals(d(), false), a(true), assertEquals(d(), true);
   }
   {
     let times = 0;
     const src = signal(0);
-    const c1 = cached(() => (++times, src()));
+    const c1 = signal(() => (++times, src()));
     c1(), assertEquals(times, 1), src(1), src(0), c1(), assertEquals(times, 1);
   }
 });
@@ -45,20 +45,20 @@ Deno.test("effect", () => {
   {
     let bRunTimes = 0;
     const a = signal(1);
-    const b = cached(() => (++bRunTimes, a() * 2));
+    const b = signal(() => (++bRunTimes, a() * 2));
     const stopEffect = effect(() => b());
     assertEquals(bRunTimes, 1), a(2), assertEquals(bRunTimes, 2);
     stopEffect(), a(3), assertEquals(bRunTimes, 2);
   }
   {
     const a = signal(3);
-    const b = cached(() => a() > 0);
+    const b = signal(() => a() > 0);
     effect(() => b() && effect(() => assertNotEquals(a(), 0)));
     a(2), a(1), a(0);
   }
   {
     const a = signal(0);
-    const b = cached(() => a() % 2);
+    const b = signal(() => a() % 2);
     let innerTriggerTimes = 0;
     effect(() => effect(() => (b(), assertLess(++innerTriggerTimes, 3))));
     a(2);
@@ -90,9 +90,9 @@ Deno.test("effect", () => {
   }
   {
     const a = signal(false);
-    const b = cached(() => a());
-    const c = cached(() => (b(), 0));
-    const d = cached(() => (c(), b()));
+    const b = signal(() => a());
+    const c = signal(() => (b(), 0));
+    const d = signal(() => (c(), b()));
     let triggers = 0;
     effect(() => (d(), ++triggers));
     assertEquals(triggers, 1), a(true), assertEquals(triggers, 2);
@@ -127,7 +127,7 @@ const reaction = <A>(
     fireImmediately = false,
   } = options;
   let prevValue: A | undefined, version = 0;
-  const tracked = cached(() => {
+  const tracked = signal(() => {
     try {
       return dataFn();
     } catch (error) {
@@ -173,7 +173,7 @@ Deno.test("untrack", () => {
   {
     const src = signal(0);
     let computedTriggerTimes = 0;
-    const c = cached(() => {
+    const c = signal(() => {
       ++computedTriggerTimes;
       const currentSub = set(undefined);
       const value = src();
@@ -207,70 +207,70 @@ Deno.test("untrack", () => {
 Deno.test("graph updates", () => {
   {
     const a = signal(2);
-    const b = cached(() => a() - 1);
-    const c = cached(() => a() + b());
+    const b = signal(() => a() - 1);
+    const c = signal(() => a() + b());
     const computer = () => spy(() => `d: ${c()}`);
     let compute = computer();
-    let d = cached(compute);
+    let d = signal(compute);
     assertEquals(d(), "d: 3"), assertSpyCalls(compute, 1);
     // Reassign for `.mockClear()`.
-    d = cached(compute = computer());
+    d = signal(compute = computer());
     a(4), d(), assertSpyCalls(compute, 1);
   }
   {
     const a = signal("a");
-    const b = cached(() => a());
-    const c = cached(() => a());
+    const b = signal(() => a());
+    const c = signal(() => a());
     const compute = spy(() => `${b()} ${c()}`);
-    const d = cached(compute);
+    const d = signal(compute);
     assertEquals(d(), "a a"), assertSpyCalls(compute, 1);
     a("aa"), assertEquals(d(), "aa aa"), assertSpyCalls(compute, 2);
   }
   {
     const a = signal("a");
-    const b = cached(() => a());
-    const c = cached(() => a());
-    const d = cached(() => `${b()} ${c()}`);
+    const b = signal(() => a());
+    const c = signal(() => a());
+    const d = signal(() => `${b()} ${c()}`);
     const compute = spy(() => d());
-    const e = cached(compute);
+    const e = signal(compute);
     assertEquals(e(), "a a"), assertSpyCalls(compute, 1);
     a("aa"), assertEquals(e(), "aa aa"), assertSpyCalls(compute, 2);
   }
   {
     const a = signal("a");
-    const b = cached(() => (a(), "foo"));
+    const b = signal(() => (a(), "foo"));
     const compute = spy(() => b());
-    const c = cached(compute);
+    const c = signal(compute);
     assertEquals(c(), "foo"), assertSpyCalls(compute, 1);
     a("aa"), assertEquals(c(), "foo"), assertSpyCalls(compute, 1);
   }
   {
     const a = signal("a");
-    const b = cached(() => a());
-    const c = cached(() => a());
-    const d = cached(() => c());
+    const b = signal(() => a());
+    const c = signal(() => a());
+    const d = signal(() => c());
     const calls: string[] = [];
     const computer_e = () => spy(() => (calls.push("e"), `${b()} ${d()}`));
     let eSpy = computer_e();
-    let e = cached(eSpy);
+    let e = signal(eSpy);
     const computer_f = () => spy(() => (calls.push("f"), e()));
     let fSpy = computer_f();
-    let f = cached(fSpy);
+    let f = signal(fSpy);
     const computer_g = () => spy(() => (calls.push("g"), e()));
     let gSpy = computer_g();
-    let g = cached(gSpy);
+    let g = signal(gSpy);
     assertEquals(f(), "a a"), assertSpyCalls(fSpy, 1);
     assertEquals(g(), "a a"), assertSpyCalls(gSpy, 1);
-    e = cached(eSpy = computer_e());
-    f = cached(fSpy = computer_f());
-    g = cached(gSpy = computer_g());
+    e = signal(eSpy = computer_e());
+    f = signal(fSpy = computer_f());
+    g = signal(gSpy = computer_g());
     a("b");
     assertEquals(e(), "b b"), assertSpyCalls(eSpy, 1);
     assertEquals(f(), "b b"), assertSpyCalls(fSpy, 1);
     assertEquals(g(), "b b"), assertSpyCalls(gSpy, 1);
-    e = cached(eSpy = computer_e());
-    f = cached(fSpy = computer_f());
-    g = cached(gSpy = computer_g());
+    e = signal(eSpy = computer_e());
+    f = signal(fSpy = computer_f());
+    g = signal(gSpy = computer_g());
     calls.length = 0;
     a("c");
     assertEquals(e(), "c c"), assertSpyCalls(eSpy, 1);
@@ -281,9 +281,9 @@ Deno.test("graph updates", () => {
   }
   {
     const a = signal("a");
-    const b = cached(() => a());
+    const b = signal(() => a());
     const compute = spy(() => a());
-    cached(compute);
+    signal(compute);
     assertEquals(b(), "a"), assertSpyCalls(compute, 0);
     a("aa"), assertEquals(b(), "aa"), assertSpyCalls(compute, 0);
   }
@@ -291,79 +291,79 @@ Deno.test("graph updates", () => {
     const a = signal("a");
     const compute_b = () => spy(() => a());
     let bSpy = compute_b();
-    let b = cached(bSpy);
+    let b = signal(bSpy);
     const compute_c = () => spy(() => b());
     let cSpy = compute_c();
-    let c = cached(cSpy);
-    const d = cached(() => a());
+    let c = signal(cSpy);
+    const d = signal(() => a());
     let result = "";
     const unsub = effect(() => result = c());
     assertEquals(result, "a"), assertEquals(d(), "a");
-    b = cached(bSpy = compute_b());
-    c = cached(cSpy = compute_c());
+    b = signal(bSpy = compute_b());
+    c = signal(cSpy = compute_c());
     unsub();
     a("aa");
     assertSpyCalls(bSpy, 0), assertSpyCalls(cSpy, 0), assertEquals(d(), "aa");
   }
   {
     const a = signal("a");
-    const b = cached(() => a());
-    const c = cached(() => (a(), "c"));
+    const b = signal(() => a());
+    const c = signal(() => (a(), "c"));
     const computer = () => spy(() => `${b()} ${c()}`);
     let compute = computer();
-    let d = cached(compute);
+    let d = signal(compute);
     assertEquals(d(), "a c");
-    d = cached(compute = computer());
+    d = signal(compute = computer());
     a("aa"), d(), assertSpyCall(compute, 0, { returned: "aa c" });
   }
   {
     const a = signal("a");
-    const b = cached(() => a());
-    const c = cached(() => (a(), "c"));
-    const d = cached(() => (a(), "d"));
+    const b = signal(() => a());
+    const c = signal(() => (a(), "c"));
+    const d = signal(() => (a(), "d"));
     const computer = () => spy(() => `${b()} ${c()} ${d()}`);
     let compute = computer();
-    let e = cached(compute);
+    let e = signal(compute);
     assertEquals(e(), "a c d");
-    e = cached(compute = computer());
+    e = signal(compute = computer());
     a("aa"), e(), assertSpyCall(compute, 0, { returned: "aa c d" });
   }
   {
     const a = signal(0);
-    const b = cached(() => a());
-    const c = cached(() => a() > 0 ? a() : b());
+    const b = signal(() => a());
+    const c = signal(() => a() > 0 ? a() : b());
     assertEquals(c(), 0), a(1), assertEquals(c(), 1);
     a(0), assertEquals(c(), 0);
   }
   {
     const a = signal("a");
-    const b = cached(() => (a(), "b"));
-    const c = cached(() => (a(), "c"));
+    const b = signal(() => (a(), "b"));
+    const c = signal(() => (a(), "c"));
     const computer = () => spy(() => `${b()} ${c()}`);
     let compute = computer();
-    let d = cached(compute);
+    let d = signal(compute);
     assertEquals(d(), "b c");
-    d = cached(compute = computer());
+    d = signal(compute = computer());
     a("aa"), assertSpyCalls(compute, 0);
   }
 });
 Deno.test("error handling", () => {
   {
     const a = signal(0);
-    const b = cached(() => {
+    const b = signal(() => {
       throw new Error();
     });
-    const c = cached(() => a());
+    const c = signal(() => a());
     assertThrows(() => b());
     a(1), assertEquals(c(), 1);
   }
   {
     const a = signal(0);
-    const b = cached(() => {
+    const b = signal(() => {
       if (a() === 1) throw new Error();
       return a();
     });
-    const c = cached(() => b());
+    const c = signal(() => b());
     assertEquals(c(), 0), a(1), assertThrows(() => b());
     a(2), assertEquals(c(), 2);
   }
