@@ -6,9 +6,9 @@
  * import * as $ from "@nyoon/lib/alien-signals";
  * import { assertEquals } from "jsr:@std/assert@^1.0.14";
  *
- * const counter = atom(0);
- * const doubled = from(() => counter() * 2);
- * const dispose = user(() => assertEquals(doubled(), counter() * 2));
+ * const counter = $.signal(0);
+ * const doubled = $.cached(() => counter() * 2);
+ * const dispose = $.effect(() => assertEquals(doubled(), counter() * 2));
  * counter(1);
  * counter((old) => old + 1);
  * ```
@@ -43,10 +43,10 @@ type Link = {
 type Noder<A extends Kind> =
   & { kind: A; flags: Flag }
   & { [_ in "head" | "deps" | "subs" | "tail"]: Link | undefined };
-type Signal<A = any> = Noder<Kind.SIGNAL> & { old: A; has: A };
-type Cached<A = any> = Noder<Kind.CACHED> & { has?: A; get: (old?: A) => A };
-type Effect = Noder<Kind.EFFECT> & { run: () => void };
-type Node = Signal | Cached | Effect;
+type Signaler<A = any> = Noder<Kind.SIGNAL> & { old: A; has: A };
+type Cacheder<A = any> = Noder<Kind.CACHED> & { has?: A; get: (old?: A) => A };
+type Effecter = Noder<Kind.EFFECT> & { run: () => void };
+type Node = Signaler | Cacheder | Effecter;
 const queue: Node[] = [];
 let version = 0, notify = 0, length = 0, active: Node | undefined;
 /** Manually sets the current subscriber (exported for testing). */
@@ -157,7 +157,7 @@ const run = ($: Node, flags: Flag) => {
   if (flags & Flag.DIRTY || flags & Flag.READY && check($.deps!, $)) {
     const a = set($);
     try {
-      track($), ($ as Effect).run();
+      track($), ($ as Effecter).run();
     } finally {
       set(a), close($);
     }
@@ -168,13 +168,10 @@ const run = ($: Node, flags: Flag) => {
   }
 };
 /** Reactive value. */
-export type Atom<A> = {
-  (): A;
-  <const B extends A>(value: B | ((old: B) => B)): B;
-};
+export type Signal<A> = { (): A; <const B extends A>($: B | (($: B) => B)): B };
 /** Creates a reactive (non-function) value. */
-export const atom = ((initial: unknown) => {
-  const a: Signal = {
+export const signal = ((initial: unknown) => {
+  const a: Signaler = {
     kind: Kind.SIGNAL,
     flags: Flag.MAYBE,
     head: undefined,
@@ -198,10 +195,10 @@ export const atom = ((initial: unknown) => {
     }
     return a.has;
   };
-}) as { <A>(): Atom<A | undefined>; <A>(initial: A): Atom<A> };
+}) as { <A>(): Signal<A | undefined>; <A>(initial: A): Signal<A> };
 /** Creates a derived computation. */
-export const from = ((get: (old?: unknown) => unknown, initial?: unknown) => {
-  const a: Cached = {
+export const cached = ((get: (old?: unknown) => unknown, initial?: unknown) => {
+  const a: Cacheder = {
     kind: Kind.CACHED,
     flags: Flag.CLEAR,
     head: undefined,
@@ -218,12 +215,12 @@ export const from = ((get: (old?: unknown) => unknown, initial?: unknown) => {
     return enlink(a), a.has;
   };
 }) as {
-  <A>(get: (old?: A) => A): () => A;
-  <A>(get: (old: A) => A, initial: A): () => A;
+  <A>($: (old?: A) => A): () => A;
+  <A>($: (old: A) => A, initial: A): () => A;
 };
-/** Creates a side effect. */
-export const user = (run: () => void): () => void => {
-  const a: Effect = {
+/** Creates a side effect and returns a disposer. */
+export const effect = (run: () => void): () => void => {
+  const a: Effecter = {
     kind: Kind.EFFECT,
     flags: Flag.WATCH,
     head: undefined,
