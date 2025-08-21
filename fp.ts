@@ -18,17 +18,24 @@ export const ok = <A = never, const B = never>($?: B): Or<A, B> => (
   { [Symbol.iterator]: iterator, is: true, or: $! }
 );
 /** Runs operations with do-notation. */
-export const run = <A extends Or, B>($: Generator<A, B, Ok<A>>): Or<No<A>, B> =>
-  function runner({ done, value }: IteratorResult<A, B>): Or<No<A>, B> {
+export const run = <A extends Or, B>($: Generator<A, B>): Or<No<A>, B> =>
+  function runner({ done, value }: IteratorResult<A, B>) {
     if (done) return ok(value);
-    return value.is ? runner($.next(value.or)) : value;
+    if (value.is) return runner($.next(value.or));
+    return value;
   }($.next());
+export const run_async = async <A extends Or, B>(
+  $: AsyncGenerator<A, B, Ok<A>>,
+): Promise<Or<No<A>, B>> =>
+  async function runner({ done, value }: IteratorResult<A, B>) {
+    if (done) return ok(value);
+    if (value.is) return runner(await $.next());
+    return value;
+  }(await $.next());
 /** Chains unary result-returning functions. */
 export const pipe = (($: any, ...$$: (($: any) => Or)[]) => {
-  for (let z = 0; z < $$.length; ++z) {
-    const a = $$[z]($);
-    if (!a.is) return $;
-    else $ = a.or;
+  for (let z = 0, a; z < $$.length; $ = a.or, ++z) {
+    if (!(a = $$[z]($)).is) return $;
   }
   return ok($);
 }) as {
@@ -77,3 +84,73 @@ export const pipe = (($: any, ...$$: (($: any) => Or)[]) => {
     fg: ($: Ok<F>) => G,
   ): No<B | C | D | E | F> | G;
 };
+export const pipe_async =
+  (async ($: any, ...$$: (($: any) => Or | Promise<Or>)[]) => {
+    for (let z = 0, a; z < $$.length; $ = a.or, ++z) {
+      if (!(a = await $$[z]($)).is) return $;
+    }
+    return ok($);
+  }) as {
+    <A, B extends Or | Promise<Or>>($: A, ab: ($: A) => B): B;
+    <A, B extends Or | Promise<Or>, C extends Or | Promise<Or>>(
+      $: A,
+      ab: ($: A) => B,
+      bc: ($: Ok<Awaited<B>>) => C,
+    ): No<Awaited<B>> | C;
+    <
+      A,
+      B extends Or | Promise<Or>,
+      C extends Or | Promise<Or>,
+      D extends Or | Promise<Or>,
+    >(
+      $: A,
+      ab: ($: A) => B,
+      bc: ($: Ok<Awaited<B>>) => C,
+      cd: ($: Ok<Awaited<C>>) => D,
+    ): No<Awaited<B | C>> | D;
+    <
+      A,
+      B extends Or | Promise<Or>,
+      C extends Or | Promise<Or>,
+      D extends Or | Promise<Or>,
+      E extends Or | Promise<Or>,
+    >(
+      $: A,
+      ab: ($: A) => B,
+      bc: ($: Ok<Awaited<B>>) => C,
+      cd: ($: Ok<Awaited<C>>) => D,
+      de: ($: Ok<Awaited<D>>) => E,
+    ): No<Awaited<B | C | D>> | E;
+    <
+      A,
+      B extends Or | Promise<Or>,
+      C extends Or | Promise<Or>,
+      D extends Or | Promise<Or>,
+      E extends Or | Promise<Or>,
+      F extends Or | Promise<Or>,
+    >(
+      $: A,
+      ab: ($: A) => B,
+      bc: ($: Ok<Awaited<B>>) => C,
+      cd: ($: Ok<Awaited<C>>) => D,
+      de: ($: Ok<Awaited<D>>) => E,
+      ef: ($: Ok<Awaited<E>>) => F,
+    ): No<Awaited<B | C | D | E>> | F;
+    <
+      A,
+      B extends Or | Promise<Or>,
+      C extends Or | Promise<Or>,
+      D extends Or | Promise<Or>,
+      E extends Or | Promise<Or>,
+      F extends Or | Promise<Or>,
+      G extends Or | Promise<Or>,
+    >(
+      $: A,
+      ab: ($: A) => B,
+      bc: ($: Ok<Awaited<B>>) => C,
+      cd: ($: Ok<Awaited<C>>) => D,
+      de: ($: Ok<Awaited<D>>) => E,
+      ef: ($: Ok<Awaited<E>>) => F,
+      fg: ($: Ok<Awaited<F>>) => G,
+    ): No<Awaited<B | C | D | E | F>> | G;
+  };
