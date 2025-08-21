@@ -1,15 +1,17 @@
 import type { Data, Formats, Kind, Type } from "./json.ts";
 
+const fix = 'O=I[F].trim().normalize("NFC");';
 const iso = "{const i=new Date(I[F]);O=isNaN(i)?I[F]:i.toISOString()}";
 const COERCERS: { [_ in keyof Formats]: string } = {
   date: iso.replace("}", ".slice(0,10)}"),
   time: iso.replace("}", ".slice(11)"),
   "date-time": iso,
-  email: 'O=I[F].trim().normalize("NFC");',
-  uri: 'O=I[F].trim().normalize("NFC");',
-  uuid: 'O=I[F].trim().normalize("NFC").toLowerCase();',
-  pkey: 'O=I[F].trim().normalize("NFC").replace(/^(?![.~])/, "~");',
-  skey: 'O=I[F].trim().normalize("NFC").replace(/^(?![.~])/, ".");',
+  duration: fix,
+  email: fix,
+  uri: fix,
+  uuid: fix.replace(";", ".toLowerCase();"),
+  pkey: fix.replace(";", '.replace(/^(?![.~])/, "~");'),
+  skey: fix.replace(";", '.replace(/^(?![.~])/, ".");'),
 };
 const CODERS: { [A in Kind]: ($: Type<A>) => [number, string, string] } = {
   bit: () => [

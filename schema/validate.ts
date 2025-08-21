@@ -15,6 +15,8 @@ const REGEXES = {
   date,
   time,
   "date-time": RegExp(`${date.source.slice(0, -1)}T${time.source.slice(1)}$`),
+  duration:
+    /^-?P(?=T?\d)(?:\d+Y)?(?:\d+M)?(?:\d+[DW])?(?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$/,
   email: /^[\w'+-](?:\.?[\w'+-])*@(?:[\dA-Za-z][\dA-Za-z-]*\.)+[A-Za-z]{2,}$/,
   uri: /^[^#/:?]+:(?:\/\/[^\/?#]*)?[^#?]*(?:\?[^#]*)?(?:#.*)?$/,
   uuid: /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/,

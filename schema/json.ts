@@ -10,6 +10,7 @@ export type Formats = {
   date: `${number}-${number}-${number}`;
   time: `${number}:${number}:${number}.${number}Z`;
   "date-time": `${Formats["date"]}T${Formats["time"]}`;
+  duration: `P${string}`;
   email: `${string}@${string}.${string}`;
   uri: `${string}:${string}`; // https://www.rfc-editor.org/rfc/rfc3986.html#appendix-B + required scheme
   uuid: `${string}-${string}-${string}-${string}-${string}`;
