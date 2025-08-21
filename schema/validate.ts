@@ -119,10 +119,10 @@ const keywords = ($: Type) =>
       ? to + b
       : `${to}if(${b})${add(key, a)}`;
   }, "");
+/** Union of possible validation results. */
+export type Result<A extends Type> = Data<A> | Set<Fail<A>>;
 /** Creates a validating function. */
-export const validator = <A extends Type>(
-  $: A,
-): ($: unknown) => Data<A> | Set<Fail<A>> =>
+export const validator = <A extends Type>($: A): ($: unknown) => Result<A> =>
   Function(
     "I",
     `const E=new Set();let P="";${keywords($)}return E.size?E:I`,
