@@ -1,17 +1,17 @@
 import type { Data, Formats, Kind, Type } from "./json.ts";
 
-const fix = 'O=I[F].trim().normalize("NFC");';
-const iso = "{const i=new Date(I[F]);O=isNaN(i)?I[F]:i.toISOString()}";
+const fix = (ending = "") => `O=I[F]?.trim().normalize("NFC")${ending}??null;`;
+const iso = '{const i=new Date(I[F]||"");O=isNaN(i)?I[F]:i.toISOString()}';
 const COERCERS: { [_ in keyof Formats]: string } = {
   date: iso.replace("}", ".slice(0,10)}"),
   time: iso.replace("}", ".slice(11)"),
   "date-time": iso,
-  duration: fix,
-  email: fix,
-  uri: fix,
-  uuid: fix.replace(";", ".toLowerCase();"),
-  pkey: fix.replace(";", '.replace(/^(?![.~])/, "~");'),
-  skey: fix.replace(";", '.replace(/^(?![.~])/, ".");'),
+  duration: fix(),
+  email: fix(),
+  uri: fix(),
+  uuid: fix(".toLowerCase()"),
+  pkey: fix('.replace(/^(?![.~])/, "~")'),
+  skey: fix('.replace(/^(?![.~])/, ".")'),
 };
 const CODERS: { [A in Kind]: ($: Type<A>) => [number, string, string] } = {
   bit: () => [
@@ -22,7 +22,7 @@ const CODERS: { [A in Kind]: ($: Type<A>) => [number, string, string] } = {
   int: () => [1, "if(I[F]==null)O=null;else O=+I[F];++F;", "O[F++]=`${I}`;"],
   num: () => [1, "if(I[F]==null)O=null;else O=+I[F];++F;", "O[F++]=`${I}`;"],
   str: ($) => [1, COERCERS[$.format] + "++F;", "O[F++]=I;"],
-  txt: () => [1, 'O=I[F++].normalize("NFC");', "O[F++]=I;"],
+  txt: () => [1, 'O=I[F++]?.normalize("NFC");', "O[F++]=I;"],
   vec: ($) => [
     1,
     `if(I[F])for(let i=I[F++].split(", "),o=O=Array(i.length),z=0;z<i.length;++z){let I=i,O,F=z;${
@@ -34,7 +34,7 @@ const CODERS: { [A in Kind]: ($: Type<A>) => [number, string, string] } = {
     const [a, b, c] = coders($.items), d = a * $.maxItems;
     return [
       d + 1,
-      `{for(let i=Math.min(+I[F++]||0,${$.maxItems}),o=O=Array(i),f=F,z=0;z<i;f+=${a},++z){let O,F=f;${b}o[z]=O}F+=${d}}`,
+      `{if(I[F])for(let i=Math.min(+I[F++]||0,${$.maxItems}),o=O=Array(i),f=F,z=0;z<i;f+=${a},++z){let O,F=f;${b}o[z]=O}else ++F;F+=${d}}`,
       `{O[F++]=\`\${I.length}\`,O.fill(null,F,F+${d});for(let i=I,f=F,z=0;z<i.length;f+=${a},++z){const I=i[z];let F=f;${c}}F+=${d}}`,
     ];
   },
