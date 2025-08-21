@@ -30,6 +30,9 @@ export const no:
 export const ok:
   & { [Symbol.hasInstance]: <A extends Or>($: A) => $ is Extract<A, Ok> }
   & (<A = never, const B = never>($?: B) => Ok<A, B>) = or(true);
+/** Wraps a possibly-undefined value. */
+export const maybe = <const A, const B extends {}>(error: A, $?: B): Or<A, B> =>
+  $ == null ? no(error) : ok($);
 /** Runs operations with do-notation. */
 export const run = <A extends Or, B>($: Generator<A, B>): Or<Nos<A>["or"], B> =>
   function runner({ done, value }: IteratorResult<A, B>) {
