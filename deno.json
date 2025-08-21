@@ -7,6 +7,7 @@
     "./base": "./base/main.ts",
     "./crypto": "./crypto/main.ts",
     "./csv": "./csv/main.ts",
+    "./fp": "./fp.ts",
     "./match": "./match/main.ts",
     "./query": "./query.ts",
     "./schema": "./schema/main.ts"
