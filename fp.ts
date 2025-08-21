@@ -24,12 +24,12 @@ const or = (is: boolean): any =>
 /** Wraps a failure. */
 export const no:
   & { [Symbol.hasInstance]: <A extends Or>($: A) => $ is Extract<A, No> }
-  & (<A = never, B = never>($?: A) => No<A, B>) = or(false);
+  & (<const A = never, B = never>($?: A) => No<A, B>) = or(false);
 
 /** Wraps a success. */
 export const ok:
   & { [Symbol.hasInstance]: <A extends Or>($: A) => $ is Extract<A, Ok> }
-  & (<A = never, B = never>($?: B) => Ok<A, B>) = or(true);
+  & (<A = never, const B = never>($?: B) => Ok<A, B>) = or(true);
 /** Runs operations with do-notation. */
 export const run = <A extends Or, B>($: Generator<A, B>): Or<Nos<A>["or"], B> =>
   function runner({ done, value }: IteratorResult<A, B>) {
@@ -39,8 +39,8 @@ export const run = <A extends Or, B>($: Generator<A, B>): Or<Nos<A>["or"], B> =>
   }($.next());
 /** Runs possibly-asynchronous operations with do-notation. */
 export const run_async = async <A extends Or, B>(
-  $: AsyncGenerator<A, B, Oks<A>>,
-): Promise<Or<Nos<A>, B>> =>
+  $: AsyncGenerator<A, B>,
+): Promise<Or<Nos<A>["or"], B>> =>
   async function runner({ done, value }: IteratorResult<A, B>) {
     if (done) return ok(value);
     if (value.is) return runner(await $.next());
