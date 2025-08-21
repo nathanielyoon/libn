@@ -1,32 +1,42 @@
+/** Success of an operation. */
+export type No<A = any, B = never> = {
+  [Symbol.iterator]: () => Iterator<No<A, B>, B>;
+  is: false;
+  or: A;
+};
+/** Failure of an operation. */
+export type Ok<A = never, B = any> = {
+  [Symbol.iterator]: () => Iterator<Ok<A, B>, B>;
+  is: true;
+  or: B;
+};
 /** Result of an operation. */
-export type Or<A = any, B = any> =
-  & { [Symbol.iterator]: () => Iterator<Or<A, B>, B> }
-  & ({ is: false; or: A } | { is: true; or: B });
+export type Or<A = any, B = any> = No<A, B> | Ok<A, B>;
 /** Unwrapped failure. */
-export type No<A extends Or> = Extract<A, { is: false }>["or"];
+export type Failure<A extends Or> = Extract<A, { is: false }>["or"];
 /** Unwrapped success. */
-export type Ok<A extends Or> = Extract<A, { is: true }>["or"];
-function* iterator<A, B>(this: Or<A, B>): Iterator<Or<A, B>, B> {
+export type Success<A extends Or> = Extract<A, { is: true }>["or"];
+function* iterator<A extends Or>(this: A): Iterator<A, Success<A>> {
   return yield this;
 }
 /** Wraps a failure. */
-export const no = <const A = never, B = never>($?: A): Or<A, B> => (
+export const no = <const A = never, B = never>($?: A): No<A, B> => (
   { [Symbol.iterator]: iterator, is: false, or: $! }
 );
 /** Wraps a success. */
-export const ok = <A = never, const B = never>($?: B): Or<A, B> => (
+export const ok = <A = never, const B = never>($?: B): Ok<A, B> => (
   { [Symbol.iterator]: iterator, is: true, or: $! }
 );
 /** Runs operations with do-notation. */
-export const run = <A extends Or, B>($: Generator<A, B>): Or<No<A>, B> =>
+export const run = <A extends Or, B>($: Generator<A, B>): Or<Failure<A>, B> =>
   function runner({ done, value }: IteratorResult<A, B>) {
     if (done) return ok(value);
     if (value.is) return runner($.next(value.or));
     return value;
   }($.next());
 export const run_async = async <A extends Or, B>(
-  $: AsyncGenerator<A, B, Ok<A>>,
-): Promise<Or<No<A>, B>> =>
+  $: AsyncGenerator<A, B, Success<A>>,
+): Promise<Or<Failure<A>, B>> =>
   async function runner({ done, value }: IteratorResult<A, B>) {
     if (done) return ok(value);
     if (value.is) return runner(await $.next());
@@ -43,29 +53,29 @@ export const pipe = (($: any, ...$$: (($: any) => Or)[]) => {
   <A, B extends Or, C extends Or>(
     $: A,
     ab: ($: A) => B,
-    bc: ($: Ok<B>) => C,
-  ): No<B> | C;
+    bc: ($: Success<B>) => C,
+  ): Failure<B> | C;
   <A, B extends Or, C extends Or, D extends Or>(
     $: A,
     ab: ($: A) => B,
-    bc: ($: Ok<B>) => C,
-    cd: ($: Ok<C>) => D,
-  ): No<B | C> | D;
+    bc: ($: Success<B>) => C,
+    cd: ($: Success<C>) => D,
+  ): Failure<B | C> | D;
   <A, B extends Or, C extends Or, D extends Or, E extends Or>(
     $: A,
     ab: ($: A) => B,
-    bc: ($: Ok<B>) => C,
-    cd: ($: Ok<C>) => D,
-    de: ($: Ok<D>) => E,
-  ): No<B | C | D> | E;
+    bc: ($: Success<B>) => C,
+    cd: ($: Success<C>) => D,
+    de: ($: Success<D>) => E,
+  ): Failure<B | C | D> | E;
   <A, B extends Or, C extends Or, D extends Or, E extends Or, F extends Or>(
     $: A,
     ab: ($: A) => B,
-    bc: ($: Ok<B>) => C,
-    cd: ($: Ok<C>) => D,
-    de: ($: Ok<D>) => E,
-    ef: ($: Ok<E>) => F,
-  ): No<B | C | D | E> | F;
+    bc: ($: Success<B>) => C,
+    cd: ($: Success<C>) => D,
+    de: ($: Success<D>) => E,
+    ef: ($: Success<E>) => F,
+  ): Failure<B | C | D | E> | F;
   <
     A,
     B extends Or,
@@ -77,12 +87,12 @@ export const pipe = (($: any, ...$$: (($: any) => Or)[]) => {
   >(
     $: A,
     ab: ($: A) => B,
-    bc: ($: Ok<B>) => C,
-    cd: ($: Ok<C>) => D,
-    de: ($: Ok<D>) => E,
-    ef: ($: Ok<E>) => F,
-    fg: ($: Ok<F>) => G,
-  ): No<B | C | D | E | F> | G;
+    bc: ($: Success<B>) => C,
+    cd: ($: Success<C>) => D,
+    de: ($: Success<D>) => E,
+    ef: ($: Success<E>) => F,
+    fg: ($: Success<F>) => G,
+  ): Failure<B | C | D | E | F> | G;
 };
 export const pipe_async =
   (async ($: any, ...$$: (($: any) => Or | Promise<Or>)[]) => {
@@ -95,8 +105,8 @@ export const pipe_async =
     <A, B extends Or | Promise<Or>, C extends Or | Promise<Or>>(
       $: A,
       ab: ($: A) => B,
-      bc: ($: Ok<Awaited<B>>) => C,
-    ): No<Awaited<B>> | C;
+      bc: ($: Success<Awaited<B>>) => C,
+    ): Failure<Awaited<B>> | C;
     <
       A,
       B extends Or | Promise<Or>,
@@ -105,9 +115,9 @@ export const pipe_async =
     >(
       $: A,
       ab: ($: A) => B,
-      bc: ($: Ok<Awaited<B>>) => C,
-      cd: ($: Ok<Awaited<C>>) => D,
-    ): No<Awaited<B | C>> | D;
+      bc: ($: Success<Awaited<B>>) => C,
+      cd: ($: Success<Awaited<C>>) => D,
+    ): Failure<Awaited<B | C>> | D;
     <
       A,
       B extends Or | Promise<Or>,
@@ -117,10 +127,10 @@ export const pipe_async =
     >(
       $: A,
       ab: ($: A) => B,
-      bc: ($: Ok<Awaited<B>>) => C,
-      cd: ($: Ok<Awaited<C>>) => D,
-      de: ($: Ok<Awaited<D>>) => E,
-    ): No<Awaited<B | C | D>> | E;
+      bc: ($: Success<Awaited<B>>) => C,
+      cd: ($: Success<Awaited<C>>) => D,
+      de: ($: Success<Awaited<D>>) => E,
+    ): Failure<Awaited<B | C | D>> | E;
     <
       A,
       B extends Or | Promise<Or>,
@@ -131,11 +141,11 @@ export const pipe_async =
     >(
       $: A,
       ab: ($: A) => B,
-      bc: ($: Ok<Awaited<B>>) => C,
-      cd: ($: Ok<Awaited<C>>) => D,
-      de: ($: Ok<Awaited<D>>) => E,
-      ef: ($: Ok<Awaited<E>>) => F,
-    ): No<Awaited<B | C | D | E>> | F;
+      bc: ($: Success<Awaited<B>>) => C,
+      cd: ($: Success<Awaited<C>>) => D,
+      de: ($: Success<Awaited<D>>) => E,
+      ef: ($: Success<Awaited<E>>) => F,
+    ): Failure<Awaited<B | C | D | E>> | F;
     <
       A,
       B extends Or | Promise<Or>,
@@ -147,10 +157,10 @@ export const pipe_async =
     >(
       $: A,
       ab: ($: A) => B,
-      bc: ($: Ok<Awaited<B>>) => C,
-      cd: ($: Ok<Awaited<C>>) => D,
-      de: ($: Ok<Awaited<D>>) => E,
-      ef: ($: Ok<Awaited<E>>) => F,
-      fg: ($: Ok<Awaited<F>>) => G,
-    ): No<Awaited<B | C | D | E | F>> | G;
+      bc: ($: Success<Awaited<B>>) => C,
+      cd: ($: Success<Awaited<C>>) => D,
+      de: ($: Success<Awaited<D>>) => E,
+      ef: ($: Success<Awaited<E>>) => F,
+      fg: ($: Success<Awaited<F>>) => G,
+    ): Failure<Awaited<B | C | D | E | F>> | G;
   };
