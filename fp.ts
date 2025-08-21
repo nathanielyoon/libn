@@ -25,9 +25,12 @@ export const run = <A extends Or, B>($: Generator<A, B, Ok<A>>): Or<No<A>, B> =>
   }($.next());
 /** Chains unary result-returning functions. */
 export const pipe = (($: any, ...$$: (($: any) => Or)[]) => {
-  let z = 0;
-  do $ = $$[z]($); while ($.ok && ($ = $.is, ++z < $$.length));
-  return $;
+  for (let z = 0; z < $$.length; ++z) {
+    const a = $$[z]($);
+    if (!a.is) return $;
+    else $ = a.or;
+  }
+  return ok($);
 }) as {
   <A, B extends Or>($: A, ab: ($: A) => B): B;
   <A, B extends Or, C extends Or>(
