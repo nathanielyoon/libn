@@ -1,3 +1,17 @@
+/**
+ * Functional programming utilities.
+ * @module fp
+ *
+ * @example
+ * ```ts
+ * import { pipe } from "@nyoon/lib/fp";
+ * import { assertEquals } from "jsr:@std/assert@^1.0.13";
+ *
+ * const result = pipe(Math.random(), ($) => $ > 0.5 ? ok($) : no($));
+ * assertEquals(result.or > 0.5, result.is);
+ * ```
+ */
+
 /** Result of an operation. */
 export type Or<A = any, B = any> = No<A, B> | Ok<A, B>;
 /** Success of an operation. */
