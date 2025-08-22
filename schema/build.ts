@@ -10,7 +10,7 @@ type Keys<A> = readonly [keyof A & string, ...(keyof A & string)[]];
 /** Gets exactly-typed keys. */
 export const keys = Object.keys as unknown as <
   A extends Type<"obj"> = never,
->($: Data<A>) => Keys<typeof $>;
+>($: Data<A> | A["properties"]) => Keys<typeof $>;
 /** JSON schema builder. */
 export type Typer<A extends Type> =
   & (Type<A["kind"]> extends infer B ? B extends {} ? Intersect<
