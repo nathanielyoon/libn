@@ -26,3 +26,13 @@ export const qa = ((selector: string, parent = document.body) => [
   ): As<Hi<Lo<A, " " | ">">, "." | "#" | "[" | ":">>[];
   <A extends Element>(selector: string, parent?: Element): A[];
 };
+/** Creates an element, optionally setting attributes. */
+export const ce = <A extends Tag>(
+  tag: A,
+  parent?: Node,
+  set?: { [name: string]: any },
+): HTMLElementTagNameMap[A] => {
+  const a = document.createElement(tag);
+  Object.entries(set ?? {}).forEach(($) => a.setAttribute($[0], `${$[1]}`));
+  return parent?.appendChild(a) ?? a;
+};
