@@ -25,7 +25,6 @@ const or = (is: boolean): any =>
 export const no:
   & { [Symbol.hasInstance]: <A extends Or>($: A) => $ is Extract<A, No> }
   & (<const A = never, B = never>($?: A) => No<A, B>) = or(false);
-
 /** Wraps a success. */
 export const ok:
   & { [Symbol.hasInstance]: <A extends Or>($: A) => $ is Extract<A, Ok> }

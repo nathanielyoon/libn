@@ -112,7 +112,7 @@ const KEYWORDS: {
 };
 const keywords = ($: Type) =>
   Object.keys($).reduce((to, key) => { // @ts-expect-error: union is too narrow
-    const a = $[key], b = KEYWORDS[$.kind][key]?.(a);
+    const a = $[key], b = KEYWORDS[$.kind][key]?.(a) ?? "";
     return key === "type"
       ? `if(${b})${add(key, a)}else{${to}}`
       : typeof a === "object" && key !== "enum" || !b
