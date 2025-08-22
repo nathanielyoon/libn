@@ -30,9 +30,15 @@ export const qa = ((selector: string, parent = document.body) => [
 export const ce = <A extends Tag>(
   tag: A,
   parent?: Node,
-  set?: { [name: string]: any },
+  set?: { [B in keyof HTMLElementTagNameMap[A]]?: HTMLElementTagNameMap[A][B] },
 ): HTMLElementTagNameMap[A] => {
   const a = document.createElement(tag);
-  Object.entries(set ?? {}).forEach(($) => a.setAttribute($[0], `${$[1]}`));
+  if (set) {
+    const b = Object.keys(set) as (keyof typeof set)[];
+    for (let z = 0; z < b.length; ++z) {
+      const c = set[b[z]];
+      if (c !== undefined) set[b[z]] = c;
+    }
+  }
   return parent?.appendChild(a) ?? a;
 };
