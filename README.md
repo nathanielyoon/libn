@@ -1,7 +1,11 @@
 # @nyoon/lib
 
 ```sh
+# jsr
 deno add jsr:@nyoon/lib
+
+# npm
+npm install @nyoon/lib
 ```
 
 - `alien-signals`: reactivity

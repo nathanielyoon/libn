@@ -42,6 +42,7 @@
     "lib": ["deno.ns", "dom", "dom.iterable", "dom.asynciterable"]
   },
   "tasks": {
-    "vectors": "fd '\\.test\\.ts' -x deno run --allow-net --allow-write"
+    "vectors": "fd '\\.test\\.ts' -x deno run --allow-net --allow-write",
+    "npm": "deno run -A ./npm.ts"
   }
 }
