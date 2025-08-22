@@ -9,10 +9,12 @@
  *   de_b32,
  *   de_b64,
  *   de_h32,
+ *   de_u64,
  *   en_b16,
  *   en_b32,
  *   en_b64,
  *   en_h32,
+ *   en_u64,
  * } from "@nyoon/lib/base";
  * import { assertEquals } from "jsr:@std/assert@^1.0.14";
  *
@@ -21,6 +23,7 @@
  * assertEquals(de_b32(en_b32(data)), data);
  * assertEquals(de_h32(en_h32(data)), data);
  * assertEquals(de_b64(en_b64(data)), data);
+ * assertEquals(de_u64(en_u64(data)), data);
  * ```
  *
  * @see [RFC 4648](https://www.rfc-editor.org/rfc/rfc4648)
