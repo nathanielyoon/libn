@@ -8,12 +8,12 @@ deno add jsr:@nyoon/lib
 npm install @nyoon/lib
 ```
 
-- `alien-signals`: reactivity
 - `base`: base16, base32, base32hex, base64url
 - `crypto`: SHA-256, SHA-512, HMAC, HKDF, X25519, Ed25519
 - `csv`: comma-separated values
 - `fp`: functional programming
+- `json`: JSON schema
 - `match`: matching algorithms
 - `query`: DOM operations
-- `schema`: JSON schema
+- `signals`: reactivity
 - `vite-plugin-inline`: html bundling
