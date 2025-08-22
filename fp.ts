@@ -4,11 +4,12 @@
  *
  * @example
  * ```ts
- * import { pipe } from "@nyoon/lib/fp";
- * import { assertEquals } from "jsr:@std/assert@^1.0.13";
+ * import { no, ok, pipe } from "@nyoon/lib/fp";
+ * import { assert } from "jsr:@std/assert@^1.0.14";
  *
  * const result = pipe(Math.random(), ($) => $ > 0.5 ? ok($) : no($));
- * assertEquals(result.or > 0.5, result.is);
+ * if (result.is) assert(result.or > 0.5), assert(result instanceof ok);
+ * else assert(result.or <= 0.5), assert(result instanceof no);
  * ```
  */
 
@@ -32,9 +33,11 @@ function* iterator<A extends Or>(this: A): Iterator<A, Oks<A>["or"]> {
   return yield this;
 }
 const or = (is: boolean): any =>
-  Object.assign(($?: any) => ({ is, or: $, [Symbol.iterator]: iterator }), {
-    [Symbol.hasInstance]: ($: Or) => $.is === is,
-  });
+  Object.defineProperty(
+    ($?: any) => ({ is, or: $, [Symbol.iterator]: iterator }),
+    Symbol.hasInstance,
+    { value: ($: Or) => $.is === is },
+  );
 /** Wraps a failure. */
 export const no:
   & { [Symbol.hasInstance]: <A extends Or>($: A) => $ is Extract<A, No> }
@@ -66,8 +69,8 @@ export const run_async = async <A extends Or, B>(
   }(await $.next());
 /** Chains unary result-returning functions. */
 export const pipe = (($: any, ...$$: (($: any) => Or)[]) => {
-  for (let z = 0, a; z < $$.length; $ = a.or, ++z) {
-    if (!(a = $$[z]($)).is) return $;
+  for (let z = 0; z < $$.length; $ = $.or, ++z) {
+    if (!($ = $$[z]($)).is) return $;
   }
   return ok($);
 }) as {
@@ -119,8 +122,8 @@ export const pipe = (($: any, ...$$: (($: any) => Or)[]) => {
 /** Chains possibly-asynchronous unary result-returning functions. */
 export const pipe_async =
   (async ($: any, ...$$: (($: any) => Or | Promise<Or>)[]) => {
-    for (let z = 0, a; z < $$.length; $ = a.or, ++z) {
-      if (!(a = await $$[z]($)).is) return $;
+    for (let z = 0; z < $$.length; $ = $.or, ++z) {
+      if (!($ = await $$[z]($)).is) return $;
     }
     return ok($);
   }) as {
