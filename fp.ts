@@ -29,12 +29,12 @@ export type Ok<A = never, B = any> = {
 };
 type Nos<A extends Or> = Extract<A, No>;
 type Oks<A extends Or> = Extract<A, Ok>;
-function* iterator<A extends Or>(this: A): Iterator<A, Oks<A>["or"]> {
+function* generate<A extends Or>(this: A): Iterator<A, Oks<A>["or"]> {
   return yield this;
 }
 const or = (is: boolean): any =>
   Object.defineProperty(
-    ($?: any) => ({ is, or: $, [Symbol.iterator]: iterator }),
+    ($?: any) => ({ is, or: $, [Symbol.iterator]: generate }),
     Symbol.hasInstance,
     { value: ($: Or) => $.is === is },
   );
