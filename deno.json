@@ -10,7 +10,8 @@
     "./fp": "./fp.ts",
     "./match": "./match/main.ts",
     "./query": "./query.ts",
-    "./schema": "./schema/main.ts"
+    "./schema": "./schema/main.ts",
+    "./vite-plugin-inline": "./vite-plugin-inline.ts"
   },
   "lint": {
     "rules": {
