@@ -10,7 +10,7 @@
     "./json": "./json/main.ts",
     "./match": "./match/main.ts",
     "./query": "./query.ts",
-    "./signals": "./signals/main.ts",
+    "./signal": "./signal/main.ts",
     "./vite-plugin-inline": "./inline.ts"
   },
   "lint": {
