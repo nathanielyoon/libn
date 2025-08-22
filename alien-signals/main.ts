@@ -1,19 +1,20 @@
 /**
  * Reactive data.
+ * @module alien-signals
  *
  * @example
  * ```ts
- * import * as $ from "@nyoon/lib/alien-signals";
+ * import { effect, signal } from "@nyoon/lib/alien-signals";
  * import { assertEquals } from "jsr:@std/assert@^1.0.14";
  *
- * const counter = $.signal(0);
- * const doubled = $.signal(() => counter() * 2);
- * const dispose = $.effect(() => assertEquals(doubled(), counter() * 2));
+ * const counter = signal(0);
+ * const doubled = signal(() => counter() * 2);
+ * const dispose = effect(() => assertEquals(doubled(), counter() * 2));
  * counter(1);
  * counter((old) => old + 1);
  * ```
  *
- * @see <https://github.com/stackblitz/alien-signals>
+ * @see [alien-signals](https://github.com/stackblitz/alien-signals)
  */
 
 const enum Flag {

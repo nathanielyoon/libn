@@ -1,9 +1,19 @@
 /**
  * Hash, sign, verify, exchange, and derive.
+ * @module crypto
  *
  * @example
  * ```ts
- * import * as $ from "@nyoon/lib/crypto";
+ * import {
+ *   generate,
+ *   hkdf,
+ *   hmac,
+ *   sha256,
+ *   sha512,
+ *   sign,
+ *   verify,
+ *   x25519,
+ * } from "@nyoon/lib/crypto";
  * import { assert, assertEquals } from "jsr:@std/assert@^1.0.14";
  *
  * const key_1 = crypto.getRandomValues(new Uint8Array(32));
@@ -11,11 +21,11 @@
  * const data = crypto.getRandomValues(new Uint8Array(100));
  *
  * assertEquals(
- *   $.sha256(data),
+ *   sha256(data),
  *   new Uint8Array(await crypto.subtle.digest("SHA-256", data)),
  * );
  * assertEquals(
- *   $.sha512(data),
+ *   sha512(data),
  *   new Uint8Array(await crypto.subtle.digest("SHA-512", data)),
  * );
  * assert(
@@ -28,14 +38,14 @@
  *       false,
  *       ["verify"],
  *     ),
- *     $.hmac(key_1, data),
+ *     hmac(key_1, data),
  *     data,
  *   ),
  * );
- * assert($.verify($.generate(key_2), data, $.sign(key_2, data)));
+ * assert(verify(generate(key_2), data, sign(key_2, data)));
  * assertEquals(
- *   $.hkdf($.x25519(key_1, $.x25519(key_2))),
- *   $.hkdf($.x25519(key_2, $.x25519(key_1))),
+ *   hkdf(x25519(key_1, x25519(key_2))),
+ *   hkdf(x25519(key_2, x25519(key_1))),
  * );
  * ```
  *
@@ -44,7 +54,6 @@
  * @see [RFC 8032](https://www.rfc-editor.org/rfc/rfc8032)
  * @see [RFC 7748](https://www.rfc-editor.org/rfc/rfc7748)
  * @see [RFC 5869](https://www.rfc-editor.org/rfc/rfc5869)
- * @module
  */
 
 export * from "./25519.ts";

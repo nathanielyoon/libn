@@ -1,20 +1,29 @@
 /**
  * Encode/decode in base16, base32, base32hex, and base64url.
+ * @module base
  *
  * @example
  * ```ts
- * import * as $ from "jsr:@nyoon/lib/base";
+ * import {
+ *   de_b16,
+ *   de_b32,
+ *   de_b64,
+ *   de_h32,
+ *   en_b16,
+ *   en_b32,
+ *   en_b64,
+ *   en_h32,
+ * } from "@nyoon/lib/base";
  * import { assertEquals } from "jsr:@std/assert@^1.0.14";
  *
  * const data = crypto.getRandomValues(new Uint8Array(100));
- * assertEquals($.de_b16($.en_b16(data)), data);
- * assertEquals($.de_b32($.en_b32(data)), data);
- * assertEquals($.de_h32($.en_h32(data)), data);
- * assertEquals($.de_b64($.en_b64(data)), data);
+ * assertEquals(de_b16(en_b16(data)), data);
+ * assertEquals(de_b32(en_b32(data)), data);
+ * assertEquals(de_h32(en_h32(data)), data);
+ * assertEquals(de_b64(en_b64(data)), data);
  * ```
  *
  * @see [RFC 4648](https://www.rfc-editor.org/rfc/rfc4648)
- * @module
  */
 
 export * from "./16.ts";
