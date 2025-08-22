@@ -3,15 +3,15 @@
   "name": "@nyoon/lib",
   "version": "0.6.1",
   "exports": {
-    "./alien-signals": "./alien-signals/main.ts",
     "./base": "./base/main.ts",
     "./crypto": "./crypto/main.ts",
     "./csv": "./csv/main.ts",
     "./fp": "./fp.ts",
+    "./json": "./json/main.ts",
     "./match": "./match/main.ts",
     "./query": "./query.ts",
-    "./schema": "./schema/main.ts",
-    "./vite-plugin-inline": "./vite-plugin-inline.ts"
+    "./signals": "./signals/main.ts",
+    "./vite-plugin-inline": "./inline.ts"
   },
   "lint": {
     "rules": {
