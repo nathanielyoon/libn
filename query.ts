@@ -29,7 +29,7 @@ export const qa = ((selector: string, parent = document.body) => [
 /** Creates an element, optionally setting attributes. */
 export const ce = <A extends Tag>(
   tag: A,
-  parent?: Node,
+  parent?: Element,
   set?: { [B in keyof HTMLElementTagNameMap[A]]?: HTMLElementTagNameMap[A][B] },
 ): HTMLElementTagNameMap[A] => {
   const a = document.createElement(tag);
@@ -42,3 +42,23 @@ export const ce = <A extends Tag>(
   }
   return parent?.appendChild(a) ?? a;
 };
+type On<A extends HTMLElement> =
+  & {
+    [B in keyof HTMLElementEventMap]: (
+      listener: (
+        this: A,
+        event: HTMLElementEventMap[B] & { currentTarget: A },
+      ) => any,
+    ) => On<A>;
+  }
+  & { (): A };
+/** Wraps an element to attach event listeners. */
+export const on = <A extends HTMLElement>($: A): On<A> =>
+  new Proxy($, {
+    get: (target, name: keyof HTMLElementEventMap, receiver) =>
+    (
+      listener: EventListener,
+      options?: boolean | AddEventListenerOptions,
+    ) => (target.addEventListener(name, listener, options), receiver),
+    apply: (target) => target,
+  }) as any;
