@@ -1,5 +1,6 @@
 import { build, emptyDir } from "jsr:@deno/dnt@^0.42.3";
 
+await Deno.mkdir("./npm", { recursive: true });
 await emptyDir("./npm");
 await build({
   entryPoints: [
@@ -31,11 +32,5 @@ await build({
   scriptModule: false,
 });
 
-await Deno.copyFile(
-  import.meta.resolve("./LICENSE").slice(7),
-  import.meta.resolve("./npm/LICENSE").slice(7),
-);
-await Deno.copyFile(
-  import.meta.resolve("./README.md").slice(7),
-  import.meta.resolve("./npm/README.md").slice(7),
-);
+await Deno.copyFile("./LICENSE", "./npm/LICENSE");
+await Deno.copyFile("./README.md", "./npm/README.md");
