@@ -91,8 +91,7 @@ export type Type<A extends Kind = Kind> = keyof Meta extends infer B
   : never
   : never;
 /** Schema-defined data. */
-export type Data<A extends Type> = Type extends A ? Json
-  : A extends { enum: readonly (infer B)[] } ? B
+export type Data<A extends Type> = A extends { enum: readonly (infer B)[] } ? B
   : A["type"] extends "boolean" ? boolean
   : A["type"] extends "integer" | "number" ? number
   : A extends { format: infer B extends keyof Formats } ? Formats[B]
