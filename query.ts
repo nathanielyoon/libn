@@ -1,3 +1,26 @@
+/**
+ * DOM manipulation utilities.
+ * @module query
+ *
+ * @example
+ * ```ts
+ * import { qs } from "@nyoon/lib/query";
+ * import { assertEquals } from "jsr:@std/assert@^1.0.14";
+ * import { DOMParser } from "jsr:@b-fuze/deno-dom@^0.1.56";
+ *
+ * assertEquals(
+ *   qs(
+ *     "div>span.b",
+ *     new DOMParser().parseFromString(
+ *       '<div><span class="a">a</span><span class="b">b</span></div>',
+ *       "text/html",
+ *     ).body as unknown as Element,
+ *   ).textContent,
+ *   "b",
+ * );
+ * ```
+ */
+
 type Lo<A, B extends string> = A extends `${any}${B}${infer D}` ? Lo<D, B> : A;
 type Hi<A, B extends string> = A extends `${infer C}${B}${any}` ? Hi<C, B> : A;
 type Tag = keyof HTMLElementTagNameMap;
