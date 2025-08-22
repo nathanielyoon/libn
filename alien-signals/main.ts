@@ -1,5 +1,5 @@
 /**
- * Reactive data.
+ * Work with reactive data.
  * @module alien-signals
  *
  * @example
