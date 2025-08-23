@@ -1,192 +1,56 @@
-/**
- * Functional programming utilities.
- * @module fp
- *
- * @example
- * ```ts
- * import { no, ok, pipe } from "@nyoon/lib/fp";
- * import { assert } from "jsr:@std/assert@^1.0.14";
- *
- * const result = pipe(Math.random(), ($) => $ > 0.5 ? ok($) : no($));
- * if (result.is) assert(result.or > 0.5), assert(result instanceof ok);
- * else assert(result.or <= 0.5), assert(result instanceof no);
- * ```
- */
-
-/** Result of an operation. */
-export type Or<A = any, B = any> = No<A, B> | Ok<A, B>;
-/** Success of an operation. */
-export type No<A = any, B = never> = {
-  [Symbol.iterator]: () => Iterator<No<A, B>, B>;
-  is: false;
-  or: A;
-};
-/** Failure of an operation. */
-export type Ok<A = never, B = any> = {
-  [Symbol.iterator]: () => Iterator<Ok<A, B>, B>;
-  is: true;
-  or: B;
-};
-type Nos<A extends Or> = Extract<A, No>;
-type Oks<A extends Or> = Extract<A, Ok>;
-function* generate<A extends Or>(this: A): Iterator<A, Oks<A>["or"]> {
-  return yield this;
-}
-const or = (is: boolean): any =>
-  Object.defineProperty(
-    ($?: any) => ({ is, or: $, [Symbol.iterator]: generate }),
-    Symbol.hasInstance,
-    { value: ($: Or) => $.is === is },
-  );
-/** Wraps a failure. */
-export const no:
-  & { [Symbol.hasInstance]: <A extends Or>($: A) => $ is Extract<A, No> }
-  & (<const A = never, B = never>($?: A) => No<A, B>) = or(false);
-/** Wraps a success. */
-export const ok:
-  & { [Symbol.hasInstance]: <A extends Or>($: A) => $ is Extract<A, Ok> }
-  & (<A = never, const B = never>($?: B) => Ok<A, B>) = or(true);
-/** Wraps a possibly-nullish value. */
-export const maybe =
-  <const A>(error: A) =>
-  <const B extends {}>($: B | null | undefined): Or<A, B> =>
-    $ == null ? no(error) : ok($);
-/** Runs operations with do-notation. */
-export const run = <A extends Or, B>($: Generator<A, B>): Or<Nos<A>["or"], B> =>
-  function runner({ done, value }: IteratorResult<A, B>) {
-    if (done) return ok(value);
-    if (value.is) return runner($.next(value.or));
-    return value;
-  }($.next());
-/** Runs possibly-asynchronous operations with do-notation. */
-export const run_async = async <A extends Or, B>(
-  $: AsyncGenerator<A, B>,
-): Promise<Or<Nos<A>["or"], B>> =>
-  async function runner({ done, value }: IteratorResult<A, B>) {
-    if (done) return ok(value);
-    if (value.is) return runner(await $.next());
-    return value;
-  }(await $.next());
-/** Chains unary result-returning functions. */
-export const pipe = (($: any, ...$$: (($: any) => Or)[]) => {
-  for (let z = 0; z < $$.length; $ = $.or, ++z) {
-    if (!($ = $$[z]($)).is) return $;
+/** Result type. */
+export class Or<A = any, B = any> {
+  /** Success! */
+  constructor(state: false, value: A);
+  /** Failure! */
+  constructor(state: true, value: B);
+  /** Creates a success or failure. */
+  constructor(private state: boolean, private inner: any) {}
+  protected *[Symbol.iterator](): Iterator<Or<A, B>, B> {
+    return yield this;
   }
-  return ok($);
-}) as {
-  <A, B extends Or>($: A, ab: ($: A) => B): B;
-  <A, B extends Or, C extends Or>(
-    $: A,
-    ab: ($: A) => B,
-    bc: ($: Oks<B>["or"]) => C,
-  ): Nos<B> | C;
-  <A, B extends Or, C extends Or, D extends Or>(
-    $: A,
-    ab: ($: A) => B,
-    bc: ($: Oks<B>["or"]) => C,
-    cd: ($: Oks<C>["or"]) => D,
-  ): Nos<B | C> | D;
-  <A, B extends Or, C extends Or, D extends Or, E extends Or>(
-    $: A,
-    ab: ($: A) => B,
-    bc: ($: Oks<B>["or"]) => C,
-    cd: ($: Oks<C>["or"]) => D,
-    de: ($: Oks<D>["or"]) => E,
-  ): Nos<B | C | D> | E;
-  <A, B extends Or, C extends Or, D extends Or, E extends Or, F extends Or>(
-    $: A,
-    ab: ($: A) => B,
-    bc: ($: Oks<B>["or"]) => C,
-    cd: ($: Oks<C>["or"]) => D,
-    de: ($: Oks<D>["or"]) => E,
-    ef: ($: Oks<E>["or"]) => F,
-  ): Nos<B | C | D | E> | F;
-  <
-    A,
-    B extends Or,
-    C extends Or,
-    D extends Or,
-    E extends Or,
-    F extends Or,
-    G extends Or,
-  >(
-    $: A,
-    ab: ($: A) => B,
-    bc: ($: Oks<B>["or"]) => C,
-    cd: ($: Oks<C>["or"]) => D,
-    de: ($: Oks<D>["or"]) => E,
-    ef: ($: Oks<E>["or"]) => F,
-    fg: ($: Oks<F>["or"]) => G,
-  ): Nos<B | C | D | E | F> | G;
-};
-/** Chains possibly-asynchronous unary result-returning functions. */
-export const pipe_async =
-  (async ($: any, ...$$: (($: any) => Or | Promise<Or>)[]) => {
-    for (let z = 0; z < $$.length; $ = $.or, ++z) {
-      if (!($ = await $$[z]($)).is) return $;
-    }
-    return ok($);
-  }) as {
-    <A, B extends Or | Promise<Or>>($: A, ab: ($: A) => B): Promise<Awaited<B>>;
-    <A, B extends Or | Promise<Or>, C extends Or | Promise<Or>>(
-      $: A,
-      ab: ($: A) => B,
-      bc: ($: Oks<Awaited<B>>["or"]) => C,
-    ): Promise<Nos<Awaited<B>> | Awaited<C>>;
-    <
-      A,
-      B extends Or | Promise<Or>,
-      C extends Or | Promise<Or>,
-      D extends Or | Promise<Or>,
-    >(
-      $: A,
-      ab: ($: A) => B,
-      bc: ($: Oks<Awaited<B>>["or"]) => C,
-      cd: ($: Oks<Awaited<C>>["or"]) => D,
-    ): Promise<Nos<Awaited<B | C>> | Awaited<D>>;
-    <
-      A,
-      B extends Or | Promise<Or>,
-      C extends Or | Promise<Or>,
-      D extends Or | Promise<Or>,
-      E extends Or | Promise<Or>,
-    >(
-      $: A,
-      ab: ($: A) => B,
-      bc: ($: Oks<Awaited<B>>["or"]) => C,
-      cd: ($: Oks<Awaited<C>>["or"]) => D,
-      de: ($: Oks<Awaited<D>>["or"]) => E,
-    ): Promise<Nos<Awaited<B | C | D>> | Awaited<E>>;
-    <
-      A,
-      B extends Or | Promise<Or>,
-      C extends Or | Promise<Or>,
-      D extends Or | Promise<Or>,
-      E extends Or | Promise<Or>,
-      F extends Or | Promise<Or>,
-    >(
-      $: A,
-      ab: ($: A) => B,
-      bc: ($: Oks<Awaited<B>>["or"]) => C,
-      cd: ($: Oks<Awaited<C>>["or"]) => D,
-      de: ($: Oks<Awaited<D>>["or"]) => E,
-      ef: ($: Oks<Awaited<E>>["or"]) => F,
-    ): Promise<Nos<Awaited<B | C | D | E>> | Awaited<F>>;
-    <
-      A,
-      B extends Or | Promise<Or>,
-      C extends Or | Promise<Or>,
-      D extends Or | Promise<Or>,
-      E extends Or | Promise<Or>,
-      F extends Or | Promise<Or>,
-      G extends Or | Promise<Or>,
-    >(
-      $: A,
-      ab: ($: A) => B,
-      bc: ($: Oks<Awaited<B>>["or"]) => C,
-      cd: ($: Oks<Awaited<C>>["or"]) => D,
-      de: ($: Oks<Awaited<D>>["or"]) => E,
-      ef: ($: Oks<Awaited<E>>["or"]) => F,
-      fg: ($: Oks<Awaited<F>>["or"]) => G,
-    ): Promise<Nos<Awaited<B | C | D | E | F>> | Awaited<G>>;
-  };
+  /** Maps successes. */
+  fmap<C>(ok: ($: B) => C): Or<A, C> { // @ts-expect-error
+    return this.state && (this.inner = ok(this.inner)), this;
+  }
+  /** Flat-maps successes. */
+  bind<C, D>(ok: ($: B) => Or<C, D>): Or<A | C, D> { // @ts-expect-error
+    return this.state ? this.copy(ok(this.inner)) : this;
+  }
+  /** Maps successes, into failures if the result is nullish. */
+  lift<C, D = never>(ok: ($: B) => C, no?: D): Or<A | D, NonNullable<C>> {
+    if (this.state) {
+      this.inner = ok(this.inner), this.inner ??= (this.state = false, no);
+    } // @ts-expect-error
+    return this;
+  }
+  /** Runs an imperative block, exiting early on failure. */
+  do<C, D, E>(block: ($: B) => Generator<Or<C, D>, E>): Or<A | C, E> { // @ts-expect-error
+    if (!this.state) return this;
+    const a = block(this.inner);
+    const b = ({ done, value }: IteratorResult<Or<C, D>, E>): Or<C, E> =>
+      done ? ok(value) : value.bind(($) => b(a.next($)));
+    return b(a.next());
+  }
+  /** Maps states. */
+  match<C, D>(no: ($: A) => C, ok: ($: B) => D): Or<C, D> { // @ts-expect-error
+    return this.inner = this.state ? ok(this.inner) : no(this.inner), this;
+  }
+  /** Checks the state. */
+  is(): this is Ok<B> {
+    return this.state;
+  }
+  /** Gets the successful value or throws. */
+  unwrap(wrap?: (no: A) => any): B {
+    if (this.state) return this.inner;
+    throw wrap ? wrap(this.inner) : this.inner;
+  }
+}
+/** Failure! */
+export type No<A = any> = Or<A, never>;
+/** Success! */
+export type Ok<A = any> = Or<never, A>;
+/** Creates a failure. */
+export const no = <const A = never>($?: A): No<A> => new Or(false, $!);
+/** Creates a success. */
+export const ok = <const A = never>($?: A): Ok<A> => new Or(true, $!);
