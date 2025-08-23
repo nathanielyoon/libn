@@ -1,5 +1,5 @@
 /**
- * Encode/decode in base16, base32, base32hex, and base64url.
+ * Encode/decode in base16, base32, base32hex, base64, and base64url.
  * @module base
  *
  * @example
@@ -19,11 +19,11 @@
  * import { assertEquals } from "jsr:@std/assert@^1.0.14";
  *
  * const data = crypto.getRandomValues(new Uint8Array(100));
- * assertEquals(de_b16(en_b16(data)), data);
- * assertEquals(de_b32(en_b32(data)), data);
- * assertEquals(de_h32(en_h32(data)), data);
- * assertEquals(de_b64(en_b64(data)), data);
- * assertEquals(de_u64(en_u64(data)), data);
+ * assertEquals(de_b16(en_b16(data)), data); // base16
+ * assertEquals(de_b32(en_b32(data)), data); // base32
+ * assertEquals(de_h32(en_h32(data)), data); // base32hex
+ * assertEquals(de_b64(en_b64(data)), data); // base64
+ * assertEquals(de_u64(en_u64(data)), data); // base64url
  * ```
  *
  * @see [RFC 4648](https://www.rfc-editor.org/rfc/rfc4648)
