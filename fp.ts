@@ -1,49 +1,64 @@
-/** Result type. */
+/** Result type, either a {@linkcode A | failure} or {@linkcode B | success}. */
 export class Or<A = any, B = any> {
   /** Success! */
-  constructor(state: false, value: A);
+  constructor(is: false, as: A);
   /** Failure! */
-  constructor(state: true, value: B);
+  constructor(is: true, as: B);
   /** Creates a success or failure. */
-  constructor(private state: boolean, private inner: any) {}
+  constructor(private is: boolean, private value: any) {}
   protected *[Symbol.iterator](): Iterator<Or<A, B>, B> {
     return yield this;
   }
-  /** Maps successes. */
-  fmap<C>(ok: ($: B) => C): Or<A, C> { // @ts-expect-error
-    return this.state && (this.inner = ok(this.inner)), this;
+  private copy($: Or): Or {
+    return this.is = $.is, this.value = $.value, this;
   }
-  /** Flat-maps successes. */
-  bind<C, D>(ok: ($: B) => Or<C, D>): Or<A | C, D> { // @ts-expect-error
-    return this.state ? this.copy(ok(this.inner)) : this;
+  /** Mutates a successful result. */
+  fmap<C>(ok: ($: B) => C): Or<A, C> {
+    return this.is && (this.value = ok(this.value)), this as any;
   }
-  /** Maps successes, into failures if the result is nullish. */
-  lift<C, D = never>(ok: ($: B) => C, no?: D): Or<A | D, NonNullable<C>> {
-    if (this.state) {
-      this.inner = ok(this.inner), this.inner ??= (this.state = false, no);
-    } // @ts-expect-error
-    return this;
+  /** Maps a successful result to a new result. */
+  bind<C, D>(ok: ($: B) => Or<C, D>): Or<A | C, D> {
+    return this.is ? this.copy(ok(this.value)) : this as any;
+  }
+  /** Mutates a successful result, and fails if the new value is nullish. */
+  lift<C, const D = never>(ok: ($: B) => C, no?: D): Or<A | D, NonNullable<C>> {
+    if (this.is) {
+      this.value = ok(this.value), this.value ??= (this.is = false, no);
+    }
+    return this as any;
+  }
+  /** Restricts a successful result with a type predicate. */
+  assert<C extends B = B, const D = never>(
+    is: (($: B) => $ is C) | (($: B) => any),
+    or?: D,
+  ): Or<A | D, C> {
+    if (this.is) (this.is = is(this.value)) || (this.value = or);
+    return this as any;
   }
   /** Runs an imperative block, exiting early on failure. */
-  do<C, D, E>(block: ($: B) => Generator<Or<C, D>, E>): Or<A | C, E> { // @ts-expect-error
-    if (!this.state) return this;
-    const a = block(this.inner);
-    const b = ({ done, value }: IteratorResult<Or<C, D>, E>): Or<C, E> =>
-      done ? ok(value) : value.bind(($) => b(a.next($)));
+  do<C, D, E>(block: ($: B) => Generator<Or<C, D>, E>): Or<A | C, E> {
+    if (!this.is) return this as any;
+    const a = block(this.value);
+    const b = ($: IteratorResult<Or<C, D>, E>): Or<C, E> =>
+      $.done ? ok($.value) : $.value.bind(($) => b(a.next($)));
     return b(a.next());
   }
-  /** Maps states. */
-  match<C, D>(no: ($: A) => C, ok: ($: B) => D): Or<C, D> { // @ts-expect-error
-    return this.inner = this.state ? ok(this.inner) : no(this.inner), this;
+  /** Checks for failure. */
+  is_no(): this is No<A> {
+    return !this.is;
   }
-  /** Checks the state. */
-  is(): this is Ok<B> {
-    return this.state;
+  /** Checks for success. */
+  is_ok(): this is Ok<B> {
+    return this.is;
   }
-  /** Gets the successful value or throws. */
-  unwrap(wrap?: (no: A) => any): B {
-    if (this.state) return this.inner;
-    throw wrap ? wrap(this.inner) : this.inner;
+  /** Gets the result's value, optionally throwing if the state is wrong. */
+  unwrap(only_if?: boolean): A | B {
+    if (only_if === !this.is) throw Error(`${this.is}`, { cause: this.value });
+    return this.value;
+  }
+  /** Gets the result as a discriminated union. */
+  get result(): { is: false; value: A } | { is: true; value: B } {
+    return { is: this.is, value: this.value };
   }
 }
 /** Failure! */
