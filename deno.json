@@ -39,7 +39,8 @@
     }
   },
   "compilerOptions": {
-    "lib": ["deno.ns", "dom", "dom.iterable", "dom.asynciterable"]
+    "lib": ["deno.ns", "dom", "dom.iterable", "dom.asynciterable"],
+    "exactOptionalPropertyTypes": true
   },
   "tasks": {
     "vectors": "fd '\\.test\\.ts' -x deno run --allow-net --allow-write",
