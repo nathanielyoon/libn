@@ -1,3 +1,22 @@
+/**
+ * Functional programming utilities.
+ * @module fp
+ *
+ * @example
+ * ```ts
+ * const base = Math.random() * 4;
+ * const { result } = ok(base)
+ *   .fmap(($) => $ & 3)
+ *   .assert(($) => $ % 4 === 0)
+ *   .assert(Number.isInteger)
+ *   .bind(($) => $ & 1 ? no("odd") : ok($))
+ *   .lift(($) => $ || null, "zero");
+ * if (result.is) assert(result.value === 2);
+ * else if (result.value === "zero") assert(base < 1);
+ * else assert(base >= 0.25 && base < 0.5 || base >= 0.75);
+ * ```
+ */
+
 /** Result type, either a {@linkcode A | failure} or {@linkcode B | success}. */
 export class Or<A = any, B = any> {
   /** Success! */
