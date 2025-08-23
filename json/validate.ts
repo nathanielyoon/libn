@@ -58,7 +58,7 @@ const regex = (pattern: string | RegExp | undefined, test = "I") => {
   } catch {}
   return "";
 };
-const enums = (map: ($: string) => string, $: readonly any[] | undefined) =>
+const enums = <A>(map: ($: A) => string, $: readonly A[] | undefined) =>
   add("enum", $, regex(`^(?:${$?.map(map).join("|")})$`, "JSON.stringify(I)"));
 const validators = ($: Type) => {
   let a = "", b, z: number = OPERATIONS.length;
@@ -71,7 +71,7 @@ const validators = ($: Type) => {
       break;
     case "int":
     case "num":
-      a += enums(($) => $.replace(/[+.]/g, "\\$&"), $.enum);
+      a += enums(($) => `${$}`.replace(/[+.]/g, "\\$&"), $.enum);
       break;
     case "fmt":
       a += add("format", $.format, regex(REGEXES[$.format]));
@@ -122,7 +122,8 @@ const validators = ($: Type) => {
         a += `{const P=p+"/${
           d.replaceAll("~", "~0").replaceAll("/", "~1").slice(1)
         },I=i[${d}];if(I!==undefined)${validators($.properties[c[z]])}`;
-        $.required.includes(c[z]) && (a += `else ${add("required", c[z], "")}`);
+        $.required.includes(c[z]) &&
+          (a += `else (E.required??=[]).push(${d});`);
         $.additionalProperties === false && (a += `$.delete(${d});`);
       }
       $.additionalProperties === false &&

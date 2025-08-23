@@ -5,7 +5,7 @@
  * @example
  * ```ts
  * import { defineConfig } from "npm:rolldown-vite@^7.1.4";
- * import inline from "@nyoon/vite-plugin-inline";
+ * import inline from "@nyoon/lib/vite-plugin-inline";
  *
  * export default defineConfig({
  *   plugins: [inline()],

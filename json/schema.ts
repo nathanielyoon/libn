@@ -143,7 +143,7 @@ export type Fail<A extends Type, B extends string = ""> =
           keyof A,
           keyof Meta | `${"prefixI" | "i"}tems` | `${"patternP" | "p"}roperties`
         >
-      ]?: [C, A[C]] extends ["required", readonly (infer D)[]] ? D : A[C];
+      ]?: [C, A[C]] extends ["required", readonly (infer D)[]] ? D[] : A[C];
     };
   }
   | (A extends { prefixItems: infer C extends readonly Type[] }

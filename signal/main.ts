@@ -4,7 +4,7 @@
  *
  * @example
  * ```ts
- * import { effect, signal } from "@nyoon/lib/alien-signals";
+ * import { effect, signal } from "@nyoon/lib/signal";
  * import { assertEquals } from "jsr:@std/assert@^1.0.14";
  *
  * const counter = signal(0);
