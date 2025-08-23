@@ -74,7 +74,11 @@ type Types = {
   };
 };
 /** Types of JSON subtypes. */
-export const KINDS = {
+export const KINDS: Join<
+  keyof Types extends infer A
+    ? A extends keyof Types ? { [B in keyof Types[A]]: A } : never
+    : never
+> = {
   bit: "boolean",
   int: "integer",
   num: "number",
@@ -86,11 +90,7 @@ export const KINDS = {
   arr: "array",
   map: "object",
   obj: "object",
-} as const satisfies Join<
-  keyof Types extends infer A
-    ? A extends keyof Types ? { [B in keyof Types[A]]: A } : never
-    : never
->;
+};
 /** Schema metadata, including custom subtype (a non-standard extension). */
 export type Meta<A extends keyof typeof KINDS = keyof typeof KINDS> = {
   kind: A;
