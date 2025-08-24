@@ -53,21 +53,32 @@ export type Data<A extends Type> = A extends { enum: readonly (infer B)[] } ? B
     ) extends infer E ? { [F in keyof E]: E[F] } : never
   : never;
 type Esc<A extends PropertyKey, B extends number, C> = C extends
-  `${infer D}${A & string}${infer F}` ? `${D}~${B}${Esc<A, B, F>}` : C & string;
+  `${infer D}${A & string}${infer E}` ? `${D}~${B}${Esc<A, B, E>}` : C & string;
+type Base =
+  | "type"
+  | "enum"
+  | `${"min" | "max"}${"imum" | "Length" | "Items"}`
+  | "multipleOf"
+  | "format"
+  | "pattern";
+type Intersect<A> = (A extends never ? never : (_: A) => void) extends
+  (_: infer B) => void ? B : never;
 /** Union of error indicators. */
 export type Fail<A extends Type, B extends string = ""> =
-  | {
-    path: B;
-    value: unknown;
-    errors: {
-      [C in Exclude<keyof A, "title" | "description" | "properties">]?:
-        [C, A[C]] extends ["required", readonly (infer D)[]] ? D[] : A[C];
-    };
-  }
-  | (A extends { items: infer C extends Type } ? Fail<C, `${B}/${number}`>
-    : A extends { properties: infer C extends { [key: string]: Type } }
-      ? keyof C extends infer D
-        ? D extends keyof C ? Fail<C[D], `${B}/${Esc<"/", 1, Esc<"~", 0, D>>}`>
-        : never
+  Exclude<keyof A, "title" | "description"> extends infer C
+    ? C extends keyof A
+      ? A[C] extends infer D ? D extends Type ? Fail<D, `${B}/${number}`>
+        : D extends { [key: string]: Type }
+          ? keyof D extends infer E
+            ? E extends keyof D
+              ? Fail<D[E], `${B}/${Esc<"/", 1, Esc<"~", 0, E>>}`>
+            : never
+          : never
+        : {
+          path: B;
+          value: unknown;
+          error: [C, [C, D] extends ["required", readonly (infer E)[]] ? E : D];
+        }
       : never
-    : never);
+    : never
+    : never;
