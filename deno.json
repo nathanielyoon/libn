@@ -17,7 +17,6 @@
     "rules": {
       "include": [
         "default-param-last",
-        "eqeqeq",
         "explicit-module-boundary-types",
         "guard-for-in",
         "no-eval",
