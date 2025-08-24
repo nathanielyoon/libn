@@ -21,7 +21,7 @@ const n_u64 = ($: number) =>
 /** Encodes binary -> base64url string. */
 export const en_u64 = ($: Uint8Array): string => {
   let a = "";
-  for (let z = 0, y = 0, b, c, d; z < $.length;) {
+  for (let z = 0, b, c, d; z < $.length;) {
     b = $[z++], c = $[z++], d = $[z++];
     a += cc(c_u64(b >> 2)), a += cc(c_u64(b << 4 & 63 | c >> 4));
     a += cc(c_u64(c << 2 & 63 | d >> 6)), a += cc(c_u64(d & 63));
