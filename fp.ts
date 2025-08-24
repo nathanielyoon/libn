@@ -71,6 +71,8 @@ export class Or<A = any, B = any> {
     return this.is;
   }
   /** Gets the result's value, optionally throwing if the state is wrong. */
+  unwrap(only_if: false): A;
+  unwrap(only_if: true): B;
   unwrap(only_if?: boolean): A | B {
     if (only_if === !this.is) throw Error(`${this.is}`, { cause: this.value });
     return this.value;
