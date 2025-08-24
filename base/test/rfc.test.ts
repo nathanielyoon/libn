@@ -30,7 +30,7 @@ Deno.test("base64", () =>
   ));
 Deno.test("base64url", () =>
   import("./vectors/rfc.json", { with: { type: "json" } }).then(($) =>
-    test(en_b64, de_b64, $.default.base64)
+    test(en_b64, de_b64, $.default.base64url)
   ));
 
 import.meta.main && await get_text(4648, 25691, 26723)
