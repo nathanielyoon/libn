@@ -6,10 +6,10 @@
     "./base": "./base/main.ts",
     "./crypto": "./crypto/main.ts",
     "./csv": "./csv/main.ts",
-    "./fp": "./fp.ts",
     "./json": "./json/main.ts",
     "./match": "./match/main.ts",
     "./query": "./query.ts",
+    "./result": "./result.ts",
     "./signal": "./signal/main.ts",
     "./vite-plugin-inline": "./inline.ts"
   },

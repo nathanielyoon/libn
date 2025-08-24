@@ -1,9 +1,12 @@
 /**
- * Functional programming utilities.
- * @module fp
+ * Result type.
+ * @module result
  *
  * @example
  * ```ts
+ * import { no, ok } from "@nyoon/lib/result.ts";
+ * import { assert } from "jsr:@std/assert@^1.0.14";
+ *
  * const base = Math.random() * 4;
  * const { result } = ok(base)
  *   .fmap(($) => $ & 3)
