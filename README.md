@@ -9,7 +9,7 @@ npm install @nyoon/lib
 ```
 
 - `base`: base16, base32, base32hex, base64url
-- `crypto`: SHA-256, SHA-512, HMAC, HKDF, X25519, Ed25519
+- `crypto`: SHA-256, SHA-512, HMAC, HKDF, X25519, Ed25519, XChaCha20Poly1305
 - `csv`: comma-separated values
 - `fp`: functional programming
 - `json`: JSON schema
