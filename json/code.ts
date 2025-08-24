@@ -1,93 +1,72 @@
-import type { Data, Formats, Type } from "./schema.ts";
+import type { Data, Type } from "./schema.ts";
 
-const fix = (end = "") => `O=I[F++]?.trim().normalize("NFC")${end}??null;`;
-const iso = '{const i=new Date(I[F++]||"");O=isNaN(i)?I[F-1]:i.toISOString()}';
-const COERCERS = {
-  date: iso.replace("}", ".slice(0,10)}"),
-  time: iso.replace("}", ".slice(11)"),
+const fix = "raw=row[at++]?.trim().normalize()??null;";
+const iso =
+  '{const i=new Date(row[at++]||"");out=isNaN(i)?row[at-1]:i.toISOString()}';
+const FORMATS = {
+  date: iso.slice(0, -1) + ".slice(0,10)}",
+  time: iso.slice(0, -1) + ".slice(11)}",
   "date-time": iso,
-  duration: fix(),
-  email: fix(),
-  uri: fix(),
-  uuid: fix(".toLowerCase()"),
-} satisfies { [_ in keyof Formats]: string };
-const coders = ($: Type): [size: number, encode: string, decode: string] => {
-  switch ($.kind) {
-    case "bit":
-      return [
-        1,
-        "O[F++]=`${I}`;",
-        'O=I[F++]==="false"?false:I[F-1]==="true"||null;',
-      ];
-    case "int":
-    case "num":
-      return [1, "O[F++]=`${I}`;", "if(I[F++]==null)O=null;else O=+I[F-1];"];
-    case "fmt":
-      return [1, "O[F++]=I;", COERCERS[$.format]];
-    case "bin":
-    case "str":
-      return [1, "O[F++]=I;", fix()];
-    case "ord": {
-      const a = $.prefixItems.length;
-      let b = 0, c = "", d = "", e, f, g, z = 0;
-      do [e, f, g] = coders($.prefixItems[z]),
-        b += e,
-        c += `{const I=i[${z}];if(I!=null)${f}else F+=${e}}`,
-        d += `{let O;${g}o[${z}]=O}`; while (++z < a);
-      return [b, `{const i=I;${c}}`, `{const o=O=Array(${a});${d}}`];
+  email: fix,
+  uri: fix,
+  uuid: fix.slice(0, -7) + ".toLowerCase()??null;",
+};
+const coders = ($: Type): { length: number; en: string; de: string } => {
+  switch ($.type) {
+    case "boolean":
+      return {
+        length: 1,
+        en: "row[at++]=`${data}`;",
+        de: 'raw=row[at++]==="false"?false:row[at-1]==="true"||null;',
+      };
+    case "number":
+      return {
+        length: 1,
+        en: "row[at++]=`${data}`;",
+        de: "if(row[at]==null)++at,raw=null;else raw=+row[at++];",
+      };
+    case "string":
+      return {
+        length: 1,
+        en: "row[at++]=data;",
+        de: $.format ? FORMATS[$.format] : fix,
+      };
+    case "array": {
+      const { length, en, de } = coders($.items), a = length * $.maxItems + 1;
+      return {
+        length: a,
+        en:
+          `{row[at++]=\`\${data.length}\`;for(let d=data,a=at,z=0;z<d.length;a+=${length},++z){const data=d[z];let at=a;${en}}at+=${a}}`,
+        de:
+          `{if(row[at])for(let r=raw=Array(Math.min(+row[at++]||0,${$.maxItems})),z=0;z<r.length;++z){let raw;${de}r[z]=raw}else raw=row[at++]==null?null:[]}`,
+      };
     }
-    case "vec":
-      return [
-        1,
-        'O[F++]=I.join(", ");',
-        `if(I[F])for(let i=I[F++].split(", "),o=O=Array(i.length),z=0;z<i.length;++z){let I=i,F=z,O;${
-          coders($.items)[2]
-        }o[z]=O}else O=I[F++]==null?null:[];`,
-      ];
-    case "arr": {
-      const [a, b, c] = coders($.items), d = a * $.maxItems;
-      return [
-        d + 1,
-        `{O[F++]=\`\${I.length}\`;for(let i=I,z=0;z<i.length;++z){const I=i[z];${b}}}`,
-        `if(I[F])for(let i=Math.min(+I[F++]||0,${$.maxItems}),o=O=Array(i),z=0;z<i;++z){let O;${c}o[z]=O}else ++F;`,
-      ];
-    }
-    case "map": {
-      const [a, b, c] = coders(
-        $.patternProperties[Object.keys($.patternProperties)[0]],
-      );
-      const d = a + 1, e = d * $.maxProperties;
-      return [
-        e,
-        `for(let i=I,$=Object.keys(i);z<$.length;++z){const I=i[O[F++]=$[z]];${b}}`,
-        `for(let o=O={},z=0;z<${$.maxProperties}&&I[F]!=null;++z){const $=I[F++];let O;${c}o[$]=O}`,
-      ];
-    }
-    case "obj": {
-      let a = 0, b = "", c = "{const o={};let $=0;";
+    case "object": {
+      let a = 0, b = "{const d=data;", c = "{const r={};let c=0;";
       for (let d = Object.keys($.properties), z = 0; z < d.length; ++z) {
-        const [e, f, g] = coders($.properties[d[z]]), h = JSON.stringify(d[z]);
-        a += e, b += `{const I=i[${h}];if(I!=null)${f}else F+=${e}}`;
-        c += `{let O;${g}if(O!=null)o[${h}]=O,++$}`;
+        const { length, en, de } = coders($.properties[d[z]]);
+        const e = JSON.stringify(d[z]);
+        a += length;
+        b += `{const data=d[${e}];if(data!==undefined)${en}else at+=${length}}`;
+        c += `{let raw;${de}if(raw!==null)r[${e}]=raw,++c}`;
       }
-      return [a, `{const i=I;${b}}`, c + "O=$?o:null}"];
+      return { length: a, en: b + "}", de: c + "raw=c?r:null}" };
     }
   }
 };
 /** Creates encoding and decoding functions. */
 export const coder = <A extends Type>($: A): {
   length: number;
-  encode: ($: Data<A>) => (string | null)[];
-  decode: ($: (string | null)[]) => unknown;
+  encode: (data: Data<A>) => (string | null)[];
+  decode: (row: (string | null)[]) => unknown;
 } => {
-  const [a, b, c] = coders($);
-  console.log(`let F=0,O;${c}return O`);
+  const { length, en, de } = coders($);
   return {
-    length: a,
+    length,
     encode: Function(
-      "I",
-      `const O=Array(${a}).fill(null);let F=0;${b}return O`,
+      "data",
+      `const row=Array(${length}).fill(null);let at=0;${en}return row`,
     ) as any,
-    decode: Function("I", `let F=0,O;${c}return O`) as any,
+    decode: Function("row", `let at=0,raw;${de}return raw`) as any,
   };
 };
