@@ -29,7 +29,7 @@ const add = <A extends Type, B extends keyof A>(
     ? ""
     : `${
       typeof to === "string" ? `if(${to}${$[key]})` : to($[key])
-    }errors.push({path,value,error:[${JSON.stringify([key, $[key]])}]});${end}`;
+    }errors.push({path,raw,error:${JSON.stringify([key, $[key]])}});${end}`;
 const validate = ($: Type) => {
   let a = add($, "type", ($) => `if(${NOT[$]})`, "else{");
   if ("enum" in $) {

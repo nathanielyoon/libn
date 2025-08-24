@@ -76,7 +76,7 @@ export type Fail<A extends Type, B extends string = ""> =
           : never
         : {
           path: B;
-          value: unknown;
+          raw: unknown;
           error: [C, [C, D] extends ["required", readonly (infer E)[]] ? E : D];
         }
       : never
