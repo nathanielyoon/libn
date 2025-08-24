@@ -29,7 +29,7 @@ const coders = ($: Type): { length: number; en: string; de: string } => {
       return {
         length: 1,
         en: "row[at++]=data;",
-        de: $.format ? FORMATS[$.format] : fix,
+        de: $.format ? FORMATS[$.format] : "raw=row[at++]??null;",
       };
     case "array": {
       const { length, en, de } = coders($.items), a = length * $.maxItems + 1;
