@@ -4,7 +4,7 @@
  *
  * @example
  * ```ts
- * import { no, ok } from "@nyoon/lib/result.ts";
+ * import { no, ok } from "@nyoon/lib/result";
  * import { assert } from "jsr:@std/assert@^1.0.14";
  *
  * const base = Math.random() * 4;
