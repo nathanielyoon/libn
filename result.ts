@@ -31,23 +31,24 @@ export class Or<A = any, B = any> {
   protected *[Symbol.iterator](): Iterator<Or<A, B>, B> {
     return yield this;
   }
-  private copy($: Or): Or {
-    return this.is = $.is, this.value = $.value, this;
-  }
-  /** Mutates a successful result. */
+  /** Maps a successful result. */
   fmap<C>(ok: ($: B) => C): Or<A, C> {
-    return this.is && (this.value = ok(this.value)), this as any;
+    return this.is && (this.value = ok(this.value)), this as Or;
   }
   /** Maps a successful result to a new result. */
   bind<C, D>(ok: ($: B) => Or<C, D>): Or<A | C, D> {
-    return this.is ? this.copy(ok(this.value)) : this as any;
+    if (this.is) {
+      const { is, value } = ok(this.value);
+      this.is = is, this.value = value;
+    }
+    return this as Or;
   }
   /** Mutates a successful result, and fails if the new value is nullish. */
   lift<C, const D = never>(ok: ($: B) => C, no?: D): Or<A | D, NonNullable<C>> {
     if (this.is) {
       this.value = ok(this.value), this.value ??= (this.is = false, no);
     }
-    return this as any;
+    return this as Or;
   }
   /** Restricts a successful result with a type predicate. */
   assert<C extends B = B, const D = never>(
@@ -55,11 +56,11 @@ export class Or<A = any, B = any> {
     no?: D,
   ): Or<A | D, C> {
     if (this.is) (this.is = is(this.value)) || (this.value = no);
-    return this as any;
+    return this as Or;
   }
   /** Runs an imperative block, exiting early on failure. */
   do<C, D, E>(block: ($: B) => Generator<Or<C, D>, E>): Or<A | C, E> {
-    if (!this.is) return this as any;
+    if (!this.is) return this as Or;
     const a = block(this.value);
     const b = ($: IteratorResult<Or<C, D>, E>): Or<C, E> =>
       $.done ? ok($.value) : $.value.bind(($) => b(a.next($)));
@@ -72,7 +73,7 @@ export class Or<A = any, B = any> {
     } catch (thrown) {
       this.is = false;
       this.value = no?.(thrown) ?? Error(undefined, { cause: thrown });
-      return this as any;
+      return this as Or;
     }
   }
   /** Checks for failure. */
@@ -100,7 +101,7 @@ export class Or<A = any, B = any> {
   match<C, D>(no: ($: A) => C, ok: ($: B) => D): Or<C | D>;
   match<C, D>(no: ($: A) => C, ok?: ($: B) => D): Or<C | D> {
     this.value = this.is && ok ? ok(this.value) : no(this.value);
-    return this as any;
+    return this as Or;
   }
 }
 /** Failure! */
