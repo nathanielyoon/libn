@@ -57,10 +57,11 @@ const validate = ($: Type) => {
       } catch { /* empty */ }
       break;
     case "array":
-      a +=
-        `for(let p=path+"/",r=raw,d=data=Array(r.length),z=0;z<r.length;++z){const path=p+z,raw=r[z];let data;${
+      a += $.items
+        ? `for(let p=path+"/",r=raw,d=data=Array(r.length),z=0;z<r.length;++z){const path=p+z,raw=r[z];let data;${
           validate($.items)
-        }d[z]=data}`;
+        }d[z]=data}`
+        : "data=JSON.parse(JSON.stringify(raw));";
       a += add($, "minItems", "raw.length<");
       a += add($, "maxItems", "raw.length>");
       a += add(
@@ -74,15 +75,20 @@ const validate = ($: Type) => {
       );
       break;
     case "object": {
+      if (!$.properties) {
+        a += "data=JSON.parse(JSON.stringify(raw));";
+        break;
+      }
       const b = $.additionalProperties === false || "";
       a += `const p=path,r=raw,d=data={}${b && ",s=new Set(Object.keys(r))"};`;
       for (let c = Object.keys($.properties), z = 0; z < c.length; ++z) {
         const d = c[z], e = JSON.stringify(d);
         a += `{const path=p+"/${
           e.replaceAll("~", "~0").replaceAll("/", "~1").slice(1)
-        },raw=r[${e}];let data;if(raw!==undefined)${validate($.properties[d])}${
-          $.required.includes(d) ? `else(errors.required??=[]).push(${e});` : ""
-        }if(data!==undefined)d[${e}]=data}${b && `s.delete(${e});`}`;
+        },raw=r[${e}];${b && `s.delete(${e});`}if(raw!==undefined){let data;${
+          validate($.properties[d])
+        }if(data!==undefined)d[${e}]=data}`;
+        a += add($, "required", ($) => $.includes(d) ? "else " : "") + "}";
       }
       if (b) a += add($, "additionalProperties", () => "s.size&&");
       break;
@@ -96,7 +102,7 @@ export const validator = <A extends Type>(
 ): ($: unknown) => Or<Fail<A>[], Data<A>> =>
   Function(
     "raw",
-    `const errors=[];let path="",data;${
+    `let path="",data;const errors=[];${
       validate($)
     }return errors.length?this.no(errors):this.ok(data)`,
   ).bind({ no, ok });

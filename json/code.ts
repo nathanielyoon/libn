@@ -32,27 +32,37 @@ const coders = ($: Type): { length: number; en: string; de: string } => {
         de: $.format ? FORMATS[$.format] : "raw=row[at++]??null;",
       };
     case "array": {
-      const { length, en, de } = coders($.items), a = length * $.maxItems + 1;
-      return {
-        length: a,
-        en:
-          `{row[at++]=\`\${data.length}\`;for(let d=data,a=at,z=0;z<d.length;a+=${length},++z){const data=d[z];let at=a;${en}}at+=${a}}`,
-        de:
-          `{if(row[at])for(let r=raw=Array(Math.min(+row[at++]||0,${$.maxItems})),z=0;z<r.length;++z){let raw;${de}r[z]=raw}else raw=row[at++]==null?null:[]}`,
-      };
-    }
-    case "object": {
-      let a = 0, b = "{const d=data;", c = "{const r={};let c=0;";
-      for (let d = Object.keys($.properties), z = 0; z < d.length; ++z) {
-        const { length, en, de } = coders($.properties[d[z]]);
-        const e = JSON.stringify(d[z]);
-        a += length;
-        b += `{const data=d[${e}];if(data!==undefined)${en}else at+=${length}}`;
-        c += `{let raw;${de}if(raw!==null)r[${e}]=raw,++c}`;
+      if ($.items && $.maxItems !== undefined) {
+        const { length, en, de } = coders($.items), a = length * $.maxItems + 1;
+        return {
+          length: a,
+          en:
+            `{row[at++]=\`\${data.length}\`;for(let d=data,a=at,z=0;z<d.length;a+=${length},++z){const data=d[z];let at=a;${en}}at+=${a}}`,
+          de:
+            `{if(row[at])for(let r=raw=Array(Math.min(+row[at++]||0,${$.maxItems})),z=0;z<r.length;++z){let raw;${de}r[z]=raw}else raw=row[at++]==null?null:[]}`,
+        };
       }
-      return { length: a, en: b + "}", de: c + "raw=c?r:null}" };
+      break;
     }
+    case "object":
+      if ($.properties && $.required?.length) {
+        let a = 0, b = "{const d=data;", c = "{const r={};let c=0;";
+        for (let d = Object.keys($.properties), z = 0; z < d.length; ++z) {
+          const { length, en, de } = coders($.properties[d[z]]);
+          const e = JSON.stringify([d[z]]);
+          a += length;
+          b += `{const data=d${e};if(data!==undefined)${en}else at+=${length}}`;
+          c += `{let raw;${de}if(raw!==null)r${e}=raw,++c}`;
+        }
+        return { length: a, en: b + "}", de: c + "raw=c?r:null}" };
+      }
+      break;
   }
+  return {
+    length: 1,
+    en: "row[at++]=JSON.stringify(data);",
+    de: "try{raw=JSON.parse(row[at++])}catch{}",
+  };
 };
 /** Creates encoding and decoding functions. */
 export const coder = <A extends Type>($: A): {

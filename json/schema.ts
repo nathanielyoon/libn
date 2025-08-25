@@ -22,14 +22,14 @@ type Types = {
     pattern?: string;
   };
   array: {
-    items: Type;
+    items?: Type;
     minItems?: number;
-    maxItems: number;
+    maxItems?: number;
     uniqueItems?: boolean;
   };
   object: {
-    properties: { [key: string]: Type };
-    required: readonly [string, ...string[]];
+    properties?: { [key: string]: Type };
+    required?: readonly [string, ...string[]];
     additionalProperties?: boolean;
   };
 };
@@ -44,25 +44,17 @@ export type Data<A extends Type> = A extends { enum: readonly (infer B)[] } ? B
   : A extends { format: infer B extends keyof Formats } ? Formats[B]
   : A["type"] extends "string" ? string
   : A extends { items: infer B extends Type } ? readonly Data<B>[]
-  : A extends {
-    properties: infer B extends { [key: string]: Type };
-    required: readonly (infer C extends string)[];
-  } ? (
-      & { [D in Extract<keyof B, C>]: Data<B[D]> }
-      & { [D in Exclude<keyof B, C>]?: Data<B[D]> }
-    ) extends infer E ? { [F in keyof E]: E[F] } : never
+  : A["type"] extends "array" ? readonly unknown[]
+  : A extends { properties: infer B extends { [key: string]: Type } }
+    ? A extends { required: readonly (infer C extends string)[] } ? (
+        & { [D in Extract<keyof B, C>]: Data<B[D]> }
+        & { [D in Exclude<keyof B, C>]?: Data<B[D]> }
+      ) extends infer E ? { [F in keyof E]: E[F] } : never
+    : { [C in keyof B]?: Data<B[C]> }
+  : A["type"] extends "object" ? { [key: string]: unknown }
   : never;
 type Esc<A extends PropertyKey, B extends number, C> = C extends
   `${infer D}${A & string}${infer E}` ? `${D}~${B}${Esc<A, B, E>}` : C & string;
-type Base =
-  | "type"
-  | "enum"
-  | `${"min" | "max"}${"imum" | "Length" | "Items"}`
-  | "multipleOf"
-  | "format"
-  | "pattern";
-type Intersect<A> = (A extends never ? never : (_: A) => void) extends
-  (_: infer B) => void ? B : never;
 /** Union of error indicators. */
 export type Fail<A extends Type, B extends string = ""> =
   Exclude<keyof A, "title" | "description"> extends infer C
@@ -77,7 +69,10 @@ export type Fail<A extends Type, B extends string = ""> =
         : {
           path: B;
           raw: unknown;
-          error: [C, [C, D] extends ["required", readonly (infer E)[]] ? E : D];
+          error: readonly [
+            C,
+            [C, D] extends ["required", readonly (infer E)[]] ? E : D,
+          ];
         }
       : never
     : never
