@@ -95,5 +95,5 @@ export const object:
     Object.defineProperty<any>(
       () => typer("object", { additionalProperties: false }),
       "keys",
-      ($: Type<"object">) => Object.keys($.properties ?? {}),
+      { value: ($: Type<"object">) => Object.keys($.properties ?? {}) },
     );
