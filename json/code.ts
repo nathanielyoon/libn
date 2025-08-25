@@ -2,7 +2,7 @@ import type { Data, Type } from "./schema.ts";
 
 const fix = "raw=row[at++]?.trim().normalize()??null;";
 const iso =
-  '{const i=new Date(row[at++]||"");out=isNaN(i)?row[at-1]:i.toISOString()}';
+  '{const i=new Date(row[at++]||"");raw=isNaN(i)?row[at-1]:i.toISOString()}';
 const FORMATS = {
   date: iso.slice(0, -1) + ".slice(0,10)}",
   time: iso.slice(0, -1) + ".slice(11)}",
