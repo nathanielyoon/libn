@@ -52,9 +52,9 @@ export class Or<A = any, B = any> {
   /** Restricts a successful result with a type predicate. */
   assert<C extends B = B, const D = never>(
     is: (($: B) => $ is C) | (($: B) => any),
-    or?: D,
+    no?: D,
   ): Or<A | D, C> {
-    if (this.is) (this.is = is(this.value)) || (this.value = or);
+    if (this.is) (this.is = is(this.value)) || (this.value = no);
     return this as any;
   }
   /** Runs an imperative block, exiting early on failure. */
@@ -64,6 +64,16 @@ export class Or<A = any, B = any> {
     const b = ($: IteratorResult<Or<C, D>, E>): Or<C, E> =>
       $.done ? ok($.value) : $.value.bind(($) => b(a.next($)));
     return b(a.next());
+  }
+  /** Catches a possibly-throwing function. */
+  try<C, const D = Error>(ok: ($: B) => C, no?: ($: any) => D): Or<A | D, C> {
+    try {
+      return this.fmap(ok);
+    } catch (thrown) {
+      this.is = false;
+      this.value = no?.(thrown) ?? Error(undefined, { cause: thrown });
+      return this as any;
+    }
   }
   /** Checks for failure. */
   is_no(): this is No<A> {
@@ -84,6 +94,13 @@ export class Or<A = any, B = any> {
   /** Gets the result as a discriminated union. */
   get result(): { is: false; value: A } | { is: true; value: B } {
     return { is: this.is, value: this.value };
+  }
+  /** Applies a function based on the result state. */
+  match<C>(no: ($: A | B) => C): Or<C, C>;
+  match<C, D>(no: ($: A) => C, ok: ($: B) => D): Or<C | D>;
+  match<C, D>(no: ($: A) => C, ok?: ($: B) => D): Or<C | D> {
+    this.value = this.is && ok ? ok(this.value) : no(this.value);
+    return this as any;
   }
 }
 /** Failure! */
