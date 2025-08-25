@@ -108,6 +108,6 @@ export type No<A = any> = Or<A, never>;
 /** Success! */
 export type Ok<A = any> = Or<never, A>;
 /** Creates a failure. */
-export const no = <const A = never>($?: A): No<A> => new Or(false, $!);
+export const no = <const A = void>($?: A): No<A> => new Or(false, $!);
 /** Creates a success. */
-export const ok = <const A = never>($?: A): Ok<A> => new Or(true, $!);
+export const ok = <const A = void>($?: A): Ok<A> => new Or(true, $!);
