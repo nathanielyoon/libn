@@ -33,7 +33,7 @@ const type = <A extends Type>(type: A, to: ($: unknown) => any, or: any) =>
     fc.anything().map(($) => [type, to($) ? $ : or, {
       path: "",
       raw: to($) ? null : $,
-      error: ["type", type.type],
+      error: ["type", type.type] as const,
     } as Fail<A>]),
   );
 Deno.test("boolean", () => {

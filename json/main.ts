@@ -15,11 +15,11 @@
  *   validator,
  * } from "@nyoon/lib/json";
  *
- * const { type } = object({
+ * const { type } = object().properties({
  *   true: boolean().enum([true]),
  *   integer: number().multipleOf(1),
- *   strings: array(string().format("email"), 2),
- * }, ["integer", "strings"]);
+ *   strings: array().items(string().format("email")).maxItems(2),
+ * }).required(["integer", "strings"]);
  * const data = [null, "12345", "1", "john@jh.edu", null];
  * const { encode, decode } = coder(type), validate = validator(type);
  * assertEquals(encode(validate(decode(data)).unwrap(true)), data);
