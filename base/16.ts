@@ -1,8 +1,15 @@
-const BIN = new Uint8Array(256), STR = Array<string>(256);
-for (let z = 0, a; z < 16; ++z) {
-  BIN[a = z.toString(16).charCodeAt(0) | 32] = BIN[a & 95] = z;
-}
-for (let z = 0; z < 256; ++z) STR[z] = z.toString(16).padStart(2, "0");
+const BIN = /* @__PURE__ */ (() => {
+  const a = new Uint8Array(256);
+  for (let z = 0, b; z < 16; ++z) {
+    a[b = z.toString(16).charCodeAt(0) | 32] = a[b & 95] = z;
+  }
+  return a;
+})();
+const STR = /* @__PURE__ */ (() => {
+  const a = Array<string>(256);
+  for (let z = 0; z < 256; ++z) a[z] = z.toString(16).padStart(2, "0");
+  return a;
+})();
 /** Encodes binary -> base16 string. */
 export const en_b16 = ($: Uint8Array): string => {
   let a = "";

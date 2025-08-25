@@ -1,8 +1,7 @@
-const cc = String.fromCharCode;
 /** Encodes binary -> base64 string. */
 export const en_b64 = ($: Uint8Array): string => {
   let a = "";
-  for (let z = 0; z < $.length; ++z) a += cc($[z]);
+  for (let z = 0; z < $.length; ++z) a += String.fromCharCode($[z]);
   return btoa(a);
 };
 /** Decodes base64 string -> binary. */
@@ -23,8 +22,10 @@ export const en_u64 = ($: Uint8Array): string => {
   let a = "";
   for (let z = 0, b, c, d; z < $.length;) {
     b = $[z++], c = $[z++], d = $[z++];
-    a += cc(c_u64(b >> 2)), a += cc(c_u64(b << 4 & 63 | c >> 4));
-    a += cc(c_u64(c << 2 & 63 | d >> 6)), a += cc(c_u64(d & 63));
+    a += String.fromCharCode(c_u64(b >> 2));
+    a += String.fromCharCode(c_u64(b << 4 & 63 | c >> 4));
+    a += String.fromCharCode(c_u64(c << 2 & 63 | d >> 6));
+    a += String.fromCharCode(c_u64(d & 63));
   }
   return a.slice(0, Math.ceil($.length / 3 * 4));
 };

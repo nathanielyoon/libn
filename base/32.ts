@@ -28,10 +28,12 @@ const map = ($: string) => {
 const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const H32 = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
 /** Encodes binary -> base32 string. */
-export const en_b32: ($: Uint8Array) => string = encode(B32);
+export const en_b32: ($: Uint8Array) => string = /* @__PURE__ */ encode(B32);
 /** Decodes base32 string -> binary. */
-export const de_b32: ($: string) => Uint8Array<ArrayBuffer> = decode(map(B32));
+export const de_b32: ($: string) => Uint8Array<ArrayBuffer> =
+  /* @__PURE__ */ decode(/* @__PURE__ */ map(B32));
 /** Encodes binary -> base32hex string. */
-export const en_h32: ($: Uint8Array) => string = encode(H32);
+export const en_h32: ($: Uint8Array) => string = /* @__PURE__ */ encode(H32);
 /** Decodes base32hex string -> binary. */
-export const de_h32: ($: string) => Uint8Array<ArrayBuffer> = decode(map(H32));
+export const de_h32: ($: string) => Uint8Array<ArrayBuffer> =
+  /* @__PURE__ */ decode(/* @__PURE__ */ map(H32));
