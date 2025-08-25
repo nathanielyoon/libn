@@ -10,23 +10,23 @@ import { coder } from "../code.ts";
 import { Data, Fail, Type } from "../schema.ts";
 import { validator } from "../validate.ts";
 
-const fc_enum = <A>($: fc.Arbitrary<A>) =>
-  fc.uniqueArray($, { minLength: 3 }) as fc.Arbitrary<[A, A, ...A[]]>;
 const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>]>) =>
   fc.assert(
     fc.property($, ([type, data, fail]) => {
       const a = validator(type), b = coder(type);
       if (data !== undefined) {
-        const c = a(data).result;
-        assert(c.is), assertEquals(c.value, data);
-        const d = b.encode(c.value);
-        assertEquals(d.length, b.length), assertEquals(b.decode(d), data);
+        const c = a(data).unwrap(true);
+        assertEquals(c, data);
+        const d = b.encode(c);
+        assertEquals(d.length, b.length);
+        assertEquals(b.decode(d), data);
       }
       if (fail !== undefined) {
-        const c = a(fail.raw).result;
-        assert(!c.is), assertArrayIncludes(c.value, [fail]);
+        const c = a(fail.raw).unwrap(false);
+        assertArrayIncludes(c, [fail]);
       }
     }),
+    { numRuns: 256 },
   );
 const type = <A extends Type>(type: A, to: ($: unknown) => any, or: any) =>
   test(
@@ -46,6 +46,19 @@ Deno.test("boolean", () => {
     ]),
   );
 });
+const fc_enum = <A>($: fc.Arbitrary<A>) =>
+  fc.uniqueArray($, {
+    minLength: 2,
+    comparator: "SameValueZero",
+  }) as fc.Arbitrary<[A, A, ...A[]]>;
+const fc_min_max = fc.uniqueArray(fc_number(), {
+  minLength: 2,
+  maxLength: 2,
+  comparator: "SameValueZero",
+}).map(($) => {
+  const [min, max] = new Float64Array($).sort();
+  return { min, max };
+});
 Deno.test("number", () => {
   type(number().type, Number.isFinite as ($: any) => $ is number, 0);
   test(
@@ -55,16 +68,48 @@ Deno.test("number", () => {
       { path: "", raw: head, error: ["enum", rest] },
     ]),
   );
+  test(fc_min_max.map(({ min, max }) => [
+    number().minimum(max).type,
+    max,
+    { path: "", raw: min, error: ["minimum", max] },
+  ]));
+  test(fc_min_max.map(({ min, max }) => [
+    number().maximum(min).type,
+    min,
+    { path: "", raw: max, error: ["maximum", min] },
+  ]));
+  test(
+    fc_min_max.filter(({ min, max }) => min !== 0 && max % min !== 0)
+      .map(({ min, max }) => [
+        number().multipleOf(min).type,
+        min,
+        { path: "", raw: max, error: ["multipleOf", min] },
+      ]),
+  );
 });
 Deno.test("string", () => {
   type(string().type, ($) => typeof $ === "string" && $ === $.normalize(), "");
   test(
-    fc_enum(fc_string().filter(($) => $ === $.normalize()))
+    fc_enum(fc_string().map(($) => $.normalize()))
       .map(([head, ...rest]) => [
         string().enum(rest).type,
         rest[0],
         { path: "", raw: head, error: ["enum", rest] },
       ]),
+  );
+  test(
+    fc_string({ minLength: 1 }).map(($) => $.normalize()).map(($) => [
+      string().minLength($.length).type,
+      $,
+      { path: "", raw: $.slice(1), error: ["minLength", $.length] },
+    ]),
+  );
+  test(
+    fc_string().map(($) => $.normalize()).map(($) => [
+      string().maxLength($.length).type,
+      $,
+      { path: "", raw: $ + "!", error: ["maxLength", $.length] },
+    ]),
   );
 });
 Deno.test("array", () => {
