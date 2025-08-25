@@ -36,7 +36,7 @@ type Typer<A extends Type> =
     ? A extends { properties: infer B extends { [key: string]: Type } } ?
         & (A extends { required: readonly string[] } ? {} : {
           required: {
-            (): Typer<To<A, "required", Tuple<keyof B>>>;
+            (): Typer<To<A, "required", Tuple<keyof B & string>>>;
             <const C extends [keyof B, ...(keyof B)[]]>(
               $: C,
             ): Typer<To<A, "required", C>>;
