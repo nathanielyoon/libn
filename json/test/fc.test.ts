@@ -148,6 +148,7 @@ Deno.test("string", () => {
       ];
     }),
   );
+  assert(validator(string().pattern("(").type)("").is_ok());
 });
 Deno.test("array", () => {
   type(array().type, Array.isArray, []);
