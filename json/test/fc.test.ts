@@ -9,6 +9,7 @@ import { array, boolean, number, object, string } from "../build.ts";
 import { coder } from "../code.ts";
 import { Data, Fail, Type } from "../schema.ts";
 import { validator } from "../validate.ts";
+import { FORMATS } from "@nyoon/lib/json";
 
 const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>]>) =>
   fc.assert(
@@ -26,7 +27,6 @@ const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>]>) =>
         assertArrayIncludes(c, [fail]);
       }
     }),
-    { numRuns: 256 },
   );
 const type = <A extends Type>(type: A, to: ($: unknown) => any, or: any) =>
   test(
@@ -87,15 +87,19 @@ Deno.test("number", () => {
       ]),
   );
 });
+const fc_iso = fc.date({
+  noInvalidDate: true,
+  min: new Date("0000"),
+  max: new Date("9999-12-31T23:59:59.999Z"),
+}).map(($) => $.toISOString());
 Deno.test("string", () => {
   type(string().type, ($) => typeof $ === "string" && $ === $.normalize(), "");
   test(
-    fc_enum(fc_string().map(($) => $.normalize()))
-      .map(([head, ...rest]) => [
-        string().enum(rest).type,
-        rest[0],
-        { path: "", raw: head, error: ["enum", rest] },
-      ]),
+    fc_enum(fc_string().map(($) => $.normalize())).map(([head, ...rest]) => [
+      string().enum(rest).type,
+      rest[0],
+      { path: "", raw: head, error: ["enum", rest] },
+    ]),
   );
   test(
     fc_string({ minLength: 1 }).map(($) => $.normalize()).map(($) => [
@@ -110,6 +114,38 @@ Deno.test("string", () => {
       $,
       { path: "", raw: $ + "!", error: ["maxLength", $.length] },
     ]),
+  );
+  test(
+    fc.constantFrom(...Object.keys(FORMATS) as (keyof typeof FORMATS)[])
+      .chain(($) =>
+        fc.tuple(
+          fc.constant(string().format($).type),
+          ($ === "date"
+            ? fc_iso.map(($) => $.slice(0, 10))
+            : $ === "time"
+            ? fc_iso.map(($) => $.slice(11))
+            : $ === "date-time"
+            ? fc_iso
+            : fc.stringMatching(FORMATS[$]).map(($) =>
+              $.normalize().trim()
+            )) as fc.Arbitrary<Data<Type<"string"> & { format: typeof $ }>>,
+          fc.constant({
+            path: "",
+            raw: "",
+            error: ["format", $],
+          } as any),
+        )
+      ),
+  );
+  test(
+    fc.string().map(($) => {
+      const a = `^${$.replaceAll(/[$(-+./?[-^{|}]/g, "\\$&")}$`;
+      return [
+        string().pattern(a).type,
+        $,
+        { path: "", raw: $ + "!", error: ["pattern", a] },
+      ];
+    }),
   );
 });
 Deno.test("array", () => {
