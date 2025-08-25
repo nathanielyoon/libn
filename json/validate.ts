@@ -85,10 +85,11 @@ const validate = ($: Type) => {
         const d = c[z], e = JSON.stringify(d);
         a += `{const path=p+"/${
           e.replaceAll("~", "~0").replaceAll("/", "~1").slice(1)
-        },raw=r[${e}];${b && `s.delete(${e});`}if(raw!==undefined){let data;${
+        },raw=r[${e}];if(raw!==undefined){let data;${
           validate($.properties[d])
         }if(data!==undefined)d[${e}]=data}`;
-        a += add($, "required", ($) => $.includes(d) ? "else " : "") + "}";
+        if ($.required?.includes(d)) a += add($, "required", () => "else ");
+        a += `${b && `s.delete(${e});`}}`;
       }
       if (b) a += add($, "additionalProperties", () => "s.size&&");
       break;
