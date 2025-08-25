@@ -13,6 +13,7 @@
     "./vite-plugin-inline": "./inline.ts"
   },
   "lint": {
+    "exclude": ["./test.ts"],
     "rules": {
       "include": [
         "default-param-last",
