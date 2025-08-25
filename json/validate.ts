@@ -14,9 +14,9 @@ export const FORMATS: { [_ in Type<"string">["format"] & string]: RegExp } = {
   uuid: /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/,
 };
 const NOT = {
-  boolean: 'typeof (data=raw)!=="boolean"',
-  number: "!Number.isFinite(data=raw)",
-  string: `typeof raw!=="string"||raw!==(data=raw).normalize()`,
+  boolean: 'typeof raw!=="boolean"',
+  number: "!Number.isFinite(raw)",
+  string: `typeof raw!=="string"||raw!==raw.normalize()`,
   array: "!Array.isArray(raw)",
   object: 'typeof raw!=="object"||!raw||Array.isArray(raw)',
 };
@@ -96,7 +96,7 @@ const validate = ($: Type) => {
       break;
     }
   }
-  return a + "}";
+  return a + "data??=raw}";
 };
 /** Creates a validating function. */
 export const validator = <A extends Type>(
