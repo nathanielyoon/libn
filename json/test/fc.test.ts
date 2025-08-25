@@ -182,6 +182,7 @@ Deno.test("array", () => {
       { path: "", raw: [$, $], error: ["uniqueItems", true as const] },
     ]),
   );
+  assert(validator({ type: "array", uniqueItems: false })([0, 0]).is_ok());
 });
 Deno.test("object", () => {
   type(
@@ -219,6 +220,13 @@ Deno.test("object", () => {
       raw: { [$]: {} },
       error: ["additionalProperties", false as const],
     }]),
+  );
+  assert(
+    validator({
+      type: "object",
+      properties: {},
+      additionalProperties: true,
+    })({ "": 0 }).is_ok(),
   );
   assertEquals(object.keys(object().properties({}).type), []);
 });
