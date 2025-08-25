@@ -45,10 +45,13 @@ const double = ($: bigint) => {
   const i = g - (c * c % P << 1n) % P, j = (a + b) ** 2n % P - d - f;
   return p(i * j) | p(g * h) << 256n | p(g * i) << 512n | p(h * j) << 768n;
 };
-const G = Array<bigint>(4224); // pre-computed multiples of base point
-for (let z = 0, a = B, b, y; z < 4224; a = double(b)) {
-  for (y = 0, G[z++] = b = a; y < 127; ++y) G[z++] = b = add(b, a);
-}
+const G = /* @__PURE__ */ (() => { // pre-computed multiples of base point
+  const a = Array<bigint>(4224);
+  for (let z = 0, b = B, c, y; z < 4224; b = double(c)) {
+    for (y = 0, a[z++] = c = b; y < 127; ++y) a[z++] = c = add(c, b);
+  }
+  return a;
+})();
 const wnaf = ($: bigint) => {
   let a = 1n << 256n | 1n << 512n, b = B, c, d, e, z = 0;
   do (c = Number($ & 255n), $ >>= 8n, c > 128 && (c -= 256, ++$)),
