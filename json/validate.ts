@@ -89,7 +89,9 @@ const validate = ($: Type) => {
         },raw=r[${e}];if(raw!==undefined){let data;${
           validate($.properties[d])
         }if(data!==undefined)d[${e}]=data}`;
-        if ($.required?.includes(d)) a += add($, "required", () => "else ");
+        if ($.required?.includes(d)) {
+          a += `else errors.push({path:p,raw,error:["required",${e}]});`;
+        }
         a += `${b && `s.delete(${e});`}}`;
       }
       if (b) a += add($, "additionalProperties", () => "s.size&&");
