@@ -7,7 +7,7 @@ import fc from "npm:fast-check@^4.2.0";
 import { fc_number, fc_string } from "../../test.ts";
 import { array, boolean, number, object, string } from "../build.ts";
 import { coder } from "../code.ts";
-import { Data, Fail, Type } from "../schema.ts";
+import type { Data, Fail, Type } from "../schema.ts";
 import { validator } from "../validate.ts";
 import { FORMATS } from "@nyoon/lib/json";
 
