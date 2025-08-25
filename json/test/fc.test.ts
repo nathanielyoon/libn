@@ -187,4 +187,35 @@ Deno.test("object", () => {
     ($) => typeof $ === "object" && $ && !Array.isArray($),
     {},
   );
+  test(
+    fc.boolean().map(($) => [
+      object().properties({ "": boolean().enum([$]) }).type,
+      { "": $ },
+      { path: "/", raw: !$, error: ["enum", [$] as const] },
+      { "": !$ },
+    ]),
+  );
+  test(
+    fc_string().map(($) => [
+      object().properties({ [$]: boolean() }).required([$]).type,
+      { [$]: true },
+      { path: "", raw: undefined, error: ["required", $] },
+      {},
+    ]),
+  );
+  test(
+    fc_string().map(($) => [
+      object().properties({ [$]: boolean() }).required().type,
+      { [$]: true },
+      { path: "", raw: undefined, error: ["required", $] },
+      {},
+    ]),
+  );
+  test(
+    fc_string().map(($) => [object().properties({}).type, {}, {
+      path: "",
+      raw: { [$]: {} },
+      error: ["additionalProperties", false as const],
+    }]),
+  );
 });
