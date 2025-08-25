@@ -126,9 +126,10 @@ Deno.test("string", () => {
             ? fc_iso.map(($) => $.slice(11))
             : $ === "date-time"
             ? fc_iso
-            : fc.stringMatching(FORMATS[$]).map(($) =>
-              $.normalize().trim()
-            )) as fc.Arbitrary<Data<Type<"string"> & { format: typeof $ }>>,
+            : fc.stringMatching(FORMATS[$]).map(($) => $.normalize().trim())
+              .filter(RegExp.prototype.test.bind(FORMATS[$]))) as fc.Arbitrary<
+              Data<Type<"string"> & { format: typeof $ }>
+            >,
           fc.constant({
             path: "",
             raw: "",
