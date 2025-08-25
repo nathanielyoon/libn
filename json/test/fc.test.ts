@@ -27,6 +27,7 @@ const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>, any?]>) =>
         assertArrayIncludes(c, [fail]);
       }
     }),
+    { seed: -1716222786, path: "39" },
   );
 const type = <A extends Type>(type: A, to: ($: unknown) => any, or: any) =>
   test(
@@ -200,7 +201,7 @@ Deno.test("object", () => {
     fc_string().map(($) => [
       object().properties({ [$]: boolean() }).required([$]).type,
       { [$]: true },
-      { path: "", raw: undefined, error: ["required", $] },
+      { path: "", raw: null, error: ["required", $] },
       {},
     ]),
   );
@@ -208,7 +209,7 @@ Deno.test("object", () => {
     fc_string().map(($) => [
       object().properties({ [$]: boolean() }).required().type,
       { [$]: true },
-      { path: "", raw: undefined, error: ["required", $] },
+      { path: "", raw: null, error: ["required", $] },
       {},
     ]),
   );
@@ -219,4 +220,5 @@ Deno.test("object", () => {
       error: ["additionalProperties", false as const],
     }]),
   );
+  assertEquals(object.keys(object().properties({}).type), []);
 });
