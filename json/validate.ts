@@ -65,15 +65,15 @@ const validate = ($: Type) => {
         : "data=JSON.parse(JSON.stringify(raw));";
       a += add($, "minItems", "raw.length<");
       a += add($, "maxItems", "raw.length>");
-      a += add(
-        $,
-        "uniqueItems",
-        ($) =>
-          $
-            ? "for(let s=new Set(),z=0;z<data.length;++z)if(s.size===s.add(JSON.stringify(data[z])).size){"
-            : "",
-        "break}",
-      );
+      if ($.uniqueItems) {
+        a += add(
+          $,
+          "uniqueItems",
+          () =>
+            "for(let s=new Set(),z=0;z<data.length;++z)if(s.size===s.add(JSON.stringify(data[z])).size){",
+          "break}",
+        );
+      }
       break;
     case "object": {
       if (!$.properties) {
