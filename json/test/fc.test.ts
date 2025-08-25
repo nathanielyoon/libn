@@ -11,9 +11,9 @@ import { Data, Fail, Type } from "../schema.ts";
 import { validator } from "../validate.ts";
 import { FORMATS } from "@nyoon/lib/json";
 
-const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>]>) =>
+const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>, any?]>) =>
   fc.assert(
-    fc.property($, ([type, data, fail]) => {
+    fc.property($, ([type, data, fail, raw]) => {
       const a = validator(type), b = coder(type);
       if (data !== undefined) {
         const c = a(data).unwrap(true);
@@ -23,7 +23,7 @@ const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>]>) =>
         assertEquals(b.decode(d), data);
       }
       if (fail !== undefined) {
-        const c = a(fail.raw).unwrap(false);
+        const c = a(raw ?? fail.raw).unwrap(false);
         assertArrayIncludes(c, [fail]);
       }
     }),
@@ -150,6 +150,35 @@ Deno.test("string", () => {
 });
 Deno.test("array", () => {
   type(array().type, Array.isArray, []);
+  test(
+    fc.boolean().map(($) => [
+      array().items(boolean().enum([$])).type,
+      [$],
+      { path: "/0", raw: !$, error: ["enum", [$] as const] },
+      [!$],
+    ]),
+  );
+  test(
+    fc.array(fc.jsonValue(), { minLength: 1 }).map(($) => [
+      array().minItems($.length).type,
+      $,
+      { path: "", raw: $.slice(1), error: ["minItems", $.length] },
+    ]),
+  );
+  test(
+    fc.array(fc.jsonValue()).map(($) => [
+      array().maxItems($.length).type,
+      $,
+      { path: "", raw: [...$, null], error: ["maxItems", $.length] },
+    ]),
+  );
+  test(
+    fc.boolean().map(($) => [
+      array().items(boolean()).uniqueItems().type,
+      [$],
+      { path: "", raw: [$, $], error: ["uniqueItems", true as const] },
+    ]),
+  );
 });
 Deno.test("object", () => {
   type(
