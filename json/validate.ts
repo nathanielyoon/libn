@@ -86,11 +86,11 @@ const validate = ($: Type) => {
         const d = c[z], e = JSON.stringify(d);
         a += `{const path=p+"/${
           e.replaceAll("~", "~0").replaceAll("/", "~1").slice(1)
-        },raw=r[${e}];if(raw!==undefined){let data;${
+        };if(Object.hasOwn(r,${e})){const raw=r[${e}];let data;${
           validate($.properties[d])
         }if(data!==undefined)d[${e}]=data}`;
         if ($.required?.includes(d)) {
-          a += `else errors.push({path:p,raw,error:["required",${e}]});`;
+          a += `else errors.push({path:p,raw:null,error:["required",${e}]});`;
         }
         a += `${b && `s.delete(${e});`}}`;
       }
