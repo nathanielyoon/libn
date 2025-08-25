@@ -47,7 +47,7 @@ type Typer<A extends Type> =
           }
           : {})
     : {
-      properties: <const B extends { [key: string]: Type }>(
+      properties: <const B extends { [key: string]: Type } = {}>(
         $: { readonly [C in keyof B]: { type: B[C] } },
       ) => Typer<To<A, "properties", B>>;
     }
