@@ -5,7 +5,7 @@ import {
 } from "jsr:@std/assert@^1.0.14";
 import fc from "npm:fast-check@^4.2.0";
 import { fc_number, fc_string } from "../../test.ts";
-import { array, boolean, number, string } from "../build.ts";
+import { array, boolean, number, object, string } from "../build.ts";
 import { coder } from "../code.ts";
 import { Data, Fail, Type } from "../schema.ts";
 import { validator } from "../validate.ts";
@@ -18,8 +18,8 @@ const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>]>) =>
       const a = validator(type), b = coder(type);
       if (data !== undefined) {
         const c = a(data).result;
-        assertEquals(c, { is: true, value: data });
-        const d = b.encode(c.value as Data<A>);
+        assert(c.is), assertEquals(c.value, data);
+        const d = b.encode(c.value);
         assertEquals(d.length, b.length), assertEquals(b.decode(d), data);
       }
       if (fail !== undefined) {
@@ -30,7 +30,7 @@ const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>]>) =>
   );
 const type = <A extends Type>(type: A, to: ($: unknown) => any, or: any) =>
   test(
-    fc.anything().map(($) => [type, to($) ? $ : or, {
+    fc.jsonValue().map(($) => [type, to($) ? $ : or, {
       path: "",
       raw: to($) ? null : $,
       error: ["type", type.type] as const,
@@ -65,5 +65,15 @@ Deno.test("string", () => {
         rest[0],
         { path: "", raw: head, error: ["enum", rest] },
       ]),
+  );
+});
+Deno.test("array", () => {
+  type(array().type, Array.isArray, []);
+});
+Deno.test("object", () => {
+  type(
+    object().type,
+    ($) => typeof $ === "object" && $ && !Array.isArray($),
+    {},
   );
 });
