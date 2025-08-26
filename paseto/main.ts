@@ -25,6 +25,7 @@
  * });
  * ```
  *
+ * @see [PASETO website](https://paseto.io/)
  * @see [PASETO spec](https://github.com/paseto-standard/paseto-spec)
  */
 
@@ -51,15 +52,15 @@ export const PAYLOAD: {
     nbf: { type: "string"; format: "date-time" };
     exp: { type: "string"; format: "date-time" };
   };
-  additionalProperties: false;
   required: ["iss", "sub", "aud", "nbf", "exp"];
+  additionalProperties: true;
 } = object().properties({
   iss: string().contentEncoding("base64url"),
   sub: string().contentEncoding("base64url"),
   aud: string().contentEncoding("base64url"),
   nbf: string().format("date-time"),
   exp: string().format("date-time"),
-}).required(["iss", "sub", "aud", "nbf", "exp"]).type;
+}).required(["iss", "sub", "aud", "nbf", "exp"]).additionalProperties().type;
 /** Encodes and signs a PASETO. */
 export const en_token = (
   secret_key: Uint8Array,
@@ -75,7 +76,7 @@ export const de_token = ($: string | null): Or<
   400 | 401 | 403,
   { payload: Data<typeof PAYLOAD>; footer: Uint8Array<ArrayBuffer> }
 > =>
-  ok(/^v4\.public\.(?<body>[-\w]{383})\.(?<footer>[-\w]*)$/.exec($ ?? ""))
+  ok(/^v4\.public\.(?<body>[-\w]{383,})\.(?<footer>[-\w]*)$/.exec($ ?? ""))
     .bind(lift(401))
     .bind(run(function* ([_, body, footer]) {
       const a = de_u64(body), b = de_u64(footer), c = a.subarray(0, -64);
