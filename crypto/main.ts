@@ -71,4 +71,3 @@
 export * from "./hash.ts";
 export * from "./25519.ts";
 export * from "./aead.ts";
-export * from "./paseto.ts";

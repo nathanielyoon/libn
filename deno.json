@@ -8,6 +8,7 @@
     "./crypto": "./crypto/main.ts",
     "./csv": "./csv/main.ts",
     "./json": "./json/main.ts",
+    "./paseto": "./paseto/main.ts",
     "./query": "./query/main.ts",
     "./result": "./result/main.ts",
     "./signal": "./signal/main.ts",
