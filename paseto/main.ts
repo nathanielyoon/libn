@@ -59,7 +59,7 @@ export const PAYLOAD: {
   aud: string().contentEncoding("base64url"),
   nbf: string().format("date-time"),
   exp: string().format("date-time"),
-}).required().type;
+}).required(["iss", "sub", "aud", "nbf", "exp"]).type;
 /** Encodes and signs a PASETO. */
 export const en_token = (
   secret_key: Uint8Array,
