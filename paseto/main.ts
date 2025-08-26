@@ -7,7 +7,7 @@
  * import { en_u64 } from "@nyoon/lib/base";
  * import { generate } from "@nyoon/lib/crypto";
  * import { type Formats } from "@nyoon/lib/json";
- * import { de_token, en_token, PAYLOAD } from "@nyoon/lib/paseto";
+ * import { de_token, en_token } from "@nyoon/lib/paseto";
  * import { assertEquals } from "jsr:@std/assert@^1.0.14";
  *
  * const secret_key = crypto.getRandomValues(new Uint8Array(32));
@@ -31,7 +31,7 @@
 import { de_bin, de_u64, en_bin, en_u64 } from "@nyoon/lib/base";
 import { sign, verify } from "@nyoon/lib/crypto";
 import { type Data, object, string, validator } from "@nyoon/lib/json";
-import { lift, no, ok, run, try_catch } from "@nyoon/lib/result";
+import { lift, no, ok, type Or, run, try_catch } from "@nyoon/lib/result";
 
 const pae = (payload: Uint8Array, footer: Uint8Array) => {
   const a = payload.length, b = new Uint8Array(50 + a + footer.length);
@@ -42,10 +42,22 @@ const pae = (payload: Uint8Array, footer: Uint8Array) => {
   return b;
 };
 /** PASETO payload. */
-export const PAYLOAD = object().properties({
-  iss: string().pattern("^[-\\w]{43}$"),
-  sub: string().pattern("^[-\\w]{43}$"),
-  aud: string().pattern("^[-\\w]{43}$"),
+export const PAYLOAD: {
+  type: "object";
+  properties:
+    & {
+      [_ in "iss" | "sub" | "aud"]: {
+        type: "string";
+        contentEncoding: "base64url";
+      };
+    }
+    & { [_ in "nbf" | "exp"]: { type: "string"; format: "date-time" } };
+  additionalProperties: false;
+  required: ["iss", "sub", "aud", "nbf", "exp"];
+} = object().properties({
+  iss: string().contentEncoding("base64url"),
+  sub: string().contentEncoding("base64url"),
+  aud: string().contentEncoding("base64url"),
   nbf: string().format("date-time"),
   exp: string().format("date-time"),
 }).required().type;
@@ -61,15 +73,18 @@ export const en_token = (
   return `v4.public.${en_u64(b)}.${en_u64(footer)}`;
 };
 /** Decodes and verifies a PASETO. */
-export const de_token = ($: string | null) =>
+export const de_token = ($: string | null): Or<
+  400 | 401 | 403,
+  { payload: Data<typeof PAYLOAD>; footer: Uint8Array<ArrayBuffer> }
+> =>
   ok(/^v4\.public\.(?<body>[-\w]{383})\.(?<footer>[-\w]*)$/.exec($ ?? ""))
     .bind(lift(401))
     .bind(run(function* ([_, body, footer]) {
       const a = de_u64(body), b = de_u64(footer), c = a.subarray(0, -64);
-      const d = yield* try_catch(JSON.parse, () => 400)(de_bin(c));
-      const e = yield* validator(PAYLOAD)(d).fmap(($) => $, () => 400);
+      const d = yield* try_catch(JSON.parse, () => 400 as const)(de_bin(c));
+      const e = yield* validator(PAYLOAD)(d).fmap(($) => $, () => 400 as const);
       if (!verify(de_u64(e.iss), pae(c, b), a.subarray(-64))) yield* no(403);
       const f = Date.now();
-      if (+new Date(e.nbf) > f || +new Date(e.exp) < f) yield* no(410);
+      if (+new Date(e.nbf) > f || +new Date(e.exp) < f) yield* no(403);
       return { payload: e, footer: b };
     }));
