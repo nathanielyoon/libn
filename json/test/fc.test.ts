@@ -8,8 +8,7 @@ import { fc_number, fc_string } from "../../test.ts";
 import { array, boolean, number, object, string } from "../build.ts";
 import { coder } from "../code.ts";
 import type { Data, Fail, Type } from "../schema.ts";
-import { validator } from "../validate.ts";
-import { FORMATS } from "@nyoon/lib/json";
+import { REGEX, validator } from "../validate.ts";
 
 const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>, any?]>) =>
   fc.assert(fc.property($, ([type, data, fail, raw]) => {
@@ -114,7 +113,7 @@ Deno.test("string", () => {
     ]),
   );
   test(
-    fc.constantFrom(...Object.keys(FORMATS) as (keyof typeof FORMATS)[])
+    fc.constantFrom(...Object.keys(REGEX) as (keyof typeof REGEX)[])
       .chain(($) =>
         fc.tuple(
           fc.constant(string().format($).type),
@@ -124,8 +123,8 @@ Deno.test("string", () => {
             ? fc_iso.map(($) => $.slice(11))
             : $ === "date-time"
             ? fc_iso
-            : fc.stringMatching(FORMATS[$]).map(($) => $.normalize().trim())
-              .filter(RegExp.prototype.test.bind(FORMATS[$]))) as fc.Arbitrary<
+            : fc.stringMatching(REGEX[$]).map(($) => $.normalize().trim())
+              .filter(RegExp.prototype.test.bind(REGEX[$]))) as fc.Arbitrary<
               Data<Type<"string"> & { format: typeof $ }>
             >,
           fc.constant({

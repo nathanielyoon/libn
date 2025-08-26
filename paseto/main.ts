@@ -28,10 +28,10 @@
  * @see [PASETO spec](https://github.com/paseto-standard/paseto-spec)
  */
 
-import { de_bin, de_u64, en_bin, en_u64 } from "@nyoon/lib/base";
-import { sign, verify } from "@nyoon/lib/crypto";
-import { type Data, object, string, validator } from "@nyoon/lib/json";
-import { lift, no, ok, type Or, run, try_catch } from "@nyoon/lib/result";
+import { de_bin, de_u64, en_bin, en_u64 } from "../base/main.ts";
+import { sign, verify } from "../crypto/main.ts";
+import { type Data, object, string, validator } from "../json/main.ts";
+import { lift, no, ok, type Or, run, try_catch } from "../result/main.ts";
 
 const pae = (payload: Uint8Array, footer: Uint8Array) => {
   const a = payload.length, b = new Uint8Array(50 + a + footer.length);
@@ -44,14 +44,13 @@ const pae = (payload: Uint8Array, footer: Uint8Array) => {
 /** PASETO payload. */
 export const PAYLOAD: {
   type: "object";
-  properties:
-    & {
-      [_ in "iss" | "sub" | "aud"]: {
-        type: "string";
-        contentEncoding: "base64url";
-      };
-    }
-    & { [_ in "nbf" | "exp"]: { type: "string"; format: "date-time" } };
+  properties: {
+    iss: { type: "string"; contentEncoding: "base64url" };
+    sub: { type: "string"; contentEncoding: "base64url" };
+    aud: { type: "string"; contentEncoding: "base64url" };
+    nbf: { type: "string"; format: "date-time" };
+    exp: { type: "string"; format: "date-time" };
+  };
   additionalProperties: false;
   required: ["iss", "sub", "aud", "nbf", "exp"];
 } = object().properties({

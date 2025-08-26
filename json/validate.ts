@@ -1,4 +1,4 @@
-import { no, ok, type Or } from "@nyoon/lib/result";
+import { no, ok, type Or } from "../result/main.ts";
 import type { Base, Data, Fail, Formats, Type } from "./schema.ts";
 
 const date = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
