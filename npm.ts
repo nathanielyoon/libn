@@ -1,19 +1,17 @@
 import { build, emptyDir } from "jsr:@deno/dnt@^0.42.3";
+import config from "./deno.json" with { type: "json" };
 
-await Deno.mkdir("./npm", { recursive: true });
-await emptyDir("./npm");
-const { exports, name, version } =
-  (await import("./deno.json", { with: { type: "json" } })).default;
+await Deno.mkdir("./npm", { recursive: true }), await emptyDir("./npm");
 await build({
-  entryPoints: Object.entries(exports).map(([name, path]) => ({
+  entryPoints: Object.entries(config.exports).map(([name, path]) => ({
     name,
     path,
   })),
   outDir: "./npm",
   package: {
-    name,
+    name: config.name,
     description: "Common modules.",
-    version,
+    version: config.version,
     license: "GPL-3.0-or-later",
     repository: {
       type: "git",
@@ -26,6 +24,5 @@ await build({
   scriptModule: false,
   skipNpmInstall: true,
 });
-
 await Deno.copyFile("./LICENSE", "./npm/LICENSE");
 await Deno.copyFile("./README.md", "./npm/README.md");
