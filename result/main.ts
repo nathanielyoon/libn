@@ -60,7 +60,7 @@ export class Or<A = any, B = any> {
   unwrap<C extends boolean>(only_if?: C):
     | (C extends false ? A : never)
     | (C extends true ? B : never) {
-    if (only_if !== !this.state) throw Error(undefined, { cause: this.value });
+    if (only_if === !this.state) throw Error(undefined, { cause: this.value });
     return this.value;
   }
 }
