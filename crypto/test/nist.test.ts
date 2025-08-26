@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@^1.0.14";
-import { de_b16 } from "../../base/16.ts";
+import { de_b16 } from "@nyoon/lib/base";
 import { get_json, write } from "../../test.ts";
 import { sha256, sha512 } from "../hash.ts";
 
