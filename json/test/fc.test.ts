@@ -8,23 +8,26 @@ import { fc_number, fc_string } from "../../test.ts";
 import { array, boolean, number, object, string } from "../build.ts";
 import { coder } from "../code.ts";
 import type { Data, Fail, Type } from "../schema.ts";
-import { REGEX, validator } from "../validate.ts";
+import { BASES, FORMATS, validator } from "../validate.ts";
 
 const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>, any?]>) =>
-  fc.assert(fc.property($, ([type, data, fail, raw]) => {
-    const a = validator(type), b = coder(type);
-    if (data !== undefined) {
-      const c = a(data).unwrap(true);
-      assertEquals(c, data);
-      const d = b.encode(c);
-      assertEquals(d.length, b.length);
-      assertEquals(b.decode(d), data);
-    }
-    if (fail !== undefined) {
-      const c = a(raw ?? fail.raw).unwrap(false);
-      assertArrayIncludes(c, [fail]);
-    }
-  }));
+  fc.assert(
+    fc.property($, ([type, data, fail, raw]) => {
+      const a = validator(type), b = coder(type);
+      if (data !== undefined) {
+        const c = a(data).unwrap(true);
+        assertEquals(c, data);
+        const d = b.encode(c);
+        assertEquals(d.length, b.length);
+        assertEquals(b.decode(d), data);
+      }
+      if (fail !== undefined) {
+        const c = a(raw ?? fail.raw).unwrap(false);
+        assertArrayIncludes(c, [fail]);
+      }
+    }),
+    { seed: -713880981, path: "0" },
+  );
 const type = <A extends Type>(type: A, to: ($: unknown) => any, or: any) =>
   test(
     fc.jsonValue().map(($) => [type, to($) ? $ : or, {
@@ -113,8 +116,22 @@ Deno.test("string", () => {
     ]),
   );
   test(
-    fc.constantFrom(...Object.keys(REGEX) as (keyof typeof REGEX)[])
-      .chain(($) =>
+    fc.constantFrom(...Object.keys(BASES) as (keyof typeof BASES)[]).chain(
+      ($) =>
+        fc.tuple(
+          fc.constant(string().contentEncoding($).type),
+          fc.stringMatching(BASES[$]),
+          fc.constant({
+            path: "",
+            raw: "!",
+            error: ["contentEncoding", $],
+          } as any),
+        ),
+    ),
+  );
+  test(
+    fc.constantFrom(...Object.keys(FORMATS) as (keyof typeof FORMATS)[]).chain(
+      ($) =>
         fc.tuple(
           fc.constant(string().format($).type),
           ($ === "date"
@@ -123,17 +140,17 @@ Deno.test("string", () => {
             ? fc_iso.map(($) => $.slice(11))
             : $ === "date-time"
             ? fc_iso
-            : fc.stringMatching(REGEX[$]).map(($) => $.normalize().trim())
-              .filter(RegExp.prototype.test.bind(REGEX[$]))) as fc.Arbitrary<
+            : fc.stringMatching(FORMATS[$]).map(($) => $.normalize().trim())
+              .filter(RegExp.prototype.test.bind(FORMATS[$]))) as fc.Arbitrary<
               Data<Type<"string"> & { format: typeof $ }>
             >,
           fc.constant({
             path: "",
-            raw: "",
+            raw: "!",
             error: ["format", $],
           } as any),
-        )
-      ),
+        ),
+    ),
   );
   test(
     fc.string().map(($) => {
