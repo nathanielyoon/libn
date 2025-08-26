@@ -1,7 +1,7 @@
 import { de_bin, de_u64, en_bin, en_u64 } from "@nyoon/lib/base";
+import { sign, verify } from "@nyoon/lib/crypto";
 import { type Data, object, string, validator } from "@nyoon/lib/json";
 import { lift, no, ok, run, try_catch } from "@nyoon/lib/result";
-import { sign, verify } from "./25519.ts";
 
 const pae = (payload: Uint8Array, footer: Uint8Array) => {
   const a = payload.length, b = new Uint8Array(50 + a + footer.length);
