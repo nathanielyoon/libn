@@ -2,15 +2,16 @@
   "$schema": "https://raw.githubusercontent.com/denoland/deno/main/cli/schemas/config-file.v1.json",
   "name": "@nyoon/lib",
   "version": "1.0.2",
+  "license": "GPL-3.0-or-later",
   "exports": {
     "./base": "./base/main.ts",
     "./crypto": "./crypto/main.ts",
     "./csv": "./csv/main.ts",
     "./json": "./json/main.ts",
-    "./query": "./query.ts",
-    "./result": "./result.ts",
+    "./query": "./query/main.ts",
+    "./result": "./result/main.ts",
     "./signal": "./signal/main.ts",
-    "./vite-plugin-inline": "./inline.ts"
+    "./vite-plugin-inline": "./inline/main.ts"
   },
   "lint": {
     "exclude": ["./test.ts"],
