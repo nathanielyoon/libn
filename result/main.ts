@@ -13,7 +13,7 @@
  *   .bind(($) => $ & 1 ? no("odd") : ok($ || null))
  *   .bind(lift("zero"));
  *
- * if (result.is) assert(result.value === 2);
+ * if (result.state) assert(result.value === 2);
  * else if (result.value === "zero") assert(base < 1);
  * else assert(base >= 0.25 && base < 0.5 || base >= 0.75);
  * ```
