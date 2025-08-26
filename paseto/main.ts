@@ -61,7 +61,6 @@ export const PAYLOAD: {
   nbf: string().format("date-time"),
   exp: string().format("date-time"),
 }).required().type;
-export const validate = validator(PAYLOAD);
 /** Encodes and signs a PASETO. */
 export const en_token = (
   secret_key: Uint8Array,
