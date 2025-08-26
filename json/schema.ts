@@ -1,11 +1,15 @@
-type Formats = {
+/** String formats (asserted). */
+export type Formats = {
   date: `${number}-${number}-${number}`;
   time: `${number}:${number}:${number}.${number}Z`;
   "date-time": `${Formats["date"]}T${Formats["time"]}`;
+  duration: `P${string}`;
   email: `${string}@${string}.${string}`;
   uri: `${string}:${string}`;
   uuid: `${string}-${string}-${string}-${string}-${string}`;
 };
+/** Content encoding types. */
+export type Base = `base${16 | 32 | "32hex" | 64 | "64url"}`;
 type Types = {
   boolean: { enum?: readonly [boolean] };
   number: {
@@ -18,6 +22,7 @@ type Types = {
     enum?: readonly [string, ...string[]];
     minLength?: number;
     maxLength?: number;
+    contentEncoding?: Base;
     format?: keyof Formats;
     pattern?: string;
   };

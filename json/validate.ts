@@ -1,18 +1,25 @@
 import { no, ok, type Or } from "@nyoon/lib/result";
-import type { Data, Fail, Type } from "./schema.ts";
+import type { Base, Data, Fail, Formats, Type } from "./schema.ts";
 
 const date = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
 const time = /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{3}Z$/;
-const regex = /[$(-+./?[-^{|}]/g;
-/** Format patterns. */
-export const FORMATS: { [_ in Type<"string">["format"] & string]: RegExp } = {
+/** Content encoding and format patterns. */
+export const REGEX: { [_ in keyof Formats | Base]: RegExp } = {
+  base16: /^[\dA-Fa-f]*$/,
+  base32: /^[2-7A-Za-z]*$/,
+  base32hex: /^[\dA-Va-v]*$/,
+  base64: /^[+\d=A-Za-z]*$/,
+  base64url: /^[\w-]*$/,
   date,
   time,
   "date-time": RegExp(`${date.source.slice(0, -1)}T${time.source.slice(1)}$`),
+  duration:
+    /^-?P(?=T?\d)(?:\d+Y)?(?:\d+M)?(?:\d+[DW])?(?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$/,
   email: /^[\w'+-](?:\.?[\w'+-])*@(?:[\dA-Za-z][\dA-Za-z-]*\.)+[A-Za-z]{2,}$/,
   uri: /^[^#/:?]+:(?:\/\/[^\/?#]*)?[^#?]*(?:\?[^#]*)?(?:#.*)?$/,
   uuid: /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/,
 };
+const regex = /[$(-+./?[-^{|}]/g;
 const NOT = {
   boolean: 'typeof raw!=="boolean"',
   number: "!Number.isFinite(raw)",
@@ -52,7 +59,8 @@ const validate = ($: Type) => {
     case "string":
       a += add($, "minLength", "raw.length<");
       a += add($, "maxLength", "raw.length>");
-      a += add($, "format", ($) => `${FORMATS[$]}.test(raw)||`);
+      a += add($, "contentEncoding", ($) => `${REGEX[$]}.test(raw)||`);
+      a += add($, "format", ($) => `${REGEX[$]}.test(raw)||`);
       try {
         a += add($, "pattern", ($) => `${RegExp($)}.test(raw)||`);
       } catch { /* empty */ }
