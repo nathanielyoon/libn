@@ -3,42 +3,43 @@ import { type Data, object, string, validator } from "@nyoon/lib/json";
 import { lift, no, ok, run, try_catch } from "@nyoon/lib/result";
 import { sign, verify } from "./25519.ts";
 
-const pae = (...$: Uint8Array[]) => {
-  const a = $.length;
-  let b = a + 1 << 8;
-  for (let z = 0; z < a; ++z) b += $[z].length;
-  const c = new Uint8Array(b), d = new DataView(c.buffer);
-  for (let z = 0, y = 8; z < a; y += $[z++].length) {
-    d.setBigUint64(y, BigInt($[z].length), true), c.set($[z], y += 8);
-  }
-  return d.setBigUint64(0, BigInt(a), true), c;
+const pae = (payload: Uint8Array, footer: Uint8Array) => {
+  const a = payload.length, b = new Uint8Array(50 + a + footer.length);
+  b[0] = 4, b[8] = 10, b.set([118, 52, 46, 112, 117, 98, 108, 105, 99, 46], 16);
+  const c = new DataView(b.buffer);
+  c.setBigUint64(26, BigInt(a), true), b.set(payload, 34);
+  c.setBigUint64(34 + a, BigInt(footer.length), true), b.set(footer, 42 + a);
+  return b;
 };
-const HEAD = "v4.public.", PRE = en_bin(HEAD);
-/** PASETO body. */
-export const BODY = object().properties({
+/** PASETO payload. */
+export const PAYLOAD = object().properties({
   iss: string().pattern("^[-\\w]{43}$"),
   sub: string().pattern("^[-\\w]{43}$"),
   aud: string().pattern("^[-\\w]{43}$"),
   nbf: string().format("date-time"),
   exp: string().format("date-time"),
 }).required().type;
+export const validate = validator(PAYLOAD);
 /** Encodes and signs a PASETO. */
-export const en_token = (key: Uint8Array, body: Data<typeof BODY>): string => {
-  const a = en_bin(JSON.stringify(body)), b = new Uint8Array(a.length + 64);
-  b.set(a), b.set(sign(key, pae(PRE, a)), b.length);
-  return HEAD + en_u64(b);
+export const en_token = (
+  secret_key: Uint8Array,
+  payload: Data<typeof PAYLOAD>,
+  footer: Uint8Array,
+): string => {
+  const a = en_bin(JSON.stringify(payload)), b = new Uint8Array(a.length + 64);
+  b.set(a), b.set(sign(secret_key, pae(a, footer)), a.length);
+  return `v4.public.${en_u64(a)}.${en_u64(footer)}`;
 };
 /** Decodes and verifies a PASETO. */
 export const de_token = ($: string | null) =>
-  ok(/(?<=^v4\.public\.)[-\w]+$/.exec($ ?? "")?.[0])
+  ok(/^v4\.public\.(?<body>[-\w]{384})\.(?<footer>[-\w]*)$/.exec($ ?? ""))
     .bind(lift(400))
-    .fmap(de_u64)
-    .fmap(($) => ({ payload: $.subarray(0, -64), signature: $.subarray(-64) }))
-    .bind(run(function* ({ payload, signature }) {
-      const a = yield* try_catch(JSON.parse, () => 400)(de_bin(payload));
-      const b = yield* validator(BODY)(a).fmap(($) => $, () => 400);
-      if (!verify(de_u64(b.iss), pae(PRE, payload), signature)) yield* no(403);
-      const c = Date.now();
-      if (+new Date(b.nbf) > c || +new Date(b.exp) < c) yield* no(410);
-      return b;
+    .bind(run(function* ([_, body, footer]) {
+      const a = de_u64(body), b = de_u64(footer), c = a.subarray(0, -64);
+      const d = yield* try_catch(JSON.parse, () => 400)(de_bin(c));
+      const e = yield* validator(PAYLOAD)(d).fmap(($) => $, () => 400);
+      if (!verify(de_u64(e.iss), pae(c, b), a.subarray(-64))) yield* no(403);
+      const f = Date.now();
+      if (+new Date(e.nbf) > f || +new Date(e.exp) < f) yield* no(410);
+      return { payload: e, footer: b };
     }));
