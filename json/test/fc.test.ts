@@ -12,23 +12,20 @@ import { validator } from "../validate.ts";
 import { FORMATS } from "@nyoon/lib/json";
 
 const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>, any?]>) =>
-  fc.assert(
-    fc.property($, ([type, data, fail, raw]) => {
-      const a = validator(type), b = coder(type);
-      if (data !== undefined) {
-        const c = a(data).unwrap(true);
-        assertEquals(c, data);
-        const d = b.encode(c);
-        assertEquals(d.length, b.length);
-        assertEquals(b.decode(d), data);
-      }
-      if (fail !== undefined) {
-        const c = a(raw ?? fail.raw).unwrap(false);
-        assertArrayIncludes(c, [fail]);
-      }
-    }),
-    { seed: -1716222786, path: "39" },
-  );
+  fc.assert(fc.property($, ([type, data, fail, raw]) => {
+    const a = validator(type), b = coder(type);
+    if (data !== undefined) {
+      const c = a(data).unwrap(true);
+      assertEquals(c, data);
+      const d = b.encode(c);
+      assertEquals(d.length, b.length);
+      assertEquals(b.decode(d), data);
+    }
+    if (fail !== undefined) {
+      const c = a(raw ?? fail.raw).unwrap(false);
+      assertArrayIncludes(c, [fail]);
+    }
+  }));
 const type = <A extends Type>(type: A, to: ($: unknown) => any, or: any) =>
   test(
     fc.jsonValue().map(($) => [type, to($) ? $ : or, {
