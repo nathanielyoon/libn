@@ -1,3 +1,33 @@
+/**
+ * Sign and verify version 4 PASETOs.
+ * @module paseto
+ *
+ * @example
+ * ```ts
+ * import { en_u64 } from "@nyoon/lib/base";
+ * import { generate } from "@nyoon/lib/crypto";
+ * import { type Formats } from "@nyoon/lib/json";
+ * import { de_token, en_token, PAYLOAD } from "@nyoon/lib/paseto";
+ * import { assertEquals } from "jsr:@std/assert@^1.0.14";
+ *
+ * const secret_key = crypto.getRandomValues(new Uint8Array(32));
+ * const payload = {
+ *   iss: en_u64(generate(secret_key)),
+ *   sub: en_u64(crypto.getRandomValues(new Uint8Array(32))),
+ *   aud: en_u64(crypto.getRandomValues(new Uint8Array(32))),
+ *   exp: new Date(Date.now() + 1000).toISOString() as Formats["date-time"],
+ *   nbf: new Date(Date.now() - 1000).toISOString() as Formats["date-time"],
+ * };
+ * const footer = crypto.getRandomValues(new Uint8Array(100));
+ * assertEquals(de_token(en_token(secret_key, payload, footer)).result, {
+ *   state: true,
+ *   value: { payload, footer },
+ * });
+ * ```
+ *
+ * @see [PASETO spec](https://github.com/paseto-standard/paseto-spec)
+ */
+
 import { de_bin, de_u64, en_bin, en_u64 } from "@nyoon/lib/base";
 import { sign, verify } from "@nyoon/lib/crypto";
 import { type Data, object, string, validator } from "@nyoon/lib/json";
@@ -28,12 +58,12 @@ export const en_token = (
 ): string => {
   const a = en_bin(JSON.stringify(payload)), b = new Uint8Array(a.length + 64);
   b.set(a), b.set(sign(secret_key, pae(a, footer)), a.length);
-  return `v4.public.${en_u64(a)}.${en_u64(footer)}`;
+  return `v4.public.${en_u64(b)}.${en_u64(footer)}`;
 };
 /** Decodes and verifies a PASETO. */
 export const de_token = ($: string | null) =>
-  ok(/^v4\.public\.(?<body>[-\w]{384})\.(?<footer>[-\w]*)$/.exec($ ?? ""))
-    .bind(lift(400))
+  ok(/^v4\.public\.(?<body>[-\w]{383})\.(?<footer>[-\w]*)$/.exec($ ?? ""))
+    .bind(lift(401))
     .bind(run(function* ([_, body, footer]) {
       const a = de_u64(body), b = de_u64(footer), c = a.subarray(0, -64);
       const d = yield* try_catch(JSON.parse, () => 400)(de_bin(c));
