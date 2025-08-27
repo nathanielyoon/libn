@@ -9,7 +9,17 @@ export const vectors =
     (typeof $ === "string"
       ? (await fetch(`https://raw.githubusercontent.com/${$}.json`)).json()
       : (await fetch(`https://www.rfc-editor.org/rfc/rfc${$}.txt`)).text())
-      .then(use).then(JSON.stringify)
+      .then(use).then((generated) =>
+        Deno.readTextFile(`${meta.dirname}/vectors.json`).catch((thrown) => {
+          if (thrown instanceof Deno.errors.NotFound) return "{}";
+          throw thrown;
+        }).then(JSON.parse).then((json) =>
+          JSON.stringify([json, generated].reduce((to, $) => ({
+            ...to,
+            ...(typeof $ === "object" && $ && !Array.isArray($) ? $ : {}),
+          }), {}))
+        )
+      )
       .then(Deno.writeTextFile.bind(Deno, `${meta.dirname}/vectors.json`))) as {
       (meta: ImportMeta, $: number, to: ($: string) => Json): Promise<void>;
       <A = any>(meta: ImportMeta, $: string, to: ($: A) => Json): Promise<void>;
