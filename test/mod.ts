@@ -13,7 +13,7 @@ export const get_wycheproof = ($: string) =>
   get_github(`C2SP/wycheproof/main/testvectors_v1/${$}_test`);
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 /** Writes JSON to an adjacent `vectors.json` file. */
-export const write = async (meta: ImportMeta, get: () => Promise<Json>) =>
+export const vectors = async (meta: ImportMeta, get: () => Promise<Json>) =>
   meta.main && Deno.writeTextFile(
     `${meta.dirname}/vectors.json`,
     JSON.stringify(await get()),
