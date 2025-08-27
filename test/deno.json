@@ -2,8 +2,5 @@
   "$schema": "https://raw.githubusercontent.com/denoland/deno/main/cli/schemas/config-file.v1.json",
   "license": "GPL-3.0-or-later",
   "name": "@nyoon/test",
-  "exports": {
-    "./fc": "./fc.test.ts",
-    "./vectors": "./vectors.ts"
-  }
+  "exports": "./mod.ts"
 }

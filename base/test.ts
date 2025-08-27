@@ -1,7 +1,6 @@
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { fc_check } from "@nyoon/test/fc";
-import { vectors } from "@nyoon/test/vectors";
+import { fc_check, vectors } from "@nyoon/test";
 import { de_b16, en_b16 } from "./16.ts";
 import { de_b32, de_h32, en_b32, en_h32 } from "./32.ts";
 import { de_b64, de_u64, en_b64, en_u64 } from "./64.ts";
