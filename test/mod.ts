@@ -6,11 +6,13 @@ export const get_rfc = ($: number, min: number, max: number): Promise<string> =>
   fetch(`https://www.rfc-editor.org/rfc/rfc${$}.txt`)
     .then(async ($) => (await $.text()).slice(min, max));
 /** Fetches a JSON file from Github. */
-export const get_raw = <A>($: string): Promise<A> =>
+export const get_github = <A>($: string): Promise<A> =>
   fetch(`https://raw.githubusercontent.com/${$}.json`).then(($) => $.json());
 /** Fetches test vectors from the Wycheproof repository. */
-export const get_wycheproof = <A>($: string) =>
-  get_raw<{ testGroups: A[] }>(`C2SP/wycheproof/main/testvectors_v1/${$}_test`);
+export const get_wycheproof = <A>($: string, $$: ($: A) => Json) =>
+  get_github<{ testGroups: A[] }>(
+    `C2SP/wycheproof/main/testvectors_v1/${$}_test`,
+  ).then(($) => $.testGroups.flatMap($$));
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 /** Writes JSON to an adjacent `vectors.json` file. */
 export const vectors = async (meta: ImportMeta, get: () => Promise<Json>) =>
