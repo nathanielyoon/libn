@@ -19,10 +19,10 @@
  *   nbf: new Date(Date.now() - 1000).toISOString() as Formats["date-time"],
  * };
  * const footer = crypto.getRandomValues(new Uint8Array(100));
- * assertEquals(de_token(en_token(secret_key, payload, footer)).result, {
- *   state: true,
- *   value: { payload, footer },
- * });
+ * assertEquals(
+ *   de_token(en_token(secret_key, payload, footer)).unwrap(),
+ *   { payload, footer },
+ * );
  * ```
  *
  * @see [PASETO website](https://paseto.io/)
