@@ -5,11 +5,10 @@ const BIN = /* @__PURE__ */ (() => {
   }
   return a;
 })();
-const STR = /* @__PURE__ */ (() => {
-  const a = Array<string>(256);
-  for (let z = 0; z < 256; ++z) a[z] = z.toString(16).padStart(2, "0");
-  return a;
-})();
+const STR = /* @__PURE__ */ Array.from(
+  { length: 256 },
+  (_, z) => z.toString(16).padStart(2, "0"),
+);
 /** Encodes binary -> base16 string. */
 export const en_b16 = ($: Uint8Array): string => {
   let a = "";

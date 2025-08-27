@@ -1,21 +1,4 @@
-/**
- * Inline everything into a single HTML file.
- * @module vite-plugin-inline
- *
- * @example
- * ```ts
- * import { defineConfig } from "npm:rolldown-vite@^7.1.4";
- * import inline from "@nyoon/lib/vite-plugin-inline";
- *
- * export default defineConfig({
- *   plugins: [inline()],
- * });
- * ```
- *
- * @see [vite-plugin-singlefile source](https://github.com/richardtallent/vite-plugin-singlefile)
- */
-
-import type { PluginOption } from "npm:rolldown-vite@^7.0.10";
+import type { PluginOption } from "rolldown-vite";
 
 function assert($: unknown): asserts $ {
   if (!$) throw Error();

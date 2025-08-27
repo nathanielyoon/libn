@@ -1,24 +1,3 @@
-/**
- * Result type.
- * @module result
- *
- * @example
- * ```ts
- * import { lift, no, ok } from "@nyoon/lib/result";
- * import { assert } from "jsr:@std/assert@^1.0.14";
- *
- * const base = Math.random();
- * const { result } = ok(base * 4)
- *   .fmap(($) => $ & 3)
- *   .bind(($) => $ & 1 ? no("odd") : ok($ || null))
- *   .bind(lift("zero"));
- *
- * if (result.state) assert(result.value === 2);
- * else if (result.value === "zero") assert(base < 1);
- * else assert(base >= 0.25 && base < 0.5 || base >= 0.75);
- * ```
- */
-
 /** Dang! */
 export type No<A = any> = Or<A, never>;
 /** Nice! */

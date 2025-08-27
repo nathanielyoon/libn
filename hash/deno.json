@@ -1,0 +1,5 @@
+{  "$schema": "https://raw.githubusercontent.com/denoland/deno/main/cli/schemas/config-file.v1.json",
+  "license": "GPL-3.0-or-later",
+  "name": "@nyoon/hash",
+  "exports": "./mod.ts"
+}

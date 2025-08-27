@@ -1,24 +1,3 @@
-/**
- * DOM manipulation utilities.
- * @module query
- *
- * @example
- * ```ts
- * import { qa, qs } from "@nyoon/lib/query";
- * import { assertEquals } from "jsr:@std/assert@^1.0.14";
- * import { DOMParser } from "jsr:@b-fuze/deno-dom@^0.1.56";
- *
- * const body = new DOMParser().parseFromString(
- *   '<div><span class="a">a</span><span id="b" class="b">b</span></div>',
- *   "text/html",
- * ).body as unknown as Element;
- * const span = qs("div>span#b.b", body); // HTMLSpanElement | null
- * assertEquals(span?.textContent, "b");
- * const spans = qa("div span:not([id])", body); // HTMLSpanElement[]
- * assertEquals(spans.length, 1);
- * ```
- */
-
 type Trim<A extends string> = A extends `${any}${" " | ">"}${infer B}` ? Trim<B>
   : A extends `${infer B}${"#" | "." | "[" | ":"}${any}` ? Trim<B>
   : A;

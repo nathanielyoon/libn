@@ -1,38 +1,7 @@
-/**
- * Sign and verify version 4 PASETOs.
- * @module paseto
- *
- * @example
- * ```ts
- * import { en_u64 } from "@nyoon/lib/base";
- * import { generate } from "@nyoon/lib/crypto";
- * import { type Formats } from "@nyoon/lib/json";
- * import { de_token, en_token } from "@nyoon/lib/paseto";
- * import { assertEquals } from "jsr:@std/assert@^1.0.14";
- *
- * const secret_key = crypto.getRandomValues(new Uint8Array(32));
- * const payload = {
- *   iss: en_u64(generate(secret_key)),
- *   sub: en_u64(crypto.getRandomValues(new Uint8Array(32))),
- *   aud: en_u64(crypto.getRandomValues(new Uint8Array(32))),
- *   exp: new Date(Date.now() + 1000).toISOString() as Formats["date-time"],
- *   nbf: new Date(Date.now() - 1000).toISOString() as Formats["date-time"],
- * };
- * const footer = crypto.getRandomValues(new Uint8Array(100));
- * assertEquals(
- *   de_token(en_token(secret_key, payload, footer)).unwrap(),
- *   { payload, footer },
- * );
- * ```
- *
- * @see [PASETO website](https://paseto.io/)
- * @see [PASETO spec](https://github.com/paseto-standard/paseto-spec)
- */
-
-import { de_bin, de_u64, en_bin, en_u64 } from "../base/main.ts";
+import { de_bin, de_u64, en_bin, en_u64 } from "@nyoon/base";
 import { sign, verify } from "../crypto/main.ts";
 import { type Data, object, string, validator } from "../json/main.ts";
-import { lift, no, ok, type Or, run, try_catch } from "../result/main.ts";
+import { lift, no, ok, type Or, run, try_catch } from "@nyoon/result";
 
 const pae = (payload: Uint8Array, footer: Uint8Array) => {
   const a = payload.length, b = new Uint8Array(50 + a + footer.length);

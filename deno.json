@@ -1,50 +1,47 @@
 {
   "$schema": "https://raw.githubusercontent.com/denoland/deno/main/cli/schemas/config-file.v1.json",
-  "name": "@nyoon/lib",
-  "version": "1.0.4",
   "license": "GPL-3.0-or-later",
-  "exports": {
-    "./base": "./base/main.ts",
-    "./crypto": "./crypto/main.ts",
-    "./csv": "./csv/main.ts",
-    "./json": "./json/main.ts",
-    "./paseto": "./paseto/main.ts",
-    "./query": "./query/main.ts",
-    "./result": "./result/main.ts",
-    "./signal": "./signal/main.ts",
-    "./vite-plugin-inline": "./inline/main.ts"
+  "workspace": [
+    "./test",
+    "./25519",
+    "./aead",
+    "./base",
+    "./csv",
+    "./hash",
+    "./inline",
+    "./json",
+    "./paseto",
+    "./query",
+    "./result",
+    "./signal",
+    "./url"
+  ],
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "dom.asynciterable", "deno.ns"],
+    "exactOptionalPropertyTypes": true
   },
   "lint": {
-    "exclude": ["./test.ts"],
     "rules": {
       "include": [
         "default-param-last",
         "explicit-module-boundary-types",
-        "guard-for-in",
-        "no-eval",
         "no-inferrable-types",
         "no-self-compare",
         "no-sparse-arrays",
         "no-useless-rename",
         "prefer-ascii",
-        "triple-slash-reference",
         "verbatim-module-syntax"
       ],
       "exclude": [
         "ban-types",
         "no-cond-assign",
         "no-control-regex",
-        "no-explicit-any",
-        "no-invalid-regexp"
+        "no-explicit-any"
       ]
     }
   },
-  "compilerOptions": {
-    "lib": ["deno.ns", "dom", "dom.iterable", "dom.asynciterable"],
-    "exactOptionalPropertyTypes": true
-  },
-  "tasks": {
-    "vectors": "fd '\\.test\\.ts' -x deno run --allow-net --allow-write",
-    "npm": "deno run -A ./npm.ts"
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^1.0.14",
+    "fast-check": "npm:fast-check@^4.2.0"
   }
 }

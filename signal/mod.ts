@@ -1,22 +1,3 @@
-/**
- * Work with reactive data.
- * @module alien-signals
- *
- * @example
- * ```ts
- * import { effect, signal } from "@nyoon/lib/signal";
- * import { assertEquals } from "jsr:@std/assert@^1.0.14";
- *
- * const counter = signal(0);
- * const doubled = signal(() => counter() * 2);
- * const dispose = effect(() => assertEquals(doubled(), counter() * 2));
- * counter(1);
- * counter((old) => old + 1);
- * ```
- *
- * @see [alien-signals](https://github.com/stackblitz/alien-signals)
- */
-
 const enum Flag {
   MAYBE = 1 << 0,
   WATCH = 1 << 1,

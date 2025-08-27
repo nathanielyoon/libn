@@ -3,101 +3,10 @@ import {
   assertLess,
   assertNotEquals,
   assertThrows,
-} from "jsr:@std/assert@^1.0.14";
-import {
-  assertSpyCall,
-  assertSpyCalls,
-  spy,
-} from "jsr:@std/testing@^1.0.15/mock";
-import { effect, set, signal } from "./main.ts";
+} from "@std/assert";
+import { assertSpyCall, assertSpyCalls, spy } from "@std/testing/mock";
+import { effect, set, signal } from "./mod.ts";
 
-Deno.test("computed", () => {
-  {
-    const src = signal(0);
-    const c1 = signal(() => src() % 2);
-    const c2 = signal(() => c1());
-    const c3 = signal(() => c2());
-    c3(), src(1), c2(), src(3), assertEquals(c3(), 1);
-  }
-  {
-    const src = signal(0);
-    const a = signal(() => src());
-    const b = signal(() => a() % 2);
-    const c = signal(() => src());
-    const d = signal(() => b() + c());
-    assertEquals(d(), 0), src(2), assertEquals(d(), 2);
-  }
-  {
-    const a = signal(false);
-    const b = signal(() => a());
-    const c = signal(() => (b(), 0));
-    const d = signal(() => (c(), b()));
-    assertEquals(d(), false), a(true), assertEquals(d(), true);
-  }
-  {
-    let times = 0;
-    const src = signal(0);
-    const c1 = signal(() => (++times, src()));
-    c1(), assertEquals(times, 1), src(1), src(0), c1(), assertEquals(times, 1);
-  }
-});
-Deno.test("effect", () => {
-  {
-    let bRunTimes = 0;
-    const a = signal(1);
-    const b = signal(() => (++bRunTimes, a() * 2));
-    const stopEffect = effect(() => b());
-    assertEquals(bRunTimes, 1), a(2), assertEquals(bRunTimes, 2);
-    stopEffect(), a(3), assertEquals(bRunTimes, 2);
-  }
-  {
-    const a = signal(3);
-    const b = signal(() => a() > 0);
-    effect(() => b() && effect(() => assertNotEquals(a(), 0)));
-    a(2), a(1), a(0);
-  }
-  {
-    const a = signal(0);
-    const b = signal(() => a() % 2);
-    let innerTriggerTimes = 0;
-    effect(() => effect(() => (b(), assertLess(++innerTriggerTimes, 3))));
-    a(2);
-  }
-  {
-    const src1 = signal(0);
-    const src2 = signal(0);
-    const order: number[] = [];
-    effect(() => {
-      order.push(0);
-      const currentSub = set(undefined);
-      const isOne = src2() === 1;
-      set(currentSub);
-      isOne && src1(), src2(), src1();
-    });
-    effect(() => (order.push(1), src1()));
-    src2(1), order.length = 0, src1(src1() + 1), assertEquals(order, [0, 1]);
-  }
-  {
-    const a = signal(0);
-    const b = signal(0);
-    const order: number[] = [];
-    effect(() => {
-      effect(() => (a(), order.push(0)));
-      effect(() => (b(), order.push(1)));
-      assertEquals(order, [0, 1]);
-      order.length = 0, b(1), a(1), assertEquals(order, [1, 0]);
-    });
-  }
-  {
-    const a = signal(false);
-    const b = signal(() => a());
-    const c = signal(() => (b(), 0));
-    const d = signal(() => (c(), b()));
-    let triggers = 0;
-    effect(() => (d(), ++triggers));
-    assertEquals(triggers, 1), a(true), assertEquals(triggers, 2);
-  }
-});
 const untracked = <A>(callback: () => A) => {
   const currentSub = set(undefined);
   try {
@@ -157,19 +66,106 @@ const reaction = <A>(
     );
   });
 };
-Deno.test("issue_48", () => {
-  const source = signal(0);
-  let disposeInner;
-  reaction(
-    () => source(),
-    (val) => {
-      if (val === 1) disposeInner = reaction(() => source(), () => {});
-      else if (val === 2) disposeInner!();
-    },
-  );
-  source(1), source(2), source(3);
-});
-Deno.test("untrack", () => {
+Deno.test("pass (most) alien-signals tests", () => {
+  // computed
+  {
+    const src = signal(0);
+    const c1 = signal(() => src() % 2);
+    const c2 = signal(() => c1());
+    const c3 = signal(() => c2());
+    c3(), src(1), c2(), src(3), assertEquals(c3(), 1);
+  }
+  {
+    const src = signal(0);
+    const a = signal(() => src());
+    const b = signal(() => a() % 2);
+    const c = signal(() => src());
+    const d = signal(() => b() + c());
+    assertEquals(d(), 0), src(2), assertEquals(d(), 2);
+  }
+  {
+    const a = signal(false);
+    const b = signal(() => a());
+    const c = signal(() => (b(), 0));
+    const d = signal(() => (c(), b()));
+    assertEquals(d(), false), a(true), assertEquals(d(), true);
+  }
+  {
+    let times = 0;
+    const src = signal(0);
+    const c1 = signal(() => (++times, src()));
+    c1(), assertEquals(times, 1), src(1), src(0), c1(), assertEquals(times, 1);
+  }
+  // effect
+  {
+    let bRunTimes = 0;
+    const a = signal(1);
+    const b = signal(() => (++bRunTimes, a() * 2));
+    const stopEffect = effect(() => b());
+    assertEquals(bRunTimes, 1), a(2), assertEquals(bRunTimes, 2);
+    stopEffect(), a(3), assertEquals(bRunTimes, 2);
+  }
+  {
+    const a = signal(3);
+    const b = signal(() => a() > 0);
+    effect(() => b() && effect(() => assertNotEquals(a(), 0)));
+    a(2), a(1), a(0);
+  }
+  {
+    const a = signal(0);
+    const b = signal(() => a() % 2);
+    let innerTriggerTimes = 0;
+    effect(() => effect(() => (b(), assertLess(++innerTriggerTimes, 3))));
+    a(2);
+  }
+  {
+    const src1 = signal(0);
+    const src2 = signal(0);
+    const order: number[] = [];
+    effect(() => {
+      order.push(0);
+      const currentSub = set(undefined);
+      const isOne = src2() === 1;
+      set(currentSub);
+      isOne && src1(), src2(), src1();
+    });
+    effect(() => (order.push(1), src1()));
+    src2(1), order.length = 0, src1(src1() + 1), assertEquals(order, [0, 1]);
+  }
+  {
+    const a = signal(0);
+    const b = signal(0);
+    const order: number[] = [];
+    effect(() => {
+      effect(() => (a(), order.push(0)));
+      effect(() => (b(), order.push(1)));
+      assertEquals(order, [0, 1]);
+      order.length = 0, b(1), a(1), assertEquals(order, [1, 0]);
+    });
+  }
+  {
+    const a = signal(false);
+    const b = signal(() => a());
+    const c = signal(() => (b(), 0));
+    const d = signal(() => (c(), b()));
+    let triggers = 0;
+    effect(() => (d(), ++triggers));
+    assertEquals(triggers, 1), a(true), assertEquals(triggers, 2);
+  }
+  // issue_48
+  {
+    const source = signal(0);
+    let disposeInner;
+    reaction(
+      () => source(),
+      (val) => {
+        if (val === 1) disposeInner = reaction(() => source(), () => {});
+        else if (val === 2) disposeInner!();
+      },
+    );
+    source(1), source(2), source(3);
+  }
+  // untrack
   {
     const src = signal(0);
     let computedTriggerTimes = 0;
@@ -203,8 +199,7 @@ Deno.test("untrack", () => {
     is(0), assertEquals(effectTriggerTimes, 4);
     src(7), src(8), src(9), assertEquals(effectTriggerTimes, 4);
   }
-});
-Deno.test("graph updates", () => {
+  // graph updates
   {
     const a = signal(2);
     const b = signal(() => a() - 1);
@@ -346,8 +341,7 @@ Deno.test("graph updates", () => {
     d = signal(compute = computer());
     a("aa"), assertSpyCalls(compute, 0);
   }
-});
-Deno.test("error handling", () => {
+  // error handling
   {
     const a = signal(0);
     const b = signal(() => {
