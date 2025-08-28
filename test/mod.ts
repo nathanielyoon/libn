@@ -21,7 +21,7 @@ export const write = async (
   meta: ImportMeta,
   get: () => Promise<{ [name: string]: any }>,
 ): Promise<false | void> =>
-  meta.main && Deno.writeTextFile(
+  Deno.writeTextFile(
     `${meta.dirname}/vectors.json`,
     JSON.stringify(Object.fromEntries(
       await Promise.all(
