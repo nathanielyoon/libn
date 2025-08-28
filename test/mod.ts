@@ -17,7 +17,7 @@ export const get_rfc = ($: number, min: number, max: number): Promise<string> =>
 export const get_github = <A>($: string): Promise<A> =>
   fetch(`https://raw.githubusercontent.com/${$}.json`).then(($) => $.json());
 /** Writes JSON to an adjacent `vectors.json` file. */
-export const write = async (
+export const write_vectors = async (
   meta: ImportMeta,
   get: () => Promise<{ [name: string]: any }>,
 ): Promise<false | void> =>

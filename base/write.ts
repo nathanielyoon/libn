@@ -1,6 +1,6 @@
-import { get_rfc, write } from "@nyoon/test";
+import { get_rfc, write_vectors } from "@nyoon/test";
 
-await write(import.meta, async () => ({
+await write_vectors(import.meta, async () => ({
   rfc4648: await get_rfc(4648, 25691, 26723).then((text) =>
     ["16", "32", "32-hex", "64", "64url"].reduce((to, base) => ({
       ...to,
