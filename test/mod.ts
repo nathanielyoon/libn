@@ -1,6 +1,14 @@
 // deno-coverage-ignore-file
 import fc from "fast-check";
 
+/** Parses base16 from enclosing text. */
+export const hex = ($: string): Uint8Array<ArrayBuffer> =>
+  Uint8Array.from(
+    $.match(
+      /(?<=(?:^|0x|\W)(?:[\da-f]{2})*)[\da-f]{2}(?=(?:[\da-f]{2})*(?:\W|$))/g,
+    ) ?? [],
+    ($) => parseInt($, 16),
+  );
 /** Fetches a slice of an RFC's text. */
 export const get_rfc = ($: number, min: number, max: number): Promise<string> =>
   fetch(`https://www.rfc-editor.org/rfc/rfc${$}.txt`)
@@ -8,48 +16,49 @@ export const get_rfc = ($: number, min: number, max: number): Promise<string> =>
 /** Fetches a JSON file from Github. */
 export const get_github = <A>($: string): Promise<A> =>
   fetch(`https://raw.githubusercontent.com/${$}.json`).then(($) => $.json());
-/** Fetches test vectors from the Wycheproof repository. */
-export const get_wycheproof = <A>($: string, $$: ($: A) => Json) =>
-  get_github<{ testGroups: A[] }>(
-    `C2SP/wycheproof/main/testvectors_v1/${$}_test`,
-  ).then(($) => $.testGroups.flatMap($$));
-type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 /** Writes JSON to an adjacent `vectors.json` file. */
-export const vectors = async (meta: ImportMeta, get: () => Promise<Json>) =>
+export const write = async (
+  meta: ImportMeta,
+  get: () => Promise<{ [name: string]: any }>,
+): Promise<false | void> =>
   meta.main && Deno.writeTextFile(
     `${meta.dirname}/vectors.json`,
-    JSON.stringify(await get()),
+    JSON.stringify(Object.fromEntries(
+      await Promise.all(
+        Object.entries(await get()).map(([key, value]) =>
+          Promise.resolve(value).then(($) => [key, $] as const)
+        ),
+      ),
+    )),
   );
-/** Checks a property. */
-export const fc_check = <A>(
-  property: (arbitraries: {
-    num: ($?: fc.DoubleConstraints) => fc.Arbitrary<number>;
-    str: ($?: fc.StringConstraints) => fc.Arbitrary<string>;
-    bin: ($?: fc.IntArrayConstraints | number) => fc.Arbitrary<Uint8Array>;
-    set: <A>($: fc.Arbitrary<A>) => fc.Arbitrary<[A, A, ...A[]]>;
-  }) => fc.IProperty<A>,
-  parameters?: fc.Parameters<A>,
-): void => {
-  const a = fc.check(property({
-    num: ($) => fc.double({ noDefaultInfinity: true, noNaN: true, ...$ }),
-    str: ($) => fc.string({ unit: "grapheme", size: "medium", ...$ }),
-    bin: ($) =>
-      fc.uint8Array({
-        size: "large",
-        ...(typeof $ === "number" ? { minLength: $, maxLength: $ } : $),
-      }),
-    set: <A>($: fc.Arbitrary<A>) =>
-      fc.uniqueArray($, {
-        comparator: "SameValueZero",
-        minLength: 2,
-      }) as fc.Arbitrary<[A, A, ...A[]]>,
-  }));
-  if (a.failed) {
+/** Creates a number arbitrary. */
+export const fc_num = ($?: fc.DoubleConstraints): fc.Arbitrary<number> =>
+  fc.double({ noDefaultInfinity: true, noNaN: true, ...$ });
+/** Creates a string arbitrary. */
+export const fc_str = ($?: fc.StringConstraints): fc.Arbitrary<string> =>
+  fc.string({ unit: "grapheme", size: "medium", ...$ });
+/** Creates a binary arbitrary. */
+export const fc_bin = ($?: fc.IntArrayConstraints): fc.Arbitrary<Uint8Array> =>
+  fc.uint8Array({ size: "large", ...$ });
+/** 32-byte binary arbitrary. */
+export const fc_key = fc.uint8Array({ minLength: 32, maxLength: 32 });
+const fc_report = <A>($: fc.RunDetails<A>) => {
+  if ($.failed) {
     console.error(
-      a.numRuns,
-      { seed: a.seed, path: a.counterexamplePath },
-      a.counterexample,
+      { runs: $.numRuns, seed: $.seed, path: $.counterexamplePath },
+      $.counterexample,
     );
-    throw a.errorInstance;
+    throw $.errorInstance;
   }
+};
+/** Checks a property and reports failures. */
+export const fc_check = ((
+  property: fc.IProperty<any> | fc.IAsyncProperty<any>,
+  parameters?: fc.Parameters<any>,
+) => {
+  const a = fc.check(property, parameters);
+  return a instanceof Promise ? a.then(fc_report) : fc_report(a);
+}) as {
+  <A>($: fc.IProperty<A>, parameters?: fc.Parameters<A>): void;
+  <A>($: fc.IAsyncProperty<A>, parameters?: fc.Parameters<A>): Promise<void>;
 };
