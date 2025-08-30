@@ -43,7 +43,8 @@ export const fc_key: fc.Arbitrary<Uint8Array<ArrayBuffer>> = fc.uint8Array(
 const fc_report = <A>($: fc.RunDetails<A>) => {
   if ($.failed) {
     console.error(
-      { runs: $.numRuns, seed: $.seed, path: $.counterexamplePath },
+      $.numRuns,
+      { seed: $.seed, path: $.counterexamplePath },
       $.counterexample,
     );
     throw $.errorInstance;
