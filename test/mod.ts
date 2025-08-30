@@ -16,21 +16,13 @@ export const get_rfc = ($: number, min: number, max: number): Promise<string> =>
 /** Fetches a JSON file from Github. */
 export const get_github = <A>($: string): Promise<A> =>
   fetch(`https://raw.githubusercontent.com/${$}.json`).then(($) => $.json());
+type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 /** Writes JSON to an adjacent `vectors.json` file. */
-export const write_vectors = async (
+export const write_vectors = (
   meta: ImportMeta,
-  get: () => Promise<{ [name: string]: any }>,
-): Promise<false | void> =>
-  Deno.writeTextFile(
-    `${meta.dirname}/vectors.json`,
-    JSON.stringify(Object.fromEntries(
-      await Promise.all(
-        Object.entries(await get()).map(([key, value]) =>
-          Promise.resolve(value).then(($) => [key, $] as const)
-        ),
-      ),
-    )),
-  );
+  vectors: { [name: string]: Json },
+): Promise<void> =>
+  Deno.writeTextFile(`${meta.dirname}/vectors.json`, JSON.stringify(vectors));
 /** Creates a number arbitrary. */
 export const fc_num = ($?: fc.DoubleConstraints): fc.Arbitrary<number> =>
   fc.double({ noDefaultInfinity: true, noNaN: true, ...$ });
