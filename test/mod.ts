@@ -6,7 +6,7 @@ export const get_txt = ($: string, min: number, max: number): Promise<string> =>
   fetch(`https://${$}`).then(async ($) => (await $.text()).slice(min, max));
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 /** Fetches a JSON file. */
-export const json = <A extends Json>($: string): Promise<A> =>
+export const get_json = <A extends Json>($: string): Promise<A> =>
   fetch(`https://${$}`).then(($) => $.json());
 /** Extracts base16 from enclosing text. */
 export const hex = ($: string): string =>
