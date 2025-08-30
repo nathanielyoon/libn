@@ -10,7 +10,7 @@ export const encrypt = (
   const b = xchachapoly(key, a, $, data ?? new Uint8Array());
   if (!b) return b;
   const c = new Uint8Array(b.length + 24);
-  return c.set(a), c.set(b, 24), b;
+  return c.set(a), c.set(b, 24), c;
 };
 /** Decrypts with XChaCha20-Poly1305. */
 export const decrypt = (
