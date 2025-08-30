@@ -3,8 +3,10 @@ export const de_csv = ($: string): (string | null)[][] | null => {
   if ($.charCodeAt(0) === 0xfeff) $ = $.slice(1);
   const a = /(?:("?)([^\n\r",]+)\1|"((?:[^"]|"")*)"|)(,|\r?\n|(?:\r?\n)?$)/y;
   for (let b = [], c = [], d; d = a.exec($);) {
-    if (c.push(d[2] ?? d[3]?.replaceAll('""', '"') ?? null), d[4] !== ",") {
-      if (b.push(c), c = [], a.lastIndex === $.length) return b;
+    c.push(d[2] ?? d[3]?.replaceAll('""', '"') ?? null);
+    if (d[4] !== ",") {
+      b.push(c), c = [];
+      if (a.lastIndex === $.length) return b;
     }
   }
   return null;
