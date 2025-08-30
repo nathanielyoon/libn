@@ -46,22 +46,28 @@ await write_vectors(import.meta, {
   }]),
   wycheproof_x25519: await get_wycheproof<
     { private: string; public: string; shared: string }
-  >("6b17607867ce8e3c3a2a4e1e35ccc3b42bfd75e3", "x25519", () => ($) => ({
-    secret_key: $.private,
-    public_key: $.public,
-    shared_secret: $.shared,
-  })),
+  >(
+    "6b17607867ce8e3c3a2a4e1e35ccc3b42bfd75e3",
+    "x25519",
+    ({ tests }) =>
+      tests.map(($) => ({
+        secret_key: $.private,
+        public_key: $.public,
+        shared_secret: $.shared,
+      })),
+  ),
   wycheproof_ed25519: await get_wycheproof<
     { msg: string; sig: string; result: "valid" | "invalid" },
     { publicKey: { pk: string } }
   >(
     "0d2dab394df1eb05b0865977f7633d010a98bccd",
     "ed25519",
-    ({ publicKey: { pk } }) => (test) => ({
-      public_key: pk,
-      data: test.msg,
-      signature: test.sig,
-      result: test.result === "valid",
-    }),
+    ({ publicKey: { pk }, tests }) =>
+      tests.map(($) => ({
+        public_key: pk,
+        data: $.msg,
+        signature: $.sig,
+        result: $.result === "valid",
+      })),
   ),
 });
