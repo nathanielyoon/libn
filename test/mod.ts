@@ -1,19 +1,18 @@
 // deno-coverage-ignore-file
 import fc from "fast-check";
 
+/** Fetches a text file. */
+export const get_txt = ($: string, min: number, max: number): Promise<string> =>
+  fetch(`https://${$}`).then(async ($) => (await $.text()).slice(min, max));
+type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
+/** Fetches a JSON file. */
+export const json = <A extends Json>($: string): Promise<A> =>
+  fetch(`https://${$}`).then(($) => $.json());
 /** Extracts base16 from enclosing text. */
 export const hex = ($: string): string =>
   ($.match(
     /(?<=(?:^|0x|\W)(?:[\da-f]{2})*)[\da-f]{2}(?=(?:[\da-f]{2})*(?:\W|$))/g,
   ) ?? []).join("");
-/** Fetches a slice of an RFC's text. */
-export const get_rfc = ($: number, min: number, max: number): Promise<string> =>
-  fetch(`https://www.rfc-editor.org/rfc/rfc${$}.txt`)
-    .then(async ($) => (await $.text()).slice(min, max));
-/** Fetches a JSON file from Github. */
-export const get_github = <A>($: string): Promise<A> =>
-  fetch(`https://raw.githubusercontent.com/${$}.json`).then(($) => $.json());
-type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 /** Writes JSON to an adjacent `vectors.json` file. */
 export const write_vectors = (
   meta: ImportMeta,
