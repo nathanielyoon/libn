@@ -17,11 +17,11 @@ export const get_rfc = ($: number, min: number, max: number): Promise<string> =>
 export const get_wycheproof = <A extends Json, B extends Json = {}>(
   hash: string,
   name: string,
-  test: (group: { tests: A[] } & B) => Json,
+  mapper: (group: { tests: A[] } & B) => ($: A) => Json,
 ): Promise<Json[]> =>
   get_json<{ testGroups: ({ tests: A[] } & B)[] }>(
     `raw.githubusercontent.com/C2SP/wycheproof/${hash}/testvectors_v1/${name}_test.json`,
-  ).then(({ testGroups }) => testGroups.flatMap(test));
+  ).then(({ testGroups }) => testGroups.flatMap(($) => $.tests.map(mapper($))));
 /** Extracts base16 from enclosing text. */
 export const hex = ($: string): string =>
   ($.match(
