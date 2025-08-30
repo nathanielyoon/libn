@@ -1,4 +1,4 @@
-import { get_github, get_rfc, write_vectors } from "@nyoon/test";
+import { get_rfc, get_wycheproof, write_vectors } from "@nyoon/test";
 
 await write_vectors(import.meta, {
   rfc7748: await get_rfc(7748, 18645, 25092).then(($) => [{
@@ -44,36 +44,24 @@ await write_vectors(import.meta, {
     data: $.slice(4605, 4745),
     signature: $.slice(4764, 4904),
   }]),
-  wycheproof_x25519: await get_github<{
-    testGroups: {
-      tests: { private: string; public: string; shared: string }[];
-    }[];
-  }>(
-    "C2SP/wycheproof/6b17607867ce8e3c3a2a4e1e35ccc3b42bfd75e3/testvectors_v1/x25519_test",
-  ).then(({ testGroups }) =>
-    testGroups.flatMap(({ tests }) =>
-      tests.map(($) => ({
-        secret_key: $.private,
-        public_key: $.public,
-        shared_secret: $.shared,
-      }))
-    )
-  ),
-  wycheproof_ed25519: await get_github<{
-    testGroups: {
-      publicKey: { pk: string };
-      tests: { msg: string; sig: string; result: "valid" | "invalid" }[];
-    }[];
-  }>(
-    "C2SP/wycheproof/0d2dab394df1eb05b0865977f7633d010a98bccd/testvectors_v1/ed25519_test",
-  ).then(({ testGroups }) =>
-    testGroups.flatMap(({ tests, publicKey: { pk } }) =>
-      tests.map((test) => ({
-        public_key: pk,
-        data: test.msg,
-        signature: test.sig,
-        result: test.result === "valid",
-      }))
-    )
+  wycheproof_x25519: await get_wycheproof<
+    { private: string; public: string; shared: string }
+  >("6b17607867ce8e3c3a2a4e1e35ccc3b42bfd75e3", "x25519", () => ($) => ({
+    secret_key: $.private,
+    public_key: $.public,
+    shared_secret: $.shared,
+  })),
+  wycheproof_ed25519: await get_wycheproof<
+    { msg: string; sig: string; result: "valid" | "invalid" },
+    { publicKey: { pk: string } }
+  >(
+    "0d2dab394df1eb05b0865977f7633d010a98bccd",
+    "ed25519",
+    ({ publicKey: { pk } }) => (test) => ({
+      public_key: pk,
+      data: test.msg,
+      signature: test.sig,
+      result: test.result === "valid",
+    }),
   ),
 });
