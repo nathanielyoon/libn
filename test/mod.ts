@@ -1,14 +1,11 @@
 // deno-coverage-ignore-file
 import fc from "fast-check";
 
-/** Parses base16 from enclosing text. */
-export const hex = ($: string): Uint8Array<ArrayBuffer> =>
-  Uint8Array.from(
-    $.match(
-      /(?<=(?:^|0x|\W)(?:[\da-f]{2})*)[\da-f]{2}(?=(?:[\da-f]{2})*(?:\W|$))/g,
-    ) ?? [],
-    ($) => parseInt($, 16),
-  );
+/** Extracts base16 from enclosing text. */
+export const hex = ($: string): string =>
+  ($.match(
+    /(?<=(?:^|0x|\W)(?:[\da-f]{2})*)[\da-f]{2}(?=(?:[\da-f]{2})*(?:\W|$))/g,
+  ) ?? []).join("");
 /** Fetches a slice of an RFC's text. */
 export const get_rfc = ($: number, min: number, max: number): Promise<string> =>
   fetch(`https://www.rfc-editor.org/rfc/rfc${$}.txt`)
