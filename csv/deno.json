@@ -1,6 +1,10 @@
 {
-  "$schema": "https://raw.githubusercontent.com/denoland/deno/main/cli/schemas/config-file.v1.json",
-  "license": "GPL-3.0-or-later",
   "name": "@nyoon/csv",
-  "exports": "./mod.ts"
+  "license": "GPL-3.0-or-later",
+  "exports": "./mod.ts",
+  "tasks": {
+    "write": "deno run --allow-all ./write.ts",
+    "test": "deno test --allow-all --no-check --doc --parallel ./test.ts",
+    "coverage": "deno test --allow-all --no-check --reporter=dot --coverage --coverage-raw-data-only --clean && deno coverage --detailed --include=\"^file://$(pwd)\"; rm -r coverage"
+  }
 }
