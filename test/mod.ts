@@ -1,28 +1,21 @@
 // deno-coverage-ignore-file
 import fc from "fast-check";
 
-/** Fetches from a text file. */
-export const get_text = ($: string): Promise<string> =>
-  fetch(`https://${$}`).then(($) => $.text());
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
-/** Fetches from a JSON file. */
-export const get_json = <A extends Json>($: string): Promise<A> =>
-  fetch(`https://${$}`).then(($) => $.json());
 /** Fetches an RFC's text. */
 export const get_rfc = ($: number, min: number, max: number): Promise<string> =>
-  get_text(`www.rfc-editor.org/rfc/rfc${$}.txt`).then(($) => $.slice(min, max));
-/** Constructs (most of) a raw Github content URL. */
-export const github = (repo: string, hash: string, path: string): string =>
-  `raw.githubusercontent.com/${repo}/${hash}/${path}`;
+  fetch(`https://www.rfc-editor.org/rfc/rfc${$}.txt`)
+    .then(async ($) => (await $.text()).slice(min, max));
 /** Fetches Wycheproof test vectors. */
 export const get_wycheproof = <A extends Json, B extends Json = {}>(
   hash: string,
   name: string,
   mapper: (group: { tests: A[] } & B) => Json[],
 ): Promise<Json[]> =>
-  get_json<{ testGroups: ({ tests: A[] } & B)[] }>(
-    github("C2SP/wycheproof", hash, `testvectors_v1/${name}_test.json`),
-  ).then(({ testGroups }) => testGroups.flatMap(mapper));
+  fetch(
+    `https://raw.githubusercontent.com/C2SP/wycheproof/${hash}/testvectors_v1/${name}_test.json`,
+  ).then<{ testGroups: ({ tests: A[] } & B)[] }>(($) => $.json())
+    .then(({ testGroups }) => testGroups.flatMap(mapper));
 /** Extracts base16 from enclosing text. */
 export const hex = ($: string): string =>
   ($.match(
