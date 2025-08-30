@@ -1,11 +1,11 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
+import { de_b16 } from "@nyoon/base";
+import { fc_bin, fc_check, fc_key } from "@nyoon/test";
 import { chacha, hchacha } from "./src/chacha.ts";
 import { poly } from "./src/poly.ts";
 import { polyxchacha, xchachapoly } from "./src/aead.ts";
 import { decrypt, encrypt } from "./mod.ts";
-import { de_b16 } from "@nyoon/base";
-import { fc_bin, fc_check, fc_key } from "@nyoon/test";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("chacha matches rfc8439 sections 2.3.2, A.1", () =>
