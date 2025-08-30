@@ -4,6 +4,7 @@
   "exports": "./mod.ts",
   "tasks": {
     "write": "deno run --allow-all ./write.ts",
-    "test": "deno test --allow-all --no-check --doc --parallel ./test.ts"
+    "test": "deno test --allow-all --no-check --doc --parallel ./test.ts",
+    "coverage": "deno test --allow-all --no-check --reporter=dot --coverage --coverage-raw-data-only --clean && deno coverage --detailed --include=\"^file://$(pwd)\"; rm -r coverage"
   }
 }
