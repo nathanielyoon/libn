@@ -1,6 +1,6 @@
 import { get_github, get_rfc, write_vectors } from "@nyoon/test";
 
-await write_vectors(import.meta, async () => ({
+await write_vectors(import.meta, {
   rfc7748: await get_rfc(7748, 18645, 25092).then(($) => [{
     secret_key: $.slice(0, 64),
     public_key: $.slice(221, 285),
@@ -76,4 +76,4 @@ await write_vectors(import.meta, async () => ({
       }))
     )
   ),
-}));
+});

@@ -1,6 +1,6 @@
 import { get_rfc, write_vectors } from "@nyoon/test";
 
-await write_vectors(import.meta, async () => ({
+await write_vectors(import.meta, {
   rfc4648: await get_rfc(4648, 25691, 26723).then((text) =>
     ["16", "32", "32-hex", "64", "64url"].reduce((to, base) => ({
       ...to,
@@ -16,4 +16,4 @@ await write_vectors(import.meta, async () => ({
       })).toArray(),
     }), {})
   ),
-}));
+});
