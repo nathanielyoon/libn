@@ -8,7 +8,7 @@ import { de_b16 } from "@nyoon/base";
 import { fc_bin, fc_check, fc_key } from "@nyoon/test";
 import vectors from "./vectors.json" with { type: "json" };
 
-Deno.test("chacha : rfc8439 sections 2.3.2, A.1", () =>
+Deno.test("chacha matches rfc8439 sections 2.3.2, A.1", () =>
   [vectors.rfc8439["2.3.2"], ...vectors.rfc8439["A.1"]].forEach(
     ({ key, iv, count, state }) => {
       const view = new DataView(de_b16(iv).buffer), to = new Uint32Array(16);
@@ -22,14 +22,14 @@ Deno.test("chacha : rfc8439 sections 2.3.2, A.1", () =>
       ), assertEquals(new Uint8Array(to.buffer), de_b16(state));
     },
   ));
-Deno.test("poly : rfc8439 section 2.5.2, donna selftests", () =>
+Deno.test("poly matches rfc8439 section 2.5.2, donna selftests", () =>
   [vectors.rfc8439["2.5.2"], ...vectors.donna].forEach(({ key, raw, tag }) =>
     assertEquals(
       poly(new DataView(de_b16(key).buffer), de_b16(raw)),
       de_b16(tag),
     )
   ));
-Deno.test("xchachapoly/polyxchacha : wycheproof xchacha20_poly1305", () =>
+Deno.test("xchachapoly/polyxchacha match wycheproof", () =>
   vectors.wycheproof.forEach(($) => {
     const key = de_b16($.key), iv = de_b16($.iv), raw = de_b16($.raw);
     const data = de_b16($.data), text = xchachapoly(key, iv, raw, data);
