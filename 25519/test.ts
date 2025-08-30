@@ -6,14 +6,14 @@ import { generate, sign, verify } from "./src/ed25519.ts";
 import { convert_public, convert_secret, x25519 } from "./src/x25519.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
-Deno.test("x25519 matches rfc7748 sections 5.2, 6.1", () =>
+Deno.test("x25519 : rfc7748 sections 5.2, 6.1", () =>
   vectors.rfc7748.forEach(($) =>
     assertEquals(
       x25519(de_b16($.secret_key), de_b16($.public_key)),
       de_b16($.shared_secret),
     )
   ));
-Deno.test("ed25519 matches rfc8032 section 7.1", () =>
+Deno.test("ed25519 : rfc8032 section 7.1", () =>
   vectors.rfc8032.forEach(($) => {
     const secret_key = de_b16($.secret_key), public_key = de_b16($.public_key);
     assertEquals(generate(secret_key), public_key);
@@ -21,14 +21,14 @@ Deno.test("ed25519 matches rfc8032 section 7.1", () =>
     assertEquals(signature, de_b16($.signature));
     assert(verify(public_key, data, signature));
   }));
-Deno.test("x25519 passes wycheproof x25519", () =>
+Deno.test("x25519 : wycheproof x25519", () =>
   vectors.wycheproof_x25519.forEach(($) =>
     assertEquals(
       x25519(de_b16($.secret_key), de_b16($.public_key)),
       $.shared_secret && de_b16($.shared_secret),
     )
   ));
-Deno.test("ed25519 passes wycheproof ed25519", () =>
+Deno.test("ed25519 : wycheproof ed25519", () =>
   vectors.wycheproof_ed25519.forEach(($) =>
     assertEquals(
       verify(de_b16($.public_key), de_b16($.data), de_b16($.signature)),
