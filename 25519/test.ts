@@ -1,3 +1,4 @@
+import { de_b16 } from "@nyoon/base";
 import fc from "fast-check";
 import { assert, assertEquals } from "@std/assert";
 import { fc_bin, fc_check, fc_key, hex } from "@nyoon/test";
@@ -8,34 +9,34 @@ import vectors from "./vectors.json" with { type: "json" };
 Deno.test("x25519 matches rfc7748 sections 5.2, 6.1", () =>
   vectors.rfc7748.forEach(($) =>
     assertEquals(
-      x25519(hex($.secret_key), hex($.public_key)),
-      hex($.shared_secret),
+      x25519(de_b16($.secret_key), de_b16($.public_key)),
+      de_b16($.shared_secret),
     )
   ));
 Deno.test("ed25519 matches rfc8032 section 7.1", () =>
   vectors.rfc8032.forEach(($) => {
-    const secret_key = hex($.secret_key), public_key = hex($.public_key);
+    const secret_key = de_b16($.secret_key), public_key = de_b16($.public_key);
     assertEquals(generate(secret_key), public_key);
-    const data = hex($.data), signature = sign(secret_key, data);
-    assertEquals(signature, hex($.signature));
+    const data = de_b16($.data), signature = sign(secret_key, data);
+    assertEquals(signature, de_b16($.signature));
     assert(verify(public_key, data, signature));
   }));
 Deno.test("x25519 passes wycheproof x25519", () =>
   vectors.wycheproof_x25519.forEach(($) =>
     assertEquals(
-      x25519(hex($.secret_key), hex($.public_key)),
-      $.shared_secret && hex($.shared_secret),
+      x25519(de_b16($.secret_key), de_b16($.public_key)),
+      $.shared_secret && de_b16($.shared_secret),
     )
   ));
 Deno.test("ed25519 passes wycheproof ed25519", () =>
   vectors.wycheproof_ed25519.forEach(($) =>
     assertEquals(
-      verify(hex($.public_key), hex($.data), hex($.signature)),
+      verify(de_b16($.public_key), de_b16($.data), de_b16($.signature)),
       $.result,
     )
   ));
 Deno.test("verification rejects bad points", () => {
-  const big = hex((1n | 1n << 255n).toString(16)).reverse();
+  const big = de_b16((1n | 1n << 255n).toString(16)).reverse();
   const empty = new Uint8Array(32);
   assert(!verify(empty, empty, empty));
   assert(!verify(big, empty, new Uint8Array(64)));
