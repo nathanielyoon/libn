@@ -56,3 +56,58 @@ Deno.test("x25519-exchange works on montgomery or converted edwards keys", () =>
       x25519(convert_secret(key_2), convert_public(generate(key_1))),
     );
   })));
+const generate_pair = (algorithm: `${"Ed" | "X"}25519`, use: KeyUsage[]) =>
+  crypto.subtle.generateKey(algorithm, true, use) as Promise<CryptoKeyPair>;
+const export_pair = ($: CryptoKeyPair) =>
+  Promise.all([
+    crypto.subtle.exportKey("pkcs8", $.privateKey),
+    crypto.subtle.exportKey("raw", $.publicKey),
+  ]).then(($) => ({
+    secret_key: new Uint8Array($[0].slice(16)),
+    public_key: new Uint8Array($[1]),
+  }));
+Deno.test("x25519-generate matches webcrypto", () =>
+  generate_pair("X25519", ["deriveBits"])
+    .then(export_pair)
+    .then(($) => assertEquals(x25519($.secret_key), $.public_key)));
+Deno.test("x25519-exchange matches webcrypto", () =>
+  Promise.all([
+    generate_pair("X25519", ["deriveBits"]),
+    generate_pair("X25519", ["deriveBits"]),
+  ]).then(([pair_1, pair_2]) =>
+    Promise.all([
+      export_pair(pair_1),
+      export_pair(pair_2),
+      crypto.subtle.deriveBits(
+        { name: "X25519", public: pair_2.publicKey },
+        pair_1.privateKey,
+        256,
+      ).then(($) => new Uint8Array($)),
+      crypto.subtle.deriveBits(
+        { name: "X25519", public: pair_1.publicKey },
+        pair_2.privateKey,
+        256,
+      ).then(($) => new Uint8Array($)),
+    ])
+  ).then(([pair_1, pair_2, secret_1, secret_2]) =>
+    assertEquals({
+      secret_1: x25519(pair_1.secret_key, pair_2.public_key),
+      secret_2: x25519(pair_2.secret_key, pair_1.public_key),
+    }, { secret_1, secret_2 })
+  ));
+Deno.test("generate matches webcrypto", () =>
+  generate_pair("Ed25519", ["sign", "verify"])
+    .then(export_pair)
+    .then(($) => assertEquals(generate($.secret_key), $.public_key)));
+Deno.test("sign/verify match webcrypto", () =>
+  fc_check(fc.asyncProperty(fc_bin(), async ($) => {
+    const pair = await generate_pair("Ed25519", ["sign", "verify"]);
+    const { secret_key, public_key } = await export_pair(pair);
+    const signature = sign(secret_key, $);
+    assertEquals(
+      signature,
+      new Uint8Array(await crypto.subtle.sign("Ed25519", pair.privateKey, $)),
+    );
+    assert(verify(public_key, $, signature));
+    assert(await crypto.subtle.verify("Ed25519", pair.publicKey, signature, $));
+  })));
