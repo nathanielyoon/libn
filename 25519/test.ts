@@ -5,14 +5,14 @@ import { generate, sign, verify } from "./src/ed25519.ts";
 import { convert_public, convert_secret, x25519 } from "./src/x25519.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
-Deno.test("x25519 matches rfc7748 5.2, 6.1", () =>
+Deno.test("x25519 matches rfc7748 sections 5.2, 6.1", () =>
   vectors.rfc7748.forEach(($) =>
     assertEquals(
       x25519(hex($.secret_key), hex($.public_key)),
       hex($.shared_secret),
     )
   ));
-Deno.test("ed25519 matches rfc8032 7.1", () =>
+Deno.test("ed25519 matches rfc8032 section 7.1", () =>
   vectors.rfc8032.forEach(($) => {
     const secret_key = hex($.secret_key), public_key = hex($.public_key);
     assertEquals(generate(secret_key), public_key);
