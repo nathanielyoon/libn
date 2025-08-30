@@ -1,13 +1,26 @@
 // deno-coverage-ignore-file
 import fc from "fast-check";
 
-/** Fetches a text file. */
+/** Fetches a specific RFC. */
+export const rfc = ($: number): string => `www.rfc-editor.org/rfc/rfc${$}.txt`;
+/** Fetches from a text file. */
 export const get_txt = ($: string, min: number, max: number): Promise<string> =>
   fetch(`https://${$}`).then(async ($) => (await $.text()).slice(min, max));
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
-/** Fetches a JSON file. */
+/** Fetches from a JSON file. */
 export const get_json = <A extends Json>($: string): Promise<A> =>
   fetch(`https://${$}`).then(($) => $.json());
+/** Fetches an RFC's text. */
+export const get_rfc = ($: number, min: number, max: number): Promise<string> =>
+  get_txt(`www.rfc-editor.org/rfc/rfc${$}.txt`, min, max);
+/** Fetches Wycheproof test vectors. */
+export const get_wycheproof = <A extends Json, B extends Json = {}>(
+  hash: string,
+  name: string,
+): Promise<{ testGroups: { tests: A[] } & B }> =>
+  get_json(
+    `raw.githubusercontent.com/C2SP/wycheproof/${hash}/testvectors_v1/${name}_test.json`,
+  );
 /** Extracts base16 from enclosing text. */
 export const hex = ($: string): string =>
   ($.match(
@@ -29,7 +42,9 @@ export const fc_str = ($?: fc.StringConstraints): fc.Arbitrary<string> =>
 export const fc_bin = ($?: fc.IntArrayConstraints): fc.Arbitrary<Uint8Array> =>
   fc.uint8Array({ size: "large", ...$ });
 /** 32-byte binary arbitrary. */
-export const fc_key = fc.uint8Array({ minLength: 32, maxLength: 32 });
+export const fc_key: fc.Arbitrary<Uint8Array<ArrayBuffer>> = fc.uint8Array(
+  { minLength: 32, maxLength: 32 },
+);
 const fc_report = <A>($: fc.RunDetails<A>) => {
   if ($.failed) {
     console.error(
