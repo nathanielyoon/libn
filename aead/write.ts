@@ -1,11 +1,4 @@
-import { en_b16 } from "@nyoon/base";
-import {
-  get_rfc,
-  get_txt,
-  get_wycheproof,
-  hex,
-  write_vectors,
-} from "@nyoon/test";
+import { get_rfc, get_wycheproof, hex, write_vectors } from "@nyoon/test";
 
 await write_vectors(import.meta, {
   rfc8439: await get_rfc(8439, 17603, 62179).then(($) => ({
@@ -31,12 +24,10 @@ await write_vectors(import.meta, {
       tag: hex($.slice(15019, 15066)),
     },
   })),
-  donna: await get_txt(
-    `raw.githubusercontent.com/floodyberry/poly1305-donna/e6ad6e091d30d7f4ec2d4f978be1fcfcbce72781/poly1305-donna.c`,
-    2198,
-    4318,
-  ).then(($) =>
-    $.matchAll(
+  donna: await fetch(
+    `https://raw.githubusercontent.com/floodyberry/poly1305-donna/e6ad6e091d30d7f4ec2d4f978be1fcfcbce72781/poly1305-donna.c`,
+  ).then(async ($) =>
+    (await $.text()).matchAll(
       /key\[32\] = \{(.+?)\};.+?msg\[\d+\] = \{(.+?)\};.+?mac\[16\] = \{(.+?)\};/gs,
     ).map(([_, key, raw, tag]) => ({
       key: hex(key),
@@ -66,22 +57,3 @@ await write_vectors(import.meta, {
       })),
   ),
 });
-// 0 && Deno.test(hchacha.name, async () => {
-//   const a = await read("xchacha-03.txt");
-//   const b = new Uint32Array(
-//     Uint8Array.from(
-//       a.slice(9966, 10258).match(/\b[\da-f]{2}\b/g)!,
-//       (Z) => parseInt(Z, 16),
-//     ).buffer,
-//   );
-//   const c = new Uint32Array(b.subarray(0, 8));
-//   hchacha(new DataView(c.buffer), new Uint32Array(b.subarray(8)));
-//   assertEquals(
-//     c,
-//     Uint32Array.from(
-//       a.slice(11123, 11236).match(/\b[\da-f]{8}\b/g)!,
-//       (Z) => parseInt(Z, 16),
-//     ),
-//     "subkey",
-//   );
-// });
