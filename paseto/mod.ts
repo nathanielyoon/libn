@@ -1,6 +1,6 @@
 import { de_bin, de_u64, en_bin, en_u64 } from "@nyoon/base";
-import { sign, verify } from "../crypto/main.ts";
-import { type Data, object, string, validator } from "../json/main.ts";
+import { sign, verify } from "@nyoon/25519";
+import { type Data, object, string, validator } from "@nyoon/json";
 import { lift, no, ok, type Or, run, try_catch } from "@nyoon/result";
 
 const pae = (payload: Uint8Array, footer: Uint8Array) => {
