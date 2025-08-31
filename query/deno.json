@@ -1,5 +1,8 @@
 {
   "name": "@nyoon/query",
   "license": "GPL-3.0-or-later",
-  "exports": "./mod.ts"
+  "exports": "./mod.ts",
+  "compilerOptions": {
+    "lib": ["dom"]
+  }
 }
