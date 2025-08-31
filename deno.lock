@@ -9,7 +9,7 @@
     "jsr:@std/internal@^1.0.10": "1.0.10",
     "jsr:@std/path@^1.1.1": "1.1.2",
     "jsr:@std/testing@^1.0.15": "1.0.15",
-    "npm:fast-check@^4.2.0": "4.2.0",
+    "npm:fast-check@^4.3.0": "4.3.0",
     "npm:rolldown-vite@^7.1.5": "7.1.5_picomatch@4.0.3"
   },
   "jsr": {
@@ -173,8 +173,8 @@
     "detect-libc@2.0.4": {
       "integrity": "sha512-3UDv+G9CsCKO1WKMGw9fwq/SWJYbI0c5Y7LU1AXYoDdbhE2AHQ6N6Nb34sG8Fj7T5APy8qXDCKuuIHd1BR0tVA=="
     },
-    "fast-check@4.2.0": {
-      "integrity": "sha512-buxrKEaSseOwFjt6K1REcGMeFOrb0wk3cXifeMAG8yahcE9kV20PjQn1OdzPGL6OBFTbYXfjleNBARf/aCfV1A==",
+    "fast-check@4.3.0": {
+      "integrity": "sha512-JVw/DJSxVKl8uhCb7GrwanT9VWsCIdBkK3WpP37B/Au4pyaspriSjtrY2ApbSFwTg3ViPfniT13n75PhzE7VEQ==",
       "dependencies": [
         "pure-rand"
       ]
@@ -340,7 +340,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@^1.0.14",
-      "npm:fast-check@^4.2.0"
+      "npm:fast-check@^4.3.0"
     ],
     "members": {
       "inline": {
@@ -351,6 +351,11 @@
       "signal": {
         "dependencies": [
           "jsr:@std/testing@^1.0.15"
+        ]
+      },
+      "test": {
+        "dependencies": [
+          "npm:fast-check@^4.3.0"
         ]
       }
     }

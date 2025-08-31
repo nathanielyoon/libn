@@ -40,6 +40,6 @@
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@^1.0.14",
-    "fast-check": "npm:fast-check@^4.2.0"
+    "fast-check": "npm:fast-check@^4.3.0"
   }
 }
