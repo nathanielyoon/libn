@@ -238,4 +238,18 @@ Deno.test("object", () => {
       additionalProperties: true,
     })({ "": 0 }).is_ok(),
   );
+  test(
+    fc_str().map(($) => [
+      object().properties({ [$]: boolean() }).minProperties(1).type,
+      { [$]: true },
+      { path: "", raw: {}, error: ["minProperties", 1 as const] },
+    ]),
+  );
+  test(
+    fc_str().map(($) => [
+      object().properties({ [$]: boolean() }).maxProperties(0).type,
+      {},
+      { path: "", raw: { [$]: true }, error: ["maxProperties", 0 as const] },
+    ]),
+  );
 });
