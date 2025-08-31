@@ -4,8 +4,8 @@ import { hmac, sha256 } from "@nyoon/hash";
 /** Presigns a URL for the specified path and operation. */
 export const presign = (
   env: { S3_HOST: string; S3_ID: string; S3_KEY: string },
-  path: string,
   method: "HEAD" | "GET" | "PUT" | "DELETE",
+  path: string,
   headers: { [header: string]: string } = {},
   time = 604800,
   region = "auto",
