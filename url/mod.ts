@@ -9,8 +9,8 @@ export const presign = (
   headers: { [header: string]: string } = {},
   time = 604800,
   region = "auto",
-  date = new Date(),
-) => {
+  date: Date = new Date(),
+): string => {
   const a = date.toISOString().replace(/[-:]|\..../g, ""), b = a.slice(0, 8);
   const { hostname, pathname } = new URL(path, env.S3_HOST);
   const d: { [header: string]: string } = { host: hostname };
