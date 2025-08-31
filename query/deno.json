@@ -3,6 +3,6 @@
   "license": "GPL-3.0-or-later",
   "exports": "./mod.ts",
   "compilerOptions": {
-    "lib": ["dom"]
+    "lib": ["dom", "dom.iterable", "deno.ns"]
   }
 }
