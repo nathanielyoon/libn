@@ -38,6 +38,8 @@ type Types = {
     properties?: { [key: string]: Type };
     required?: readonly string[];
     additionalProperties?: boolean;
+    minProperties?: number;
+    maxProperties?: number;
   };
 };
 /** JSON schema subset. */

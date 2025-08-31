@@ -91,7 +91,10 @@ const parsers = ($: Type): string => {
             : ""
         }${b && `s.delete(${e})`}}`;
       }
-      return b && (a += not($, "additionalProperties", "s.size")), a + "}";
+      return a + (b && not($, "additionalProperties", "s.size")) +
+        not($, "minProperties", `Object.keys(data).length<${$.minProperties}`) +
+        not($, "maxProperties", `Object.keys(data).length>${$.maxProperties}`) +
+        "}";
     }
   }
 };
