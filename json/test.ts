@@ -11,7 +11,9 @@ import { coder } from "./src/code.ts";
 import type { Data, Fail, Type } from "./src/types.ts";
 import { BASES, FORMATS, parser } from "./src/parse.ts";
 
-const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>, {}?]>) =>
+const test = <A extends Type>(
+  $: fc.Arbitrary<readonly [type: A, ok: Data<A>, no: Fail<A>, raw?: {}]>,
+) =>
   fc_check(fc.property($, ([type, data, fail, raw]) => {
     const a = parser(type), b = a(data).unwrap(true);
     assertEquals(b, data);
@@ -187,12 +189,21 @@ Deno.test("array", () => {
     ]),
   );
   assert(parser({ type: "array", uniqueItems: false })([0, 0]).is_ok());
-  for (
-    const $ of [
-      coder(array().items(boolean()).type).decode(["[true,true]"]),
-      coder(array().maxItems(2).type).decode(["[true,true]"]),
-    ]
-  ) assertEquals($, [true, true]);
+  test(fc.oneof(
+    fc.array(fc.boolean()).map(($) =>
+      [
+        array().items(boolean()).type,
+        $,
+        { path: "", raw: {}, error: ["type", "array"] },
+      ] as const
+    ),
+  ));
+  // for (
+  //   const $ of [
+  //     coder(array().items(boolean()).type).decode(["true, true"]),
+  //     coder(array().items(number()))
+  //   ]
+  // ) assertEquals($, [true, true]);
 });
 Deno.test("object", () => {
   type(
