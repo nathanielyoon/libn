@@ -1,7 +1,7 @@
 import { en_b16, en_bin } from "@nyoon/base";
 import { hmac, sha256 } from "@nyoon/hash";
 
-/** Presigns a URL for the specified path and operation. */
+/** Presigns a URL for the specified method, path, and headers. */
 export const presign = (
   env: { S3_HOST: string; S3_ID: string; S3_KEY: string },
   method: "HEAD" | "GET" | "PUT" | "DELETE",
