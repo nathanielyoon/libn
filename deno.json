@@ -6,6 +6,7 @@
     "./aead",
     "./base",
     "./csv",
+    "./fuzz",
     "./hash",
     "./inline",
     "./query",
