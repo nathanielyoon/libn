@@ -9,6 +9,7 @@
     "./fuzz",
     "./hash",
     "./inline",
+    "./json",
     "./match",
     "./query",
     "./result",
