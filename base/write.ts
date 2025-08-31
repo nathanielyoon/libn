@@ -1,4 +1,4 @@
-import { get_rfc, write_vectors } from "@nyoon/test";
+import { get_rfc, write_vectors } from "../test.ts";
 
 await write_vectors(import.meta, {
   rfc4648: await get_rfc(4648, 25691, 26723).then((text) =>

@@ -1,6 +1,6 @@
 import { assert, assertArrayIncludes, assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { fc_num, fc_str } from "@nyoon/test";
+import { fc_num, fc_str } from "../test.ts";
 import { array, boolean, number, object, string } from "./src/build.ts";
 import { coder } from "./src/code.ts";
 import type { Data, Fail, Type } from "./src/types.ts";

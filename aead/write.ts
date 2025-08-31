@@ -1,4 +1,4 @@
-import { get_rfc, get_wycheproof, hex, write_vectors } from "@nyoon/test";
+import { get_rfc, get_wycheproof, hex, write_vectors } from "../test.ts";
 
 await write_vectors(import.meta, {
   rfc8439: await get_rfc(8439, 17603, 62179).then(($) => ({

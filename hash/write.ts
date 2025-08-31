@@ -1,4 +1,4 @@
-import { get_wycheproof, write_vectors } from "@nyoon/test";
+import { get_wycheproof, write_vectors } from "../test.ts";
 
 await write_vectors(import.meta, {
   nist: await Promise.all(

@@ -1,5 +1,0 @@
-{
-  "name": "@nyoon/test",
-  "license": "GPL-3.0-or-later",
-  "exports": "./mod.ts"
-}

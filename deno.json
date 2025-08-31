@@ -1,7 +1,6 @@
 {
   "license": "GPL-3.0-or-later",
   "workspace": [
-    "./test",
     "./25519",
     "./aead",
     "./base",

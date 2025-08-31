@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { fc_check, fc_str } from "@nyoon/test";
+import { fc_check, fc_str } from "../test.ts";
 import { de_csv, en_csv } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 

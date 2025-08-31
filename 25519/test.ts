@@ -1,7 +1,7 @@
-import { de_b16 } from "@nyoon/base";
-import fc from "fast-check";
 import { assert, assertEquals } from "@std/assert";
-import { fc_bin, fc_check, fc_key } from "@nyoon/test";
+import fc from "fast-check";
+import { de_b16 } from "@nyoon/base";
+import { fc_bin, fc_check, fc_key } from "../test.ts";
 import { generate, sign, verify } from "./src/ed25519.ts";
 import { convert_public, convert_secret, x25519 } from "./src/x25519.ts";
 import vectors from "./vectors.json" with { type: "json" };

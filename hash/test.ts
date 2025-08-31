@@ -1,11 +1,11 @@
 import { assertEquals } from "@std/assert";
+import fc from "fast-check";
 import { de_b16, en_b16 } from "@nyoon/base";
+import { fc_bin, fc_check } from "../test.ts";
 import { sha256, sha512 } from "./src/sha2.ts";
 import { hmac } from "./src/hmac.ts";
 import { hkdf } from "./src/hkdf.ts";
 import vectors from "./vectors.json" with { type: "json" };
-import { fc_bin, fc_check } from "@nyoon/test";
-import fc from "fast-check";
 
 Deno.test("sha256 matches nist aft", () =>
   vectors.nist.sha256.forEach(($) =>
