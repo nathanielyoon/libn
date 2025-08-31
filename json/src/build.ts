@@ -31,7 +31,8 @@ type Typer<A extends Type> =
             To<
               A,
               "required",
-              string extends keyof B ? string[] : Tuple<keyof B & string>
+              string extends keyof B ? [string, ...string[]]
+                : Tuple<keyof B & string>
             >
           >;
           <const C extends (keyof B & string)[]>(

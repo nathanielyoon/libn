@@ -36,7 +36,7 @@ type Types = {
   };
   object: {
     properties?: { [key: string]: Type };
-    required?: readonly string[];
+    required?: readonly [string, ...string[]];
     additionalProperties?: boolean;
   };
 };
