@@ -16,6 +16,8 @@ type Types = {
     enum?: readonly [number, ...number[]];
     minimum?: number;
     maximum?: number;
+    exclusiveMinimum?: number;
+    exclusiveMaximum?: number;
     multipleOf?: number;
   };
   string: {
@@ -58,8 +60,8 @@ export type Data<A extends Type> = A extends { enum: readonly (infer B)[] } ? B
     : { [C in keyof B]?: Data<B[C]> }
   : A["type"] extends "object" ? { [key: string]: unknown }
   : never;
-type Esc<A extends PropertyKey, B extends number, C> = C extends
-  `${infer D}${A & string}${infer E}` ? `${D}~${B}${Esc<A, B, E>}` : C & string;
+type Esc<A extends PropertyKey, B extends number, C extends string> = C extends
+  `${infer D}${A & string}${infer E}` ? `${D}~${B}${Esc<A, B, E>}` : C;
 /** Union of error indicators. */
 export type Fail<A extends Type, B extends string = ""> =
   Exclude<keyof A, "title" | "description"> extends infer C
@@ -67,7 +69,7 @@ export type Fail<A extends Type, B extends string = ""> =
       ? A[C] extends infer D ? D extends Type ? Fail<D, `${B}/${number}`>
         : D extends { [key: string]: Type }
           ? keyof D extends infer E
-            ? E extends keyof D
+            ? E extends keyof D & string
               ? Fail<D[E], `${B}/${Esc<"/", 1, Esc<"~", 0, E>>}`>
             : never
           : never

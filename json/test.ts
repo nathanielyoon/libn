@@ -1,29 +1,24 @@
-import { assert, assertArrayIncludes, assertEquals } from "@std/assert";
+import {
+  assert,
+  assertArrayIncludes,
+  assertEquals,
+  assertThrows,
+} from "@std/assert";
 import fc from "fast-check";
-import { fc_num, fc_str } from "../test.ts";
+import { fc_check, fc_num, fc_str } from "../test.ts";
 import { array, boolean, number, object, string } from "./src/build.ts";
 import { coder } from "./src/code.ts";
 import type { Data, Fail, Type } from "./src/types.ts";
-import { BASES, FORMATS, validator } from "./src/validate.ts";
+import { BASES, FORMATS, parser } from "./src/parse.ts";
 
-const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>, any?]>) =>
-  fc.assert(
-    fc.property($, ([type, data, fail, raw]) => {
-      const a = validator(type), b = coder(type);
-      if (data !== undefined) {
-        const c = a(data).unwrap(true);
-        assertEquals(c, data);
-        const d = b.encode(c);
-        assertEquals(d.length, b.length);
-        assertEquals(b.decode(d), data);
-      }
-      if (fail !== undefined) {
-        const c = a(raw ?? fail.raw).unwrap(false);
-        assertArrayIncludes(c, [fail]);
-      }
-    }),
-    { seed: -713880981, path: "0" },
-  );
+const test = <A extends Type>($: fc.Arbitrary<[A, Data<A>, Fail<A>, {}?]>) =>
+  fc_check(fc.property($, ([type, data, fail, raw]) => {
+    const a = parser(type), b = a(data).unwrap(true);
+    assertEquals(b, data);
+    assertArrayIncludes(a(raw ?? fail.raw).unwrap(false), [fail]);
+    const c = coder(type), d = c.encode(b);
+    assertEquals(d.length, c.length), assertEquals(c.decode(d), data);
+  }));
 const type = <A extends Type>(type: A, to: ($: unknown) => any, or: any) =>
   test(
     fc.jsonValue().map(($) => [type, to($) ? $ : or, {
@@ -158,7 +153,7 @@ Deno.test("string", () => {
       ];
     }),
   );
-  assert(validator(string().pattern("(").type)("").is_ok());
+  assertThrows(() => parser(string().pattern("(").type));
 });
 Deno.test("array", () => {
   type(array().type, Array.isArray, []);
@@ -191,7 +186,13 @@ Deno.test("array", () => {
       { path: "", raw: [$, $], error: ["uniqueItems", true as const] },
     ]),
   );
-  assert(validator({ type: "array", uniqueItems: false })([0, 0]).is_ok());
+  assert(parser({ type: "array", uniqueItems: false })([0, 0]).is_ok());
+  for (
+    const $ of [
+      coder(array().items(boolean()).type).decode(["[true,true]"]),
+      coder(array().maxItems(2).type).decode(["[true,true]"]),
+    ]
+  ) assertEquals($, [true, true]);
 });
 Deno.test("object", () => {
   type(
@@ -231,11 +232,10 @@ Deno.test("object", () => {
     }]),
   );
   assert(
-    validator({
+    parser({
       type: "object",
       properties: {},
       additionalProperties: true,
     })({ "": 0 }).is_ok(),
   );
-  assertEquals(object.keys(object().properties({}).type), []);
 });
