@@ -198,12 +198,6 @@ Deno.test("array", () => {
       ] as const
     ),
   ));
-  // for (
-  //   const $ of [
-  //     coder(array().items(boolean()).type).decode(["true, true"]),
-  //     coder(array().items(number()))
-  //   ]
-  // ) assertEquals($, [true, true]);
 });
 Deno.test("object", () => {
   type(
