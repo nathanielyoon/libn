@@ -16,7 +16,6 @@
     "./url"
   ],
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "dom.asynciterable", "deno.ns"],
     "exactOptionalPropertyTypes": true
   },
   "lint": {
