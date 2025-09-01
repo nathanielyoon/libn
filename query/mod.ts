@@ -18,9 +18,23 @@ export const qa = ((query: string, parent = document.body) => [
   <A extends string>(selector: A, parent?: Element): As<Trim<A>>[];
   <A extends Element>(selector: string, parent?: Element): A[];
 };
+type Writable<A> = Pick<
+  A,
+  keyof {
+    [B in keyof A]: (<C>() => C extends { [_ in B]: A[B] } ? 1 : 0) extends
+      (<C>() => C extends { -readonly [_ in B]: A[B] } ? 1 : 0) ? B : never;
+  }
+>;
 /** Creates an element. */
 export const ce = <A extends Tag>(
-  as: A,
-  parent?: Node,
-): HTMLElementTagNameMap[A] =>
-  parent?.appendChild(document.createElement(as)) ?? document.createElement(as);
+  tag: A,
+  assign: Partial<Writable<HTMLElementTagNameMap[A]>> & { parent?: Node } = {},
+): HTMLElementTagNameMap[A] => {
+  const a = document.createElement(tag);
+  if (assign) {
+    const { parent, ...b } = assign, c = Object.keys(b);
+    parent?.appendChild(a); // @ts-expect-error: it'll be ok
+    for (const key of Object.keys(b)) if (b[key] !== undefined) a[key] = b[key];
+  }
+  return a;
+};
