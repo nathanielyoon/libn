@@ -20,7 +20,6 @@
 
 import { en_b16, en_bin } from "@nyoon/base";
 import { hmac, sha256 } from "@nyoon/hash";
-import { assertMatch } from "@std/assert/match";
 
 /** Presigns a URL for the specified method, path, and headers. */
 export const presign = (
