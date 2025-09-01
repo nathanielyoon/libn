@@ -22,7 +22,7 @@
  * assertEquals(x25519(key_1, x25519(key_2)), x25519(key_2, x25519(key_1)));
  * ```ts
  *
- * @example Montgomery key exchange
+ * @example Key exchange with converted Edwards keys
  * ```ts
  * import { assertEquals } from "@std/assert";
  *
