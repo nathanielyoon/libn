@@ -3,7 +3,7 @@
  * ([RFC 7748](https://www.rfc-editor.org/rfc/rfc7748)).
  *
  * @example
- * ```ts Key generation, signing, and verification
+ * ```ts Key generation, signing, verification
  * import { assert } from "@std/assert";
  *
  * const secret_key = crypto.getRandomValues(new Uint8Array(32));
@@ -13,7 +13,7 @@
  * assert(verify(public_key, data, signature));
  * ```
  *
- * @example Montgomery key exchange
+ * @example Key exchange
  * ```ts
  * import { assertEquals } from "@std/assert";
  *
