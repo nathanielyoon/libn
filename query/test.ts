@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { DOMParser } from "@b-fuze/deno-dom";
+import { DOMParser } from "@b-fuze/deno-dom/native";
 import { fc_check } from "../test.ts";
 import { ce, qa, qs, type Tag } from "./mod.ts";
 
