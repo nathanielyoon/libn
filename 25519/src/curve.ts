@@ -1,4 +1,4 @@
-import { sha512 } from "@nyoon/hash";
+import { sha512 } from "@libn/hash";
 
 /** Curve25519 prime. */
 export const P = (1n << 255n) - 19n;

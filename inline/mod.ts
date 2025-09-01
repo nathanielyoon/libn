@@ -4,7 +4,7 @@
  * @example Config
  * ```ts
  * import { defineConfig } from "rolldown-vite";
- * import inline from "@nyoon/inline";
+ * import inline from "@libn/inline";
  *
  * export default defineConfig({
  *   plugins: [inline()],

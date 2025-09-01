@@ -1,4 +1,4 @@
-import { sha512 } from "@nyoon/hash";
+import { sha512 } from "@libn/hash";
 import { de_big, en_big, prune } from "./curve.ts";
 import { add, de_point, double, en_point, equal, wnaf } from "./point.ts";
 

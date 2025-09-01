@@ -1,5 +1,5 @@
 {
-  "name": "@nyoon/json",
+  "name": "@libn/json",
   "version": "0.1.0",
   "license": "GPL-3.0-or-later",
   "exports": "./mod.ts",

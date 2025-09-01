@@ -18,8 +18,8 @@
  * @module url
  */
 
-import { en_b16, en_bin } from "@nyoon/base";
-import { hmac, sha256 } from "@nyoon/hash";
+import { en_b16, en_bin } from "@libn/base";
+import { hmac, sha256 } from "@libn/hash";
 
 /** Presigns a URL for the specified method, path, and headers. */
 export const presign = (
