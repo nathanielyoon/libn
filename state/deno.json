@@ -1,0 +1,9 @@
+{
+  "name": "@nyoon/state",
+  "license": "GPL-3.0-or-later",
+  "exports": "./mod.ts",
+  "tasks": {
+    "test": "deno test --allow-all --no-check --doc --parallel ./test.ts",
+    "coverage": "deno test --allow-all --no-check --reporter=dot --coverage --coverage-raw-data-only --clean && deno coverage --detailed --include=\"^file://$(pwd)\"; rm -r coverage"
+  }
+}
