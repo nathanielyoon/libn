@@ -7,7 +7,7 @@ export const myers = (one: string, two: string): number => {
   if (!a) return b;
   const l = new Int32Array(c), m = new Int32Array(c).fill(-1), n = b - 1 >> 5;
   do {
-    y = z << 5, d = Math.min(32, b - y) + y;
+    y = z << 5, d = b - y - 32, d = 32 + (d & d >> 31) + y;
     do TEMP[two.charCodeAt(y)] |= 1 << y; while (++y < d);
     z === n && (c = b--), d = -1, e = y = 0;
     do f = TEMP[one.charCodeAt(y)],
