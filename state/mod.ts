@@ -1,7 +1,7 @@
 const enum Color {
-  CLEAN,
-  CHECK,
   DIRTY,
+  CHECK,
+  CLEAN,
 }
 type Is<A> = (one: A, two: A) => any;
 let VALUE: Node | null = null, QUEUE: Node[] = [], AT = 0;
@@ -18,7 +18,7 @@ class Node<A = any> {
     } else this.color = Color.CLEAN, this.source = $, this.target = null;
   }
   private check(color: Color) {
-    if (this.color < color) {
+    if (this.color > color) {
       this.color = color;
       for (let z = 0; z < this.to.length; ++z) this.to[z].check(Color.CHECK);
     }
@@ -36,7 +36,7 @@ class Node<A = any> {
   private update() {
     if (this.color === Color.CHECK) {
       for (let z = 0; z < this.of.length; ++z) {
-        if (this.of[z].update(), (this.color as Color) === Color.DIRTY) break;
+        if (this.of[z].update(), !this.color) break;
       }
     }
     if (this.color === Color.DIRTY) {
