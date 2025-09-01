@@ -1,7 +1,8 @@
+/** Element tag name. */
+export type Tag = keyof HTMLElementTagNameMap;
 type Trim<A extends string> = A extends `${any}${" " | ">"}${infer B}` ? Trim<B>
   : A extends `${infer B}${"#" | "." | "[" | ":"}${any}` ? Trim<B>
   : A;
-type Tag = keyof HTMLElementTagNameMap;
 type As<A extends string> = A extends Tag ? HTMLElementTagNameMap[A] : Element;
 /** Query-selects an element. */
 export const qs =
