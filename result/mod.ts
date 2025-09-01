@@ -1,8 +1,33 @@
+/**
+ * Result type.
+ *
+ * @example Methods, higher-order functions
+ * ```ts
+ * import { assert } from "@std/assert";
+ *
+ * const base = Math.random();
+ *
+ * const { result } = ok(base * 4)
+ *   .fmap(($) => $ & 3)
+ *   .bind(not(($) => $ & 1 && "odd"))
+ *   .fmap(($) => $ || null, ($) => `${$}!` as const)
+ *   .bind(lift("zero!"));
+ * if (result.state) assert(result.value === 2);
+ * else if (result.value === "zero!") assert(base < 0.25);
+ * else {
+ *   assert(result.value === "odd!");
+ *   assert(base >= 0.25 && base < 0.5 || base >= 0.75);
+ * }
+ * ```
+ *
+ * @module result
+ */
+
 /** Dang! */
 export type No<A = any> = Or<A, never>;
 /** Nice! */
 export type Ok<A = any> = Or<never, A>;
-/** Result type, either a {@linkcode A | failure} or {@linkcode B | success}. */
+/** Result type, either a failure or success. */
 export class Or<A = any, B = any> {
   /** Success! */
   constructor(state: false, value: A);
