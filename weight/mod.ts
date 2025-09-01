@@ -31,7 +31,7 @@
  * );
  * ```
  *
- * @module match
+ * @module weight
  */
 
 import { assign } from "./src/assign.ts";

@@ -1,5 +1,5 @@
 {
-  "name": "@nyoon/match",
+  "name": "@nyoon/weight",
   "license": "GPL-3.0-or-later",
   "exports": "./mod.ts",
   "tasks": {

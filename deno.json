@@ -9,12 +9,12 @@
     "./hash",
     "./inline",
     "./json",
-    "./match",
     "./query",
     "./result",
     "./signal",
     "./state",
-    "./url"
+    "./url",
+    "./weight",
   ],
   "compilerOptions": {
     "exactOptionalPropertyTypes": true
