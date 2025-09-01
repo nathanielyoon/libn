@@ -13,7 +13,7 @@ await write_vectors(import.meta, {
       ).take(7).map(($) => $.slice(1)),
     ].map(($) => {
       const [weights, total] = JSON.parse(`[${$}]`);
-      return { weights, total: (total as number).toPrecision(7) };
+      return { weights, total };
     })
   ),
   mwmatching: await fetch(

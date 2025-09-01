@@ -1,15 +1,12 @@
-import { assertEquals } from "@std/assert";
+import { assertAlmostEquals, assertEquals } from "@std/assert";
 import { assign } from "./src/assign.ts";
 import vectors from "./vectors.json" with { type: "json" };
 import { Blossom } from "./src/blossom.ts";
 
 Deno.test("assign matches munkres.py", () =>
   vectors.munkres.forEach(({ weights, total }) =>
-    assertEquals(
-      assign(weights.map(($) => new Float64Array($))).reduce(
-        (to, col, row) => to + weights[row][col],
-        0,
-      ).toPrecision(7),
+    assertAlmostEquals(
+      assign(weights).reduce((to, col, row) => to + weights[row][col], 0),
       total,
     )
   ));
