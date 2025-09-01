@@ -1,43 +1,62 @@
-import {
-  assert,
-  assertArrayIncludes,
-  assertEquals,
-  assertThrows,
-} from "@std/assert";
+import { assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { fc_check, fc_num, fc_str } from "../test.ts";
+import type { Data, Type } from "./src/types.ts";
 import { array, boolean, number, object, string } from "./src/build.ts";
 import { coder } from "./src/code.ts";
-import type { Data, Fail, Type } from "./src/types.ts";
 import { BASES, FORMATS, parser } from "./src/parse.ts";
 
-const test = <A extends Type>(
-  $: fc.Arbitrary<readonly [type: A, ok: Data<A>, no: Fail<A>, raw?: {}]>,
-) =>
-  fc_check(fc.property($, ([type, data, fail, raw]) => {
-    const a = parser(type), b = a(data).unwrap(true);
-    assertEquals(b, data);
-    assertArrayIncludes(a(raw ?? fail.raw).unwrap(false), [fail]);
-    const c = coder(type), d = c.encode(b);
-    assertEquals(d.length, c.length), assertEquals(c.decode(d), data);
-  }));
-const type = <A extends Type>(type: A, to: ($: unknown) => any, or: any) =>
-  test(
-    fc.jsonValue().map(($) => [type, to($) ? $ : or, {
-      path: "",
-      raw: to($) ? null : $,
-      error: ["type", type.type] as const,
-    } as Fail<A>]),
-  );
-Deno.test("boolean", () => {
-  type(boolean().type, ($) => typeof $ === "boolean", true);
-  test(
-    fc.boolean().map(($) => [
-      boolean().enum([$]).type,
-      $,
-      { path: "", raw: !$, error: ["enum", [$]] } as const,
-    ]),
-  );
+const test_fc = <A extends Type["type"]>(type: A, tests: {
+  [step: string]: fc.Arbitrary<{
+    type: { type: Type<A> };
+    data?: Data<Type<A>>;
+    fail?: any;
+    raw?: {};
+  }>;
+}) =>
+  Deno.test(type, async ($) => {
+    const { [type]: data, ...fail } = {
+      boolean: fc.boolean(),
+      number: fc_num(),
+      string: fc_str().map(($) => $.normalize()),
+      array: fc.array(fc.jsonValue()),
+      object: fc.dictionary(fc_str(), fc.jsonValue()),
+    };
+    const a: typeof tests = {
+      type: fc.tuple(
+        data,
+        fc.oneof(...Object.values<fc.Arbitrary<fc.JsonValue>>(fail)),
+      ).map(([data, fail]) => ({
+        type: { type: { type } as Type<A> },
+        data: data as Data<Type<A>>,
+        fail: { path: "", raw: fail, error: ["type", type] },
+      })),
+      ...tests,
+    };
+    for (let b = Object.keys(a), z = 0; z < b.length; ++z) {
+      await $.step(b[z], () =>
+        fc_check(
+          fc.property(a[b[z]], ({ type: { type }, data, fail, raw }) => {
+            const c = parser(type), d = coder(type);
+            if (data !== undefined) {
+              const e = c(data).unwrap(true), f = d.encode(e);
+              assertEquals(e, data);
+              assertEquals(f.length, d.length), assertEquals(d.decode(f), data);
+            }
+            if (fail !== undefined) {
+              assertEquals(c(raw ?? fail.raw).unwrap(false), [fail]);
+            }
+          }),
+          { seed: 864978007, path: "1:0" },
+        ));
+    }
+  });
+test_fc("boolean", {
+  enum: fc.boolean().map(($) => ({
+    type: boolean().enum([$]),
+    data: $,
+    fail: { path: "", raw: !$, error: ["enum", [$]] },
+  })),
 });
 const fc_enum = <A>($: fc.Arbitrary<A>) =>
   fc.uniqueArray($, {
@@ -52,209 +71,198 @@ const fc_min_max = fc.uniqueArray(fc_num(), {
   const [min, max] = new Float64Array($).sort();
   return { min, max };
 });
-Deno.test("number", () => {
-  type(number().type, Number.isFinite as ($: any) => $ is number, 0);
-  test(
-    fc_enum(fc_num()).map(([head, ...rest]) => [
-      number().enum(rest).type,
-      rest[0],
-      { path: "", raw: head, error: ["enum", rest] },
-    ]),
-  );
-  test(fc_min_max.map(({ min, max }) => [
-    number().minimum(max).type,
-    max,
-    { path: "", raw: min, error: ["minimum", max] },
-  ]));
-  test(fc_min_max.map(({ min, max }) => [
-    number().maximum(min).type,
-    min,
-    { path: "", raw: max, error: ["maximum", min] },
-  ]));
-  test(
-    fc_min_max.filter(({ min, max }) => min !== 0 && max % min !== 0)
-      .map(({ min, max }) => [
-        number().multipleOf(min).type,
-        min,
-        { path: "", raw: max, error: ["multipleOf", min] },
-      ]),
-  );
+test_fc("number", {
+  enum: fc_enum(fc_num()).chain(([head, ...rest]) =>
+    fc.oneof(
+      fc.record({
+        type: fc.constant(number().enum([head])),
+        data: fc.constant(head),
+        fail: fc.record({
+          path: fc.constant(""),
+          raw: fc.constantFrom(...rest),
+          error: fc.constant(["enum", [head]]),
+        }),
+      }),
+      fc.record({
+        type: fc.constant(number().enum(rest)),
+        data: fc.constantFrom(...rest),
+        fail: fc.constant({
+          path: "",
+          raw: head,
+          error: ["enum", rest],
+        }),
+      }),
+    )
+  ),
+  minimum: fc_min_max.map(({ min, max }) => ({
+    type: number().minimum(max),
+    data: max,
+    fail: { path: "", raw: min, error: ["minimum", max] },
+  })),
+  maximum: fc_min_max.map(({ min, max }) => ({
+    type: number().maximum(min),
+    data: min,
+    fail: { path: "", raw: max, error: ["maximum", min] },
+  })),
+  exclusiveMinimum: fc_min_max.map(({ min, max }) => ({
+    type: number().exclusiveMinimum(min),
+    data: max,
+    fail: { path: "", raw: min, error: ["exclusiveMinimum", min] },
+  })),
+  exclusiveMaximum: fc_min_max.map(({ min, max }) => ({
+    type: number().exclusiveMaximum(max),
+    data: min,
+    fail: { path: "", raw: max, error: ["exclusiveMaximum", max] },
+  })),
+  multipleOf: fc_min_max.filter(({ min, max }) => min !== 0 && max % min !== 0)
+    .map(({ min, max }) => ({
+      type: number().multipleOf(min),
+      data: min,
+      fail: { path: "", raw: max, error: ["multipleOf", min] },
+    })),
 });
 const fc_iso = fc.date({
   noInvalidDate: true,
   min: new Date("0000"),
   max: new Date("9999-12-31T23:59:59.999Z"),
 }).map(($) => $.toISOString());
-Deno.test("string", () => {
-  type(string().type, ($) => typeof $ === "string" && $ === $.normalize(), "");
-  test(
-    fc_enum(fc_str().map(($) => $.normalize())).map(([head, ...rest]) => [
-      string().enum(rest).type,
-      rest[0],
-      { path: "", raw: head, error: ["enum", rest] },
-    ]),
-  );
-  test(
-    fc_str({ minLength: 1 }).map(($) => $.normalize()).map(($) => [
-      string().minLength($.length).type,
-      $,
-      { path: "", raw: $.slice(1), error: ["minLength", $.length] },
-    ]),
-  );
-  test(
-    fc_str().map(($) => $.normalize()).map(($) => [
-      string().maxLength($.length).type,
-      $,
-      { path: "", raw: $ + "!", error: ["maxLength", $.length] },
-    ]),
-  );
-  test(
-    fc.constantFrom(...Object.keys(BASES) as (keyof typeof BASES)[]).chain(
-      ($) =>
-        fc.tuple(
-          fc.constant(string().contentEncoding($).type),
-          fc.stringMatching(BASES[$]),
-          fc.constant({
-            path: "",
-            raw: "!",
-            error: ["contentEncoding", $],
-          } as any),
-        ),
+test_fc("string", {
+  enum: fc_enum(fc_str().map(($) => $.normalize())).chain(([head, ...rest]) =>
+    fc.oneof(
+      fc.record({
+        type: fc.constant(string().enum([head])),
+        data: fc.constant(head),
+        fail: fc.record({
+          path: fc.constant(""),
+          raw: fc.constantFrom(...rest),
+          error: fc.constant(["enum", [head]]),
+        }),
+      }),
+      fc.record({
+        type: fc.constant(string().enum(rest)),
+        data: fc.constantFrom(...rest),
+        fail: fc.constant({
+          path: "",
+          raw: head,
+          error: ["enum", rest],
+        }),
+      }),
+    )
+  ),
+  minLength: fc_str({ minLength: 1 }).map(($) => ($ = $.normalize(), {
+    type: string().minLength($.length),
+    data: $,
+    fail: { path: "", raw: $.slice(1), error: ["minLength", $.length] },
+  })),
+  maxLength: fc_str({ minLength: 1 }).map(($) => ($ = $.normalize(), {
+    type: string().maxLength($.length - 1),
+    data: $.slice(1),
+    fail: { path: "", raw: $, error: ["maxLength", $.length - 1] },
+  })),
+  contentEncoding: fc.oneof(
+    ...Object.entries(BASES).map(([key, value]) =>
+      fc.record({
+        type: fc.constant(string().contentEncoding(key as keyof typeof BASES)),
+        data: fc.stringMatching(value),
+        fail: fc_str().map(($) => ({
+          path: "",
+          raw: $.normalize(),
+          error: ["contentEncoding", key],
+        })).filter(($) => !value.test($.raw)),
+      })
     ),
-  );
-  test(
-    fc.constantFrom(...Object.keys(FORMATS) as (keyof typeof FORMATS)[]).chain(
-      ($) =>
-        fc.tuple(
-          fc.constant(string().format($).type),
-          ($ === "date"
-            ? fc_iso.map(($) => $.slice(0, 10))
-            : $ === "time"
-            ? fc_iso.map(($) => $.slice(11))
-            : $ === "date-time"
-            ? fc_iso
-            : fc.stringMatching(FORMATS[$]).map(($) => $.normalize().trim())
-              .filter(RegExp.prototype.test.bind(FORMATS[$]))) as fc.Arbitrary<
-              Data<Type<"string"> & { format: typeof $ }>
-            >,
-          fc.constant({
-            path: "",
-            raw: "!",
-            error: ["format", $],
-          } as any),
-        ),
+  ),
+  format: fc.oneof(
+    fc.tuple(fc.constant("date"), fc_iso.map(($) => $.slice(0, 10))),
+    fc.tuple(fc.constant("time"), fc_iso.map(($) => $.slice(11))),
+    fc.tuple(fc.constant("date-time"), fc_iso),
+    fc.constantFrom("duration", "email", "uri", "uuid").chain(($) =>
+      fc.tuple(
+        fc.constant($),
+        fc.stringMatching(FORMATS[$])
+          .map(($) => $.trim().normalize())
+          .filter(RegExp.prototype.test.bind(FORMATS[$])),
+      )
     ),
-  );
-  test(
-    fc.string().map(($) => {
-      const a = `^${$.replaceAll(/[$(-+./?[-^{|}]/g, "\\$&")}$`;
-      return [
-        string().pattern(a).type,
-        $,
-        { path: "", raw: $ + "!", error: ["pattern", a] },
-      ];
+  ).chain(([format, data]) =>
+    fc.record({
+      type: fc.constant(string().format(format)),
+      data: fc.constant(data),
+      fail: fc_str().map(($) => ({
+        path: "",
+        raw: $.normalize(),
+        error: ["format", format],
+      })).filter(($) => !FORMATS[format].test($.raw)),
+    })
+  ),
+  pattern: fc_str().map(($) =>
+    RegExp(`^${$.normalize().replaceAll(/[$(-+./?[-^{|}]/g, "\\$&")}$`)
+  ).chain((pattern) =>
+    fc.record({
+      type: fc.constant(string().pattern(pattern.source)),
+      data: fc.stringMatching(pattern),
+      fail: fc_str().map(($) => ({
+        path: "",
+        raw: $.normalize(),
+        error: ["pattern", pattern.source],
+      })).filter(($) => !pattern.test($.raw)),
+    })
+  ),
+});
+test_fc("array", {
+  items: fc.boolean().map(($) => ({
+    type: array().items(boolean().enum([$])),
+    data: [$],
+    fail: { path: "/0", raw: !$, error: ["enum", [$]] },
+    raw: [!$],
+  })).map(($) => $),
+  minItems: fc.array(fc.jsonValue(), { minLength: 1 }).map(($) => ({
+    type: array().minItems($.length),
+    data: $,
+    fail: { path: "", raw: $.slice(1), error: ["minItems", $.length] },
+  })),
+  maxItems: fc.array(fc.jsonValue(), { minLength: 1 }).map(($) => ({
+    type: array().maxItems($.length - 1),
+    data: $.slice(1),
+    fail: { path: "", raw: $, error: ["maxItems", $.length - 1] },
+  })),
+  uniqueItems: fc.jsonValue().map(($) => ({
+    type: array().uniqueItems(),
+    data: [$],
+    fail: { path: "", raw: [$, $], error: ["uniqueItems", true] },
+  })),
+});
+test_fc("object", {
+  properties: fc.tuple(fc_str(), fc.boolean()).map(([key, value]) => ({
+    type: object().properties({
+      [key = key.normalize()]: boolean().enum([value]),
     }),
-  );
-  assertThrows(() => parser(string().pattern("(").type));
-});
-Deno.test("array", () => {
-  type(array().type, Array.isArray, []);
-  test(
-    fc.boolean().map(($) => [
-      array().items(boolean().enum([$])).type,
-      [$],
-      { path: "/0", raw: !$, error: ["enum", [$] as const] },
-      [!$],
-    ]),
-  );
-  test(
-    fc.array(fc.jsonValue(), { minLength: 1 }).map(($) => [
-      array().minItems($.length).type,
-      $,
-      { path: "", raw: $.slice(1), error: ["minItems", $.length] },
-    ]),
-  );
-  test(
-    fc.array(fc.jsonValue()).map(($) => [
-      array().maxItems($.length).type,
-      $,
-      { path: "", raw: [...$, null], error: ["maxItems", $.length] },
-    ]),
-  );
-  test(
-    fc.boolean().map(($) => [
-      array().items(boolean()).uniqueItems().type,
-      [$],
-      { path: "", raw: [$, $], error: ["uniqueItems", true as const] },
-    ]),
-  );
-  assert(parser({ type: "array", uniqueItems: false })([0, 0]).is_ok());
-  test(fc.oneof(
-    fc.array(fc.boolean()).map(($) =>
-      [
-        array().items(boolean()).type,
-        $,
-        { path: "", raw: {}, error: ["type", "array"] },
-      ] as const
-    ),
-  ));
-});
-Deno.test("object", () => {
-  type(
-    object().type,
-    ($) => typeof $ === "object" && $ && !Array.isArray($),
-    {},
-  );
-  test(
-    fc.boolean().map(($) => [
-      object().properties({ "": boolean().enum([$]) }).type,
-      { "": $ },
-      { path: "/", raw: !$, error: ["enum", [$] as const] },
-      { "": !$ },
-    ]),
-  );
-  test(
-    fc_str().map(($) => [
-      object().properties({ [$]: boolean() }).required([$]).type,
-      { [$]: true },
-      { path: "", raw: null, error: ["required", $] },
-      {},
-    ]),
-  );
-  test(
-    fc_str().map(($) => [
-      object().properties({ [$]: boolean() }).required().type,
-      { [$]: true },
-      { path: "", raw: null, error: ["required", $] },
-      {},
-    ]),
-  );
-  test(
-    fc_str().map(($) => [object().properties({}).type, {}, {
+    data: { [key]: value },
+    fail: {
+      path: `/${key.replaceAll("~", "~0").replaceAll("/", "~1")}`,
+      raw: !value,
+      error: ["enum", [value]],
+    },
+    raw: { [key]: !value },
+  })),
+  required: fc_str().chain(($) =>
+    fc.tuple(
+      fc.constant($ = $.normalize()),
+      fc.option(fc.constant([$]), { nil: undefined }),
+    )
+  ).map(([key, required]) => ({
+    type: object().properties({ [key]: boolean() }).required(required!),
+    data: { [key]: true },
+    fail: { path: "", raw: null, error: ["required", key] },
+    raw: {},
+  })),
+  additionalProperties: fc.tuple(fc_str(), fc.boolean()).map(([key, $]) => ({
+    type: object().properties({}).additionalProperties($),
+    data: $ ? { [key.normalize()]: 0 } : {},
+    fail: $ ? undefined : {
       path: "",
-      raw: { [$]: {} },
-      error: ["additionalProperties", false as const],
-    }]),
-  );
-  assert(
-    parser({
-      type: "object",
-      properties: {},
-      additionalProperties: true,
-    })({ "": 0 }).is_ok(),
-  );
-  test(
-    fc_str().map(($) => [
-      object().properties({ [$]: boolean() }).minProperties(1).type,
-      { [$]: true },
-      { path: "", raw: {}, error: ["minProperties", 1 as const] },
-    ]),
-  );
-  test(
-    fc_str().map(($) => [
-      object().properties({ [$]: boolean() }).maxProperties(0).type,
-      {},
-      { path: "", raw: { [$]: true }, error: ["maxProperties", 0 as const] },
-    ]),
-  );
+      raw: { [key.normalize()]: 0 },
+      error: ["additionalProperties", false],
+    },
+  })),
 });
