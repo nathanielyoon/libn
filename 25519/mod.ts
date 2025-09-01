@@ -4,13 +4,13 @@
  *
  * @example
  * ```ts Key generation, signing, and verification
- * import { assertEquals } from "@std/assert";
+ * import { assert } from "@std/assert";
  *
  * const secret_key = crypto.getRandomValues(new Uint8Array(32));
  * const public_key = generate(secret_key);
  * const data = crypto.getRandomValues(new Uint8Array(32));
  * const signature = sign(secret_key, data);
- * assertEquals(verify(public_key, data, signature), true);
+ * assert(verify(public_key, data, signature));
  * ```
  *
  * @example Montgomery key exchange
