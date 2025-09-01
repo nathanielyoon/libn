@@ -17,6 +17,22 @@ class Node<A = any> {
       this.source = undefined as A, this.target = $ as () => A;
     } else this.color = Color.CLEAN, this.source = $, this.target = null;
   }
+  private check(color: Color) {
+    if (this.color < color) {
+      this.color = color;
+      for (let z = 0; z < this.to.length; ++z) this.to[z].check(Color.CHECK);
+    }
+  }
+  private clear(dep: number) {
+    for (let a, z; dep < this.of.length; ++dep) {
+      for (a = this.of[dep], z = 0; z < a.to.length; ++z) {
+        if (a.to[z] === this) {
+          a.to[z] = a.to[a.to.length - 1], a.to.pop();
+          break;
+        }
+      }
+    }
+  }
   private update() {
     if (this.color === Color.CHECK) {
       for (let z = 0; z < this.of.length; ++z) {
@@ -57,26 +73,11 @@ class Node<A = any> {
     } else $ !== this.target && this.check(Color.DIRTY), this.target = $ as any;
     return this.source;
   }
-  private check(color: Color) {
-    if (this.color < color) {
-      this.color = color;
-      for (let z = 0; z < this.to.length; ++z) this.to[z].check(Color.CHECK);
-    }
-  }
-  private clear(dep: number) {
-    for (let a, z; dep < this.of.length; ++dep) {
-      for (a = this.of[dep], z = 0; z < a.to.length; ++z) {
-        if (a.to[z] === this) {
-          a.to[z] = a.to[a.to.length - 1], a.to.pop();
-          break;
-        }
-      }
-    }
-  }
 }
+/** Combined getter/setter for a reactive node. */
 export type State<A> = { (): A; <const B extends A>($: B): B; ($: () => A): A };
+/** Creates a reactive node. */
 export const state = <A>($: A | (() => A), is: Is<A> = Object.is): State<A> => {
   const a = new Node($, is);
-  return ((...$: [$?: A | (() => A)]) =>
-    $.length ? a.set($[0]!) : a.get()) as State<A>;
+  return ((...$: [A]) => $.length ? a.set($[0]) : a.get()) as State<A>;
 };
