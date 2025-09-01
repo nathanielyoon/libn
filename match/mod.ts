@@ -1,2 +1,2 @@
-export * from "./src/assign.ts"
-export * from "./src/blossom.ts"
+export { assign } from "./src/assign.ts";
+export { Blossom } from "./src/blossom.ts";
