@@ -29,13 +29,13 @@ type Writable<A> = Pick<
 /** Creates an element. */
 export const ce = <A extends Tag>(
   tag: A,
-  assign: Partial<Writable<HTMLElementTagNameMap[A]>> & { parent?: Node } = {},
+  parent?: Node,
+  set: Partial<Writable<HTMLElementTagNameMap[A]>> = {},
 ): HTMLElementTagNameMap[A] => {
   const a = document.createElement(tag);
-  if (assign) {
-    const { parent, ...b } = assign, c = Object.keys(b);
+  if (set) {
     parent?.appendChild(a); // @ts-expect-error: it'll be ok
-    for (const key of Object.keys(b)) if (b[key] !== undefined) a[key] = b[key];
+    for (const $ of Object.keys(set)) if (set[$] !== undefined) a[$] = set[$];
   }
   return a;
 };
