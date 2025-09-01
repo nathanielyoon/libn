@@ -1,5 +1,26 @@
+/**
+ * S3 presigned URLs.
+ *
+ * @example Sign query parameters
+ * ```ts
+ * import { assertMatch } from "@std/assert";
+ *
+ * assertMatch(
+ *   presign(
+ *     { S3_HOST: "https://s3.amazonaws.com", S3_ID: "", S3_KEY: "" },
+ *     "GET",
+ *     "file.txt",
+ *   ),
+ *   /\b[\da-f]{64}$/,
+ * );
+ * ```
+ *
+ * @module url
+ */
+
 import { en_b16, en_bin } from "@nyoon/base";
 import { hmac, sha256 } from "@nyoon/hash";
+import { assertMatch } from "@std/assert/match";
 
 /** Presigns a URL for the specified method, path, and headers. */
 export const presign = (
