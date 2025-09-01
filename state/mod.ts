@@ -1,3 +1,24 @@
+/**
+ * Reactive state management.
+ *
+ * @example Push-pull updates
+ * ```ts
+ * import { assertEquals } from "@std/assert";
+ *
+ * const count = state(0), half = state(() => count() >> 1);
+ * let called = 0;
+ * const caller = state(() => (++called, half() + 1));
+ *
+ * assertEquals(called, 0);
+ * assertEquals(caller(), 1), assertEquals(called, 1);
+ * count(4), count(7), assertEquals(called, 1);
+ * count(1), assertEquals(caller(), 1), assertEquals(called, 1);
+ * count(6), assertEquals(caller(), 4), assertEquals(called, 2);
+ * ```
+ *
+ * @module state
+ */
+
 const enum Color {
   DIRTY,
   CHECK,
