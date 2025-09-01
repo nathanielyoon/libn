@@ -1,6 +1,6 @@
 /** Finds a minimum-weight matching in a bipartite graph (rows <= cols). */
-export const assign = (weights: Float64Array[]): Int32Array<ArrayBuffer> => {
-  const a = weights.length, b = weights[0].length, c = new Float64Array(b);
+export const assign = (graph: ArrayLike<number>[]): Int32Array<ArrayBuffer> => {
+  const a = graph.length, b = graph[0].length, c = new Float64Array(b);
   const d = new Uint8Array(a), e = new Uint8Array(b), f = new Float64Array(a);
   const g = new Float64Array(b), h = new Int32Array(b).fill(-1);
   const i = new Int32Array(b).fill(-1), j = new Int32Array(a).fill(-1);
@@ -10,7 +10,7 @@ export const assign = (weights: Float64Array[]): Int32Array<ArrayBuffer> => {
     do {
       x = 0, d[k] = 1, m = Infinity, n = -1;
       do if (!e[x]) {
-        if ((o = l + weights[k][x] - f[k] - g[x]) < c[x]) c[x] = o, h[x] = k;
+        if ((o = l + graph[k][x] - f[k] - g[x]) < c[x]) c[x] = o, h[x] = k;
         if (c[x] < m || c[x] === m && i[x] === -1) m = c[x], n = x;
       } while (++x < b);
     } while (l = m, e[n] = 1, ~i[n] ? k = i[n] : y = n, y === -1);
