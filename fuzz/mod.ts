@@ -1,5 +1,23 @@
+/**
+ * [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance).
+ *
+ * @example Fuzzy-sort strings
+ * ```ts
+ * import { assertEquals } from "@std/assert";
+ *
+ * assertEquals(
+ *   ["arsenal", "spurs"].sort((one, two) =>
+ *     myers("winners", one) - myers("winners", two)
+ *   ),
+ *   ["spurs", "arsenal"],
+ * );
+ * ```
+ *
+ * @module fuzz
+ */
+
 const TEMP = new Uint32Array(0x10000);
-/** Calculates Levenshtein distance. */
+/** Calculates the distance between two strings. */
 export const myers = (one: string, two: string): number => {
   if (one.length > two.length) [two, one] = [one, two];
   const a = one.length;

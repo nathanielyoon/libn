@@ -1,3 +1,18 @@
+/**
+ * Comma-separated values ([RFC 4180](https://www.rfc-editor.org/rfc/rfc4180)).
+ *
+ * @example Stringifying, parsing
+ * ```ts
+ * import { assertEquals } from "@std/assert";
+ *
+ * const data = [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]];
+ *
+ * assertEquals(de_csv(en_csv(data)), data);
+ * ```
+ *
+ * @module csv
+ */
+
 /** Parses CSV. */
 export const de_csv = ($: string): (string | null)[][] | null => {
   if ($.charCodeAt(0) === 0xfeff) $ = $.slice(1);
