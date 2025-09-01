@@ -1,3 +1,19 @@
+/**
+ * Inline Vite assets.
+ *
+ * @example Config
+ * ```ts
+ * import { defineConfig } from "rolldown-vite";
+ * import inline from "@nyoon/inline";
+ *
+ * export default defineConfig({
+ *   plugins: [inline()],
+ * });
+ * ```
+ *
+ * @module inline
+ */
+
 import type { PluginOption } from "rolldown-vite";
 
 function assert($: unknown): asserts $ {
