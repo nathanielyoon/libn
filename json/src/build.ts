@@ -34,7 +34,7 @@ type Typer<A extends Type> =
               string extends keyof B ? string[] : Tuple<keyof B & string>
             >
           >;
-          <const C extends (keyof B & string)[]>(
+          <const C extends readonly (keyof B & string)[]>(
             $: C,
           ): Typer<To<A, "required", C>>;
         };
