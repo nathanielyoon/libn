@@ -12,6 +12,7 @@
     "./paseto",
     "./query",
     "./result",
+    "./signal",
     "./state",
     "./url",
     "./weight"
