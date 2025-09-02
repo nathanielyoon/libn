@@ -9,6 +9,7 @@
     "./hash",
     "./inline",
     "./json",
+    "./paseto",
     "./query",
     "./result",
     "./state",
