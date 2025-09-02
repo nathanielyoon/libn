@@ -1,3 +1,23 @@
+/**
+ * Reactive state management.
+ *
+ * @example Push-pull updates
+ * ```ts
+ * import { assertEquals } from "@std/assert";
+ *
+ * const count = signal(0), half = signal(() => count() >> 1);
+ * let called = 0;
+ * effect(() => half() && ++called);
+ *
+ * assertEquals(called, 0);
+ * count(1), assertEquals(called, 0);
+ * count(2), assertEquals(called, 1);
+ * count(3), assertEquals(called, 1);
+ * ```
+ *
+ * @module signal
+ */
+
 const enum Flag {
   MAYBE = 1 << 0,
   WATCH = 1 << 1,
@@ -171,7 +191,7 @@ function dispose(this: Effect) {
 const node = <A extends Kind, B>(kind: A, flags: Flag, rest: B) => (
   { kind, flags, head: null, dep: null, sub: null, tail: null, ...rest }
 );
-/** Reactive value. */
+/** Combined getter/setter for a reactive value. */
 export type Signal<A> = { (): A; <const C extends A>($: C | (($: C) => C)): C };
 /** Creates a reactive value. */
 export const signal = (
