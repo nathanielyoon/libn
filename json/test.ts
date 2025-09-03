@@ -1,4 +1,4 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertThrows } from "@std/assert";
 import fc from "fast-check";
 import { fc_check, fc_num, fc_str } from "../test.ts";
 import type { Data, Type } from "./src/types.ts";
@@ -322,3 +322,8 @@ Deno.test("arrays encode/decode with any items", () =>
     ),
     { numRuns: 0x200 },
   ));
+Deno.test("string enum parsing escapes breaking characters", () =>
+  ["\n", "\r", "\u2028", "\u2029"].forEach(($) => {
+    assertThrows(() => Function(`/${$}/`));
+    assertEquals(parser(string().enum([$]).type)($).unwrap(), $);
+  }));
