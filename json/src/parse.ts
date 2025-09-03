@@ -38,7 +38,7 @@ const parsers = ($: Type): string => {
   if ("enum" in $) {
     a += "if(!/^(?:", z = 0;
     do a += JSON.stringify($.enum[z]).replace(
-      /([$(-+./?[-^{|}])|[\p{C}\p{Zl}\p{Zp}]/gu,
+      /([$(-+./?[-^{|}])|[\n\r\u2028\u2029]/g,
       ($, $1) =>
         `\\${$1 ?? "u" + $.charCodeAt(0).toString(16).padStart(4, "0")}`,
     ); while (++z < $.enum.length && (a += "|"));
