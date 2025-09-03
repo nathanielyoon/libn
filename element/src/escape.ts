@@ -17,5 +17,5 @@ export const html = ($: { raw: readonly string[] }, ...use: any[]): string => {
     d = typeof c === "string" ? c : Array.isArray(c) ? c.join("") : `${c}`;
     a += b.charCodeAt(b.length - 1) === 36 ? b.slice(0, -1) + d : b + escape(d);
   }
-  return a + $.raw[use.length];
+  return (a + $.raw[use.length]).replace(/^\s*\r?\n/gm, "");
 };
