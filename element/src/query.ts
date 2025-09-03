@@ -19,10 +19,3 @@ export const qa = ((query: string, parent = document.body) => [
   <A extends string>(selector: A, parent?: Element): As<Trim<A>>[];
   <A extends Element>(selector: string, parent?: Element): A[];
 };
-type Writable<A> = Pick<
-  A,
-  keyof {
-    [B in keyof A]: (<C>() => C extends { [_ in B]: A[B] } ? 1 : 0) extends
-      (<C>() => C extends { -readonly [_ in B]: A[B] } ? 1 : 0) ? B : never;
-  }
->;
