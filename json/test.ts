@@ -12,6 +12,7 @@ const test_fc = <A extends Type["type"]>(type: A, tests: {
     data?: Data<Type<A>>;
     fail?: any;
     raw?: {};
+    out?: {};
   }>;
 }) =>
   Deno.test(type, async ($) => {
@@ -35,20 +36,18 @@ const test_fc = <A extends Type["type"]>(type: A, tests: {
     };
     for (let b = Object.keys(a), z = 0; z < b.length; ++z) {
       await $.step(b[z], () =>
-        fc_check(
-          fc.property(a[b[z]], ({ type: { type }, data, fail, raw }) => {
-            const c = parser(type), d = coder(type);
-            if (data !== undefined) {
-              const e = c(data).unwrap(true), f = d.encode(e);
-              assertEquals(e, data);
-              assertEquals(f.length, d.length), assertEquals(d.decode(f), data);
-            }
-            if (fail !== undefined) {
-              assertEquals(c(raw ?? fail.raw).unwrap(false), [fail]);
-            }
-          }),
-          { seed: 864978007, path: "1:0" },
-        ));
+        fc_check(fc.property(a[b[z]], ({ type, data, fail, raw, out }) => {
+          const c = parser(type.type), d = coder(type.type);
+          if (data !== undefined) {
+            const e = c(data).unwrap(true), f = d.encode(e);
+            assertEquals(e, out ?? data);
+            assertEquals(f.length, d.length);
+            assertEquals(d.decode(f), out ?? data);
+          }
+          if (fail !== undefined) {
+            assertEquals(c(raw ?? fail.raw).unwrap(false), [fail]);
+          }
+        })));
     }
   });
 test_fc("boolean", {
@@ -259,6 +258,7 @@ test_fc("object", {
   additionalProperties: fc.tuple(fc_str(), fc.boolean()).map(([key, $]) => ({
     type: object().properties({}).additionalProperties($),
     data: $ ? { [key.normalize()]: 0 } : {},
+    out: {},
     fail: $ ? undefined : {
       path: "",
       raw: { [key.normalize()]: 0 },
