@@ -214,7 +214,7 @@ test_fc("array", {
     data: [$],
     fail: { path: "/0", raw: !$, error: ["enum", [$]] },
     raw: [!$],
-  })).map(($) => $),
+  })),
   minItems: fc.array(fc.jsonValue(), { minLength: 1 }).map(($) => ({
     type: array().minItems($.length),
     data: $,
