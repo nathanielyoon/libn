@@ -5,6 +5,7 @@
     "./aead",
     "./base",
     "./csv",
+    "./escape",
     "./fuzz",
     "./hash",
     "./inline",
