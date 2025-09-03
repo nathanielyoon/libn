@@ -269,53 +269,56 @@ test_fc("object", {
   })),
 });
 Deno.test("arrays encode/decode with any items", () =>
-  fc_check(fc.property(
-    fc.oneof(
+  fc_check(
+    fc.property(
       fc.oneof(
-        fc.tuple(fc.constant(boolean()), fc.array(fc.boolean())),
-        fc.tuple(fc.constant(number()), fc.array(fc_num())),
-        ...formats.map(([format, data]) =>
-          fc.tuple(fc.constant(string().format(format)), fc.array(data))
-        ),
-        fc_enum(fc.oneof(
-          fc.stringMatching(/^(?:.*,.*|)$/),
-          fc.stringMatching(/^[^,]+$/),
-        )).chain(($) =>
-          fc.tuple(
-            fc.constant(string().enum($)),
-            fc.array(fc.constantFrom(...$)),
-          )
-        ),
-      ).map(([typer, data]) => [array().items<Type>(typer), data] as const),
-      fc.oneof(...bases.map(([base, data]) =>
-        fc.nat({ max: 99 }).chain((min) =>
-          fc.tuple(
-            fc.constant(
-              array().items(string().contentEncoding(base)).minItems(min),
-            ),
-            fc.array(data, { minLength: min }),
-          )
-        )
-      )),
-      fc.tuple(
-        fc.tuple(fc.boolean(), fc.nat({ max: 99 })),
         fc.oneof(
-          fc.tuple(fc.constant(array()), fc.array(fc.array(fc.jsonValue()))),
-          fc.tuple(
-            fc.constant(object()),
-            fc.array(fc.dictionary(fc_str(), fc.jsonValue())),
+          fc.tuple(fc.constant(boolean()), fc.array(fc.boolean())),
+          fc.tuple(fc.constant(number()), fc.array(fc_num())),
+          ...formats.map(([format, data]) =>
+            fc.tuple(fc.constant(string().format(format)), fc.array(data))
           ),
-        ),
-      ).map(([[use_max, max], [typer, data]]) => {
-        const a = array().items<Type>(typer);
-        return use_max
-          ? [a.maxItems(max), data.slice(0, max)] as const
-          : [a, data] as const;
-      }),
-      fc.tuple(fc.constant(array()), fc.array(fc.jsonValue())),
+          fc_enum(fc.oneof(
+            fc.stringMatching(/^(?:.*,.*|)$/),
+            fc.stringMatching(/^[^,]+$/),
+          )).chain(($) =>
+            fc.tuple(
+              fc.constant(string().enum($)),
+              fc.array(fc.constantFrom(...$)),
+            )
+          ),
+        ).map(([typer, data]) => [array().items<Type>(typer), data] as const),
+        fc.oneof(...bases.map(([base, data]) =>
+          fc.nat({ max: 99 }).chain((min) =>
+            fc.tuple(
+              fc.constant(
+                array().items(string().contentEncoding(base)).minItems(min),
+              ),
+              fc.array(data, { minLength: min }),
+            )
+          )
+        )),
+        fc.tuple(
+          fc.tuple(fc.boolean(), fc.nat({ max: 99 })),
+          fc.oneof(
+            fc.tuple(fc.constant(array()), fc.array(fc.array(fc.jsonValue()))),
+            fc.tuple(
+              fc.constant(object()),
+              fc.array(fc.dictionary(fc_str(), fc.jsonValue())),
+            ),
+          ),
+        ).map(([[use_max, max], [typer, data]]) => {
+          const a = array().items<Type>(typer);
+          return use_max
+            ? [a.maxItems(max), data.slice(0, max)] as const
+            : [a, data] as const;
+        }),
+        fc.tuple(fc.constant(array()), fc.array(fc.jsonValue())),
+      ),
+      ([{ type }, data]) => {
+        const { encode, decode } = coder(type);
+        assertEquals(decode(encode(parser(type)(data).unwrap(true))), data);
+      },
     ),
-    ([{ type }, data]) => {
-      const { encode, decode } = coder(type);
-      assertEquals(decode(encode(parser(type)(data).unwrap(true))), data);
-    },
-  )));
+    { numRuns: 0x200 },
+  ));
