@@ -69,7 +69,7 @@ const enlink = ($: Node) => {
 };
 const delink = ($: Node, link: Link) => {
   const a = link.dep_prev, b = link.dep, c = link.dep_next, d = link.sub_prev;
-  c ? c.dep_prev = a : $.head = a, a ? a.dep_next = c : $.dep = c;
+  (c ? c.dep_prev = a : $.head = a) ? a!.dep_next = c : $.dep = c;
   let e = link.sub_next;
   if (e ? e.sub_prev = d : b.tail = d) d!.sub_next = e;
   else if (!(b.sub = e) && b.dep) {
@@ -108,7 +108,7 @@ const deep = ($: Link) => {
     else if (d & 48 || !ok($, c)) d = 0; // 48 = DIRTY | READY
     else c.flags |= 40, d &= Flag.MAYBE; // 40 = RECUR | READY
     if (d & Flag.WATCH && rerun(c), d & Flag.MAYBE) {
-      c.sub && ($ = c.sub).sub_next && (a.push(b), b = $.sub_next);
+      if (c.sub && ($ = c.sub).sub_next) a.push(b), b = $.sub_next;
     } else if (!b) {
       while (a.length) {
         if ($ = a.pop()!) {
@@ -124,7 +124,7 @@ const flat = ($: Link | null) => {
   while ($) { // 48 = READY | DIRTY
     ($.sub.flags & 48) === Flag.READY &&
     ($.sub.flags |= Flag.DIRTY) & Flag.WATCH &&
-    rerun($.sub), $ = $?.sub_next!;
+    rerun($.sub), $ = $.sub_next;
   }
 };
 const check = ($: Node, link: Link) => {
@@ -133,8 +133,8 @@ const check = ($: Node, link: Link) => {
     else if ((d.flags & Flag.CLEAR) === Flag.CLEAR) {
       if (reset(d) || reget(d)) c = true, d.sub!.sub_next && flat(d.sub!);
     } else if ((d.flags & 33) === 33) { // 33 = MAYBE | READY
-      if (link.sub_prev || link.sub_next) a.push(link);
-      ++b, $ = d, link = d.dep!;
+      (link.sub_prev || link.sub_next) && a.push(link);
+      ++b, link = ($ = d).dep!;
       continue;
     }
     if (c || !link.dep_next) {
