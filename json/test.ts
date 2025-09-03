@@ -125,6 +125,24 @@ const fc_iso = fc.date({
   min: new Date("0000"),
   max: new Date("9999-12-31T23:59:59.999Z"),
 }).map(($) => $.toISOString());
+const fc_format = fc.oneof(
+  fc.tuple(fc.constant("date"), fc_iso.map(($) => $.slice(0, 10))),
+  fc.tuple(fc.constant("time"), fc_iso.map(($) => $.slice(11))),
+  fc.tuple(fc.constant("date-time"), fc_iso),
+  fc.constantFrom("duration", "email", "uri", "uuid").chain(($) =>
+    fc.tuple(
+      fc.constant($),
+      fc.stringMatching(FORMATS[$]).map(($) => $.trim().normalize()).filter(
+        RegExp.prototype.test.bind(FORMATS[$]),
+      ),
+    )
+  ),
+);
+const fc_base = fc.oneof(
+  ...Object.entries(BASES).map(([key, value]) =>
+    fc.tuple(fc.constant(key as keyof typeof BASES), fc.stringMatching(value))
+  ),
+);
 test_fc("string", {
   enum: fc_enum(fc_str().map(($) => $.normalize())).chain(([head, ...rest]) =>
     fc.oneof(
@@ -158,32 +176,18 @@ test_fc("string", {
     data: $.slice(1),
     fail: { path: "", raw: $, error: ["maxLength", $.length - 1] },
   })),
-  contentEncoding: fc.oneof(
-    ...Object.entries(BASES).map(([key, value]) =>
-      fc.record({
-        type: fc.constant(string().contentEncoding(key as keyof typeof BASES)),
-        data: fc.stringMatching(value),
-        fail: fc_str().map(($) => ({
-          path: "",
-          raw: $.normalize(),
-          error: ["contentEncoding", key],
-        })).filter(($) => !value.test($.raw)),
-      })
-    ),
+  contentEncoding: fc_base.chain(([base, data]) =>
+    fc.record({
+      type: fc.constant(string().contentEncoding(base)),
+      data: fc.constant(data),
+      fail: fc_str().map(($) => ({
+        path: "",
+        raw: $.normalize(),
+        error: ["contentEncoding", base],
+      })).filter(($) => !BASES[base].test($.raw)),
+    })
   ),
-  format: fc.oneof(
-    fc.tuple(fc.constant("date"), fc_iso.map(($) => $.slice(0, 10))),
-    fc.tuple(fc.constant("time"), fc_iso.map(($) => $.slice(11))),
-    fc.tuple(fc.constant("date-time"), fc_iso),
-    fc.constantFrom("duration", "email", "uri", "uuid").chain(($) =>
-      fc.tuple(
-        fc.constant($),
-        fc.stringMatching(FORMATS[$])
-          .map(($) => $.trim().normalize())
-          .filter(RegExp.prototype.test.bind(FORMATS[$])),
-      )
-    ),
-  ).chain(([format, data]) =>
+  format: fc_format.chain(([format, data]) =>
     fc.record({
       type: fc.constant(string().format(format)),
       data: fc.constant(data),
