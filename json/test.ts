@@ -125,23 +125,21 @@ const fc_iso = fc.date({
   min: new Date("0000"),
   max: new Date("9999-12-31T23:59:59.999Z"),
 }).map(($) => $.toISOString());
-const fc_format = fc.oneof(
-  fc.tuple(fc.constant("date"), fc_iso.map(($) => $.slice(0, 10))),
-  fc.tuple(fc.constant("time"), fc_iso.map(($) => $.slice(11))),
-  fc.tuple(fc.constant("date-time"), fc_iso),
-  fc.constantFrom("duration", "email", "uri", "uuid").chain(($) =>
-    fc.tuple(
-      fc.constant($),
+const formats = [
+  ["date", fc_iso.map(($) => $.slice(0, 10))],
+  ["time", fc_iso.map(($) => $.slice(11))],
+  ["date-time", fc_iso],
+  ...(["duration", "email", "uri", "uuid"] as const).map(($) =>
+    [
+      $,
       fc.stringMatching(FORMATS[$]).map(($) => $.trim().normalize()).filter(
         RegExp.prototype.test.bind(FORMATS[$]),
       ),
-    )
+    ] as const
   ),
-);
-const fc_base = fc.oneof(
-  ...Object.entries(BASES).map(([key, value]) =>
-    fc.tuple(fc.constant(key as keyof typeof BASES), fc.stringMatching(value))
-  ),
+] as const;
+const bases = Object.entries(BASES).map(([key, value]) =>
+  [key as keyof typeof BASES, fc.stringMatching(value)] as const
 );
 test_fc("string", {
   enum: fc_enum(fc_str().map(($) => $.normalize())).chain(([head, ...rest]) =>
@@ -176,28 +174,28 @@ test_fc("string", {
     data: $.slice(1),
     fail: { path: "", raw: $, error: ["maxLength", $.length - 1] },
   })),
-  contentEncoding: fc_base.chain(([base, data]) =>
+  contentEncoding: fc.oneof(...bases.map(([base, data]) =>
     fc.record({
       type: fc.constant(string().contentEncoding(base)),
-      data: fc.constant(data),
+      data,
       fail: fc_str().map(($) => ({
         path: "",
         raw: $.normalize(),
         error: ["contentEncoding", base],
       })).filter(($) => !BASES[base].test($.raw)),
     })
-  ),
-  format: fc_format.chain(([format, data]) =>
+  )),
+  format: fc.oneof(...formats.map(([format, data]) =>
     fc.record({
       type: fc.constant(string().format(format)),
-      data: fc.constant(data),
+      data,
       fail: fc_str().map(($) => ({
         path: "",
         raw: $.normalize(),
         error: ["format", format],
       })).filter(($) => !FORMATS[format].test($.raw)),
     })
-  ),
+  )),
   pattern: fc_str().map(($) =>
     RegExp(`^${$.normalize().replaceAll(/[$(-+./?[-^{|}]/g, "\\$&")}$`)
   ).chain((pattern) =>
@@ -270,3 +268,54 @@ test_fc("object", {
     },
   })),
 });
+Deno.test("arrays encode/decode with any items", () =>
+  fc_check(fc.property(
+    fc.oneof(
+      fc.oneof(
+        fc.tuple(fc.constant(boolean()), fc.array(fc.boolean())),
+        fc.tuple(fc.constant(number()), fc.array(fc_num())),
+        ...formats.map(([format, data]) =>
+          fc.tuple(fc.constant(string().format(format)), fc.array(data))
+        ),
+        fc_enum(fc.oneof(
+          fc.stringMatching(/^(?:.*,.*|)$/),
+          fc.stringMatching(/^[^,]+$/),
+        )).chain(($) =>
+          fc.tuple(
+            fc.constant(string().enum($)),
+            fc.array(fc.constantFrom(...$)),
+          )
+        ),
+      ).map(([typer, data]) => [array().items<Type>(typer), data] as const),
+      fc.oneof(...bases.map(([base, data]) =>
+        fc.nat({ max: 99 }).chain((min) =>
+          fc.tuple(
+            fc.constant(
+              array().items(string().contentEncoding(base)).minItems(min),
+            ),
+            fc.array(data, { minLength: min }),
+          )
+        )
+      )),
+      fc.tuple(
+        fc.tuple(fc.boolean(), fc.nat({ max: 99 })),
+        fc.oneof(
+          fc.tuple(fc.constant(array()), fc.array(fc.array(fc.jsonValue()))),
+          fc.tuple(
+            fc.constant(object()),
+            fc.array(fc.dictionary(fc_str(), fc.jsonValue())),
+          ),
+        ),
+      ).map(([[use_max, max], [typer, data]]) => {
+        const a = array().items<Type>(typer);
+        return use_max
+          ? [a.maxItems(max), data.slice(0, max)] as const
+          : [a, data] as const;
+      }),
+      fc.tuple(fc.constant(array()), fc.array(fc.jsonValue())),
+    ),
+    ([{ type }, data]) => {
+      const { encode, decode } = coder(type);
+      assertEquals(decode(encode(parser(type)(data).unwrap(true))), data);
+    },
+  )));
