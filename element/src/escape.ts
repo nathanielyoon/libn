@@ -9,13 +9,3 @@ export const escape = ($: string): string => {
     OUT[$.charCodeAt(c++)]; while (IN.test($));
   return b + $.slice(c);
 };
-/** Escapes a HTML template. */
-export const html = ($: { raw: readonly string[] }, ...use: any[]): string => {
-  let a = "";
-  for (let b, c, d, z = 0; z < use.length; ++z) {
-    b = $.raw[z], c = use[z] ?? "";
-    d = typeof c === "string" ? c : Array.isArray(c) ? c.join("") : `${c}`;
-    a += b.charCodeAt(b.length - 1) === 36 ? b.slice(0, -1) + d : b + escape(d);
-  }
-  return (a + $.raw[use.length]).replace(/^\s*\r?\n/gm, "");
-};
