@@ -10,27 +10,32 @@ type Html<A extends HTMLElement> =
         : A[B],
     ) => Html<A>;
   }
-  & { (children?: Child[]): A };
-const get = (effect: ($: () => void) => () => void, tag: string) =>
-  new Proxy<any>(document.createElement(tag), {
-    get: (target, key: string, proxy) => (value: any) => {
-      if (value !== undefined) {
-        typeof value !== "function" || key.startsWith("on")
-          ? target[key] = value
-          : effect(() => target[key] = value);
-      }
-      return proxy;
-    },
-    apply: (target, _, [children]: [Child[]?]) => {
-      for (const node of children ?? []) {
-        node && target.appendChild(
-          typeof node === "string" ? new Text(node) : node,
-        );
-      }
-      return target;
-    },
-  });
+  & { (children?: Child[] | (() => Child[])): A };
+const node = ($: NonNullable<Child>) => typeof $ === "string" ? new Text($) : $;
+const html = (target: any) => ({
+  get: (effect, key: string, proxy) => (value: any) => {
+    if (value !== undefined) {
+      typeof value !== "function" || key.startsWith("on")
+        ? target[key] = value
+        : effect(() => target[key] = value());
+    }
+    return proxy;
+  },
+  apply: (effect, _, [children]: [(Child[] | (() => Child[]))?]) => (
+    typeof children === "function"
+      ? effect(() =>
+        Element.prototype.replaceChildren.apply(
+          target,
+          children().reduce<Node[]>((to, $) => $ ? [...to, node($)] : to, []),
+        )
+      )
+      : children?.forEach(($) => $ && target.appendChild(node($))), target
+  ),
+} satisfies ProxyHandler<($: () => void) => () => void>);
 /** Creates an HTML builder. */
 export const runtime = (effect: ($: () => void) => () => void): {
   [A in keyof HTMLElementTagNameMap]: Html<HTMLElementTagNameMap[A]>;
-} => new Proxy<any>(effect, { get });
+} =>
+  new Proxy<any>({}, {
+    get: (_, $: string) => new Proxy(effect, html(document.createElement($))),
+  });
