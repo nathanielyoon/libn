@@ -17,7 +17,7 @@ type Elementer<A> =
       ? ($: (event: C & { currentTarget: A }) => any) => Elementer<A>
       : never;
   }
-  & ((use?: ((element: A) => Children) | Children) => A);
+  & ((use?: ((element: A) => void | Children) | Children) => A);
 const elementer = (target: any) => ({
   get: (_, key: string, proxy) => (value: any) => (target[key] = value, proxy),
   apply: (_, __, [$]) => (
