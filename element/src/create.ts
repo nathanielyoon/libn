@@ -1,9 +1,5 @@
 type Nullish<A> = A | null | undefined;
 type Children = Nullish<string | Node | Nullish<string | Node>[]>;
-const node = ($: string | Node) =>
-  typeof $ === "string" ? document.createTextNode($) : $;
-const append = (parent: Node, $: Children) =>
-  (Array.isArray($) ? $ : [$]).forEach(($) => $ && parent.appendChild(node($)));
 type Writable<A, B> = (<C>() => C extends A ? true : false) extends
   (<C>() => C extends Readonly<A> ? true : false) ? never : B;
 type Off<A, B extends keyof A> = B extends `on${string}` ? never
@@ -20,12 +16,20 @@ type Elementer<A> =
   & ((use?: ((element: A) => void | Children) | Children) => A);
 const elementer = (target: any) => ({
   get: (_, key: string, proxy) => (value: any) => (target[key] = value, proxy),
-  apply: (_, __, [$]) => (
+  apply: (append, _, [$]) => (
     $ && append(target, typeof $ === "function" ? $(target) : $), target
   ),
-} satisfies ProxyHandler<() => void>);
+} satisfies ProxyHandler<(parent: Node, $: Children) => Node>);
 const builder = {
-  get: (create, tag: string) => new Proxy(() => {}, elementer(create(tag))),
+  get: (create, tag: string) =>
+    new Proxy((parent: Node, $: Children) => {
+      for (const child of (Array.isArray($) ? $ : [$])) {
+        child && parent.appendChild(
+          typeof child === "string" ? document.createTextNode(child) : child,
+        );
+      }
+      return parent;
+    }, elementer(create(tag))),
   apply: (create, _, [tag, parent, assign]: [string, (Node | null)?, any?]) =>
     Object.assign(parent?.appendChild(create(tag)) ?? create(tag), assign),
 } satisfies ProxyHandler<(tag: string) => Element>;
