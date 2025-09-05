@@ -1,6 +1,7 @@
 type Nullish<A> = A | null | undefined;
 type Children = Nullish<string | Node | Nullish<string | Node>[]>;
-const node = ($: string | Node) => typeof $ === "string" ? new Text($) : $;
+const node = ($: string | Node) =>
+  typeof $ === "string" ? document.createTextNode($) : $;
 const append = (parent: Node, $: Children) =>
   (Array.isArray($) ? $ : [$]).forEach(($) => $ && parent.appendChild(node($)));
 type Writable<A, B> = (<C>() => C extends A ? true : false) extends
