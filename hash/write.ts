@@ -1,5 +1,5 @@
 import { en_b16, en_bin } from "@libn/base";
-import { get_wycheproof, write_vectors } from "../test.ts";
+import { get_rfc, get_wycheproof, hex, write_vectors } from "../test.ts";
 
 await write_vectors(import.meta, {
   nist: await Promise.all(
@@ -48,6 +48,17 @@ await write_vectors(import.meta, {
         })),
     ),
   },
+  blake2: await get_rfc(7693, 49161, 54202).then(($) =>
+    $.matchAll(/blake2([bs])_res\[32\] = \{(.+?)\}.+?\{(.+?)\}.+?\{(.+?)\}/gs)
+      .reduce((to, [_, flavor, result, md_len, in_len]) => ({
+        ...to,
+        [flavor]: {
+          result: hex(result.toLowerCase()),
+          md: JSON.parse(`[${md_len}]`),
+          in: JSON.parse(`[${in_len}]`),
+        },
+      }), {})
+  ),
   blake3: await fetch(
     "https://raw.githubusercontent.com/BLAKE3-team/BLAKE3/ae3e8e6b3a5ae3190ca5d62820789b17886a0038/test_vectors/test_vectors.json",
   ).then<{

@@ -5,8 +5,9 @@ import { fc_bin, fc_check } from "../test.ts";
 import { sha256, sha512 } from "./src/sha2.ts";
 import { hmac } from "./src/hmac.ts";
 import { hkdf } from "./src/hkdf.ts";
-import vectors from "./vectors.json" with { type: "json" };
+import { Blake2s } from "./src/blake2.ts";
 import { blake3_derive, blake3_hash, blake3_keyed } from "./src/blake3.ts";
+import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("sha256 matches nist aft", () =>
   vectors.nist.sha256.forEach(($) =>
@@ -32,6 +33,20 @@ Deno.test("hkdf matches wycheproof", () =>
       de_b16($.derived),
     )
   ));
+Deno.test("blake2 matches selftest", () => {
+  const a = [...vectors.blake2.s.md, ...vectors.blake2.s.in];
+  const b = new Uint8Array(1056), c = new Uint8Array(32), d = new Blake2s();
+  let z = 0, y = 0, x = 0, w, e, f, g, h, i, j, k;
+  do do do {
+    e = (x & 1) ^ 1, f = a[z], g = a[y % 6 + 4], h = e ? g : f;
+    for (i = 0xDEAD4BAD * h | 0, j = 1, k, w = 0; w < h; ++w) {
+      k = i + j | 0, i = j, j = k, b[w + (-e & 32)] = k >> 24;
+    }
+    new Blake2s(f, b.subarray(0, -(x & 1) & a[z]))
+      .update(b.subarray(32, g + 32)).finalize(c), d.update(c.subarray(0, f));
+  } while (++x & 1); while (++y % 6); while (++z < 4);
+  assertEquals(d.finalize(), de_b16(vectors.blake2.s.result));
+});
 Deno.test("blake3 matches reference", () => {
   const keyed = blake3_keyed.bind(null, de_b16(vectors.blake3.key));
   const derive = blake3_derive(de_b16(vectors.blake3.context));
