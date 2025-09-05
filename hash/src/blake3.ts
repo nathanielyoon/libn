@@ -1,4 +1,4 @@
-import { IV } from "./iv.ts";
+import { LOWER } from "./iv.ts";
 
 const enum Size {
   BLOCK = 64,
@@ -26,8 +26,8 @@ const mix = (
   to: Uint32Array,
 ) => {
   let a = use[0], b = use[1], c = use[2], d = use[3], e = use[4], f = use[5];
-  let g = use[6], h = use[7], i = IV[0], j = IV[1], k = IV[2], l = IV[3];
-  let m = at, n = at / 0x100000000, o = byte, p = flag, z = 0;
+  let g = use[6], h = use[7], i = LOWER[0], j = LOWER[1], k = LOWER[2];
+  let l = LOWER[3], m = at, n = at / 0x100000000, o = byte, p = flag, z = 0;
   do m ^= a = a + e + $.getUint32(PERMUTE[z++], true) | 0,
     m = m << 16 | m >>> 16,
     e ^= i = i + m | 0,
@@ -147,7 +147,7 @@ const b_b32 = ($: Uint8Array) => {
 export const blake3_hash = (
   $: Uint8Array,
   out?: number,
-): Uint8Array<ArrayBuffer> => blake3(IV.subarray(0, 8), 0, $, out);
+): Uint8Array<ArrayBuffer> => blake3(LOWER.subarray(0, 8), 0, $, out);
 /** Hashes with Blake3 (keyed). */
 export const blake3_keyed = (
   key: Uint8Array,
@@ -158,6 +158,6 @@ export const blake3_keyed = (
 export const blake3_derive = (
   context: Uint8Array,
 ): ($: Uint8Array, out?: number, at?: number) => Uint8Array<ArrayBuffer> => {
-  const a = b_b32(blake3(IV.subarray(0, 8), Flag.DERIVE_CONTEXT, context));
+  const a = b_b32(blake3(LOWER.subarray(0, 8), Flag.DERIVE_CONTEXT, context));
   return ($, out, at) => blake3(a, Flag.DERIVE_KEY, $, out, at);
 };
