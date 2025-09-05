@@ -1,14 +1,14 @@
 type Not<A, B> = (<C>() => C extends A ? true : false) extends
   (<C>() => C extends Readonly<A> ? true : false) ? never : B;
 type Child = undefined | null | string | Node;
-type Html<A extends HTMLElement> =
+type Htmler<A extends HTMLElement> =
   & {
     [B in keyof A as Not<Pick<A, B>, B>]: (
       $: [B, NonNullable<A[B]>] extends
         [`on${string}`, (event: infer C extends Event) => any]
         ? ($: C & { currentTarget: A }) => any
-        : A[B],
-    ) => Html<A>;
+        : A[B] | (() => A[B]),
+    ) => Htmler<A>;
   }
   & { (children?: Child[] | (() => Child[])): A };
 const node = ($: NonNullable<Child>) => typeof $ === "string" ? new Text($) : $;
@@ -33,9 +33,15 @@ const html = (target: any) => ({
   ),
 } satisfies ProxyHandler<($: () => void) => () => void>);
 /** Creates an HTML builder. */
-export const runtime = (effect: ($: () => void) => () => void): {
-  [A in keyof HTMLElementTagNameMap]: Html<HTMLElementTagNameMap[A]>;
+export const reactive = (effect: ($: () => void) => () => void): {
+  [A in keyof HTMLElementTagNameMap]: Htmler<HTMLElementTagNameMap[A]>;
 } =>
   new Proxy<any>({}, {
     get: (_, $: string) => new Proxy(effect, html(document.createElement($))),
   });
+/** Creates an element. */
+export const ce = <A extends keyof HTMLElementTagNameMap>(
+  $: A,
+  parent?: Node,
+): HTMLElementTagNameMap[A] =>
+  parent?.appendChild(document.createElement($)) ?? document.createElement($);
