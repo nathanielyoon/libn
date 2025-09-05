@@ -6,6 +6,7 @@ import { sha256, sha512 } from "./src/sha2.ts";
 import { hmac } from "./src/hmac.ts";
 import { hkdf } from "./src/hkdf.ts";
 import vectors from "./vectors.json" with { type: "json" };
+import { blake3_derive, blake3_hash, blake3_keyed } from "./src/blake3.ts";
 
 Deno.test("sha256 matches nist aft", () =>
   vectors.nist.sha256.forEach(($) =>
@@ -31,6 +32,17 @@ Deno.test("hkdf matches wycheproof", () =>
       de_b16($.derived),
     )
   ));
+Deno.test("blake3 matches reference", () => {
+  const keyed = blake3_keyed.bind(null, de_b16(vectors.blake3.key));
+  const derive = blake3_derive(de_b16(vectors.blake3.context));
+  const length = vectors.blake3.output_length;
+  vectors.blake3.cases.forEach(($) => {
+    const input = de_b16($.input);
+    assertEquals(blake3_hash(input, length), de_b16($.hash));
+    assertEquals(keyed(input, length), de_b16($.keyed));
+    assertEquals(derive(input, length), de_b16($.derive));
+  });
+});
 Deno.test("sha256 matches webcrypto", () =>
   fc_check(fc.asyncProperty(
     fc_bin(),

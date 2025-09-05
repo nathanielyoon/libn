@@ -1,3 +1,4 @@
+import { en_b16, en_bin } from "@libn/base";
 import { get_wycheproof, write_vectors } from "../test.ts";
 
 await write_vectors(import.meta, {
@@ -47,4 +48,26 @@ await write_vectors(import.meta, {
         })),
     ),
   },
+  blake3: await fetch(
+    "https://raw.githubusercontent.com/BLAKE3-team/BLAKE3/ae3e8e6b3a5ae3190ca5d62820789b17886a0038/test_vectors/test_vectors.json",
+  ).then<{
+    key: string;
+    context_string: string;
+    cases: {
+      input_len: number;
+      hash: string;
+      keyed_hash: string;
+      derive_key: string;
+    }[];
+  }>(($) => $.json()).then(($) => ({
+    key: en_b16(en_bin($.key)),
+    context: en_b16(en_bin($.context_string)),
+    output_length: $.cases[0].hash.length >> 1,
+    cases: $.cases.map(({ input_len, hash, keyed_hash, derive_key }) => ({
+      input: en_b16(Uint8Array.from({ length: input_len }, (_, z) => z % 251)),
+      hash,
+      keyed: keyed_hash,
+      derive: derive_key,
+    })),
+  })),
 });
