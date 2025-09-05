@@ -61,3 +61,13 @@ export const fc_check = ((
   <A>($: fc.IProperty<A>, parameters?: fc.Parameters<A>): void;
   <A>($: fc.IAsyncProperty<A>, parameters?: fc.Parameters<A>): Promise<void>;
 };
+/** Initializes a simple LCG. */
+export const rng = (seed = Date.now()): () => number => (
+  seed = seed % 0x100000000 >>> 0, () => seed = seed * 0x3d575 + 1 >>> 0
+);
+/** Hashes (non-cryptographically), one byte at a time. */
+export const oaat = (data: Uint8Array, seed: number): number => {
+  let a = seed ^ 0x3b00, b = seed << 15 | seed >>> 17, z = 0;
+  while (z < data.length) b -= a = (a + data[z++]) * 9, a = a << 7 | a >>> 25;
+  return (a ^ b) >>> 0;
+};
