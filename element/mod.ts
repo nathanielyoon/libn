@@ -14,6 +14,8 @@
  *   assertEquals(qs("div")?.textContent, "hello")
  * );
  * ```
+ *
+ * @module element
  */
 
 export { escape } from "./src/escape.ts";
