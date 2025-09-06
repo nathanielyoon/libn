@@ -27,8 +27,8 @@ type S3 = { S3_HOST: string; S3_ID: string; S3_KEY: string };
 export const signer = (env: S3, region?: string, date?: Date): (
   method: Method,
   path: string,
-  headers?: { [name: string]: string },
-  expires?: number,
+  headers: { [name: string]: string },
+  expiration: number,
 ) => string => {
   const a = (date ?? new Date()).toISOString().replace(/\....|\W/g, "");
   const b = a.slice(0, 8), c = `${b}/${region ??= "auto"}/s3/aws4_request`;
@@ -44,12 +44,12 @@ export const signer = (env: S3, region?: string, date?: Date): (
     ),
     en_bin("aws4_request"),
   );
-  return (method, path, headers, expires) => {
+  return (method, path, headers, expiration) => {
     const { host, pathname, href } = new URL(path, env.S3_HOST);
-    const g = Object.keys(headers ??= {}), h: typeof headers = { host };
+    const g = Object.keys(headers), h: typeof headers = { host };
     for (let z = 0; z < g.length; ++z) h[g[z].toLowerCase()] = headers[g[z]];
     const i = Object.keys(h).sort();
-    const j = `${e}${expires ?? 604800}&X-Amz-SignedHeaders=${i.join("%3B")}`;
+    const j = `${e}${expiration}&X-Amz-SignedHeaders=${i.join("%3B")}`;
     let k = `${method}\n${pathname}\n${j}\n`, z = i.length;
     do k += `${i[--z]}:${h[i[z]]}\n`; while (z);
     return `${href}?${j}&X-Amz-Signature=${
