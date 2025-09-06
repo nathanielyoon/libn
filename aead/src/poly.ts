@@ -12,8 +12,8 @@ export const poly = (key: DataView, $: Uint8Array): Uint8Array => {
   let z = 0, a0 = 0, a1 = 0, a2 = 0, a3 = 0, a4 = 0, a5 = 0, a6 = 0;
   while (y && z < $.length) {
     if ($.length - z < 16) {
-      const _ = new Uint8Array(16); // pad rest of buffer
-      _.set($.subarray(z)), y = z = _[$.length - z]++, $ = _; // reset index
+      const _ = new Uint8Array(16);
+      _.set($.subarray(z)), y = z = _[$.length - z]++, $ = _;
     }
     a = $[z++] | $[z++] << 8, b = $[z++] | $[z++] << 8, r = (a & 8191) + p;
     s = ((a >> 13 | b << 3) & 8191) + q, c = $[z++] | $[z++] << 8;
@@ -56,7 +56,7 @@ export const poly = (key: DataView, $: Uint8Array): Uint8Array => {
   a = -(n >> 13 ^ 1), b = ~a & 8191, n = (n & 8191) - (1 << 13);
   p = p & a | e & b, q = q & a | f & b, r = r & a | g & b, s = s & a | h & b;
   t = t & a | i & b, u = u & a | k & b, v = v & a | j & b, w = w & a | l & b;
-  x = x & a | m & b, o = o & a | n & b, $ = new Uint8Array(16); // allocate tag
+  x = x & a | m & b, o = o & a | n & b, $ = new Uint8Array(16);
   $[0] = p = ((p | q << 13) & 65535) + key.getUint16(16, true), $[1] = p >> 8;
   $[2] = q = (p >> 16) + (q >> 3 | r << 10 & 65535) + key.getUint16(18, true);
   $[4] = r = (q >> 16) + (r >> 6 | s << 7 & 65535) + key.getUint16(20, true);
