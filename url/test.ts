@@ -8,13 +8,11 @@ Deno.test("match signature v4 documentation example", () => {
     S3_ID: vectors.docs.id,
     S3_KEY: vectors.docs.key,
   };
-  const a = ["GET", vectors.docs.path, {}, +vectors.docs.time] as const;
-  const b = vectors.docs.url.replaceAll("&amp;", "&");
-  assertEquals(presign(S3, ...a), b);
-  assertEquals(
-    signer(S3, vectors.docs.region, new Date(vectors.docs.date))(...a),
-    b,
-  );
+  const a = [vectors.docs.region, new Date(vectors.docs.date)] as const;
+  const b = ["GET", vectors.docs.path, {}, +vectors.docs.time] as const;
+  const c = vectors.docs.url.replaceAll("&amp;", "&");
+  assertEquals(presign(S3, ...b, ...a), c);
+  assertEquals(signer(S3, ...a)(...b), c);
   assertMatch(
     presign(S3, "PUT", "", { "content-type": "text/plain" }),
     /X-Amz-SignedHeaders=content-type%3Bhost/,

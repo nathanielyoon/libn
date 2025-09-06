@@ -70,4 +70,5 @@ export const presign = (
   headers: { [header: string]: string } = {},
   expires = 604800,
   region = "auto",
-): string => signer(env, region)(method, path, headers, expires);
+  date: Date = new Date(),
+): string => signer(env, region, date)(method, path, headers, expires);
