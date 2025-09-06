@@ -8,7 +8,6 @@ Deno.test("match signature v4 documentation example", () => {
     S3_ID: vectors.signature_v4.id,
     S3_KEY: vectors.signature_v4.key,
   };
-  // From <https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html#query-string-auth-v4-signing-example>.
   assertEquals(
     presign(
       S3,

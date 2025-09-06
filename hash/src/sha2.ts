@@ -5,11 +5,11 @@ const md = (
   mix: (use: Uint32Array, data: DataView, at: number, to: Uint32Array) => void,
 ) =>
 (data: Uint8Array): Uint8Array<ArrayBuffer> => {
-  const a = new Uint32Array(base), b = a.length, c = b << 3; // size in bits
+  const a = new Uint32Array(base), b = a.length, c = b << 3;
   const d = new Uint32Array(b * 10), e = new Uint8Array(c), f = data.length;
   let g = new DataView(data.buffer, data.byteOffset), z = 0, y = 0;
   while (z < f) {
-    const j = Math.min(c - y, f - z); // compare block size to remaining input
+    const j = Math.min(c - y, f - z);
     if (j !== c) e.set(data.subarray(z, z += j)), y += j;
     else do mix(d, g, z, a), z += c; while (f - z >= c);
   }

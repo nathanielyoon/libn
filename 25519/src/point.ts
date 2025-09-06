@@ -20,7 +20,7 @@ export const double = ($: bigint): bigint => {
   const i = g - (c * c % P << 1n) % P, j = (a + b) ** 2n % P - d - f;
   return p(i * j) | p(g * h) << 256n | p(g * i) << 512n | p(h * j) << 768n;
 };
-const G = /* @__PURE__ */ (() => { // pre-computed multiples of base point
+const G = /* @__PURE__ */ (() => {
   const a = Array<bigint>(4224);
   for (let z = 0, b = B, c, y; z < 4224; b = double(c)) {
     for (y = 0, a[z++] = c = b; y < 127; ++y) a[z++] = c = add(c, b);

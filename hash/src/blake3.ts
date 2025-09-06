@@ -15,12 +15,12 @@ const enum Flag {
 }
 const PERMUTE = Uint8Array.from(
   "0123456789abcdef263a704d1bc59ef834acd27e6590bf81a7c9e3df40b25816cd9bfae8725301649eb58cf1d30a2647bf501986ea2c347d",
-  (Z) => parseInt(Z, 16) << 2, // map word-wise index to new byte-wise index
+  (Z) => parseInt(Z, 16) << 2,
 );
 const mix = (
   use: Uint32Array,
   $: DataView,
-  at: number, // combined t0 and t1
+  at: number,
   byte: number,
   flag: number,
   to: Uint32Array,

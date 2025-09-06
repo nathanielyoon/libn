@@ -6,7 +6,7 @@ export const P = (1n << 255n) - 19n;
 export const p = ($: bigint): bigint => ($ %= P) < 0n ? $ + P : $;
 /** Raises to a power modulo P. */
 export const s = (base: bigint, power: number, multiplier = base): bigint => {
-  do base = base * base % P; while (--power); // break up exponentiation by % P
+  do base = base * base % P; while (--power);
   return base * multiplier % P;
 };
 /** Inverts modulo P. */

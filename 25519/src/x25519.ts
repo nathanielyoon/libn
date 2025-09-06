@@ -1,12 +1,12 @@
 import { de_big, en_big, P, p, prune, r, s, v } from "./curve.ts";
 
-const F = ~(1n << 255n); // mask to clear top bit
+const F = ~(1n << 255n);
 const ladder = (scalar: bigint, point: bigint) => {
   let a = 1n, b = 0n, c = point, d = 1n, e = 0n, f, g, z = 254n;
   do e ^= f = scalar >> z & 1n,
-    a ^= g = (a ^ c) & -e, // cswap 1
+    a ^= g = (a ^ c) & -e,
     c ^= g,
-    d ^= g = (b ^ d) & -e, // cswap 2
+    d ^= g = (b ^ d) & -e,
     a -= b ^= g,
     b += a + b,
     e = f,
