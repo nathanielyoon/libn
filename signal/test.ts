@@ -1,112 +1,186 @@
-import {
-  assertEquals,
-  assertLess,
-  assertNotEquals,
-  assertThrows,
-} from "@std/assert";
-import { assertSpyCall, assertSpyCalls, spy } from "@std/testing/mock";
-import { effect, set, signal } from "./mod.ts";
+import { assertEquals, assertLess, assertThrows } from "@std/assert";
+import { assertSpyCall, assertSpyCalls, Spy, spy } from "@std/testing/mock";
+import { batch, effect, scoper, set_actor, signal } from "./mod.ts";
 
-Deno.test("alien-signals tests", async ({ step }) => {
-  await step("computed", () => {
-    {
-      const src = signal(0);
-      const c1 = signal(() => src() % 2);
-      const c2 = signal(() => c1());
-      const c3 = signal(() => c2());
-      c3(), src(1), c2(), src(3), assertEquals(c3(), 1);
-    }
-    {
-      const src = signal(0);
-      const a = signal(() => src());
+Deno.test("alien-signals", async ({ step }) => {
+  await step("signal", async ({ step }) => {
+    await step("correctly propagate changes through signal signals", () => {
+      const a = signal(0);
       const b = signal(() => a() % 2);
-      const c = signal(() => src());
-      const d = signal(() => b() + c());
-      assertEquals(d(), 0), src(2), assertEquals(d(), 2);
-    }
-    {
+      const c = signal(() => b());
+      const d = signal(() => c());
+      d();
+      a(1); // c1 -> dirty, c2 -> toCheckDirty, c3 -> toCheckDirty
+      c(); // c1 -> none, c2 -> none
+      a(3); // c1 -> dirty, c2 -> toCheckDirty
+      assertEquals(d(), 1);
+    });
+    await step("propagate updated source through chained computations", () => {
+      const a = signal(0);
+      const b = signal(() => a());
+      const c = signal(() => b() % 2);
+      const d = signal(() => a());
+      const e = signal(() => c() + d());
+      assertEquals(e(), 0);
+      a(2), assertEquals(e(), 2);
+    });
+    await step("handle flags are indirectly updated during checkDirty", () => {
       const a = signal(false);
       const b = signal(() => a());
       const c = signal(() => (b(), 0));
       const d = signal(() => (c(), b()));
-      assertEquals(d(), false), a(true), assertEquals(d(), true);
-    }
-    {
-      let times = 0;
-      const src = signal(0);
-      const c1 = signal(() => (++times, src()));
-      c1(),
-        assertEquals(times, 1),
-        src(1),
-        src(0),
-        c1(),
-        assertEquals(times, 1);
-    }
+      assertEquals(d(), false);
+      a(true), assertEquals(d(), true);
+    });
+    await step("not update if the signal value is reverted", () => {
+      let a = 0;
+      const b = signal(0);
+      const c = signal(() => (a++, b()));
+      c(), assertEquals(a, 1);
+      b(1), b(0), c(), assertEquals(a, 1);
+    });
   });
-  await step("effect", () => {
-    {
-      let bRunTimes = 0;
-      const a = signal(1);
-      const b = signal(() => (++bRunTimes, a() * 2));
-      const stopEffect = effect(() => b());
-      assertEquals(bRunTimes, 1), a(2), assertEquals(bRunTimes, 2);
-      stopEffect(), a(3), assertEquals(bRunTimes, 2);
-    }
-    {
+  await step("effect", async ({ step }) => {
+    await step("clear subscriptions when untracked by all subscribers", () => {
+      let a = 0;
+      const b = signal(1);
+      const c = signal(() => (a++, b() * 2));
+      const d = effect(() => c());
+      assertEquals(a, 1);
+      b(2), assertEquals(a, 2);
+      d(), b(3), assertEquals(a, 2);
+    });
+    await step("not run untracked inner effect", () => {
       const a = signal(3);
       const b = signal(() => a() > 0);
-      effect(() => b() && effect(() => assertNotEquals(a(), 0)));
+      effect(() =>
+        b() && effect(() => {
+          if (!a()) throw 0;
+        })
+      );
       a(2), a(1), a(0);
-    }
-    {
+    });
+    await step("run outer effect first", () => {
+      const a = signal(1);
+      const b = signal(1);
+      effect(() =>
+        a() && effect(() => {
+          if (b(), !a()) throw 0;
+        })
+      );
+      batch(() => (b(0), a(0)));
+    });
+    await step("not trigger inner effect when resolve maybe dirty", () => {
       const a = signal(0);
       const b = signal(() => a() % 2);
-      let innerTriggerTimes = 0;
-      effect(() => effect(() => (b(), assertLess(++innerTriggerTimes, 3))));
-      a(2);
-    }
-    {
-      const src1 = signal(0);
-      const src2 = signal(0);
-      const order: number[] = [];
-      effect(() => {
-        order.push(0);
-        const currentSub = set(undefined);
-        const isOne = src2() === 1;
-        set(currentSub);
-        isOne && src1(), src2(), src1();
-      });
-      effect(() => (order.push(1), src1()));
-      src2(1), order.length = 0, src1(src1() + 1), assertEquals(order, [0, 1]);
-    }
-    {
+      let c = 0;
+      effect(() =>
+        effect(() => {
+          if (b(), ++c >= 2) throw 0;
+        })
+      ), a(2);
+    });
+    await step("trigger inner effects in sequence", () => {
       const a = signal(0);
       const b = signal(0);
-      const order: number[] = [];
+      const c = signal(() => a() - b());
+      const d: string[] = [];
       effect(() => {
-        effect(() => (a(), order.push(0)));
-        effect(() => (b(), order.push(1)));
-        assertEquals(order, [0, 1]);
-        order.length = 0, b(1), a(1), assertEquals(order, [1, 0]);
+        c();
+        effect(() => (d.push("first inner"), a()));
+        effect(() => (d.push("last inner"), a(), b()));
       });
-    }
-    {
+      d.length = 0;
+      batch(() => (b(1), a(1)));
+      assertEquals(d, ["first inner", "last inner"]);
+    });
+    await step("trigger inner effects in sequence in effect scope", () => {
+      const a = signal(0);
+      const b = signal(0);
+      const c: string[] = [];
+      scoper(() => {
+        effect(() => (c.push("first inner"), a()));
+        effect(() => (c.push("last inner"), a(), b()));
+      });
+      c.length = 0;
+      batch(() => (b(1), a(1)));
+      assertEquals(c, ["first inner", "last inner"]);
+    });
+    await step("custom effect support batch", () => {
+      const batch_effect = ($: () => void) => batch(() => effect($));
+      const a: string[] = [];
+      const b = signal(0);
+      const c = signal(0);
+      const d = signal(() => (a.push("aa-0"), b() || c(1), a.push("aa-1")));
+      const e = signal(() => (a.push("bb"), c()));
+      batch_effect(() => e());
+      batch_effect(() => d());
+      assertEquals(a, ["bb", "aa-0", "aa-1", "bb"]);
+    });
+    await step("duplicate subscribers do not affect the notify order", () => {
+      const a = signal(0);
+      const b = signal(0);
+      const c: string[] = [];
+      effect(() => {
+        c.push("a");
+        const d = set_actor(null), e = b() === 1;
+        set_actor(d), e && a(), b(), a();
+      });
+      effect(() => (c.push("b"), a()));
+      b(1); // src1.subs: a -> b -> a
+      c.length = 0, a(a() + 1), assertEquals(c, ["a", "b"]);
+    });
+    await step("handle side effect with inner effects", () => {
+      const a = signal(0);
+      const b = signal(0);
+      const c: string[] = [];
+      effect(() => {
+        effect(() => (a(), c.push("a")));
+        effect(() => (b(), c.push("b")));
+        assertEquals(c, ["a", "b"]);
+        c.length = 0, b(1), a(1), assertEquals(c, ["b", "a"]);
+      });
+    });
+    await step("handle flags are indirectly updated during checkDirty", () => {
       const a = signal(false);
       const b = signal(() => a());
       const c = signal(() => (b(), 0));
       const d = signal(() => (c(), b()));
-      let triggers = 0;
-      effect(() => (d(), ++triggers));
-      assertEquals(triggers, 1), a(true), assertEquals(triggers, 2);
-    }
+      let e = 0;
+      effect(() => (d(), ++e));
+      assertEquals(e, 1);
+      a(true), assertEquals(e, 2);
+    });
   });
-  await step("issue_48", () => {
+  await step("scoper", async ({ step }) => {
+    await step("not trigger after stop", () => {
+      const a = signal(1);
+      let b = 0;
+      const c = scoper(() => {
+        effect(() => (b++, a())), assertEquals(b, 1);
+        a(2), assertEquals(b, 2);
+      });
+      a(3), assertEquals(b, 3);
+      c(), a(4), assertEquals(b, 3);
+    });
+    await step("dispose inner effects if created in an effect", () => {
+      const a = signal(1);
+      let b = 0;
+      effect(() => {
+        const c = scoper(() => effect(() => (a(), b++)));
+        assertEquals(b, 1);
+        a(2), assertEquals(b, 2);
+        c(), a(3), assertEquals(b, 2);
+      });
+    });
+  });
+  await step("issue 48", () => {
     const untracked = <A>(callback: () => A) => {
-      const currentSub = set(undefined);
+      const currentSub = set_actor(null);
       try {
         return callback();
       } finally {
-        set(currentSub);
+        set_actor(currentSub);
       }
     };
     interface ReactionOptions<A, B extends boolean = boolean> {
@@ -171,206 +245,273 @@ Deno.test("alien-signals tests", async ({ step }) => {
     );
     source(1), source(2), source(3);
   });
-  await step("untrack", () => {
-    {
-      const src = signal(0);
-      let computedTriggerTimes = 0;
-      const c = signal(() => {
-        ++computedTriggerTimes;
-        const currentSub = set(undefined);
-        const value = src();
-        set(currentSub);
-        return value;
-      });
-      assertEquals(c(), 0), assertEquals(computedTriggerTimes, 1);
-      src(1), src(2), src(3);
-      assertEquals(c(), 0), assertEquals(computedTriggerTimes, 1);
-    }
-    {
-      const src = signal(0);
-      const is = signal(0);
-      let effectTriggerTimes = 0;
-      effect(() => {
-        ++effectTriggerTimes;
-        if (is()) {
-          const currentSub = set(undefined);
-          src(), set(currentSub);
-        }
-      });
-      assertEquals(effectTriggerTimes, 1);
-      is(1), assertEquals(effectTriggerTimes, 2);
-      src(1), src(2), src(3), assertEquals(effectTriggerTimes, 2);
-      is(2), assertEquals(effectTriggerTimes, 3);
-      src(4), src(5), src(6), assertEquals(effectTriggerTimes, 3);
-      is(0), assertEquals(effectTriggerTimes, 4);
-      src(7), src(8), src(9), assertEquals(effectTriggerTimes, 4);
-    }
-  });
-  await step("graph updates", () => {
-    {
+  await step("graph updates", async ({ step }) => {
+    await step("drop A->B->A updates", () => {
+      //     A
+      //   / |
+      //  B  | <- Looks like a flag doesn't it? :D
+      //   \ |
+      //     C
+      //     |
+      //     D
       const a = signal(2);
       const b = signal(() => a() - 1);
       const c = signal(() => a() + b());
-      const computer = () => spy(() => `d: ${c()}`);
-      let compute = computer();
-      let d = signal(compute);
-      assertEquals(d(), "d: 3"), assertSpyCalls(compute, 1);
-      d = signal(compute = computer());
-      a(4), d(), assertSpyCalls(compute, 1);
-    }
-    {
+      const d = spy(() => "d: " + c());
+      const e = signal(d);
+      // Trigger read
+      assertEquals(e(), "d: 3"), assertSpyCalls(d, 1);
+      d.calls.length = 0, a(4), e(), assertSpyCalls(d, 1);
+    });
+    await step("only update every signal once", () => {
+      // (diamond graph)
+      // In this scenario "D" should only update once when "A" receives
+      // an update. This is sometimes referred to as the "diamond" scenario.
+      //     A
+      //   /   \
+      //  B     C
+      //   \   /
+      //     D
       const a = signal("a");
       const b = signal(() => a());
       const c = signal(() => a());
-      const compute = spy(() => `${b()} ${c()}`);
-      const d = signal(compute);
-      assertEquals(d(), "a a"), assertSpyCalls(compute, 1);
-      a("aa"), assertEquals(d(), "aa aa"), assertSpyCalls(compute, 2);
-    }
-    {
+      const d = spy(() => b() + " " + c());
+      const e = signal(d);
+      assertEquals(e(), "a a"), assertSpyCalls(d, 1);
+      a("aa"), assertEquals(e(), "aa aa"), assertSpyCalls(d, 2);
+    });
+    await step("only update every signal once", () => {
+      // (diamond graph + tail)
+      // "E" will be likely updated twice if our mark+sweep logic is buggy.
+      //     A
+      //   /   \
+      //  B     C
+      //   \   /
+      //     D
+      //     |
+      //     E
       const a = signal("a");
       const b = signal(() => a());
       const c = signal(() => a());
-      const d = signal(() => `${b()} ${c()}`);
-      const compute = spy(() => d());
-      const e = signal(compute);
-      assertEquals(e(), "a a"), assertSpyCalls(compute, 1);
-      a("aa"), assertEquals(e(), "aa aa"), assertSpyCalls(compute, 2);
-    }
-    {
+      const d = signal(() => b() + " " + c());
+      const e = spy(() => d());
+      const f = signal(e);
+      assertEquals(f(), "a a"), assertSpyCalls(e, 1);
+      a("aa"), assertEquals(f(), "aa aa"), assertSpyCalls(e, 2);
+    });
+    await step("bail out if result is the same", () => {
+      // Bail out if value of "B" never changes
+      // A->B->C
       const a = signal("a");
       const b = signal(() => (a(), "foo"));
-      const compute = spy(() => b());
-      const c = signal(compute);
-      assertEquals(c(), "foo"), assertSpyCalls(compute, 1);
-      a("aa"), assertEquals(c(), "foo"), assertSpyCalls(compute, 1);
-    }
-    {
+      const c = spy(() => b());
+      const d = signal(c);
+      assertEquals(d(), "foo"), assertSpyCalls(c, 1);
+      a("aa"), assertEquals(d(), "foo"), assertSpyCalls(c, 1);
+    });
+    await step("only update every signal once", () => {
+      // (jagged diamond graph + tails)
+      // "F" and "G" will be likely updated twice if our mark+sweep logic is buggy.
+      //     A
+      //   /   \
+      //  B     C
+      //  |     |
+      //  |     D
+      //   \   /
+      //     E
+      //   /   \
+      //  F     G
       const a = signal("a");
       const b = signal(() => a());
       const c = signal(() => a());
       const d = signal(() => c());
-      const calls: string[] = [];
-      const computer_e = () => spy(() => (calls.push("e"), `${b()} ${d()}`));
-      let eSpy = computer_e();
-      let e = signal(eSpy);
-      const computer_f = () => spy(() => (calls.push("f"), e()));
-      let fSpy = computer_f();
-      let f = signal(fSpy);
-      const computer_g = () => spy(() => (calls.push("g"), e()));
-      let gSpy = computer_g();
-      let g = signal(gSpy);
-      assertEquals(f(), "a a"), assertSpyCalls(fSpy, 1);
-      assertEquals(g(), "a a"), assertSpyCalls(gSpy, 1);
-      e = signal(eSpy = computer_e());
-      f = signal(fSpy = computer_f());
-      g = signal(gSpy = computer_g());
-      a("b");
-      assertEquals(e(), "b b"), assertSpyCalls(eSpy, 1);
-      assertEquals(f(), "b b"), assertSpyCalls(fSpy, 1);
-      assertEquals(g(), "b b"), assertSpyCalls(gSpy, 1);
-      e = signal(eSpy = computer_e());
-      f = signal(fSpy = computer_f());
-      g = signal(gSpy = computer_g());
-      calls.length = 0;
-      a("c");
-      assertEquals(e(), "c c"), assertSpyCalls(eSpy, 1);
-      assertEquals(f(), "c c"), assertSpyCalls(fSpy, 1);
-      assertEquals(g(), "c c"), assertSpyCalls(gSpy, 1);
-      const order = ["e", "f", "g"].map(($) => calls.indexOf($));
-      assertLess(order[0], order[1]), assertLess(order[1], order[2]);
-    }
-    {
+      const e: Spy[] = [];
+      const f: Spy<any, [], string> = spy(() => (e.push(f), b() + " " + d()));
+      const g = signal(f);
+      const h: Spy<any, [], string> = spy(() => (e.push(h), g()));
+      const i = signal(h);
+      const j: Spy<any, [], string> = spy(() => (e.push(j), g()));
+      const k = signal(j);
+      assertEquals(i(), "a a"), assertSpyCalls(h, 1);
+      assertEquals(k(), "a a"), assertSpyCalls(j, 1);
+      e.length = 0;
+      f.calls.length = h.calls.length = j.calls.length = 0, a("b");
+      assertEquals(g(), "b b"), assertSpyCalls(f, 1);
+      assertEquals(i(), "b b"), assertSpyCalls(h, 1);
+      assertEquals(k(), "b b"), assertSpyCalls(j, 1);
+      e.length = 0;
+      f.calls.length = h.calls.length = j.calls.length = 0, a("c");
+      assertEquals(g(), "c c"), assertSpyCalls(f, 1);
+      assertEquals(i(), "c c"), assertSpyCalls(h, 1);
+      assertEquals(k(), "c c"), assertSpyCalls(j, 1);
+      // top to bottom
+      assertLess(e.indexOf(f), e.indexOf(h));
+      // left to right
+      assertLess(e.indexOf(h), e.indexOf(j));
+    });
+    await step("only subscribe to signals listened to", () => {
+      //    *A
+      //   /   \
+      // *B     C <- we don't listen to C
       const a = signal("a");
       const b = signal(() => a());
-      const compute = spy(() => a());
-      signal(compute);
-      assertEquals(b(), "a"), assertSpyCalls(compute, 0);
-      a("aa"), assertEquals(b(), "aa"), assertSpyCalls(compute, 0);
-    }
-    {
+      const c = spy(() => a());
+      signal(c), assertEquals(b(), "a"), assertSpyCalls(c, 0);
+      a("aa"), assertEquals(b(), "aa"), assertSpyCalls(c, 0);
+    });
+    await step("only subscribe to signals listened to II", () => {
+      // Here both "B" and "C" are active in the beginning, but
+      // "B" becomes inactive later. At that point it should
+      // not receive any updates anymore.
+      //    *A
+      //   /   \
+      // *B     D <- we don't listen to C
+      //  |
+      // *C
       const a = signal("a");
-      const compute_b = () => spy(() => a());
-      let bSpy = compute_b();
-      let b = signal(bSpy);
-      const compute_c = () => spy(() => b());
-      let cSpy = compute_c();
-      let c = signal(cSpy);
-      const d = signal(() => a());
-      let result = "";
-      const unsub = effect(() => result = c());
-      assertEquals(result, "a"), assertEquals(d(), "a");
-      b = signal(bSpy = compute_b());
-      c = signal(cSpy = compute_c());
-      unsub();
-      a("aa");
-      assertSpyCalls(bSpy, 0), assertSpyCalls(cSpy, 0), assertEquals(d(), "aa");
-    }
-    {
+      const b = spy(() => a());
+      const c = signal(b);
+      const d = spy(() => c());
+      const e = signal(d);
+      const f = signal(() => a());
+      let g = "";
+      const h = effect(() => g = e());
+      assertEquals(g, "a"), assertEquals(f(), "a");
+      b.calls.length = d.calls.length = 0, h(), a("aa");
+      assertSpyCalls(b, 0), assertSpyCalls(d, 0), assertEquals(f(), "aa");
+    });
+    await step("ensure subs update even if one dep unmarks it", () => {
+      // In this scenario "C" always returns the same value. When "A"
+      // changes, "B" will update, then "C" at which point its update
+      // to "D" will be unmarked. But "D" must still update because
+      // "B" marked it. If "D" isn't updated, then we have a bug.
+      //     A
+      //   /   \
+      //  B     *C <- returns same value every time
+      //   \   /
+      //     D
       const a = signal("a");
       const b = signal(() => a());
       const c = signal(() => (a(), "c"));
-      const computer = () => spy(() => `${b()} ${c()}`);
-      let compute = computer();
-      let d = signal(compute);
-      assertEquals(d(), "a c");
-      d = signal(compute = computer());
-      a("aa"), d(), assertSpyCall(compute, 0, { returned: "aa c" });
-    }
-    {
+      const d = spy(() => b() + " " + c());
+      const e = signal(d);
+      assertEquals(e(), "a c");
+      d.calls.length = 0, a("aa"), e();
+      assertSpyCall(d, 0, { returned: "aa c" });
+    });
+    await step("ensure subs update even if two deps unmark it", () => {
+      // In this scenario both "C" and "D" always return the same
+      // value. But "E" must still update because "A" marked it.
+      // If "E" isn't updated, then we have a bug.
+      //     A
+      //   / | \
+      //  B *C *D
+      //   \ | /
+      //     E
       const a = signal("a");
       const b = signal(() => a());
       const c = signal(() => (a(), "c"));
       const d = signal(() => (a(), "d"));
-      const computer = () => spy(() => `${b()} ${c()} ${d()}`);
-      let compute = computer();
-      let e = signal(compute);
-      assertEquals(e(), "a c d");
-      e = signal(compute = computer());
-      a("aa"), e(), assertSpyCall(compute, 0, { returned: "aa c d" });
-    }
-    {
+      const e = spy(() => b() + " " + c() + " " + d());
+      const f = signal(e);
+      assertEquals(f(), "a c d");
+      e.calls.length = 0, a("aa"), f();
+      assertSpyCall(e, 0, { returned: "aa c d" });
+    });
+    await step("support lazy branches", () => {
       const a = signal(0);
       const b = signal(() => a());
-      const c = signal(() => a() > 0 ? a() : b());
-      assertEquals(c(), 0), a(1), assertEquals(c(), 1);
+      const c = signal(() => (a() > 0 ? a() : b()));
+      assertEquals(c(), 0);
+      a(1), assertEquals(c(), 1);
       a(0), assertEquals(c(), 0);
-    }
-    {
+    });
+    await step("not update a sub if all deps unmark it", () => {
+      // In this scenario "B" and "C" always return the same value. When "A"
+      // changes, "D" should not update.
+      //     A
+      //   /   \
+      // *B     *C
+      //   \   /
+      //     D
       const a = signal("a");
       const b = signal(() => (a(), "b"));
       const c = signal(() => (a(), "c"));
-      const computer = () => spy(() => `${b()} ${c()}`);
-      let compute = computer();
-      let d = signal(compute);
-      assertEquals(d(), "b c");
-      d = signal(compute = computer());
-      a("aa"), assertSpyCalls(compute, 0);
-    }
+      const d = spy(() => b() + " " + c());
+      const e = signal(d);
+      assertEquals(e(), "b c");
+      d.calls.length = 0, a("aa"), assertSpyCalls(d, 0);
+    });
   });
-  await step("error handling", () => {
-    {
+  await step("error handling", async ({ step }) => {
+    await step("keep graph consistent on errors during activation", () => {
       const a = signal(0);
       const b = signal(() => {
-        throw new Error();
+        throw 0;
       });
       const c = signal(() => a());
-      assertThrows(() => b());
+      assertThrows(b);
       a(1), assertEquals(c(), 1);
-    }
-    {
+    });
+    await step("keep graph consistent on errors in signals", () => {
       const a = signal(0);
       const b = signal(() => {
-        if (a() === 1) throw new Error();
+        if (a() === 1) throw 0;
         return a();
       });
       const c = signal(() => b());
-      assertEquals(c(), 0), a(1), assertThrows(() => b());
+      assertEquals(c(), 0);
+      a(1), assertThrows(b);
       a(2), assertEquals(c(), 2);
-    }
+    });
+  });
+  await step("untrack", async ({ step }) => {
+    await step("pause tracking in signal", () => {
+      let a = 0;
+      const b = signal(0);
+      const c = signal(() => {
+        ++a;
+        const d = set_actor(null), e = b();
+        return set_actor(d), e;
+      });
+      assertEquals(c(), 0), assertEquals(a, 1);
+      b(1), b(2), b(3), assertEquals(c(), 0), assertEquals(a, 1);
+    });
+    await step("pause tracking in effect", () => {
+      let a = 0;
+      const b = signal(0);
+      const c = signal(0);
+      effect(() => {
+        ++a;
+        if (c()) {
+          const d = set_actor(null);
+          b(), set_actor(d);
+        }
+      });
+      assertEquals(a, 1);
+      c(1), assertEquals(a, 2);
+      b(1), b(2), b(3), assertEquals(a, 2);
+      c(2), assertEquals(a, 3);
+      b(4), b(5), b(6), assertEquals(a, 3);
+      c(0), assertEquals(a, 4);
+      b(7), b(8), b(9), assertEquals(a, 4);
+    });
+    await step("pause tracking in effect scope", () => {
+      let a = 0;
+      const b = signal(0);
+      scoper(() =>
+        effect(() => {
+          ++a;
+          const c = set_actor(null);
+          b(), set_actor(c);
+        })
+      );
+      assertEquals(a, 1);
+      b(1), b(2), b(3), assertEquals(a, 1);
+    });
   });
 });
-Deno.test("reactively tests", async ({ step }) => {
+Deno.test("reactively", async ({ step }) => {
   await step("core", async ({ step }) => {
     await step("two signals", () => {
       const a = signal(7), b = signal(1);
