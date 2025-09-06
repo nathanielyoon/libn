@@ -32,7 +32,7 @@ export const presign = (
   date: Date = new Date(),
 ): string => {
   const a = date.toISOString().replace(/[-:]|\..../g, ""), b = a.slice(0, 8);
-  const { hostname, pathname } = new URL(path, env.S3_HOST);
+  const { href, hostname, pathname } = new URL(path, env.S3_HOST);
   const d: { [header: string]: string } = { host: hostname };
   for (const $ of Object.keys(headers)) d[$.toLowerCase()] = headers[$];
   const e = Object.keys(d).sort(), f = `${b}/${region}/s3/aws4_request`;
@@ -42,7 +42,7 @@ export const presign = (
   }&X-Amz-Date=${a}&X-Amz-Expires=${time}&X-Amz-SignedHeaders=${e.join("%3B")}`;
   let h = `${method}\n${pathname}\n${g}\n`, z = 0;
   do h += `${e[z]}:${d[e[z]]}\n`; while (++z < e.length);
-  return `https://${hostname}/${path}?${g}&X-Amz-Signature=` + en_b16(hmac(
+  return `${href}?${g}&X-Amz-Signature=` + en_b16(hmac(
     hmac(
       hmac(
         hmac(hmac(en_bin(`AWS4${env.S3_KEY}`), en_bin(b)), en_bin(region)),
