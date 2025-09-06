@@ -7,7 +7,7 @@ const xor = (key: DataView, iv: DataView, $: Uint8Array, to: Uint8Array) => {
   let e = new DataView(to.buffer, to.byteOffset), z = 0, y = 1, x;
   while (z < c) {
     chacha(key, y++, x = 0, a, b, d);
-    do e.setUint32( // xor word
+    do e.setUint32(
       z,
       ($[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24) ^ d[x],
       true,
@@ -15,7 +15,7 @@ const xor = (key: DataView, iv: DataView, $: Uint8Array, to: Uint8Array) => {
   }
   if (c < $.length) {
     chacha(key, y, x = 0, a, b, d), e = new DataView(d.buffer);
-    do to[z] = $[z] ^ e.getUint8(x++); while (++z < $.length); // xor byte
+    do to[z] = $[z] ^ e.getUint8(x++); while (++z < $.length);
   }
 };
 const tag = (key: Uint32Array, $: Uint8Array, data: Uint8Array) => {
@@ -49,10 +49,10 @@ export const polyxchacha = (
   if (key.length !== 32 || iv.length !== 24) return null;
   const a = new DataView(iv.buffer, iv.byteOffset), b = new Uint32Array(16);
   const c = hchacha(new DataView(key.buffer, key.byteOffset), a, b);
-  const d = $.length - 16, e = new Uint8Array(d);
   chacha(c, 0, 0, a.getUint32(16, true), a.getUint32(20, true), b);
+  const d = $.length - 16, e = new Uint8Array(d);
   const f = tag(b, $.subarray(0, d), data);
   let z = 16, y = 0;
-  do y |= f[--z] ^ $[d + z]; while (z); // compare tag
+  do y |= f[--z] ^ $[d + z]; while (z);
   return y ? null : (xor(c, a, $.subarray(0, d), e), e);
 };
