@@ -5,22 +5,22 @@ type Writable<A, B> = (<C>() => C extends A ? true : false) extends
 type Off<A, B extends keyof A> = B extends `on${string}` ? never
   : A extends (...args: any[]) => any ? never
   : Writable<Pick<A, B>, B>;
-type Elementer<A> =
-  & { [B in keyof A as Off<A, B>]: ($: A[B]) => Elementer<A> }
+type Builder<A> =
+  & { [B in keyof A as Off<A, B>]: ($: A[B]) => Builder<A> }
   & {
     [B in Extract<keyof A, `on${string}`>]: NonNullable<A[B]> extends
       (event: infer C) => any
-      ? ($: (event: C & { currentTarget: A }) => any) => Elementer<A>
+      ? ($: (event: C & { currentTarget: A }) => any) => Builder<A>
       : never;
   }
   & ((use?: ((element: A) => void | Children) | Children) => A);
-const elementer = (target: any) => ({
+const builder = (target: any) => ({
   get: (_, key: string, proxy) => (value: any) => (target[key] = value, proxy),
   apply: (append, _, [$]) => (
     $ && append(target, typeof $ === "function" ? $(target) : $), target
   ),
 } satisfies ProxyHandler<(parent: Node, $: Children) => Node>);
-const builder = {
+const handler = {
   get: (create, tag: string) =>
     new Proxy((parent: Node, $: Children) => {
       for (const child of (Array.isArray($) ? $ : [$])) {
@@ -29,22 +29,24 @@ const builder = {
         );
       }
       return parent;
-    }, elementer(create(tag))),
+    }, builder(create(tag))),
   apply: (create, _, [tag, parent, assign]: [string, (Node | null)?, any?]) =>
     Object.assign(parent?.appendChild(create(tag)) ?? create(tag), assign),
 } satisfies ProxyHandler<(tag: string) => Element>;
-type Builder<A> =
-  & { [B in keyof A]: Elementer<A[B]> }
+type Elementer<A> =
+  & { [B in keyof A]: Builder<A[B]> }
   & (<B extends keyof A>(
     tag: B,
     parent?: Node | null,
     assign?: { [C in keyof A[B] as Writable<Pick<A[B], C>, C>]?: A[B][C] },
   ) => A[B]);
-export const html: Builder<HTMLElementTagNameMap> = new Proxy<any>(
+/** Creates an HTML element when called directly, otherwise wraps a builder. */
+export const html: Elementer<HTMLElementTagNameMap> = new Proxy<any>(
   document.createElement.bind(document),
-  builder,
+  handler,
 );
-export const svg: Builder<SVGElementTagNameMap> = new Proxy<any>(
+/** Creates an SVG element when called directly, otherwise wraps a builder. */
+export const svg: Elementer<SVGElementTagNameMap> = new Proxy<any>(
   document.createElementNS.bind(document, "http://www.w3.org/2000/svg"),
-  builder,
+  handler,
 );
