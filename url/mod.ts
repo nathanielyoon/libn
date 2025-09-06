@@ -7,7 +7,7 @@
  *
  * assertMatch(
  *   presign(
- *     { S3_HOST: "https://s3.amazonaws.com", S3_ID: "", S3_KEY: "" },
+ *     { S3_HOST: "https://s3.amazonaws.com", S3_ID: "<id>", S3_KEY: "<key>" },
  *     "GET",
  *     "file.txt",
  *   ),
@@ -24,7 +24,7 @@ import { hmac, sha256 } from "@libn/hash";
 type Method = "HEAD" | "GET" | "PUT" | "POST" | "PATCH" | "DELETE";
 type S3 = { S3_HOST: string; S3_ID: string; S3_KEY: string };
 /** Creates a request presigner. */
-export const signer = (env: S3, region?: string, date?: Date): (
+export const presigner = (env: S3, region?: string, date?: Date): (
   method: Method,
   path: string,
   headers: { [name: string]: string },
@@ -71,4 +71,4 @@ export const presign = (
   expiration = 604800,
   region?: string,
   date?: Date,
-): string => signer(env, region, date)(method, path, headers, expiration);
+): string => presigner(env, region, date)(method, path, headers, expiration);
