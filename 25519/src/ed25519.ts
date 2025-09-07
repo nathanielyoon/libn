@@ -4,7 +4,7 @@ import { add, de_point, double, en_point, equal, wnaf } from "./point.ts";
 
 const int = ($: Uint8Array) => {
   const a = sha512($);
-  return (en_big(a) | en_big(a.copyWithin(0, 32)) << 256n) % N;
+  return (en_big(a) | en_big(a.subarray(32)) << 256n) % N;
 };
 /** Derives a public key from a secret key. */
 export const generate = ($: Uint8Array): Uint8Array<ArrayBuffer> =>
@@ -34,8 +34,9 @@ export const verify = (
   let c = 1n << 256n | 1n << 512n, d = de_point(public_key);
   if (d < 0n) return false;
   let e = int(b);
-  do e & 1n && (c = add(c, d)), d = double(d); while (e >>= 1n);
+  // No secret information involved, so unsafe double-and-add is ok.
+  do if (e & 1n) c = add(c, d); while (d = double(d), e >>= 1n);
   d = de_point(signature);
   if (d < 0n) return false;
-  return equal(add(c, d), wnaf(a)[0]);
+  return equal(wnaf(a)[0], add(c, d));
 };

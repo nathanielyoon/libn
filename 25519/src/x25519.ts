@@ -1,8 +1,8 @@
 import { de_big, en_big, P, p, prune, r, s, v } from "./curve.ts";
 
-const F = ~(1n << 255n);
+const F = ~(1n << 255n); // mask for top bit
 const ladder = (scalar: bigint, point: bigint) => {
-  let a = 1n, b = 0n, c = point, d = 1n, e = 0n, f, g, z = 254n;
+  let a = 1n, b = 0n, c = point, d = 1n, e = 0n, f, g, z = 254n; // t = bits - 1
   do e ^= f = scalar >> z & 1n,
     a ^= g = (a ^ c) & -e,
     c ^= g,
@@ -18,7 +18,8 @@ const ladder = (scalar: bigint, point: bigint) => {
     b = b * b % P,
     f = b - a,
     a = a * b % P,
-    b = f * (f * 121665n % P + b) % P; while (z--);
+    b = f * (b + f * 121665n % P) % P; while (z--);
+  // Final cswap is outside the loop.
   return p(s(r(b ^= (b ^ d) & -e, b **= 3n), 3, a ^ (a ^ c) & -e) * b) & F;
 };
 /** Multiplies a public coordinate (if omitted, the generator) by a scalar. */

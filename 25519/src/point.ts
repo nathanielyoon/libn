@@ -4,6 +4,7 @@ const D = 0x52036cee2b6ffe738cc740797779e89800700a4d4141d8ab75eb4dca135978a3n;
 const R = 0x2b8324804fc1df0b2b4d00993dfbd7a72f431806ad2fe478c4ee1b274a0ea0b0n;
 const X = 0x216936d3cd6e53fec0a4e231fdd6dc5c692cc7609525a7b2c9562d608f25d51an;
 const Y = 0x6666666666666666666666666666666666666666666666666666666666666658n;
+// Extended representation as a 1024-bit integer.
 const B = X | Y << 256n | 1n << 512n | X * Y % P << 768n, M = (1n << 256n) - 1n;
 /** Adds two points. */
 export const add = (one: bigint, two: bigint): bigint => {
