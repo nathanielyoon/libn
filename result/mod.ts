@@ -1,7 +1,7 @@
 /**
  * Result type.
  *
- * @example Lifters
+ * @example Construction
  * ```ts
  * import { assertEquals } from "@std/assert";
  *
