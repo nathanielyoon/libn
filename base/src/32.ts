@@ -1,6 +1,6 @@
 const encode = (str: string) => ($: Uint8Array) => {
-  let a = "", b, c, d, e, f, z = 0;
-  while (z < $.length) {
+  let a = "";
+  for (let b, c, d, e, f, z = 0; z < $.length;) {
     b = $[z++], c = $[z++], d = $[z++], e = $[z++], f = $[z++];
     a += str[b >> 3] + str[b << 2 & 28 | c >> 6] + str[c >> 1 & 31] +
       str[c << 4 & 16 | d >> 4] + str[d << 1 & 30 | e >> 7] + str[e >> 2 & 31] +
@@ -10,8 +10,7 @@ const encode = (str: string) => ($: Uint8Array) => {
 };
 const decode = (bin: Uint8Array) => ($: string) => {
   const a = new Uint8Array($.length * 5 >> 3), b = $.charCodeAt.bind($);
-  let c, d, e, f, z = 0, y = 0;
-  while (z < $.length) {
+  for (let c, d, e, f, z = 0, y = 0; z < $.length;) {
     c = bin[b(++z)], a[y++] = bin[b(z++ - 1)] << 3 | c >> 2 & 7;
     d = bin[b(++z)], a[y++] = c << 6 & 192 | bin[b(z++ - 1)] << 1 | d >> 4 & 1;
     e = bin[b(z++)], a[y++] = d << 4 & 240 | e >> 1 & 15, f = bin[b(++z)];

@@ -1,6 +1,6 @@
 const BIN = /* @__PURE__ */ (() => {
   const a = new Uint8Array(256);
-  for (let z = 0, b; z < 16; ++z) {
+  for (let b, z = 0; z < 16; ++z) {
     a[b = z.toString(16).charCodeAt(0) | 32] = a[b & 95] = z;
   }
   return a;
