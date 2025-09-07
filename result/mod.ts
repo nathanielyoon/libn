@@ -1,62 +1,38 @@
 /**
  * Result type.
  *
- * @example Methods, higher-order functions
+ * @example Lifters
  * ```ts
- * import { assert } from "@std/assert";
+ * import { assertEquals } from "@std/assert";
  *
- * const base = Math.random();
- *
- * const { result } = ok(base * 4)
- *   .fmap(($) => $ & 3)
- *   .bind(not(($) => $ & 1 && "odd"))
- *   .fmap(($) => $ || null, ($) => `${$}!` as const)
- *   .bind(lift("zero!"));
- * if (result.state) assert(result.value === 2);
- * else if (result.value === "zero!") assert(base < 0.25);
- * else {
- *   assert(result.value === "odd!");
- *   assert(base >= 0.25 && base < 0.5 || base >= 0.75);
- * }
+ * assertEquals(no(0).result, { state: false, value: 0 });
+ * assertEquals(ok(0).result, { state: true, value: 0 });
  * ```
  *
  * @module result
  */
 
-/** Dang! */
-export type No<A = any> = Or<A, never>;
-/** Nice! */
-export type Ok<A = any> = Or<never, A>;
-/** Result type, either a failure or success. */
+/** Result type. */
 export class Or<A = any, B = any> {
-  /** Success! */
+  /** Creates a failure or success. */
   constructor(state: false, value: A);
-  /** Failure! */
   constructor(state: true, value: B);
-  /** Creates a success or failure. */
   constructor(private state: boolean, private value: any) {}
+  /** Just yields itself, for delegation in generator functions. */
   protected *[Symbol.iterator](): Iterator<Or<A, B>, B> {
     return yield this;
   }
   /** Applies functions to the inner value. */
   fmap<C, D = A>(if_ok: ($: B) => C, if_no?: ($: A) => D): Or<D, C> {
-    if (this.state) this.value = if_ok(this.value);
-    else if (if_no) this.value = if_no(this.value);
+    if (this.state) return new Or(true, if_ok(this.value));
+    else if (if_no) return new Or(false, if_no(this.value));
     return this as Or;
   }
   /** Maps a successful result to a new result. */
   bind<C, D>($: ($: B) => Or<C, D>): Or<A | C, D> {
     return this.state ? $(this.value) : this as Or;
   }
-  /** Checks for failure. */
-  is_no(): this is No<A> {
-    return !this.state;
-  }
-  /** Checks for success. */
-  is_ok(): this is Ok<B> {
-    return this.state;
-  }
-  /** Gets the result as a discriminated union. */
+  /** Extracts the result as a discriminated union. */
   get result(): { state: false; value: A } | { state: true; value: B } {
     return { state: this.state, value: this.value };
   }
@@ -69,34 +45,24 @@ export class Or<A = any, B = any> {
   }
 }
 /** Creates a failure. */
-export const no = <const A = void>($?: A): No<A> => new Or(false, $!);
+export const no = <const A = void>($?: A): Or<A, never> => new Or(false, $!);
 /** Creates a success. */
-export const ok = <const A = void>($?: A): Ok<A> => new Or(true, $!);
+export const ok = <const A = void>($?: A): Or<never, A> => new Or(true, $!);
 /** Runs a function if the passed-in value exists. */
-export const lift = <A, const B = void, C = NonNullable<A>>(
-  if_none?: B,
-  if_some?: ($: NonNullable<A>) => C,
+export const some = <A, const B = void, C = NonNullable<A>>(
+  if_nullish?: B,
+  if_nonnull?: ($: NonNullable<A>) => C,
 ): ($: A) => Or<B, C> =>
-($) => $ == null ? no(if_none) : ok(if_some ? if_some($) : $ as C);
-/** Tries a possibly-throwing function. */
-export const try_catch =
-  <A, B, C = Error>($$: ($: A) => B, or?: ($: any) => C): ($: A) => Or<C, B> =>
-  ($) => {
-    try {
-      return ok($$($));
-    } catch (cause) {
-      return no(or ? or(cause) : Error(undefined, { cause }) as C);
-    }
-  };
+($) => $ == null ? no(if_nullish) : ok(if_nonnull ? if_nonnull($) : $ as C);
 type Falsy = undefined | null | false | 0 | 0n | "";
 /** Wraps a type guard. */
-export const not =
+export const drop =
   <A, B extends {}>($$: ($: A) => B | Falsy): ($: A) => Or<B, A> => ($) => {
     const a = $$($);
     return a ? no(a) : ok($);
   };
-/** Executes an imperative block. */
-export const run =
+/** Wraps an imperative block. */
+export const exec =
   <A, B, C, D>($$: ($: A) => Generator<Or<B, C>, D, C>): ($: A) => Or<B, D> =>
   ($) => {
     const a = $$($);
@@ -104,3 +70,15 @@ export const run =
       $.done ? ok($.value) : $.value.bind(($) => b(a.next($)));
     return b(a.next());
   };
+/** Wraps a possibly-throwing function. */
+export const save = <A, B, C = Error>(
+  unsafe: ($: A) => B,
+  if_thrown?: ($: unknown) => C,
+): ($: A) => Or<C, B> =>
+($) => {
+  try {
+    return ok(unsafe($));
+  } catch (cause) {
+    return no(if_thrown ? if_thrown(cause) : Error(undefined, { cause }) as C);
+  }
+};
