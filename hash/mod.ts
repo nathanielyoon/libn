@@ -1,9 +1,11 @@
 /**
  * SHA-256 and SHA-512 ([RFC 6234](https://www.rfc-editor.org/rfc/rfc6234)),
+ * BLAKE2 ([RFC 7693](https://www.rfc-editor.org/rfc/rfc7693)) and BLAKE3
+ * ([specification](https://github.com/BLAKE3-team/BLAKE3-specs/)),
  * HMAC-SHA256 ([RFC 2104](https://www.rfc-editor.org/rfc/rfc2104)), and
  * HKDF-SHA256 ([RFC 5869](https://www.rfc-editor.org/rfc/rfc5869)).
  *
- * @example Hashing
+ * @example SHA-2 hashing
  * ```ts
  * import { assertEquals } from "@std/assert";
  *
@@ -15,6 +17,22 @@
  * assertEquals(
  *   sha512(data),
  *   new Uint8Array(await crypto.subtle.digest("SHA-512", data)),
+ * );
+ * ```
+ *
+ * @example BLAKE hashing
+ * ```ts
+ * import { assertEquals } from "@std/assert";
+ * import { crypto } from "@std/crypto";
+ *
+ * const data = crypto.getRandomValues(new Uint8Array(100));
+ * assertEquals(
+ *   blake3_hash(data),
+ *   new Uint8Array(await crypto.subtle.digest("BLAKE3", data)),
+ * );
+ * assertEquals(
+ *   new Blake2s().update(data).finalize(),
+ *   new Uint8Array(await crypto.subtle.digest("BLAKE2s", data)),
  * );
  * ```
  *
@@ -66,5 +84,16 @@
 import { sha256, sha512 } from "./src/sha2.ts";
 import { hmac } from "./src/hmac.ts";
 import { hkdf } from "./src/hkdf.ts";
+import { Blake2s } from "./src/blake2.ts";
+import { blake3_derive, blake3_hash, blake3_keyed } from "./src/blake3.ts";
 
-export { hkdf, hmac, sha256, sha512 };
+export {
+  Blake2s,
+  blake3_derive,
+  blake3_hash,
+  blake3_keyed,
+  hkdf,
+  hmac,
+  sha256,
+  sha512,
+};
