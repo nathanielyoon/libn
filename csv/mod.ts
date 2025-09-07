@@ -13,7 +13,7 @@
  * @module csv
  */
 
-/** Parses CSV. */
+/** Decodes CSV string -> array of rows, mapping empty fields to `null`s. */
 export const de_csv = ($: string): (string | null)[][] | null => {
   if ($.charCodeAt(0) === 0xfeff) $ = $.slice(1);
   const a = /(?:("?)([^\n\r",]+)\1|"((?:[^"]|"")*)"|)(,|\r?\n|(?:\r?\n)?$)/y;
@@ -26,7 +26,7 @@ export const de_csv = ($: string): (string | null)[][] | null => {
   }
   return null;
 };
-/** Stringifies CSV. */
+/** Encodes array of rows -> CSV string, mapping `null`s to empty fields. */
 export const en_csv = ($: (string | null)[][]): string => {
   let a = "";
   for (let b, c, d, z = 0, y; z < $.length; a += c.replace(/,?$/, "\n"), ++z) {
