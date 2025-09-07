@@ -13,12 +13,15 @@ type Builder<A> =
       ? ($: (event: C & { currentTarget: A }) => any) => Builder<A>
       : never;
   }
-  & ((use?: ((element: A) => void | Children) | Children) => A);
+  & ((...use: (((element: A) => void | Children) | Children)[]) => A);
 const builder = (target: any) => ({
   get: (_, key: string, proxy) => (value: any) => (target[key] = value, proxy),
-  apply: (append, _, [$]) => (
-    $ && append(target, typeof $ === "function" ? $(target) : $), target
-  ),
+  apply: (append, _, all) => {
+    for (const $ of all) {
+      $ && append(target, typeof $ === "function" ? $(target) : $);
+    }
+    return target;
+  },
 } satisfies ProxyHandler<(parent: Node, $: Children) => Node>);
 const handler = {
   get: (create, tag: string) =>
