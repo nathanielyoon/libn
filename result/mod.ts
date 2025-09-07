@@ -29,8 +29,8 @@ export class Or<A = any, B = any> {
     return this as Or;
   }
   /** Maps a successful result to a new result. */
-  bind<C, D>($: ($: B) => Or<C, D>): Or<A | C, D> {
-    return this.state ? $(this.value) : this as Or;
+  bind<C, D>(or: ($: B) => Or<C, D>): Or<A | C, D> {
+    return this.state ? or(this.value) : this as Or;
   }
   /** Extracts the result as a discriminated union. */
   get result(): { state: false; value: A } | { state: true; value: B } {
@@ -57,15 +57,15 @@ export const some = <A, const B = void, C = NonNullable<A>>(
 type Falsy = undefined | null | false | 0 | 0n | "";
 /** Wraps a type guard. */
 export const drop =
-  <A, B extends {}>($$: ($: A) => B | Falsy): ($: A) => Or<B, A> => ($) => {
-    const a = $$($);
+  <A, B extends {}>(not: ($: A) => B | Falsy): ($: A) => Or<B, A> => ($) => {
+    const a = not($);
     return a ? no(a) : ok($);
   };
 /** Wraps an imperative block. */
 export const exec =
-  <A, B, C, D>($$: ($: A) => Generator<Or<B, C>, D, C>): ($: A) => Or<B, D> =>
+  <A, B, C, D>(doer: ($: A) => Generator<Or<B, C>, D, C>): ($: A) => Or<B, D> =>
   ($) => {
-    const a = $$($);
+    const a = doer($);
     const b = ($: IteratorResult<Or<B, C>, D>): Or<B, D> =>
       $.done ? ok($.value) : $.value.bind(($) => b(a.next($)));
     return b(a.next());
