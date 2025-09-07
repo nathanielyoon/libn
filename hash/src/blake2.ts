@@ -26,7 +26,7 @@ export class Blake2s {
     if (key_len) this.update(key), this.state[24] = 64;
   }
   /** Updates the hash state. */
-  update(data: Uint8Array) {
+  update(data: Uint8Array): this {
     for (let z = 0; z < data.length; ++z) {
       if (this.state[24] === 64) {
         this.state[25] += 64, this.state[25] < 64 && ++this.state[26];
@@ -38,7 +38,7 @@ export class Blake2s {
     return this;
   }
   /** Computes a digest from the current state. */
-  finalize(into?: Uint8Array) {
+  finalize<A extends Uint8Array = Uint8Array<ArrayBuffer>>(into?: A): A {
     const out = new Uint8Array(this.out_len);
     const view = new DataView(this.state.buffer), len = this.state[24] + 108;
     this.state.fill(0, len + 3 >> 2)[25] += this.state[24];
@@ -51,6 +51,6 @@ export class Blake2s {
       out[z] = this.state[z + 64 >> 2] >> (z << 3 & 24);
     }
     if (into) return into.set(out.subarray(0, into.length)), into;
-    return out;
+    return out as A;
   }
 }
