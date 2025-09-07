@@ -1,4 +1,4 @@
-type Nullish<A> = A | null | undefined;
+type Nullish<A> = A | null | undefined | void;
 type Children = Nullish<string | Node | Nullish<string | Node>[]>;
 type Writable<A, B> = (<C>() => C extends A ? true : false) extends
   (<C>() => C extends Readonly<A> ? true : false) ? never : B;
