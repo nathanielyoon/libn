@@ -2,6 +2,8 @@ import { sha512 } from "@libn/hash";
 
 /** Curve25519 prime. */
 export const P = (1n << 255n) - 19n;
+/** Curve25519 order. */
+export const N = 1n << 252n | 0x14def9dea2f79cd65812631a5cf5d3edn;
 /** Reduces modulo P. */
 export const p = ($: bigint): bigint => ($ %= P) < 0n ? $ + P : $;
 /** Raises to a power modulo P. */

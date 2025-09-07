@@ -1,8 +1,7 @@
 import { sha512 } from "@libn/hash";
-import { de_big, en_big, prune } from "./curve.ts";
+import { de_big, en_big, N, prune } from "./curve.ts";
 import { add, de_point, double, en_point, equal, wnaf } from "./point.ts";
 
-const N = 1n << 252n | 0x14def9dea2f79cd65812631a5cf5d3edn;
 const int = ($: Uint8Array) => {
   const a = sha512($);
   return (en_big(a) | en_big(a.copyWithin(0, 32)) << 256n) % N;
