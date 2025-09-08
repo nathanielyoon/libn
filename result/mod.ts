@@ -156,7 +156,9 @@ type Wrap<A extends Or[]> = Or<
 /** Wraps a list of results. */
 export const wrap = <const A extends Or[]>($: A): Wrap<A> => {
   const a = Array($.length), b = [];
-  for (let z = 0; z < $.length; ++z) (a[z] = $[z].result).state && b.push(a[z]);
+  for (let z = 0; z < $.length; ++z) {
+    (a[z] = $[z].result).state && b.push(a[z].value);
+  }
   return b.length === $.length ? ok<any>(b) : no<any>(a);
 };
 /** Wraps a possibly-asynchronous list of results. */
