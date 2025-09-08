@@ -12,7 +12,6 @@
  * @module result
  */
 
-type Result<A, B> = { state: false; value: A } | { state: true; value: B };
 /** Result type. */
 export class Or<A = any, B = any> {
   private promise?: Promise<Result<any, any>>;
@@ -87,6 +86,7 @@ export class Or<A = any, B = any> {
     return value;
   }
 }
+type Result<A, B> = { state: false; value: A } | { state: true; value: B };
 /** Creates a failure. */
 export const no = <const A = void>($?: A): Or<A, never> => new Or($!, false);
 /** Creates a success. */
@@ -148,4 +148,27 @@ async ($) => {
   const b = ($: IteratorResult<Or<B, C>, D>): Or<B, D> =>
     $.done ? ok($.value) : $.value.bind_async(async ($) => b(await a.next($)));
   return b(await a.next());
+};
+type Wrap<A extends Or[]> = Or<
+  { [B in keyof A]: A[B] extends Or<infer C, infer D> ? Result<C, D> : never },
+  { [B in keyof A]: A[B] extends Or<any, infer C> ? C : A[B] }
+>;
+/** Wraps a list of results. */
+export const wrap = <const A extends Or[]>($: A): Wrap<A> => {
+  const a = Array($.length), b = [];
+  for (let z = 0; z < $.length; ++z) (a[z] = $[z].result).state && b.push(a[z]);
+  return b.length === $.length ? ok<any>(b) : no<any>(a);
+};
+/** Wraps a possibly-asynchronous list of results. */
+export const wrap_async = async <const A extends Or[]>(
+  $: A,
+): Promise<Wrap<A>> => {
+  const a = Array<Promise<Result<any, any>>>($.length);
+  for (let z = 0; z < $.length; ++z) a[z] = $[z].result_async;
+  const b = await Promise.all(a), c = [];
+  for (let z = 0; z < b.length; ++z) {
+    if (b[z].state) c.push(b[z].value);
+    else return no<any>(b);
+  }
+  return ok<any>(c);
 };
