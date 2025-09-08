@@ -116,6 +116,20 @@ export const save = <A, B, C = Error>(
     return no(if_thrown ? if_thrown(cause) : Error(undefined, { cause }) as C);
   }
 };
+/** Wraps a possibly-rejecting function. */
+export const save_async = <A, B, C = Error>(
+  unsafe: ($: A) => B | Promise<B>,
+  if_thrown?: ($: unknown) => C | Promise<C>,
+): ($: A) => Promise<Or<C, B>> =>
+async ($) => {
+  try {
+    return ok(await unsafe($));
+  } catch (cause) {
+    return no(
+      if_thrown ? await if_thrown(cause) : Error(undefined, { cause }) as C,
+    );
+  }
+};
 /** Wraps an imperative block. */
 export const exec =
   <A, B, C, D>(doer: ($: A) => Generator<Or<B, C>, D, C>): ($: A) => Or<B, D> =>
@@ -126,7 +140,7 @@ export const exec =
     return b(a.next());
   };
 /** Wraps an asychronous imperative block. */
-export const wait = <A, B, C, D>(
+export const exec_async = <A, B, C, D>(
   doer: ($: A) => AsyncGenerator<Or<B, C>, D, C>,
 ): ($: A) => Promise<Or<B, D>> =>
 async ($) => {

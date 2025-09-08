@@ -1,7 +1,17 @@
 import { assertEquals, assertRejects, assertThrows } from "@std/assert";
 import fc from "fast-check";
 import { fc_check } from "../test.ts";
-import { drop, exec, no, ok, Or, save, some, wait } from "./mod.ts";
+import {
+  drop,
+  exec,
+  exec_async,
+  no,
+  ok,
+  Or,
+  save,
+  save_async,
+  some,
+} from "./mod.ts";
 
 const fc_or = fc.boolean().map(($) => $ ? ok($) : no($));
 Deno.test("constructor takes promises", () =>
@@ -118,7 +128,7 @@ Deno.test("drop filters by predicate", () =>
     fc.nat(),
     (keep, $) => assertEquals(drop(() => !keep)($).unwrap(), keep ? $ : true),
   )));
-Deno.test("save try-catches", () => {
+Deno.test("save/save_async try-catch", async () => {
   fc_check(fc.property(
     fc.boolean(),
     fc.nat(),
@@ -146,8 +156,35 @@ Deno.test("save try-catches", () => {
         error ? thrown + caught : $,
       ),
   ));
+  await fc_check(fc.asyncProperty(
+    fc.boolean(),
+    fc.nat(),
+    fc.nat(),
+    async (error, thrown, $) =>
+      assertEquals(
+        await (await save_async(($) => {
+          if (error) throw thrown;
+          return $;
+        })($)).fmap(($) => $, ($) => $.cause).unwrap_async(),
+        error ? thrown : $,
+      ),
+  ));
+  await fc_check(fc.asyncProperty(
+    fc.boolean(),
+    fc.nat(),
+    fc.nat(),
+    fc.nat(),
+    async (error, thrown, caught, $) =>
+      assertEquals(
+        await (await save_async(async ($) => {
+          if (error) throw thrown;
+          return $;
+        }, async (thrown) => Number(thrown) + caught)($)).unwrap_async(),
+        error ? thrown + caught : $,
+      ),
+  ));
 });
-Deno.test("exec/wait return early", async () => {
+Deno.test("exec/exec_async return early", async () => {
   fc_check(fc.property(
     fc.tuple(fc.boolean(), fc.nat()),
     fc.tuple(fc.boolean(), fc.nat()),
@@ -168,7 +205,7 @@ Deno.test("exec/wait return early", async () => {
     fc.nat(),
     async (one, two, $) =>
       assertEquals(
-        await (await wait(async function* ($: number) {
+        await (await exec_async(async function* ($: number) {
           const a = yield* one[0] ? no(one[1]) : ok(one[1]);
           const b = yield* two[0] ? no(two[1]) : ok(two[1]);
           return $ + a + b;
