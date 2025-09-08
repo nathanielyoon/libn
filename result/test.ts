@@ -25,10 +25,10 @@ Deno.test("fmap/fmap_async apply conditionally", async () => {
     fc_or,
     ($) => assertEquals($.fmap(($) => !$).unwrap(), false),
   ));
-  fc_check(fc.asyncProperty(fc_or, async ($) =>
+  fc_check(fc.property(fc_or, ($) =>
     assertEquals(
-      await $.fmap(($) => !$, ($) => !$).unwrap_async(),
-      !$.result.state,
+      $.fmap(($) => $, ($) => !$).unwrap(),
+      true,
     )));
   await fc_check(fc.asyncProperty(fc_or, async ($) =>
     assertEquals(
@@ -37,8 +37,8 @@ Deno.test("fmap/fmap_async apply conditionally", async () => {
     )));
   await fc_check(fc.asyncProperty(fc_or, async ($) =>
     assertEquals(
-      await $.fmap_async(async ($) => !$, async ($) => !$).unwrap_async(),
-      !(await $.result_async).state,
+      await $.fmap_async(async ($) => $, async ($) => !$).unwrap_async(),
+      true,
     )));
 });
 Deno.test("bind/bind_async only map successes", async () => {
@@ -82,20 +82,18 @@ Deno.test("unwrap/unwrap_async pass through or throw/reject", async () => {
       void await assertRejects(() => $.unwrap_async(!$.result.state)),
   ));
 });
-Deno.test("sync methods apply to async results", async () => {
-  fc_check(fc.asyncProperty(fc_or.map(($) => $.fmap(($) => $)), async ($) => {
-  }));
-  await fc_check(fc.asyncProperty(fc_or, async ($) =>
-    assertEquals(
-      await $.fmap_async(async ($) => !$).fmap(($) => !$).unwrap_async(),
-      (await $.result_async).state,
-    )));
-  await fc_check(fc.asyncProperty(fc_or, async ($) =>
-    assertEquals(
-      await $.bind_async(async ($) => ok($)).bind(($) => ok($)).unwrap_async(),
-      (await $.result_async).state,
-    )));
-});
+Deno.test("sync methods apply to async results", async () =>
+  fc_check(fc.asyncProperty(
+    fc_or.map(($) => $.fmap_async(async ($) => $)),
+    async ($) => {
+      const { state } = await $.result_async;
+      assertEquals(await $.fmap(async ($) => $).unwrap_async(), state);
+      assertEquals(
+        await $.bind_async(async ($) => ok($)).unwrap_async(),
+        state,
+      );
+    },
+  )));
 Deno.test("sync openers throw if result is async", () =>
   fc_check(fc.property(
     fc_or.map(($) => $.fmap_async(async ($) => $)),
