@@ -54,7 +54,7 @@ export class Or<A = any, B = any> {
     return this as Or;
   }
   /** Maps a successful result to a possibly-asynchronous new result. */
-  bind_async<C, D>(or: ($: B) => Or<C, D> | Promise<Or<C, D>>) {
+  bind_async<C, D>(or: ($: B) => Or<C, D> | Promise<Or<C, D>>): Or<A | C, D> {
     return this.await(async ($) =>
       $.state ? await (await or($.value)).result_async : $
     );
