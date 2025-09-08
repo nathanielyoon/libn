@@ -7,7 +7,7 @@
  *
  * assertMatch(
  *   presign(
- *     { S3_HOST: "https://s3.amazonaws.com", S3_ID: "<id>", S3_KEY: "<key>" },
+ *     { S3_ENDPOINT: "https://s3.amazonaws.com", S3_ID: "id", S3_KEY: "key" },
  *     "GET",
  *     "file.txt",
  *   ),
@@ -21,14 +21,20 @@
 import { en_b16, en_bin } from "@libn/base";
 import { hmac, sha256 } from "@libn/hash";
 
-type Method = "HEAD" | "GET" | "PUT" | "POST" | "PATCH" | "DELETE";
-type S3 = { S3_HOST: string; S3_ID: string; S3_KEY: string };
+/** HTTP request method. */
+export type Method = "HEAD" | "GET" | "PUT" | "POST" | "PATCH" | "DELETE";
+/** Environment variables for an S3 request. */
+export interface S3 {
+  S3_ENDPOINT: string;
+  S3_ID: string;
+  S3_KEY: string;
+}
 /** Creates a request presigner. */
 export const presigner = (env: S3, region?: string, date?: Date): (
   method: Method,
   path: string,
-  headers: { [name: string]: string },
-  expiration: number,
+  headers?: { [name: string]: string },
+  expires?: number,
 ) => string => {
   const a = (date ?? new Date()).toISOString().replace(/\....|\W/g, "");
   const b = a.slice(0, 8), c = `${b}/${region ??= "auto"}/s3/aws4_request`;
@@ -44,12 +50,12 @@ export const presigner = (env: S3, region?: string, date?: Date): (
     ),
     en_bin("aws4_request"),
   );
-  return (method, path, headers, expiration) => {
-    const { host, pathname, href } = new URL(path, env.S3_HOST);
-    const g = Object.keys(headers), h: typeof headers = { host };
+  return (method, path, headers, expires) => {
+    const { host, pathname, href } = new URL(path, env.S3_ENDPOINT);
+    const g = Object.keys(headers ??= {}), h: typeof headers = { host };
     for (let z = 0; z < g.length; ++z) h[g[z].toLowerCase()] = headers[g[z]];
     const i = Object.keys(h).sort();
-    const j = `${e}${expiration}&X-Amz-SignedHeaders=${i.join("%3B")}`;
+    const j = `${e}${expires ?? 604800}&X-Amz-SignedHeaders=${i.join("%3B")}`;
     let k = `${method}\n${pathname}\n${j}\n`, z = i.length;
     do k += `${i[--z]}:${h[i[z]]}\n`; while (z);
     return `${href}?${j}&X-Amz-Signature=${
@@ -67,8 +73,8 @@ export const presign = (
   env: S3,
   method: Method,
   path: string,
-  headers: { [header: string]: string } = {},
-  expiration = 604800,
+  headers?: { [name: string]: string },
+  expires?: number,
   region?: string,
   date?: Date,
-): string => presigner(env, region, date)(method, path, headers, expiration);
+): string => presigner(env, region, date)(method, path, headers, expires);

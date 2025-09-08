@@ -4,7 +4,7 @@ import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("match signature v4 documentation example", () => {
   const S3 = {
-    S3_HOST: `https://${vectors.docs.bucket}.s3.amazonaws.com`,
+    S3_ENDPOINT: `https://${vectors.docs.bucket}.s3.amazonaws.com`,
     S3_ID: vectors.docs.id,
     S3_KEY: vectors.docs.key,
   };
