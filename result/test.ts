@@ -11,6 +11,8 @@ import {
   save,
   save_async,
   some,
+  wrap,
+  wrap_async,
 } from "./mod.ts";
 
 const fc_or = fc.boolean().map(($) => $ ? ok($) : no($));
@@ -87,11 +89,8 @@ Deno.test("sync methods apply to async results", async () =>
     fc_or.map(($) => $.fmap_async(async ($) => $)),
     async ($) => {
       const { state } = await $.result_async;
-      assertEquals(await $.fmap(async ($) => $).unwrap_async(), state);
-      assertEquals(
-        await $.bind_async(async ($) => ok($)).unwrap_async(),
-        state,
-      );
+      assertEquals(await $.fmap(($) => $).unwrap_async(), state);
+      assertEquals(await $.bind(($) => ok($)).unwrap_async(), state);
     },
   )));
 Deno.test("sync openers throw if result is async", () =>
@@ -209,6 +208,26 @@ Deno.test("exec/exec_async return early", async () => {
           return $ + a + b;
         })($)).unwrap_async(),
         one[0] ? one[1] : two[0] ? two[1] : $ + one[1] + two[1],
+      ),
+  ));
+});
+Deno.test("wrap/wrap_async fail/pass all together", async () => {
+  fc_check(fc.property(fc_or, fc_or, (one, two) =>
+    assertEquals<any>(
+      wrap([one, two]),
+      one.result.state && two.result.state
+        ? ok([one.unwrap(), two.unwrap()])
+        : no([one.result, two.result]),
+    )));
+  await fc_check(fc.asyncProperty(
+    fc_or.map(($) => $.fmap_async(async ($) => !$)),
+    fc_or.map(($) => $.fmap_async(async ($) => !$)),
+    async (one, two) =>
+      assertEquals<any>(
+        await wrap_async([one, two]),
+        (await one.result_async).state && (await two.result_async).state
+          ? ok([await one.unwrap_async(), await two.unwrap_async()])
+          : no([await one.result_async, await two.result_async]),
       ),
   ));
 });
