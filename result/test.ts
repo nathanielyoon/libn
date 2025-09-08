@@ -1,36 +1,99 @@
-import { assertEquals, assertThrows } from "@std/assert";
+import { assertEquals, assertRejects, assertThrows } from "@std/assert";
 import fc from "fast-check";
 import { fc_check } from "../test.ts";
-import { drop, exec, no, ok, save, some } from "./mod.ts";
+import { drop, exec, no, ok, Or, save, some, wait } from "./mod.ts";
 
 const fc_or = fc.boolean().map(($) => $ ? ok($) : no($));
-Deno.test("fmap applies conditionally", () => {
+Deno.test("constructor takes promises", () =>
+  fc_check(fc.asyncProperty(fc_or, async ($) =>
+    assertEquals(
+      await new Or(Promise.resolve($.result)).result_async,
+      $.result,
+    ))));
+Deno.test("fmap/fmap_async apply conditionally", async () => {
   fc_check(fc.property(
     fc_or,
     ($) => assertEquals($.fmap(($) => !$).unwrap(), false),
   ));
-  fc_check(fc.property(
-    fc_or,
-    ($) => assertEquals($.fmap(($) => !$, ($) => !$).unwrap(), !$.result.state),
-  ));
+  fc_check(fc.asyncProperty(fc_or, async ($) =>
+    assertEquals(
+      await $.fmap(($) => !$, ($) => !$).unwrap_async(),
+      !$.result.state,
+    )));
+  await fc_check(fc.asyncProperty(fc_or, async ($) =>
+    assertEquals(
+      await $.fmap_async(async ($) => !$).unwrap_async(),
+      false,
+    )));
+  await fc_check(fc.asyncProperty(fc_or, async ($) =>
+    assertEquals(
+      await $.fmap_async(async ($) => !$, async ($) => !$).unwrap_async(),
+      !(await $.result_async).state,
+    )));
 });
-Deno.test("bind only maps successes", () =>
+Deno.test("bind/bind_async only map successes", async () => {
   fc_check(fc.property(
     fc_or,
     ($) => assertEquals($.bind(($) => ok(!$)).unwrap(), false),
-  )));
-Deno.test("result union discriminates", () =>
+  ));
+  await fc_check(fc.asyncProperty(fc_or, async ($) =>
+    assertEquals(
+      await $.bind_async(async ($) => ok(!$)).unwrap_async(),
+      false,
+    )));
+});
+Deno.test("result/result_async unions discriminate", () => {
   fc_check(
     fc.property(fc_or, ($) => assertEquals($.result.state, $.result.value)),
-  ));
-Deno.test("unwrap passes through or throws", () => {
+  );
+  fc_check(fc.asyncProperty(fc_or, async ($) => {
+    const { state, value } = await $.result_async;
+    assertEquals(state, value);
+  }));
+});
+Deno.test("unwrap/unwrap_async pass through or throw/reject", async () => {
   fc_check(fc.property(fc_or, ($) => assertEquals($.unwrap(), $.result.state)));
   fc_check(fc.property(fc_or, ($) => void $.unwrap($.result.state)));
   fc_check(fc.property(
     fc_or,
     ($) => void assertThrows(() => $.unwrap(!$.result.state)),
   ));
+  await fc_check(fc.asyncProperty(
+    fc_or,
+    async ($) => assertEquals(await $.unwrap_async(), $.result.state),
+  ));
+  await fc_check(fc.asyncProperty(
+    fc_or,
+    async ($) => void await $.unwrap_async($.result.state),
+  ));
+  await fc_check(fc.asyncProperty(
+    fc_or,
+    async ($) =>
+      void await assertRejects(() => $.unwrap_async(!$.result.state)),
+  ));
 });
+Deno.test("sync methods apply to async results", async () => {
+  fc_check(fc.asyncProperty(fc_or.map(($) => $.fmap(($) => $)), async ($) => {
+  }));
+  await fc_check(fc.asyncProperty(fc_or, async ($) =>
+    assertEquals(
+      await $.fmap_async(async ($) => !$).fmap(($) => !$).unwrap_async(),
+      (await $.result_async).state,
+    )));
+  await fc_check(fc.asyncProperty(fc_or, async ($) =>
+    assertEquals(
+      await $.bind_async(async ($) => ok($)).bind(($) => ok($)).unwrap_async(),
+      (await $.result_async).state,
+    )));
+});
+Deno.test("sync openers throw if result is async", () =>
+  fc_check(fc.property(
+    fc_or.map(($) => $.fmap_async(async ($) => $)),
+    ($) => {
+      assertThrows(() => $.result);
+      assertThrows(() => $.unwrap());
+    },
+  )));
 Deno.test("some lifts nullish values", () => {
   fc_check(fc.property(
     fc.option(fc.nat()),
@@ -54,21 +117,6 @@ Deno.test("drop filters by predicate", () =>
     fc.boolean(),
     fc.nat(),
     (keep, $) => assertEquals(drop(() => !keep)($).unwrap(), keep ? $ : true),
-  )));
-Deno.test("exec returns early", () =>
-  fc_check(fc.property(
-    fc.tuple(fc.boolean(), fc.nat()),
-    fc.tuple(fc.boolean(), fc.nat()),
-    fc.nat(),
-    (one, two, $) =>
-      assertEquals(
-        exec(function* ($: number) {
-          const a = yield* one[0] ? no(one[1]) : ok(one[1]);
-          const b = yield* two[0] ? no(two[1]) : ok(two[1]);
-          return $ + a + b;
-        })($).unwrap(),
-        one[0] ? one[1] : two[0] ? two[1] : $ + one[1] + two[1],
-      ),
   )));
 Deno.test("save try-catches", () => {
   fc_check(fc.property(
@@ -96,6 +144,36 @@ Deno.test("save try-catches", () => {
           return $;
         }, (thrown) => Number(thrown) + caught)($).unwrap(),
         error ? thrown + caught : $,
+      ),
+  ));
+});
+Deno.test("exec/wait return early", async () => {
+  fc_check(fc.property(
+    fc.tuple(fc.boolean(), fc.nat()),
+    fc.tuple(fc.boolean(), fc.nat()),
+    fc.nat(),
+    (one, two, $) =>
+      assertEquals(
+        exec(function* ($: number) {
+          const a = yield* one[0] ? no(one[1]) : ok(one[1]);
+          const b = yield* two[0] ? no(two[1]) : ok(two[1]);
+          return $ + a + b;
+        })($).unwrap(),
+        one[0] ? one[1] : two[0] ? two[1] : $ + one[1] + two[1],
+      ),
+  ));
+  await fc_check(fc.asyncProperty(
+    fc.tuple(fc.boolean(), fc.nat()),
+    fc.tuple(fc.boolean(), fc.nat()),
+    fc.nat(),
+    async (one, two, $) =>
+      assertEquals(
+        await (await wait(async function* ($: number) {
+          const a = yield* one[0] ? no(one[1]) : ok(one[1]);
+          const b = yield* two[0] ? no(two[1]) : ok(two[1]);
+          return $ + a + b;
+        })($)).unwrap_async(),
+        one[0] ? one[1] : two[0] ? two[1] : $ + one[1] + two[1],
       ),
   ));
 });
