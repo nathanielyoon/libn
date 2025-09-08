@@ -64,7 +64,7 @@ export class Or<A = any, B = any> {
     if (this.promise) throw Error("result is asynchronous, use result_async");
     return { state: this.state, value: this.value };
   }
-  /** Asynchronously extracts the result as a discriminated union. */
+  /** Awaits the result as a discriminated union. */
   get result_async(): Promise<Result<A, B>> {
     return this.promise ??
       Promise.resolve({ state: this.state, value: this.value });
@@ -77,7 +77,7 @@ export class Or<A = any, B = any> {
     if (only_if === !this.state) throw Error(undefined, { cause: this.value });
     return this.value;
   }
-  /** Asynchronously gets the result's value, optionally throwing if the state is wrong. */
+  /** Awaits the result's value, optionally throwing if the state is wrong. */
   async unwrap_async<C extends boolean>(only_if?: C): Promise<
     | (C extends false ? A : never)
     | (C extends true ? B : never)
