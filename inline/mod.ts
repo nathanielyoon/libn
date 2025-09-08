@@ -22,16 +22,55 @@ function assert($: unknown): asserts $ {
 const regex = (
   $: TemplateStringsArray,
   file: string,
-) => RegExp(`${$[0]}(?:[^"]*?/)?${file.replaceAll(".", "\\.")}${$[1]}`);
-/** Initializes the plugin, will update config and bundle assets. */
-export default (): PluginOption => ({
+) => RegExp($.join(`(?:[^"]*?/)?${file.replace(/[$(-+./?[-^{|}]/g, "\\$&")}`));
+/** Options to pass to Vite's build configuration. */
+export interface Options {
+  /** @default true */
+  cssCodeSplit?: boolean;
+  /** @default "" */
+  assetsDir?: string;
+  /** @default 1e9 */
+  assetsInlineLimit?: number;
+  /** @default 1e9 */
+  chunkSizeWarningLimit?: number;
+  /**
+   * This should match the shape of the actual `build.rolldownOptions.output`
+   * configuration (i.e. `OutputOptions` or `OutputOptions[]`). If passed an
+   * object instead of an array, that `inlineDynamicImports` value will be set
+   * for every member of the `output` array. If passed an array instead of an
+   * object, the default will apply instead.
+   *
+   * @default { output: { inlineDynamicImports: true } }
+   */
+  rolldownOptions?: {
+    output?:
+      | { inlineDynamicImports?: boolean }
+      | { inlineDynamicImports?: boolean }[];
+  };
+}
+/** Updates config (unless passed `false`) and inlines assets. */
+export default (build: Options | false = {}): PluginOption => ({
   name: "vite-plugin-inline",
-  config: ($) => {
-    ($.build ??= {}).cssCodeSplit = false, $.build.assetsDir = "";
-    $.build.assetsInlineLimit = $.build.chunkSizeWarningLimit = 1e9;
-    const a = ($.build.rollupOptions ??= {}).output ??= {};
-    if (Array.isArray(a)) a.forEach(($) => $.inlineDynamicImports = true);
-    else a.inlineDynamicImports = true;
+  config: (config) => {
+    if (build) {
+      const a = config.build ??= {};
+      a.cssCodeSplit = build.cssCodeSplit ?? false;
+      a.assetsDir = build.assetsDir ?? "";
+      a.assetsInlineLimit = build.assetsInlineLimit ?? 1e9;
+      a.chunkSizeWarningLimit = build.chunkSizeWarningLimit ?? 1e9;
+      const b = (config.build.rolldownOptions ??= {}).output ??= {};
+      const c = build?.rolldownOptions?.output;
+      if (Array.isArray(b)) {
+        for (let z = 0; z < b.length; ++z) {
+          b[z].inlineDynamicImports = (Array.isArray(c)
+            ? c[z].inlineDynamicImports
+            : c?.inlineDynamicImports) ?? true;
+        }
+      } else {
+        b.inlineDynamicImports = Array.isArray(c) ||
+          (c?.inlineDynamicImports ?? true);
+      }
+    }
   },
   enforce: "post",
   generateBundle(_, bundle) {
@@ -50,11 +89,11 @@ export default (): PluginOption => ({
         assert(g.type === "chunk"), this.info(`inlining: ${js}`), e.push(js);
         f.source = f.source.replace(
           regex`(<script[^>]*?) src="${g.fileName}"([^>]*>)(</script>)`,
-          (_, $1, $2, $3) =>
-            `${$1}${$2}${
+          (_, opening, attributes, closing) =>
+            `${opening}${attributes}${
               g.code.replace(/("?)__VITE_PRELOAD__\1/g, "void 0")
                 .replace(/<(\/script>|!--)/g, "\\x3C$1")
-            }${$3}`,
+            }${closing}`,
         ).replace(/(<script type="module").*?\}\)\(\);/s, "$1>");
       }
       for (const css of d) {
