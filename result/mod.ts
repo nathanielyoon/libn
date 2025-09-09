@@ -22,7 +22,7 @@ export class Or<A = any, B = any> {
   constructor(private value: any, private state = false) {
     if (value instanceof Promise) this.promise = value;
   }
-  private await(then: ($: Result<A, B>) => Promise<Result<any, any>>) {
+  private await(then: ($: Result<A, B>) => Promise<Result<any, any>>): Or {
     return new Or((this.promise ?? Promise.resolve(this.result)).then(then));
   }
   /** Just yields itself, for delegation in generator functions. */
