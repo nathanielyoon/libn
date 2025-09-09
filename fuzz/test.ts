@@ -18,7 +18,8 @@ const levenshtein = (one: string, two: string) => {
   return c[a];
 };
 Deno.test("myers matches levenshtein", () =>
-  fc_check(
-    fc.property(fc_str(), fc_str(), (one, two) =>
-      myers(one, two) === levenshtein(one, two)),
-  ));
+  fc_check(fc.property(
+    fc_str({ size: "large" }),
+    fc_str({ size: "large" }),
+    (one, two) => myers(one, two) === levenshtein(one, two),
+  )));
