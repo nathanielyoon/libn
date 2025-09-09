@@ -15,6 +15,11 @@
     "./url",
     "./weight"
   ],
+  "imports": {
+    "@deno/dnt": "jsr:@deno/dnt@^0.42.3",
+    "@std/assert": "jsr:@std/assert@^1.0.14",
+    "fast-check": "npm:fast-check@^4.3.0"
+  },
   "compilerOptions": {
     "exactOptionalPropertyTypes": true
   },
@@ -38,9 +43,10 @@
       ]
     }
   },
-  "imports": {
-    "@deno/dnt": "jsr:@deno/dnt@^0.42.3",
-    "@std/assert": "jsr:@std/assert@^1.0.14",
-    "fast-check": "npm:fast-check@^4.3.0"
+  "tasks": {
+    "write": "deno run --allow-net --allow-write */write.ts",
+    "test": "deno test --allow-all --no-check --doc --parallel",
+    "coverage": "deno test --allow-all --no-check --reporter=dot --coverage --coverage-raw-data-only --clean && deno coverage --detailed --include=\"^file://$(pwd)\"; rm -r coverage",
+    "npm": "deno run --allow-all ./npm.ts"
   }
 }

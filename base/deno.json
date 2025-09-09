@@ -2,10 +2,5 @@
   "name": "@libn/base",
   "version": "0.1.2",
   "license": "GPL-3.0-or-later",
-  "exports": "./mod.ts",
-  "tasks": {
-    "write": "deno run --allow-all ./write.ts",
-    "test": "deno test --allow-all --no-check --doc --parallel ./test.ts",
-    "coverage": "deno test --allow-all --no-check --reporter=dot --coverage --coverage-raw-data-only --clean && deno coverage --detailed --include=\"^file://$(pwd)\"; rm -r coverage"
-  }
+  "exports": "./mod.ts"
 }
