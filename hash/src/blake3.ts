@@ -1,4 +1,4 @@
-import { LOWER } from "./iv.ts";
+import { iv, min, SHA256 } from "./common.ts";
 
 const enum Size {
   BLOCK = 64,
@@ -13,7 +13,7 @@ const enum Flag {
   DERIVE_CONTEXT = 1 << 5,
   DERIVE_KEY = 1 << 6,
 }
-const PERMUTE = Uint8Array.from(
+const PERMUTE = /* @__PURE__ */ Uint8Array.from(
   "0123456789abcdef263a704d1bc59ef834acd27e6590bf81a7c9e3df40b25816cd9bfae8725301649eb58cf1d30a2647bf501986ea2c347d",
   (Z) => parseInt(Z, 16) << 2,
 );
@@ -26,8 +26,8 @@ const mix = (
   to: Uint32Array,
 ) => {
   let a = use[0], b = use[1], c = use[2], d = use[3], e = use[4], f = use[5];
-  let g = use[6], h = use[7], i = LOWER[0], j = LOWER[1], k = LOWER[2];
-  let l = LOWER[3], m = at, n = at / 0x100000000, o = byte, p = flag, z = 0;
+  let g = use[6], h = use[7], i = SHA256[0], j = SHA256[1], k = SHA256[2];
+  let l = SHA256[3], m = at, n = at / 0x100000000, o = byte, p = flag, z = 0;
   do m ^= a = a + e + $.getUint32(PERMUTE[z++], true) | 0,
     m = m << 16 | m >>> 16,
     e ^= i = i + m | 0,
@@ -103,7 +103,6 @@ const mix = (
 const merge = (left: Uint32Array<ArrayBuffer>, right: Uint32Array) => (
   left.set(right.subarray(0, 8), 8), new DataView(left.buffer)
 );
-const min = (one: number, two: number) => two + (one - two & one - two >> 31);
 const blake3 = (
   key: Uint32Array,
   flags: number,
@@ -147,7 +146,7 @@ const b_b32 = ($: Uint8Array) => {
 export const blake3_hash = (
   $: Uint8Array,
   out?: number,
-): Uint8Array<ArrayBuffer> => blake3(LOWER.subarray(0, 8), 0, $, out);
+): Uint8Array<ArrayBuffer> => blake3(SHA256.subarray(0, 8), 0, $, out);
 /** Hashes with Blake3 (keyed). */
 export const blake3_keyed = (
   key: Uint8Array,
@@ -158,6 +157,6 @@ export const blake3_keyed = (
 export const blake3_derive = (
   context: Uint8Array,
 ): ($: Uint8Array, out?: number, at?: number) => Uint8Array<ArrayBuffer> => {
-  const a = b_b32(blake3(LOWER.subarray(0, 8), Flag.DERIVE_CONTEXT, context));
+  const a = b_b32(blake3(SHA256.subarray(0, 8), Flag.DERIVE_CONTEXT, context));
   return ($, out, at) => blake3(a, Flag.DERIVE_KEY, $, out, at);
 };

@@ -1,4 +1,4 @@
-import { IV, LOWER, UPPER } from "./iv.ts";
+import { iv, min, SHA256, SHA512 } from "./common.ts";
 
 const md = (
   base: Uint32Array,
@@ -9,7 +9,7 @@ const md = (
   const d = new Uint32Array(b * 10), e = new Uint8Array(c), f = data.length;
   let g = new DataView(data.buffer, data.byteOffset), z = 0, y = 0;
   while (z < f) {
-    const j = Math.min(c - y, f - z);
+    const j = min(c - y, f - z);
     if (j !== c) e.set(data.subarray(z, z += j)), y += j;
     else do mix(d, g, z, a), z += c; while (f - z >= c);
   }
@@ -18,9 +18,39 @@ const md = (
   do g.setUint32(y << 2, a[y]); while (++y < b);
   return new Uint8Array(e.subarray(0, c >> 1));
 };
+/** Hashes with SHA-256. */
+export const sha256: ReturnType<typeof md> = /* @__PURE__ */ md(
+  SHA256,
+  (use, data, at, to) => {
+    let a, b, z = 0;
+    do use[z] = data.getUint32(at), at += 4; while (++z < 16);
+    do a = use[z - 2],
+      b = use[z - 15],
+      use[z] = ((b >>> 7 | b << 25) ^ (b >>> 18 | b << 14) ^ b >>> 3) +
+        ((a >>> 17 | a << 15) ^ (a >>> 19 | a << 13) ^ a >>> 10) +
+        use[z - 7] + use[z - 16]; while (++z < 64);
+    let c = to[z = 0], d = to[1], e = to[2], f = to[3], g = to[4], h = to[5];
+    let i = to[6], j = to[7];
+    do a = ((g >>> 6 | g << 26) ^ (g >>> 11 | g << 21) ^ (g >>> 25 | g << 7)) +
+      (g & h ^ ~g & i) + j + UPPER[z] + use[z],
+      b = ((c >>> 2 | c << 30) ^ (c >>> 13 | c << 19) ^ (c >>> 22 | c << 10)) +
+        (d & e ^ c & d ^ c & e),
+      (j = i, i = h, h = g, g = f + a | 0),
+      (f = e, e = d, d = c, c = a + b | 0); while (++z < 64);
+    to[0] = to[0] + c | 0, to[1] = to[1] + d | 0, to[2] = to[2] + e | 0;
+    to[3] = to[3] + f | 0, to[4] = to[4] + g | 0, to[5] = to[5] + h | 0;
+    to[6] = to[6] + i | 0, to[7] = to[7] + j | 0;
+  },
+);
+const UPPER = /* @__PURE__ */ iv(
+  "428a2f9871374491b5c0fbcfe9b5dba53956c25b59f111f1923f82a4ab1c5ed5d807aa9812835b01243185be550c7dc372be5d7480deb1fe9bdc06a7c19bf174e49b69c1efbe47860fc19dc6240ca1cc2de92c6f4a7484aa5cb0a9dc76f988da983e5152a831c66db00327c8bf597fc7c6e00bf3d5a7914706ca63511429296727b70a852e1b21384d2c6dfc53380d13650a7354766a0abb81c2c92e92722c85a2bfe8a1a81a664bc24b8b70c76c51a3d192e819d6990624f40e3585106aa07019a4c1161e376c082748774c34b0bcb5391c0cb34ed8aa4a5b9cca4f682e6ff3748f82ee78a5636f84c878148cc7020890befffaa4506cebbef9a3f7c67178f2ca273eced186b8c7eada7dd6f57d4f7f06f067aa0a637dc5113f98041b710b3528db77f532caab7b3c9ebe0a431d67c44cc5d4be597f299c5fcb6fab6c44198c",
+);
+const LOWER = /* @__PURE__ */ iv(
+  "d728ae2223ef65cdec4d3b2f8189dbbcf348b538b605d019af194f9bda6d8118a303024245706fbe4ee4b28cd5ffb4e2f27b896f3b1696b125c71235cf6926949ef14ad2384f25e38b8cd5b577ac9c65592b02756ea6e483bd41fbd4831153b5ee66dfab2db4321098fb213fbeef0ee43da88fc2930aa725e003826f0a0e6e7046d22ffc5c26c9265ac42aed9d95b3df8baf63de3c77b2a847edaee61482353b4cf10364bc423001d0f897910654be30d6ef52185565a9105771202a32bbd1b8b8d2d0c85141ab53df8eeb99e19b48a8c5c95a63e3418acb7763e373d6b2b8a35defb2fc43172f60a1f0ab721a6439ec23631e28de82bde9b2c67915e372532bea26619c21c0c207cde0eb1eee6ed17872176fbaa2c898a6bef90dae131c471b23047d8440c7249315c9bebc9c100d4ccb3e42b6fc657e2a3ad6faec4a475817",
+);
 /** Hashes with SHA-512. */
 export const sha512: ReturnType<typeof md> = /* @__PURE__ */ md(
-  UPPER,
+  SHA512,
   (use, data, at, to) => {
     let a, b, c, d, z = 0;
     do use[z] = data.getUint32(at),
@@ -41,8 +71,9 @@ export const sha512: ReturnType<typeof md> = /* @__PURE__ */ md(
     let q = to[12], r = to[13], s = to[14], t = to[15], u, v;
     do a = (n >>> 9 | m << 23) ^ (m >>> 14 | n << 18) ^ (m >>> 18 | n << 14),
       b = (m >>> 9 | n << 23) ^ (n >>> 14 | m << 18) ^ (n >>> 18 | m << 14),
-      u = t + (b >>> 0) + ((n & p ^ ~n & r) >>> 0) + IV[z + 80] + use[z + 80],
-      v = a + s + (m & o ^ ~m & q) + IV[z] + use[z] + (u / 0x100000000 | 0) | 0,
+      u = t + (b >>> 0) + ((n & p ^ ~n & r) >>> 0) + LOWER[z] + use[z + 80],
+      v = a + s + (m & o ^ ~m & q) + UPPER[z] + use[z] + (u / 0x100000000 | 0) |
+        0,
       a = (f >>> 2 | e << 30) ^ (f >>> 7 | e << 25) ^ (e >>> 28 | f << 4),
       b = (e >>> 2 | f << 30) ^ (e >>> 7 | f << 25) ^ (f >>> 28 | e << 4),
       (c = g & i ^ g & e ^ i & e, d = f & h ^ f & j ^ h & j),
@@ -63,29 +94,5 @@ export const sha512: ReturnType<typeof md> = /* @__PURE__ */ md(
     to[10] = to[10] + o + ((to[11] += p) / 0x100000000 | 0) | 0;
     to[12] = to[12] + q + ((to[13] += r) / 0x100000000 | 0) | 0;
     to[14] = to[14] + s + ((to[15] += t) / 0x100000000 | 0) | 0;
-  },
-);
-/** Hashes with SHA-256. */
-export const sha256: ReturnType<typeof md> = /* @__PURE__ */ md(
-  LOWER,
-  (use, data, at, to) => {
-    let a, b, z = 0;
-    do use[z] = data.getUint32(at), at += 4; while (++z < 16);
-    do a = use[z - 2],
-      b = use[z - 15],
-      use[z] = ((b >>> 7 | b << 25) ^ (b >>> 18 | b << 14) ^ b >>> 3) +
-        ((a >>> 17 | a << 15) ^ (a >>> 19 | a << 13) ^ a >>> 10) +
-        use[z - 7] + use[z - 16]; while (++z < 64);
-    let c = to[z = 0], d = to[1], e = to[2], f = to[3], g = to[4], h = to[5];
-    let i = to[6], j = to[7];
-    do a = ((g >>> 6 | g << 26) ^ (g >>> 11 | g << 21) ^ (g >>> 25 | g << 7)) +
-      (g & h ^ ~g & i) + j + IV[z] + use[z],
-      b = ((c >>> 2 | c << 30) ^ (c >>> 13 | c << 19) ^ (c >>> 22 | c << 10)) +
-        (d & e ^ c & d ^ c & e),
-      (j = i, i = h, h = g, g = f + a | 0),
-      (f = e, e = d, d = c, c = a + b | 0); while (++z < 64);
-    to[0] = to[0] + c | 0, to[1] = to[1] + d | 0, to[2] = to[2] + e | 0;
-    to[3] = to[3] + f | 0, to[4] = to[4] + g | 0, to[5] = to[5] + h | 0;
-    to[6] = to[6] + i | 0, to[7] = to[7] + j | 0;
   },
 );
