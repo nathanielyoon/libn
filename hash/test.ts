@@ -1,4 +1,5 @@
 import { assertEquals } from "@std/assert";
+import { crypto } from "@std/crypto";
 import fc from "fast-check";
 import { de_b16, en_b16 } from "@libn/base";
 import { fc_bin, fc_check } from "../test.ts";
@@ -59,28 +60,20 @@ Deno.test("blake3 matches reference", () => {
   });
 });
 Deno.test("sha256 matches webcrypto", () =>
-  fc_check(fc.asyncProperty(
-    fc_bin(),
-    async ($) =>
-      assertEquals(
-        sha256($),
-        new Uint8Array(await crypto.subtle.digest("SHA-256", $)),
-      ),
-  )));
+  fc_check(fc.asyncProperty(fc_bin(), async ($) =>
+    assertEquals(
+      sha256($),
+      new Uint8Array(await crypto.subtle.digest("SHA-256", $)),
+    ))));
 Deno.test("sha512 matches webcrypto", () =>
-  fc_check(fc.asyncProperty(
-    fc_bin(),
-    async ($) =>
-      assertEquals(
-        sha512($),
-        new Uint8Array(await crypto.subtle.digest("SHA-512", $)),
-      ),
-  )));
+  fc_check(fc.asyncProperty(fc_bin(), async ($) =>
+    assertEquals(
+      sha512($),
+      new Uint8Array(await crypto.subtle.digest("SHA-512", $)),
+    ))));
 Deno.test("hmac matches webcrypto", () =>
-  fc_check(fc.asyncProperty(
-    fc_bin({ minLength: 1 }),
-    fc_bin(),
-    async (key, data) =>
+  fc_check(
+    fc.asyncProperty(fc_bin({ minLength: 1 }), fc_bin(), async (key, data) =>
       assertEquals(
         hmac(key, data),
         new Uint8Array(
@@ -96,8 +89,8 @@ Deno.test("hmac matches webcrypto", () =>
             data,
           ),
         ),
-      ),
-  )));
+      )),
+  ));
 Deno.test("hkdf matches webcrypto", () =>
   fc_check(fc.asyncProperty(
     fc_bin(),
@@ -118,6 +111,18 @@ Deno.test("hkdf matches webcrypto", () =>
         ),
       ),
   )));
+Deno.test("blake2 matches webcrypto", () =>
+  fc_check(fc.asyncProperty(fc_bin(), async ($) =>
+    assertEquals(
+      new Blake2s().update($).finalize(),
+      new Uint8Array(await crypto.subtle.digest("BLAKE2S", $)),
+    ))));
+Deno.test("blake3 matches webcrypto", () =>
+  fc_check(fc.asyncProperty(fc_bin(), async ($) =>
+    assertEquals(
+      blake3_hash($),
+      new Uint8Array(await crypto.subtle.digest("BLAKE3", $)),
+    ))));
 Deno.test("blake2 works on long inputs", () => {
   const a = new Uint32Array([
     1267191321,
