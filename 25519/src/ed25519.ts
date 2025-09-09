@@ -31,12 +31,11 @@ export const verify = (
   if (a >= N) return false;
   const b = new Uint8Array(data.length + 64);
   b.set(signature), b.set(public_key, 32), b.set(data, 64);
-  let c = 1n << 256n | 1n << 512n, d = de_point(public_key);
-  if (d < 0n) return false;
-  let e = int(b);
+  let c = de_point(public_key);
+  if (c < 0n) return false;
+  let d = int(b), e = 1n << 256n | 1n << 512n;
   // No secret information involved, so unsafe double-and-add is ok.
-  do if (e & 1n) c = add(c, d); while (d = double(d), e >>= 1n);
-  d = de_point(signature);
-  if (d < 0n) return false;
-  return equal(wnaf(a)[0], add(c, d));
+  do if (d & 1n) e = add(e, c); while (c = double(c), d >>= 1n);
+  c = de_point(signature);
+  return c >= 0n && equal(wnaf(a)[0], add(e, c));
 };

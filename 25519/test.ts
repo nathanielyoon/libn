@@ -6,7 +6,7 @@ import { generate, sign, verify } from "./src/ed25519.ts";
 import { convert_public, convert_secret, x25519 } from "./src/x25519.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
-Deno.test("x25519-exchange matches rfc7748 sections 5.2, 6.1", () =>
+Deno.test("x25519 matches rfc7748 sections 5.2, 6.1", () =>
   vectors.rfc7748.forEach(($) =>
     assertEquals(
       x25519(de_b16($.secret_key), de_b16($.public_key)),
@@ -21,7 +21,7 @@ Deno.test("sign/verify match rfc8032 section 7.1", () =>
     assertEquals(signature, de_b16($.signature));
     assert(verify(public_key, data, signature));
   }));
-Deno.test("x25519-exchange matches wycheproof", () =>
+Deno.test("x25519 matches wycheproof", () =>
   vectors.wycheproof_x25519.forEach(($) =>
     assertEquals(
       x25519(de_b16($.secret_key), de_b16($.public_key)),
@@ -48,7 +48,7 @@ Deno.test("verify validates correctly-generated signatures", () =>
     fc.property(fc_key, fc_bin(), (key, data) =>
       assert(verify(generate(key), data, sign(key, data)))),
   ));
-Deno.test("x25519-exchange works on montgomery or converted edwards keys", () =>
+Deno.test("x25519 works on montgomery or converted edwards keys", () =>
   fc_check(fc.property(fc_key, fc_key, (key_1, key_2) => {
     assertEquals(x25519(key_1, x25519(key_2)), x25519(key_2, x25519(key_1)));
     assertEquals(
@@ -66,15 +66,10 @@ const export_pair = ($: CryptoKeyPair) =>
     secret_key: new Uint8Array($[0].slice(16)),
     public_key: new Uint8Array($[1]),
   }));
-Deno.test("x25519-generate matches webcrypto", () =>
-  generate_pair("X25519", ["deriveBits"])
-    .then(export_pair)
-    .then(($) => assertEquals(x25519($.secret_key), $.public_key)));
-Deno.test("x25519-exchange matches webcrypto", () =>
-  Promise.all([
-    generate_pair("X25519", ["deriveBits"]),
-    generate_pair("X25519", ["deriveBits"]),
-  ]).then(([pair_1, pair_2]) =>
+Deno.test("x25519 matches webcrypto", () =>
+  Promise.all(
+    Array.from({ length: 2 }, () => generate_pair("X25519", ["deriveBits"])),
+  ).then(([pair_1, pair_2]) =>
     Promise.all([
       export_pair(pair_1),
       export_pair(pair_2),
@@ -89,12 +84,14 @@ Deno.test("x25519-exchange matches webcrypto", () =>
         256,
       ).then(($) => new Uint8Array($)),
     ])
-  ).then(([pair_1, pair_2, secret_1, secret_2]) =>
+  ).then(([pair_1, pair_2, secret_1, secret_2]) => {
+    assertEquals(x25519(pair_1.secret_key), pair_1.public_key);
+    assertEquals(x25519(pair_2.secret_key), pair_2.public_key);
     assertEquals({
       secret_1: x25519(pair_1.secret_key, pair_2.public_key),
       secret_2: x25519(pair_2.secret_key, pair_1.public_key),
-    }, { secret_1, secret_2 })
-  ));
+    }, { secret_1, secret_2 });
+  }));
 Deno.test("generate matches webcrypto", () =>
   generate_pair("Ed25519", ["sign", "verify"])
     .then(export_pair)

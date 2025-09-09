@@ -10,9 +10,9 @@ const B = X | Y << 256n | 1n << 512n | X * Y % P << 768n, M = (1n << 256n) - 1n;
 export const add = (one: bigint, two: bigint): bigint => {
   const a = one & M, b = one >> 256n & M, c = two & M, d = two >> 256n & M;
   const e = (one >> 512n & M) * (two >> 512n & M) % P;
-  const f = (one >> 768n & M) * D * (two >> 768n & M) % P, g = e + f, i = e - f;
-  const h = a * c % P + b * d % P, j = (a + b) * (c + d) % P - h;
-  return p(i * j) | p(h * g) << 256n | p(g * i) << 512n | p(h * j) << 768n;
+  const f = (one >> 768n & M) * D * (two >> 768n & M) % P, g = e + f, h = e - f;
+  const i = a * c % P + b * d % P, j = (a + b) * (c + d) % P - i;
+  return p(h * j) | p(i * g) << 256n | p(g * h) << 512n | p(i * j) << 768n;
 };
 /** Doubles a point. */
 export const double = ($: bigint): bigint => {
@@ -62,7 +62,7 @@ export const de_point = ($: Uint8Array): bigint => {
 };
 /** Compares two points. */
 export const equal = (one: bigint, two: bigint): boolean => {
-  const a = one >> 512n & M, b = two >> 512n & M;
-  return !(p((one & M) * b) ^ p(a * (two & M)) |
-    p((one >> 256n & M) * b) ^ p(a * (two >> 256n & M)));
+  const t1 = one >> 512n & M, t2 = two >> 512n & M;
+  return !(p((one & M) * t2) ^ p(t1 * (two & M)) |
+    p((one >> 256n & M) * t2) ^ p(t1 * (two >> 256n & M)));
 };
