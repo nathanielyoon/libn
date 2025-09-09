@@ -1,20 +1,32 @@
 import { assertEquals, assertMatch } from "@std/assert";
-import { presign, presigner } from "./mod.ts";
+import fc from "fast-check";
+import { fc_check, fc_str } from "../test.ts";
+import { Presigner } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
-Deno.test("match signature v4 documentation example", () => {
-  const S3 = {
-    S3_ENDPOINT: `https://${vectors.docs.bucket}.s3.amazonaws.com`,
-    S3_ID: vectors.docs.id,
-    S3_KEY: vectors.docs.key,
-  };
-  const a = [vectors.docs.region, new Date(vectors.docs.date)] as const;
-  const b = ["GET", vectors.docs.path, {}, +vectors.docs.time] as const;
-  const c = vectors.docs.url.replaceAll("&amp;", "&");
-  assertEquals(presigner(S3, ...a)(...b), c);
-  assertEquals(presign(S3, ...b, ...a), c);
-  assertMatch(
-    presign(S3, "PUT", "", { "content-type": "text/plain" }),
-    /X-Amz-SignedHeaders=content-type%3Bhost/,
-  );
-});
+const presigner = new Presigner({
+  S3_ENDPOINT: `https://${vectors.docs.bucket}.s3.amazonaws.com`,
+  S3_ID: vectors.docs.id,
+  S3_KEY: vectors.docs.key,
+  S3_REGION: vectors.docs.region,
+}, new Date(vectors.docs.date));
+Deno.test("Presigner matches signature v4 documentation example", () =>
+  assertEquals(
+    presigner.presign("GET", vectors.docs.path, {}, +vectors.docs.time),
+    vectors.docs.url.replaceAll("&amp;", "&"),
+  ));
+Deno.test("Presigner signs additional headers", () =>
+  fc_check(
+    fc.property(fc.dictionary(fc_str(), fc_str()), (headers) =>
+      assertMatch(
+        new URL(presigner.presign("GET", "", headers)).href,
+        RegExp(
+          `&X-Amz-SignedHeaders=${
+            ["host", ...Object.keys(headers)].map(($) => $.toLowerCase()).sort()
+              .join(";").replace(/[^-.\w~]/g, ($) =>
+                "%" +
+                $.charCodeAt(0).toString(16).padStart(2, "0").toUpperCase())
+          }`,
+        ),
+      )),
+  ));
