@@ -24,27 +24,31 @@ import { hmac, sha256 } from "@libn/hash";
 
 const escape = ($: string) =>
   "%" + $.charCodeAt(0).toString(16).padStart(2, "0").toUpperCase();
-const URI_PATH = /[^-./\w~]/g;
-const URI_OTHER = /[^-.\w~]/g;
+const URI_BYTE = /[^-.\w~]/g; // encode the forward slash everywhere
+const URI_PATH = /[^-./\w~]/g; // except in the object key name
 const search_parameterize = ($: [string, string]) => `X-Amz-${$[0]}=${$[1]}`;
 /** S3 query-parameter-request presigner. */
 export class Presigner {
   private host;
   private query;
-  private string_to_sign;
+  private string_to_sign; // except last line, which is request-specific
   private signing_key;
   /** Initializes a presigner with the specified environment conditions. */
   constructor(
     env: { [_ in `S3_${"ENDPOINT" | "ID" | "KEY" | "REGION"}`]: string },
     timestamp: Date = new Date(),
   ) {
-    this.host = new URL(env.S3_ENDPOINT).hostname;
+    // Endpoint should be a valid URL (i.e. with scheme) but this only preserves
+    // the hostname and uses `https://` for all outputs.
+    this.host = new URL(env.S3_ENDPOINT).hostname; // no need for port
+    // Converts to `yyyyMMddTHHmmssZ` format by removing the time's fractional
+    // part and all the "-" and ":" characters.
     const datetime = timestamp.toISOString().replace(/\....|\W/g, "");
     const date = datetime.slice(0, 8);
     const scope = `${date}/${env.S3_REGION}/s3/aws4_request`;
     this.query = {
       Algorithm: "AWS4-HMAC-SHA256",
-      Credential: `${env.S3_ID}/${scope}`.replace(URI_OTHER, escape),
+      Credential: `${env.S3_ID}/${scope}`.replace(URI_BYTE, escape),
       Date: datetime,
     };
     this.string_to_sign = `AWS4-HMAC-SHA256\n${datetime}\n${scope}\n`;
@@ -60,6 +64,7 @@ export class Presigner {
     headers: { [name: string]: string } = {},
     expires?: number,
   ): string {
+    // Prepend a forward slash if there isn't one.
     const pathname = path.replace(URI_PATH, escape).replace(/^(?!\/)/, "/");
     const canonical_headers: { [name: string]: string } = { host: this.host };
     for (let names = Object.keys(headers), z = 0; z < names.length; ++z) {
@@ -68,8 +73,8 @@ export class Presigner {
     const names = Object.keys(canonical_headers).sort();
     const search = Object.entries({
       ...this.query,
-      Expires: `${Math.min(expires! >>> 0 || 1, 604800)}`,
-      SignedHeaders: names.join(";").replace(URI_OTHER, escape),
+      Expires: `${Math.min(expires! >>> 0 || 1, 604800)}`, // 1 second to 1 week
+      SignedHeaders: names.join(";").replace(URI_BYTE, escape),
     }).map(search_parameterize).join("&");
     let canonical_request = `${method}\n${pathname}\n${search}\n`;
     for (let z = 0; z < names.length; ++z) {
