@@ -1,4 +1,9 @@
-const C0 = 0x61707865, C1 = 0x3320646e, C3 = 0x79622d32, C4 = 0x6b206574;
+const enum Words {
+  EXPA = 0x61707865,
+  ND_3 = 0x3320646e,
+  "2_BY" = 0x79622d32,
+  TE_K = 0x6b206574,
+}
 /** Updates a ChaCha20 block. */
 export const chacha = (
   key: DataView,
@@ -12,8 +17,9 @@ export const chacha = (
   const c = key.getUint32(8, true), d = key.getUint32(12, true);
   const e = key.getUint32(16, true), f = key.getUint32(20, true);
   const g = key.getUint32(24, true), h = key.getUint32(28, true);
-  let i = C0, j = C1, k = C3, l = C4, m = a, n = b, o = c, p = d;
-  let q = e, r = f, s = g, t = h, u = count, v = iv0, w = iv1, x = iv2, z = 10;
+  let i = Words.EXPA, j = Words.ND_3, k = Words["2_BY"], l = Words.TE_K, m = a;
+  let n = b, o = c, p = d, q = e, r = f, s = g, t = h, u = count, v = iv0;
+  let w = iv1, x = iv2, z = 10;
   do u ^= i = i + m | 0,
     u = u << 16 | u >>> 16,
     m ^= q = q + u | 0,
@@ -78,23 +84,33 @@ export const chacha = (
     w = w << 8 | w >>> 24,
     m ^= r = r + w | 0,
     m = m << 7 | m >>> 25; while (--z);
-  to[0] = C0 + i, to[1] = C1 + j, to[2] = C3 + k, to[3] = C4 + l;
-  to[4] = a + m, to[5] = b + n, to[6] = c + o, to[7] = d + p, to[8] = e + q;
-  to[9] = f + r, to[10] = g + s, to[11] = h + t, to[12] = count + u;
-  to[13] = iv0 + v, to[14] = iv1 + w, to[15] = iv2 + x;
+  to[0] = Words.EXPA + i, to[1] = Words.ND_3 + j, to[2] = Words["2_BY"] + k;
+  to[3] = Words.TE_K + l, to[4] = a + m, to[5] = b + n, to[6] = c + o;
+  to[7] = d + p, to[8] = e + q, to[9] = f + r, to[10] = g + s, to[11] = h + t;
+  to[12] = count + u, to[13] = iv0 + v, to[14] = iv1 + w, to[15] = iv2 + x;
 };
-/** Updates a HChaCha20 block. */
+/** Fills a block-0 key and returns a subkey. */
 export const hchacha = (
   key: DataView,
   iv: DataView,
   to: Uint32Array,
 ): DataView<ArrayBuffer> => {
-  const a = new DataView(new ArrayBuffer(32));
-  const b = iv.getUint32(0, true), c = iv.getUint32(4, true);
-  const d = iv.getUint32(8, true), e = iv.getUint32(12, true);
-  chacha(key, b, c, d, e, to), a.setUint32(0, to[0] - C0, true);
-  a.setUint32(4, to[1] - C1, true), a.setUint32(8, to[2] - C3, true);
-  a.setUint32(12, to[3] - C4, true), a.setUint32(16, to[12] - b, true);
-  a.setUint32(20, to[13] - c, true), a.setUint32(24, to[14] - d, true);
-  return a.setUint32(28, to[15] - e, true), a;
+  const subkey = new DataView(new ArrayBuffer(32));
+  chacha(
+    key,
+    iv.getUint32(0, true),
+    iv.getUint32(4, true),
+    iv.getUint32(8, true),
+    iv.getUint32(12, true),
+    to,
+  );
+  subkey.setUint32(0, to[0] - Words.EXPA, true);
+  subkey.setUint32(4, to[1] - Words.ND_3, true);
+  subkey.setUint32(8, to[2] - Words["2_BY"], true);
+  subkey.setUint32(12, to[3] - Words.TE_K, true);
+  subkey.setUint32(16, to[12] - iv.getUint32(0, true), true);
+  subkey.setUint32(20, to[13] - iv.getUint32(4, true), true);
+  subkey.setUint32(24, to[14] - iv.getUint32(8, true), true);
+  subkey.setUint32(28, to[15] - iv.getUint32(12, true), true);
+  return subkey;
 };

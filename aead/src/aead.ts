@@ -2,40 +2,41 @@ import { chacha, hchacha } from "./chacha.ts";
 import { poly } from "./poly.ts";
 
 const xor = (key: DataView, iv: DataView, $: Uint8Array, to: Uint8Array) => {
-  const a = $.length & ~63, b = new DataView($.buffer, $.byteOffset);
-  const c = iv.getUint32(16, true), d = iv.getUint32(20, true);
-  const e = new Uint32Array(16);
-  let f = new DataView(to.buffer, to.byteOffset), z = 0, y = 1;
-  while (z < a) {
-    chacha(key, y++, 0, c, d, e);
-    f.setUint32(z, b.getUint32(z, true) ^ e[0], true);
-    f.setUint32(z + 4, b.getUint32(z + 4, true) ^ e[1], true);
-    f.setUint32(z + 8, b.getUint32(z + 8, true) ^ e[2], true);
-    f.setUint32(z + 12, b.getUint32(z + 12, true) ^ e[3], true);
-    f.setUint32(z + 16, b.getUint32(z + 16, true) ^ e[4], true);
-    f.setUint32(z + 20, b.getUint32(z + 20, true) ^ e[5], true);
-    f.setUint32(z + 24, b.getUint32(z + 24, true) ^ e[6], true);
-    f.setUint32(z + 28, b.getUint32(z + 28, true) ^ e[7], true);
-    f.setUint32(z + 32, b.getUint32(z + 32, true) ^ e[8], true);
-    f.setUint32(z + 36, b.getUint32(z + 36, true) ^ e[9], true);
-    f.setUint32(z + 40, b.getUint32(z + 40, true) ^ e[10], true);
-    f.setUint32(z + 44, b.getUint32(z + 44, true) ^ e[11], true);
-    f.setUint32(z + 48, b.getUint32(z + 48, true) ^ e[12], true);
-    f.setUint32(z + 52, b.getUint32(z + 52, true) ^ e[13], true);
-    f.setUint32(z + 56, b.getUint32(z + 56, true) ^ e[14], true);
-    f.setUint32(z + 60, b.getUint32(z + 60, true) ^ e[15], true), z += 64;
+  // `iv_0` (first 4 bytes) is a constant `0`.
+  const iv_1 = iv.getUint32(16, true), iv_2 = iv.getUint32(20, true);
+  const state = new Uint32Array(16), a = new DataView($.buffer, $.byteOffset);
+  let b = new DataView(to.buffer), z = 0, y = 1;
+  const most = $.length & ~63;
+  while (z < most) {
+    chacha(key, y++, 0, iv_1, iv_2, state);
+    b.setUint32(z, a.getUint32(z, true) ^ state[0], true);
+    b.setUint32(z + 4, a.getUint32(z + 4, true) ^ state[1], true);
+    b.setUint32(z + 8, a.getUint32(z + 8, true) ^ state[2], true);
+    b.setUint32(z + 12, a.getUint32(z + 12, true) ^ state[3], true);
+    b.setUint32(z + 16, a.getUint32(z + 16, true) ^ state[4], true);
+    b.setUint32(z + 20, a.getUint32(z + 20, true) ^ state[5], true);
+    b.setUint32(z + 24, a.getUint32(z + 24, true) ^ state[6], true);
+    b.setUint32(z + 28, a.getUint32(z + 28, true) ^ state[7], true);
+    b.setUint32(z + 32, a.getUint32(z + 32, true) ^ state[8], true);
+    b.setUint32(z + 36, a.getUint32(z + 36, true) ^ state[9], true);
+    b.setUint32(z + 40, a.getUint32(z + 40, true) ^ state[10], true);
+    b.setUint32(z + 44, a.getUint32(z + 44, true) ^ state[11], true);
+    b.setUint32(z + 48, a.getUint32(z + 48, true) ^ state[12], true);
+    b.setUint32(z + 52, a.getUint32(z + 52, true) ^ state[13], true);
+    b.setUint32(z + 56, a.getUint32(z + 56, true) ^ state[14], true);
+    b.setUint32(z + 60, a.getUint32(z + 60, true) ^ state[15], true), z += 64;
   }
-  if (a < $.length) {
-    chacha(key, y, y = 0, c, d, e), f = new DataView(e.buffer);
-    do to[z] = $[z] ^ f.getUint8(y++); while (++z < $.length);
+  if (most < $.length) {
+    chacha(key, y, y = 0, iv_1, iv_2, state), b = new DataView(state.buffer);
+    do to[z] = $[z] ^ b.getUint8(y++); while (++z < $.length);
   }
 };
 const tag = (key: Uint32Array, $: Uint8Array, data: Uint8Array) => {
-  const a = new DataView(key.buffer), b = data.length, c = $.length;
-  const d = b + 15 & ~15, e = c + d + 15 & ~15, f = new Uint8Array(e + 16);
-  f.set(data), f.set($, d), f[e] = b, f[e + 1] = b >> 8, f[e + 2] = b >> 16;
-  f[e + 3] = b >> 24, f[e + 8] = c, f[e + 9] = c >> 8, f[e + 10] = c >> 16;
-  return f[e + 11] = c >> 24, poly(a, f);
+  const a = data.length + 15 & ~15, b = $.length + a + 15 & ~15;
+  const message = new Uint8Array(b + 16), view = new DataView(message.buffer);
+  view.setUint32(b, data.length, true), view.setUint32(b + 8, $.length, true);
+  message.set(data), message.set($, a);
+  return poly(new DataView(key.buffer), message);
 };
 /** Authenticated encryption. */
 export const xchachapoly = (
@@ -45,11 +46,12 @@ export const xchachapoly = (
   data: Uint8Array,
 ): null | Uint8Array<ArrayBuffer> => {
   if (key.length !== 32 || iv.length !== 24) return null;
-  const a = new DataView(iv.buffer, iv.byteOffset), b = new Uint32Array(16);
-  const c = hchacha(new DataView(key.buffer, key.byteOffset), a, b);
-  chacha(c, 0, 0, a.getUint32(16, true), a.getUint32(20, true), b);
-  const d = $.length, e = new Uint8Array(d + 16);
-  return xor(c, a, $, e), e.set(tag(b, e.subarray(0, d), data), d), e;
+  const a = new DataView(iv.buffer, iv.byteOffset);
+  const b = new Uint8Array($.length + 16), mac_key = new Uint32Array(16);
+  const xor_key = hchacha(new DataView(key.buffer, key.byteOffset), a, mac_key);
+  chacha(xor_key, 0, 0, a.getUint32(16, true), a.getUint32(20, true), mac_key);
+  xor(xor_key, a, $, b);
+  return b.set(tag(mac_key, b.subarray(0, $.length), data), $.length), b;
 };
 /** Authenticated decryption. */
 export const polyxchacha = (
@@ -59,12 +61,12 @@ export const polyxchacha = (
   data: Uint8Array,
 ): null | Uint8Array<ArrayBuffer> => {
   if (key.length !== 32 || iv.length !== 24) return null;
-  const a = new DataView(iv.buffer, iv.byteOffset), b = new Uint32Array(16);
-  const c = hchacha(new DataView(key.buffer, key.byteOffset), a, b);
-  chacha(c, 0, 0, a.getUint32(16, true), a.getUint32(20, true), b);
-  const d = $.length - 16, e = new Uint8Array(d);
-  const f = tag(b, $.subarray(0, d), data);
+  const a = new DataView(iv.buffer, iv.byteOffset), offset = $.length - 16;
+  const b = new Uint8Array(offset), mac_key = new Uint32Array(16);
+  const xor_key = hchacha(new DataView(key.buffer, key.byteOffset), a, mac_key);
+  chacha(xor_key, 0, 0, a.getUint32(16, true), a.getUint32(20, true), mac_key);
+  const mac = tag(mac_key, $.subarray(0, offset), data);
   let z = 16, y = 0;
-  do y |= f[--z] ^ $[d + z]; while (z);
-  return y ? null : (xor(c, a, $.subarray(0, d), e), e);
+  do y |= mac[--z] ^ $[offset + z]; while (z);
+  return y ? null : (xor(xor_key, a, $.subarray(0, offset), b), b);
 };

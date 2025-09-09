@@ -39,11 +39,12 @@ export const encrypt = (
   $: Uint8Array,
   data?: Uint8Array,
 ): Uint8Array<ArrayBuffer> | null => {
-  const a = crypto.getRandomValues(new Uint8Array(24));
-  const b = xchachapoly(key, a, $, data ?? new Uint8Array());
-  if (!b) return b;
-  const c = new Uint8Array(b.length + 24);
-  return c.set(a), c.set(b, 24), c;
+  const iv = crypto.getRandomValues(new Uint8Array(24));
+  const ciphertext_tag = xchachapoly(key, iv, $, data ?? new Uint8Array());
+  if (!ciphertext_tag) return ciphertext_tag;
+  const iv_ciphertext_tag = new Uint8Array(ciphertext_tag.length + 24);
+  iv_ciphertext_tag.set(iv), iv_ciphertext_tag.set(ciphertext_tag, 24);
+  return iv_ciphertext_tag;
 };
 /** Decrypts with XChaCha20-Poly1305. */
 export const decrypt = (
