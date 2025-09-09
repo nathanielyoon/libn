@@ -1,23 +1,25 @@
 const BIN = /* @__PURE__ */ (() => {
-  const a = new Uint8Array(256);
-  for (let b, z = 0; z < 16; ++z) {
-    a[b = z.toString(16).charCodeAt(0) | 32] = a[b & 95] = z;
+  const bin = new Uint8Array(256);
+  for (let char, z = 0; z < 16; ++z) {
+    bin[char = z.toString(16).charCodeAt(0) | 32] = bin[char & 95] = z;
   }
-  return a;
+  return bin;
 })();
 const STR = /* @__PURE__ */ Array.from(
   { length: 256 },
-  (_, z) => z.toString(16).padStart(2, "0"),
+  (_, byte) => byte.toString(16).padStart(2, "0"),
 );
 /** Encodes binary -> base16 string. */
 export const en_b16 = ($: Uint8Array): string => {
-  let a = "";
-  for (let z = 0; z < $.length; ++z) a += STR[$[z]];
-  return a;
+  let string = "";
+  for (let z = 0; z < $.length; ++z) string += STR[$[z]];
+  return string;
 };
 /** Decodes base16 string -> binary. */
 export const de_b16 = ($: string): Uint8Array<ArrayBuffer> => {
-  const a = new Uint8Array($.length >> 1), b = $.charCodeAt.bind($);
-  for (let z = 0; z < $.length;) a[z >> 1] = BIN[b(z++)] << 4 | BIN[b(z++)];
-  return a;
+  const binary = new Uint8Array($.length >> 1);
+  for (let z = 0; z < $.length;) {
+    binary[z >> 1] = BIN[$.charCodeAt(z++)] << 4 | BIN[$.charCodeAt(z++)];
+  }
+  return binary;
 };

@@ -1,28 +1,34 @@
 const encode = (str: string) => ($: Uint8Array) => {
-  let a = "";
-  for (let b, c, d, e, f, z = 0; z < $.length;) {
-    b = $[z++], c = $[z++], d = $[z++], e = $[z++], f = $[z++];
-    a += str[b >> 3] + str[b << 2 & 28 | c >> 6] + str[c >> 1 & 31] +
-      str[c << 4 & 16 | d >> 4] + str[d << 1 & 30 | e >> 7] + str[e >> 2 & 31] +
-      str[e << 3 & 24 | f >> 5] + str[f & 31];
+  let string = "";
+  for (let a, b, c, d, e, z = 0; z < $.length;) {
+    a = $[z++], b = $[z++], c = $[z++], d = $[z++], e = $[z++];
+    string += str[a >> 3] + str[a << 2 & 28 | b >> 6] + str[b >> 1 & 31] +
+      str[b << 4 & 16 | c >> 4] + str[c << 1 & 30 | d >> 7] + str[d >> 2 & 31] +
+      str[d << 3 & 24 | e >> 5] + str[e & 31];
   }
-  return a.slice(0, Math.ceil($.length / 5 * 8));
+  return string.slice(0, Math.ceil($.length / 5 * 8));
 };
 const decode = (bin: Uint8Array) => ($: string) => {
-  const a = new Uint8Array($.length * 5 >> 3), b = $.charCodeAt.bind($);
-  for (let c, d, e, f, z = 0, y = 0; z < $.length;) {
-    c = bin[b(++z)], a[y++] = bin[b(z++ - 1)] << 3 | c >> 2 & 7;
-    d = bin[b(++z)], a[y++] = c << 6 & 192 | bin[b(z++ - 1)] << 1 | d >> 4 & 1;
-    e = bin[b(z++)], a[y++] = d << 4 & 240 | e >> 1 & 15, f = bin[b(++z)];
-    a[y++] = e << 7 & 128 | bin[b(z++ - 1)] << 2 | f >> 3 & 7;
-    a[y++] = f << 5 & 224 | bin[b(z++)];
+  const binary = new Uint8Array($.length * 5 >> 3);
+  for (let a, b, c, d, z = 0, y = 0; z < $.length;) {
+    a = bin[$.charCodeAt(++z)];
+    binary[y++] = bin[$.charCodeAt(z++ - 1)] << 3 | a >> 2 & 7;
+    b = bin[$.charCodeAt(++z)];
+    binary[y++] = a << 6 & 192 | bin[$.charCodeAt(z++ - 1)] << 1 | b >> 4 & 1;
+    c = bin[$.charCodeAt(z++)];
+    binary[y++] = b << 4 & 240 | c >> 1 & 15;
+    d = bin[$.charCodeAt(++z)];
+    binary[y++] = c << 7 & 128 | bin[$.charCodeAt(z++ - 1)] << 2 | d >> 3 & 7;
+    binary[y++] = d << 5 & 224 | bin[$.charCodeAt(z++)];
   }
-  return a;
+  return binary;
 };
 const map = ($: string) => {
-  const a = new Uint8Array(256);
-  for (let z = 0, b; z < 32; ++z) a[b = $.charCodeAt(z) | 32] = a[b & 95] = z;
-  return a;
+  const bin = new Uint8Array(256);
+  for (let char, z = 0; z < 32; ++z) {
+    bin[char = $.charCodeAt(z) | 32] = bin[char & 95] = z;
+  }
+  return bin;
 };
 const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const H32 = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
