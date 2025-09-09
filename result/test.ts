@@ -34,12 +34,13 @@ Deno.test("fmap/fmap_async apply conditionally", async () => {
     )));
   await fc_check(fc.asyncProperty(fc_or, async ($) =>
     assertEquals(
-      await $.fmap_async(async ($) => !$).unwrap_async(),
+      await $.fmap_async(($) => Promise.resolve(!$)).unwrap_async(),
       false,
     )));
   await fc_check(fc.asyncProperty(fc_or, async ($) =>
     assertEquals(
-      await $.fmap_async(async ($) => $, async ($) => !$).unwrap_async(),
+      await $.fmap_async(($) => Promise.resolve($), ($) => Promise.resolve(!$))
+        .unwrap_async(),
       true,
     )));
 });
@@ -50,7 +51,7 @@ Deno.test("bind/bind_async only map successes", async () => {
   ));
   await fc_check(fc.asyncProperty(fc_or, async ($) =>
     assertEquals(
-      await $.bind_async(async ($) => ok(!$)).unwrap_async(),
+      await $.bind_async(($) => Promise.resolve(ok(!$))).unwrap_async(),
       false,
     )));
 });
@@ -84,9 +85,9 @@ Deno.test("unwrap/unwrap_async pass through or throw/reject", async () => {
       void await assertRejects(() => $.unwrap_async(!$.result.state)),
   ));
 });
-Deno.test("sync methods apply to async results", async () =>
+Deno.test("sync methods apply to async results", () =>
   fc_check(fc.asyncProperty(
-    fc_or.map(($) => $.fmap_async(async ($) => $)),
+    fc_or.map(($) => $.fmap_async(($) => Promise.resolve($))),
     async ($) => {
       const { state } = await $.result_async;
       assertEquals(await $.fmap(($) => $).unwrap_async(), state);
@@ -95,7 +96,7 @@ Deno.test("sync methods apply to async results", async () =>
   )));
 Deno.test("sync openers throw if result is async", () =>
   fc_check(fc.property(
-    fc_or.map(($) => $.fmap_async(async ($) => $)),
+    fc_or.map(($) => $.fmap_async(($) => Promise.resolve($))),
     ($) => {
       assertThrows(() => $.result);
       assertThrows(() => $.unwrap());
@@ -173,10 +174,10 @@ Deno.test("save/save_async try-catch", async () => {
     fc.nat(),
     async (error, thrown, caught, $) =>
       assertEquals(
-        await (await save_async(async ($) => {
+        await (await save_async(($) => {
           if (error) throw thrown;
-          return $;
-        }, async (thrown) => Number(thrown) + caught)($)).unwrap_async(),
+          return Promise.resolve($);
+        }, ($) => Promise.resolve(Number($) + caught))($)).unwrap_async(),
         error ? thrown + caught : $,
       ),
   ));
@@ -220,8 +221,8 @@ Deno.test("wrap/wrap_async fail/pass all together", async () => {
         : no([one.result, two.result]),
     )));
   await fc_check(fc.asyncProperty(
-    fc_or.map(($) => $.fmap_async(async ($) => !$)),
-    fc_or.map(($) => $.fmap_async(async ($) => !$)),
+    fc_or.map(($) => $.fmap_async(($) => Promise.resolve(!$))),
+    fc_or.map(($) => $.fmap_async(($) => Promise.resolve(!$))),
     async (one, two) =>
       assertEquals<any>(
         await wrap_async([one, two]),
