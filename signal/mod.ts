@@ -157,7 +157,7 @@ const flat = ($: Link) => {
   } while ($ = $.sub_next!);
 };
 const check = (sub: Reactive, $: Link) => {
-  top: for (let a: (Link | null)[] = [], b = 0, c = false, d, e;;) {
+  for (let a: (Link | null)[] = [], b = 0, c = false, d, e;;) {
     if (d = $.dep, sub.flags & Flag.DIRTY) c = true;
     else if ((d.flags & Flag.RESET) === Flag.RESET) {
       if (reuse(d) || reget(d)) c = true, d.sub!.sub_next && flat(d.sub!);
