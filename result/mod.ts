@@ -73,7 +73,7 @@ export class Or<A = any, B = any> {
     | (C extends false ? A : never)
     | (C extends true ? B : never) {
     if (this.promise) throw Error("result is asynchronous, use unwrap_async()");
-    if (only_if === !this.state) throw Error(undefined, { cause: this.value });
+    if (only_if === !this.state) throw Error("", { cause: this.value });
     return this.value;
   }
   /** Awaits the result's value, optionally throwing if the state is wrong. */
@@ -82,7 +82,7 @@ export class Or<A = any, B = any> {
     | (C extends true ? B : never)
   > {
     const { state, value } = await this.promise ?? await this.result_async;
-    if (only_if === !state) throw Error(undefined, { cause: value });
+    if (only_if === !state) throw Error("", { cause: value });
     return value;
   }
 }
@@ -100,9 +100,9 @@ export const some = <A, const B = void, C = NonNullable<A>>(
 type Falsy = undefined | null | false | 0 | 0n | "";
 /** Wraps a type guard. */
 export const drop =
-  <A, B extends {}>(not: ($: A) => B | Falsy): ($: A) => Or<B, A> => ($) => {
-    const a = not($);
-    return a ? no(a) : ok($);
+  <A, B>(not: ($: A) => B | Falsy): ($: A) => Or<B, A> => ($) => {
+    const maybe_error = not($);
+    return maybe_error ? no(maybe_error) : ok($);
   };
 /** Wraps a possibly-throwing function. */
 export const save = <A, B, C = Error>(
@@ -113,7 +113,7 @@ export const save = <A, B, C = Error>(
   try {
     return ok(unsafe($));
   } catch (cause) {
-    return no(if_thrown ? if_thrown(cause) : Error(undefined, { cause }) as C);
+    return no(if_thrown ? if_thrown(cause) : Error("", { cause }) as C);
   }
 };
 /** Wraps a possibly-rejecting function. */
@@ -125,52 +125,52 @@ async ($) => {
   try {
     return ok(await unsafe($));
   } catch (cause) {
-    return no(
-      if_thrown ? await if_thrown(cause) : Error(undefined, { cause }) as C,
-    );
+    return no(if_thrown ? await if_thrown(cause) : Error("", { cause }) as C);
   }
 };
 /** Wraps an imperative block. */
 export const exec =
   <A, B, C, D>(doer: ($: A) => Generator<Or<B, C>, D, C>): ($: A) => Or<B, D> =>
   ($) => {
-    const a = doer($);
-    const b = ($: IteratorResult<Or<B, C>, D>): Or<B, D> =>
-      $.done ? ok($.value) : $.value.bind(($) => b(a.next($)));
-    return b(a.next());
+    const generator = doer($);
+    const next = ($: IteratorResult<Or<B, C>, D>): Or<B, D> =>
+      $.done ? ok($.value) : $.value.bind(($) => next(generator.next($)));
+    return next(generator.next());
   };
 /** Wraps an asychronous imperative block. */
 export const exec_async = <A, B, C, D>(
   doer: ($: A) => AsyncGenerator<Or<B, C>, D, C>,
 ): ($: A) => Promise<Or<B, D>> =>
 async ($) => {
-  const a = doer($);
-  const b = ($: IteratorResult<Or<B, C>, D>): Or<B, D> =>
-    $.done ? ok($.value) : $.value.bind_async(async ($) => b(await a.next($)));
-  return b(await a.next());
+  const generator = doer($);
+  const next = ($: IteratorResult<Or<B, C>, D>): Or<B, D> =>
+    $.done
+      ? ok($.value)
+      : $.value.bind_async(async ($) => next(await generator.next($)));
+  return next(await generator.next());
 };
-type Wrap<A extends Or[]> = Or<
+type Wrapped<A extends Or[]> = Or<
   { [B in keyof A]: A[B] extends Or<infer C, infer D> ? Result<C, D> : never },
   { [B in keyof A]: A[B] extends Or<any, infer C> ? C : A[B] }
 >;
 /** Wraps a list of results. */
-export const wrap = <const A extends Or[]>($: A): Wrap<A> => {
-  const a = Array($.length), b = [];
+export const wrap = <const A extends Or[]>($: A): Wrapped<A> => {
+  const results = Array($.length), oks = [];
   for (let z = 0; z < $.length; ++z) {
-    (a[z] = $[z].result).state && b.push(a[z].value);
+    (results[z] = $[z].result).state && oks.push(results[z].value);
   }
-  return b.length === $.length ? ok<any>(b) : no<any>(a);
+  return oks.length === $.length ? ok<any>(oks) : no<any>(results);
 };
 /** Wraps a possibly-asynchronous list of results. */
 export const wrap_async = async <const A extends Or[]>(
   $: A,
-): Promise<Wrap<A>> => {
-  const a = Array<Promise<Result<any, any>>>($.length);
-  for (let z = 0; z < $.length; ++z) a[z] = $[z].result_async;
-  const b = await Promise.all(a), c = [];
-  for (let z = 0; z < b.length; ++z) {
-    if (b[z].state) c.push(b[z].value);
-    else return no<any>(b);
+): Promise<Wrapped<A>> => {
+  const promised_results = Array<Promise<Result<any, any>>>($.length);
+  for (let z = 0; z < $.length; ++z) promised_results[z] = $[z].result_async;
+  const results = await Promise.all(promised_results), oks = [];
+  for (let z = 0; z < results.length; ++z) {
+    if (results[z].state) oks.push(results[z].value);
+    else return no<any>(results);
   }
-  return ok<any>(c);
+  return ok<any>(oks);
 };
