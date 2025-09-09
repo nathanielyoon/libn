@@ -19,11 +19,10 @@ const b2_mix = (to: Uint32Array, last: boolean) => {
 export class Blake2s {
   private state = new Uint32Array(43);
   /** Creates a new hash instance. */
-  constructor(private out_len = 32, key?: Uint8Array) {
-    const key_len = key?.length!;
+  constructor(private length = 32, key?: Uint8Array) {
     this.state.set(LOWER, 16);
-    this.state[16] ^= out_len | key_len << 8 | 0x01010000;
-    if (key_len) this.update(key), this.state[24] = 64;
+    this.state[16] ^= length | key?.length! << 8 | 0x01010000;
+    if (key?.length) this.update(key), this.state[24] = 64;
   }
   /** Updates the hash state. */
   update(data: Uint8Array): this {
@@ -39,18 +38,13 @@ export class Blake2s {
   }
   /** Computes a digest from the current state. */
   finalize<A extends Uint8Array = Uint8Array<ArrayBuffer>>(into?: A): A {
-    const out = new Uint8Array(this.out_len);
-    const view = new DataView(this.state.buffer), len = this.state[24] + 108;
-    this.state.fill(0, len + 3 >> 2)[25] += this.state[24];
+    const a = new Uint8Array(this.length), b = new DataView(this.state.buffer);
+    let c = this.state[24] + 108;
+    this.state.fill(0, c + 3 >> 2)[25] += this.state[24];
     this.state[25] < this.state[24] && ++this.state[26];
-    len & 3 && view.setUint8(len, 0);
-    (len ^ len >> 1) & 1 && view.setUint8(len + 1, 0);
-    len & 1 & ~len >> 1 && view.setUint8(len + 2, 0);
-    b2_mix(this.state, true);
-    for (let z = 0; z < this.out_len; ++z) {
-      out[z] = this.state[z + 64 >> 2] >> (z << 3 & 24);
-    }
-    if (into) return into.set(out.subarray(0, into.length)), into;
-    return out as A;
+    c & 3 && b.setUint8(c, 0), (c ^ c >> 1) & 1 && b.setUint8(c + 1, 0);
+    c & 1 & ~c >> 1 && b.setUint8(c + 2, 0), b2_mix(this.state, true), c = 0;
+    while (c < this.length) a[c] = this.state[c + 64 >> 2] >> (c++ << 3 & 24);
+    return into ? (into.set(a.subarray(0, into.length)), into) : a as A;
   }
 }

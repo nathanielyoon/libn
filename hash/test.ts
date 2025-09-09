@@ -118,3 +118,45 @@ Deno.test("hkdf matches webcrypto", () =>
         ),
       ),
   )));
+Deno.test("blake2 works on long inputs", () => {
+  const a = new Uint32Array([
+    1267191321,
+    3819302079,
+    3380430345,
+    2614770244,
+    61962841,
+    46318689,
+    3190628561,
+    2510837884,
+    2017891610,
+    2596496858,
+    1770113441,
+    3036477892,
+    653348303,
+    547472135,
+    53784711,
+    3557836614,
+    2303019534,
+    677791490,
+    1251155793,
+    3961835637,
+    4019012213,
+    3731589776,
+    1069522241,
+    3308172893,
+    64,
+    4294967232,
+    0,
+  ]);
+  const b = new Blake2s();
+  b["state"].set(a);
+  assertEquals(
+    b.finalize(),
+    de_b16("2a8e26830310da3ef7f7032b7b1af11b989aba44a3713a22f539f69bd2ce4a87"),
+  );
+  b["state"].set(a);
+  assertEquals(
+    b.update(new Uint8Array(1)).finalize(),
+    de_b16("bad88cce259c1bfc72612bd1968d14a9fe7766e36e1fcafc0aed77e08b8cc9e0"),
+  );
+});
