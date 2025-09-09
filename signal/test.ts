@@ -1,5 +1,10 @@
 import { assertEquals, assertLess, assertThrows } from "@std/assert";
-import { assertSpyCall, assertSpyCalls, Spy, spy } from "@std/testing/mock";
+import {
+  assertSpyCall,
+  assertSpyCalls,
+  type Spy,
+  spy,
+} from "@std/testing/mock";
 import { batch, effect, scoper, set_actor, signal } from "./mod.ts";
 
 Deno.test("alien-signals", async ({ step }) => {
