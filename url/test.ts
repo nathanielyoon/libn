@@ -25,7 +25,7 @@ Deno.test("Presigner signs additional headers", () =>
             ["host", ...Object.keys(headers)].map(($) => $.toLowerCase()).sort()
               .join(";").replace(/[^-.\w~]/g, ($) =>
                 "%" +
-                $.charCodeAt(0).toString(16).padStart(2, "0").toUpperCase())
+                $.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0"))
           }`,
         ),
       )),
