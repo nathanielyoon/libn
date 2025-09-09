@@ -26,7 +26,6 @@
   "lint": {
     "rules": {
       "include": [
-        "default-param-last",
         "explicit-module-boundary-types",
         "no-inferrable-types",
         "no-self-compare",
@@ -39,7 +38,8 @@
         "ban-types",
         "no-cond-assign",
         "no-control-regex",
-        "no-explicit-any"
+        "no-explicit-any",
+        "no-invalid-regexp"
       ]
     }
   },
