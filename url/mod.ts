@@ -23,7 +23,7 @@ import { en_b16, en_bin } from "@libn/base";
 import { hmac, sha256 } from "@libn/hash";
 
 const escape = ($: string) =>
-  "%" + $.charCodeAt(0).toString(16).padStart(2, "0").toUpperCase();
+  "%" + $.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0");
 const URI_BYTE = /[^-.\w~]/g; // encode the forward slash everywhere
 const URI_PATH = /[^-./\w~]/g; // except in the object key name
 const search_parameterize = ($: [string, string]) => `X-Amz-${$[0]}=${$[1]}`;
