@@ -1,4 +1,4 @@
-import { iv, min, SHA256 } from "./common.ts";
+import { min, SHA256 } from "./common.ts";
 
 const enum Size {
   BLOCK = 64,
