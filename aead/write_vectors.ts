@@ -50,9 +50,10 @@ await write_vectors(import.meta, {
       ivSize !== 192 ? [] : tests.map(($) => ({
         key: $.key,
         iv: $.iv,
-        raw: $.msg,
-        data: $.aad,
-        text: $.ct + $.tag,
+        plaintext: $.msg,
+        associated_data: $.aad,
+        ciphertext: $.ct,
+        tag: $.tag,
         result: $.result === "valid",
       })),
   ),

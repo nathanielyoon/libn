@@ -31,49 +31,57 @@ Deno.test("poly matches rfc8439 section 2.5.2, donna selftests", () =>
   ));
 Deno.test("xchachapoly/polyxchacha match wycheproof", () =>
   vectors.wycheproof.forEach(($) => {
-    const key = de_b16($.key), iv = de_b16($.iv), raw = de_b16($.raw);
-    const data = de_b16($.data), text = xchachapoly(key, iv, raw, data);
-    if (text) {
-      if ($.result) {
-        assertEquals(text, de_b16($.text));
-        assertEquals(polyxchacha(key, iv, text, data), raw);
-      } else assert(!polyxchacha(key, iv, de_b16($.text), data));
-    } else assert(!$.result);
+    const key = de_b16($.key), iv = de_b16($.iv);
+    const plaintext = de_b16($.plaintext), ciphertext = de_b16($.ciphertext);
+    const associated_data = de_b16($.associated_data);
+    const tag = de_b16($.tag);
+    if ($.result) {
+      const temp = new Uint8Array(plaintext);
+      assertEquals(xchachapoly(key, iv, temp, associated_data), tag);
+      assertEquals(temp, ciphertext);
+      assert(polyxchacha(key, iv, tag, temp, associated_data));
+      assertEquals(temp, plaintext);
+    } else assert(!polyxchacha(key, iv, tag, ciphertext, associated_data));
   }));
 Deno.test("encryption/decryption round-trips losslessly", () =>
   fc_check(fc.property(fc_key, fc_bin(), fc_bin(), (key, $, data) => {
-    assertEquals(decrypt(key, encrypt(key, $, data)!, data), $);
-    assertEquals(decrypt(key, encrypt(key, $)!), $);
+    assertEquals(decrypt(key, encrypt(key, $, data)!, data)!, $);
+    assertEquals(decrypt(key, encrypt(key, $)!)!, $);
   })));
-const fc_iv = fc_bin({ minLength: 24, maxLength: 24 });
-const fc_not_key = fc.oneof(
-  fc_bin({ maxLength: 31 }),
-  fc_bin({ minLength: 33 }),
-);
-const fc_not_iv = fc.oneof(
-  fc_bin({ maxLength: 23 }),
-  fc_bin({ minLength: 25 }),
-);
-Deno.test("xchachapoly/polyxchacha reject wrong-size arguments", () =>
+const fc_wrong = ($: number) =>
+  fc.oneof(fc_bin({ maxLength: $ - 1 }), fc_bin({ minLength: $ + 1 }));
+const fc_at_least_one_wrong = <const A extends number[]>(...lengths: A) =>
+  fc.oneof(...Array.from(lengths, (_, index) =>
+    fc.tuple(
+      ...lengths.map(($, z) =>
+        z !== index
+          ? fc.oneof(fc_bin({ minLength: $, maxLength: $ }), fc_wrong($))
+          : fc_wrong($)
+      ),
+    )));
+Deno.test("xchachapoly rejects wrong-size arguments", () =>
   fc_check(fc.property(
-    fc.oneof(
-      fc.tuple(fc.oneof(fc_key, fc_not_key), fc_not_iv),
-      fc.tuple(fc_not_key, fc.oneof(fc_iv, fc_not_iv)),
-    ),
+    fc_at_least_one_wrong(32, 24),
     fc_bin(),
     fc_bin(),
-    ([key, iv], $, data) => {
-      assertEquals(xchachapoly(key, iv, $, data), null);
-      assertEquals(polyxchacha(key, iv, $, data), null);
-    },
+    ([key, iv], plaintext, data) =>
+      assertEquals(xchachapoly(key, iv, plaintext, data), undefined),
+  )));
+Deno.test("polyxchacha rejects wrong-size arguments", () =>
+  fc_check(fc.property(
+    fc_at_least_one_wrong(32, 24, 16),
+    fc_bin(),
+    fc_bin(),
+    ([key, iv, tag], ciphertext, data) =>
+      assertEquals(polyxchacha(key, iv, tag, ciphertext, data), false),
   )));
 Deno.test("encrypt/decrypt reject wrong-size arguments", () =>
   fc_check(fc.property(
-    fc_not_key,
+    fc_wrong(32),
     fc_bin(),
     fc_bin(),
     (key, $, data) => {
-      assertEquals(encrypt(key, $, data), null);
-      assertEquals(decrypt(key, $, data), null);
+      assertEquals(encrypt(key, $, data), undefined);
+      assertEquals(decrypt(key, $, data), undefined);
     },
   )));
