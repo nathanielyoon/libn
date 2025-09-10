@@ -1,22 +1,22 @@
 import { assertEquals } from "@std/assert";
 import { crypto } from "@std/crypto";
 import fc from "fast-check";
-import { de_b16, en_b16 } from "@libn/base";
+import { de_b16, en_b16, en_bin } from "@libn/base";
 import { fc_bin, fc_check } from "../test.ts";
-import { sha256, sha512 } from "./src/md.ts";
+import { sha256, sha512 } from "./src/sha2.ts";
 import { hmac } from "./src/hmac.ts";
 import { hkdf } from "./src/hkdf.ts";
 import { b3, b3_derive, b3_keyed } from "./src/blake3.ts";
 import vectors from "./vectors.json" with { type: "json" };
 import {
   b2b,
-  b2b_hash,
-  b2b_make,
-  b2b_read,
+  b2b_get,
+  b2b_new,
+  b2b_set,
   b2s,
-  b2s_hash,
-  b2s_make,
-  b2s_read,
+  b2s_get,
+  b2s_new,
+  b2s_set,
 } from "./src/blake2.ts";
 
 Deno.test("sha256 matches nist aft", () =>
@@ -45,19 +45,19 @@ Deno.test("hkdf matches wycheproof", () =>
   ));
 Deno.test("blake2 matches selftest", () => {
   const a = [...vectors.blake2.selftest.s.md, ...vectors.blake2.selftest.s.in];
-  const b = new Uint8Array(1056), c = b2s_make();
+  const b = new Uint8Array(1056), c = b2s_new();
   let z = 0, y = 0, x = 0, w, e, f, g, h, i, j, k;
   do do do {
     e = (x & 1) ^ 1, f = a[z], g = a[y % 6 + 4], h = e ? g : f;
     for (i = 0xDEAD4BAD * h | 0, j = 1, k, w = 0; w < h; ++w) {
       k = i + j | 0, i = j, j = k, b[w + (-e & 32)] = k >> 24;
     }
-    b2s_read(
+    b2s_set(
       c,
       b2s(b.subarray(32, g + 32), b.subarray(0, -(x & 1) & a[z]), f),
     );
   } while (++x & 1); while (++y % 6); while (++z < 4);
-  assertEquals(b2s_hash(c), de_b16(vectors.blake2.selftest.s.result));
+  assertEquals(b2s_get(c), de_b16(vectors.blake2.selftest.s.result));
 });
 Deno.test("blake3 matches reference", () => {
   const keyed = b3_keyed.bind(null, de_b16(vectors.blake3.key));

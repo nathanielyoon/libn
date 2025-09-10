@@ -1,4 +1,4 @@
-import { sha256 } from "./md.ts";
+import { sha256 } from "./sha2.ts";
 
 /** Creates a hash-based message authentication code. */
 export const hmac = (
