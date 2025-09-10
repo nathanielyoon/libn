@@ -1,4 +1,4 @@
-import { Max, SHA256, SHA512 } from "./common.ts";
+import { type Hash, Max, SHA256, SHA512 } from "./common.ts";
 
 const SIGMA = Uint8Array.from(
   "0123456789abcdefea489fd61c02b753b8c052fdae3671947931dcbe265a40f8905724afe1bc683d2c6a0b834d75fe19c51fed4a0763928bdb7ec13950f4862a6fe9b308c2d714a5a2847615fb9e3cd00123456789abcdefea489fd61c02b753",
@@ -80,20 +80,17 @@ const blake2s_compress = ($: Uint32Array, final: boolean) => {
   $.fill(0, 0, 16);
 };
 /** Initializes the BLAKE2s state. */
-export const blake2s_create = (
+export const b2s_make = (
   key?: Uint8Array,
   length = 32,
 ): Uint32Array<ArrayBuffer> => {
   const state = new Uint32Array(28);
   state[27] = length = length >>> 0 || 1, key &&= key.subarray(0, 32);
   state.set(SHA256, 16), state[16] ^= length | key?.length! << 8 | 0x01010000;
-  return key?.length && (blake2s_update(state, key), state[24] = 64), state;
+  return key?.length && (b2s_read(state, key), state[24] = 64), state;
 };
 /** Processes a chunk of data and updates the BLAKE2s state. */
-export const blake2s_update = <A extends Uint32Array>(
-  $: A,
-  input: Uint8Array,
-): A => {
+export const b2s_read = <A extends Uint32Array>($: A, input: Uint8Array): A => {
   for (let z = 0; z < input.length; ++z) {
     if ($[24] === 64) {
       $[25] += 64, $[25] < 64 && ++$[26], blake2s_compress($, false), $[24] = 0;
@@ -102,20 +99,20 @@ export const blake2s_update = <A extends Uint32Array>(
   }
   return $;
 };
-/** Finalizes a BLAKE2s state into a fixed-length hash. */
-export const blake2s_digest = ($: Uint32Array): Uint8Array<ArrayBuffer> => {
+/** Finalizes the BLAKE2s state into a fixed-length hash. */
+export const b2s_hash = ($: Uint32Array): Uint8Array<ArrayBuffer> => {
   $[25] += $[24], $[25] < $[24] && ++$[26], blake2s_compress($, true);
   const out = new Uint8Array($[27]);
   for (let z = 0; z < out.length; ++z) out[z] = $[z + 64 >> 2] >> (z << 3);
   return out;
 };
 /** Hashes with BLAKE2s. */
-export const blake2s = (
-  input: Uint8Array,
+export const b2s: Hash<[$: Uint8Array, key?: Uint8Array, length?: number]> = (
+  $: Uint8Array,
   key?: Uint8Array,
   length?: number,
-): Uint8Array<ArrayBuffer> =>
-  blake2s_digest(blake2s_update(blake2s_create(key, length), input));
+): Uint8Array<ArrayBuffer> => b2s_hash(b2s_read(b2s_make(key, length), $));
+// The BLAKE2b IV is SHA-512's but little-endian (with regard to word halves).
 const LE = SHA512.map((_, z, $) => $[z ^ 1]), S2 = SIGMA.map(($) => $ << 1);
 // The BLAKE2s state block is a 54-word `Uint32Array`:
 // m[0:32] | h[0:16] | bytes in current block | t[0:4] | output length
@@ -349,14 +346,19 @@ const blake2b_compress = ($: Uint32Array, final: boolean) => {
   $[44] ^= g0 ^ o0, $[45] ^= g1 ^ o1, $[46] ^= h0 ^ p0, $[47] ^= h1 ^ p1;
   $.fill(0, 0, 32);
 };
-export const blake2b_create = (key?: Uint8Array, length = 64) => {
+/** Initializes the BLAKE2b state. */
+export const b2b_make = (
+  key?: Uint8Array,
+  length = 64,
+): Uint32Array<ArrayBuffer> => {
   const state = new Uint32Array(54);
   state[53] = length = length >>> 0 || 1, key &&= key.subarray(0, 64);
   state.set(LE, 32), state[32] ^= length | key?.length! << 8 | 0x01010000;
-  if (key?.length) blake2b_update(state, key), state[48] = 128;
+  if (key?.length) b2b_read(state, key), state[48] = 128;
   return state;
 };
-export const blake2b_update = ($: Uint32Array, input: Uint8Array) => {
+/** Processes a chunk of data and updates the BLAKE2b state. */
+export const b2b_read = <A extends Uint32Array>($: A, input: Uint8Array): A => {
   for (let z = 0; z < input.length; ++z) {
     if ($[48] === 128) {
       ($[49] += 128) < Max.U || ++$[50] < Max.U || ++$[51] < Max.U || ++$[52];
@@ -366,12 +368,17 @@ export const blake2b_update = ($: Uint32Array, input: Uint8Array) => {
   }
   return $;
 };
-export const blake2b_digest = ($: Uint32Array): Uint8Array<ArrayBuffer> => {
+/** Finalizes the BLAKE2b state into a fixed-length hash. */
+export const b2b_hash = ($: Uint32Array): Uint8Array<ArrayBuffer> => {
   ($[49] += $[48]) < Max.U || ++$[50] < Max.U || ++$[51] < Max.U || ++$[52];
   blake2b_compress($, true);
   const out = new Uint8Array($[53]);
   for (let z = 0; z < out.length; ++z) out[z] = $[z + 128 >> 2] >> (z << 3);
   return out;
 };
-export const blake2b = (input: Uint8Array, key?: Uint8Array, length?: number) =>
-  blake2b_digest(blake2b_update(blake2b_create(key, length), input));
+/** Hashes with BLAKE2b. */
+export const b2b: Hash<[$: Uint8Array, key?: Uint8Array, length?: number]> = (
+  $: Uint8Array,
+  key?: Uint8Array,
+  length?: number,
+): Uint8Array<ArrayBuffer> => b2b_hash(b2b_read(b2b_make(key, length), $));

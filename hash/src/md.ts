@@ -1,7 +1,5 @@
-import { HI, LO, Max, min, SHA256, SHA512 } from "./common.ts";
+import { type Hash, HI, LO, Max, min, SHA256, SHA512 } from "./common.ts";
 
-/** SHA-2 function. */
-export type Sha2 = ($: Uint8Array) => Uint8Array<ArrayBuffer>;
 const md = (
   base: Uint32Array,
   block: number,
@@ -25,7 +23,7 @@ const md = (
   return new Uint8Array(data.subarray(0, out));
 };
 /** Hashes with SHA-256. */
-export const sha256: Sha2 = /* @__PURE__ */
+export const sha256: Hash<[$: Uint8Array]> = /* @__PURE__ */
   md.bind(null, SHA256, 64, 32, 8, (use, data, at, to) => {
     let a, b, z = 0;
     do use[z] = data.getUint32(at), at += 4; while (++z < 16);
@@ -53,7 +51,7 @@ export const sha256: Sha2 = /* @__PURE__ */
     to[6] = to[6] + i | 0, to[7] = to[7] + j | 0;
   });
 /** Hashes with SHA-512. */
-export const sha512: Sha2 = /* @__PURE__ */
+export const sha512: Hash<[$: Uint8Array]> = /* @__PURE__ */
   md.bind(null, SHA512, 128, 64, 16, (use, data, at, to) => {
     let a, b, c, d, z = 0;
     do use[z] = data.getUint32(at),

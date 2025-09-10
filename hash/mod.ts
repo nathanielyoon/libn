@@ -27,7 +27,7 @@
  *
  * const data = crypto.getRandomValues(new Uint8Array(100));
  * assertEquals(
- *   blake3_hash(data),
+ *   b3(data),
  *   new Uint8Array(await crypto.subtle.digest("BLAKE3", data)),
  * );
  * ```
@@ -80,6 +80,6 @@
 import { sha256, sha512 } from "./src/md.ts";
 import { hmac } from "./src/hmac.ts";
 import { hkdf } from "./src/hkdf.ts";
-import { blake3_derive, blake3_hash, blake3_keyed } from "./src/blake3.ts";
+import { b3, b3_derive, b3_keyed } from "./src/blake3.ts";
 
-export { blake3_derive, blake3_hash, blake3_keyed, hkdf, hmac, sha256, sha512 };
+export { b3, b3_derive, b3_keyed, hkdf, hmac, sha256, sha512 };

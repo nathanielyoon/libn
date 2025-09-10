@@ -1,3 +1,5 @@
+/** Hash function. */
+export type Hash<A extends any[]> = (..._: A) => Uint8Array<ArrayBuffer>;
 export const enum Max {
   U = 0x100000000,
 }

@@ -58,7 +58,6 @@ await write_vectors(import.meta, {
           Object.fromEntries($.split("\n").map((line) => line.split(":\t")))
         ),
       ])).then(Object.fromEntries),
-
     selftest: await get_rfc(7693, 49161, 54202).then(($) =>
       $.matchAll(/blake2([bs])_res\[32\] = \{(.+?)\}.+?\{(.+?)\}.+?\{(.+?)\}/gs)
         .reduce((to, [_, flavor, result, md_len, in_len]) => ({
