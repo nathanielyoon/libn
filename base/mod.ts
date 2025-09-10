@@ -23,11 +23,11 @@ import { de_b32, de_h32, en_b32, en_h32 } from "./src/32.ts";
 import { de_b64, de_u64, en_b64, en_u64 } from "./src/64.ts";
 
 /** Encodes arbitrary string -> binary. */
-export const en_bin: ($: string) => Uint8Array = /* @__PURE__ */ TextEncoder
-  .prototype.encode.bind(/* @__PURE__ */ new TextEncoder());
+export const en_bin: ($: string) => Uint8Array = /* @__PURE__ */
+  TextEncoder.prototype.encode.bind(/* @__PURE__ */ new TextEncoder());
 /** Decodes binary -> arbitrary string. */
-export const de_bin: ($: Uint8Array) => string = /* @__PURE__ */ TextDecoder
-  .prototype.decode.bind(/* @__PURE__ */ new TextDecoder());
+export const de_bin: ($: Uint8Array) => string = /* @__PURE__ */
+  TextDecoder.prototype.decode.bind(/* @__PURE__ */ new TextDecoder());
 export {
   de_b16,
   de_b32,

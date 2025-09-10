@@ -1,10 +1,6 @@
-const BIN = /* @__PURE__ */ (() => {
-  const bin = new Uint8Array(256);
-  for (let char, z = 0; z < 16; ++z) {
-    bin[char = z.toString(16).charCodeAt(0) | 32] = bin[char & 95] = z;
-  }
-  return bin;
-})();
+import { map } from "./map.ts";
+
+const BIN = /* @__PURE__ */ map("0123456789abcdef");
 const STR = /* @__PURE__ */ Array.from(
   { length: 256 },
   (_, byte) => byte.toString(16).padStart(2, "0"),

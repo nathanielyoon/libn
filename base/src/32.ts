@@ -1,4 +1,6 @@
-const encode = (str: string) => ($: Uint8Array) => {
+import { map } from "./map.ts";
+
+const encode = (str: string, $: Uint8Array) => {
   let string = "";
   for (let a, b, c, d, e, z = 0; z < $.length;) {
     a = $[z++], b = $[z++], c = $[z++], d = $[z++], e = $[z++];
@@ -8,7 +10,7 @@ const encode = (str: string) => ($: Uint8Array) => {
   }
   return string.slice(0, Math.ceil($.length / 5 * 8));
 };
-const decode = (bin: Uint8Array) => ($: string) => {
+const decode = (bin: Uint8Array, $: string) => {
   const binary = new Uint8Array($.length * 5 >> 3);
   for (let a, b, c, d, z = 0, y = 0; z < $.length;) {
     a = bin[$.charCodeAt(++z)];
@@ -23,22 +25,18 @@ const decode = (bin: Uint8Array) => ($: string) => {
   }
   return binary;
 };
-const map = ($: string) => {
-  const bin = new Uint8Array(256);
-  for (let char, z = 0; z < 32; ++z) {
-    bin[char = $.charCodeAt(z) | 32] = bin[char & 95] = z;
-  }
-  return bin;
-};
 const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const H32 = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
 /** Encodes binary -> base32 string. */
-export const en_b32: ($: Uint8Array) => string = /* @__PURE__ */ encode(B32);
+export const en_b32: ($: Uint8Array) => string = /* @__PURE__ */
+  encode.bind(null, B32);
 /** Decodes base32 string -> binary. */
-export const de_b32: ($: string) => Uint8Array<ArrayBuffer> =
-  /* @__PURE__ */ decode(/* @__PURE__ */ map(B32));
+export const de_b32: ($: string) => Uint8Array<ArrayBuffer> = /* @__PURE__ */
+  decode.bind(null, /* @__PURE__ */ map(B32));
+
 /** Encodes binary -> base32hex string. */
-export const en_h32: ($: Uint8Array) => string = /* @__PURE__ */ encode(H32);
+export const en_h32: ($: Uint8Array) => string = /* @__PURE__ */
+  encode.bind(null, H32);
 /** Decodes base32hex string -> binary. */
-export const de_h32: ($: string) => Uint8Array<ArrayBuffer> =
-  /* @__PURE__ */ decode(/* @__PURE__ */ map(H32));
+export const de_h32: ($: string) => Uint8Array<ArrayBuffer> = /* @__PURE__ */
+  decode.bind(null, /* @__PURE__ */ map(H32));
