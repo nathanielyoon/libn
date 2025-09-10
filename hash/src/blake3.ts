@@ -142,18 +142,18 @@ const b_b32 = ($: Uint8Array) => {
   for (let z = 0; z < 32; ++z) a[z >> 2] |= $[z] << (z << 3);
   return a;
 };
-/** Hashes with Blake3 (unkeyed). */
+/** Hashes with BLAKE3 (unkeyed). */
 export const blake3_hash = (
   $: Uint8Array,
   out?: number,
 ): Uint8Array<ArrayBuffer> => blake3(SHA256.subarray(0, 8), 0, $, out);
-/** Hashes with Blake3 (keyed). */
+/** Hashes with BLAKE3 (keyed). */
 export const blake3_keyed = (
   key: Uint8Array,
   $: Uint8Array,
   out?: number,
 ): Uint8Array<ArrayBuffer> => blake3(b_b32(key), Flag.KEYED, $, out);
-/** Creates a key derivation function with Blake3 (that can skip blocks). */
+/** Creates a key derivation function with BLAKE3 (that can skip blocks). */
 export const blake3_derive = (
   context: Uint8Array,
 ): ($: Uint8Array, out?: number, at?: number) => Uint8Array<ArrayBuffer> => {
