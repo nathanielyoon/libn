@@ -156,7 +156,9 @@ export const blake3_keyed = (
 /** Creates a key derivation function with BLAKE3 (that can skip blocks). */
 export const blake3_derive = (
   context: Uint8Array,
-): ($: Uint8Array, out?: number, at?: number) => Uint8Array<ArrayBuffer> => {
-  const a = b_b32(blake3(SHA256.subarray(0, 8), Flag.DERIVE_CONTEXT, context));
-  return ($, out, at) => blake3(a, Flag.DERIVE_KEY, $, out, at);
-};
+): ($: Uint8Array, out?: number, at?: number) => Uint8Array<ArrayBuffer> =>
+  blake3.bind(
+    null,
+    b_b32(blake3(SHA256.subarray(0, 8), Flag.DERIVE_CONTEXT, context)),
+    Flag.DERIVE_KEY,
+  );
