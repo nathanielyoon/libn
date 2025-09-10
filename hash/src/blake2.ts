@@ -1,54 +1,377 @@
-import { iv, SHA256 } from "./common.ts";
+import { Max, SHA256, SHA512 } from "./common.ts";
 
-const ROTATE = /* @__PURE__ */ iv("d951c840fb73ea62cb61fa50e943d872");
-const SIGMA = /* @__PURE__ */ iv(
-  "76543210fedcba986df984ae357b20c1df250c8b491763eaebcd13978f04a562fa427509d386cb1e38b0a6c291ef57d4a4def15cb8293670931ce7bda2684f05803b9ef65a417d2c5167482a0dc3e9bf",
+const SIGMA = Uint8Array.from(
+  "0123456789abcdefea489fd61c02b753b8c052fdae3671947931dcbe265a40f8905724afe1bc683d2c6a0b834d75fe19c51fed4a0763928bdb7ec13950f4862a6fe9b308c2d714a5a2847615fb9e3cd00123456789abcdefea489fd61c02b753",
+  ($) => parseInt($, 16),
 );
-const b2_mix = (to: Uint32Array, last: boolean) => {
-  to.copyWithin(0, 16, 24), to.set(SHA256, 8), to[12] ^= to[25];
-  to[13] ^= to[26], last && (to[14] = ~to[14]);
-  let z = 0, y = 80, x, a, b, c;
-  do do x = --y & 3,
-    a = ROTATE[x >> 1 | z << 1 & 2] >> (x << 4 & 16),
-    to[c = a >> 12 & 15] ^= to[a & 15] += to[b = a >> 4 & 15] +
-      to[(SIGMA[z] >> (x << 3) & 15) + 27],
-    to[b] ^= to[a >> 8 & 15] += to[c] = to[c] >>> 16 | to[c] << 16,
-    to[b] = to[b] >>> 12 | to[b] << 20,
-    to[c] ^= to[a & 15] += to[b] + to[(SIGMA[z] >> (x << 3) + 4 & 15) + 27],
-    to[b] ^= to[a >> 8 & 15] += to[c] = to[c] >>> 8 | to[c] << 24,
-    to[b] = to[b] >>> 7 | to[b] << 25; while (x); while (++z < 20);
-  do to[x + 16] ^= to[x] ^ to[x + 8]; while (++x < 8);
+// The BLAKE2s state block is a 28-word `Uint32Array`:
+// m[0:16] | h[0:8] | bytes in current block | t[0:2] | output length
+const blake2s_compress = ($: Uint32Array, final: boolean) => {
+  let a = $[16], b = $[17], c = $[18], d = $[19], e = $[20], f = $[21];
+  let g = $[22], h = $[23], i = SHA256[0], j = SHA256[1], k = SHA256[2];
+  let l = SHA256[3], m = SHA256[4] ^ $[25], n = SHA256[5] ^ $[26];
+  let o = final ? ~SHA256[6] : SHA256[6], p = SHA256[7], z = 0;
+  do m ^= a = a + e + $[SIGMA[z++]] >>> 0,
+    m = m >>> 16 | m << 16,
+    e ^= i = i + m >>> 0,
+    e = e >>> 12 | e << 20,
+    m ^= a = a + e + $[SIGMA[z++]] >>> 0,
+    m = m >>> 8 | m << 24,
+    e ^= i = i + m >>> 0,
+    e = e >>> 7 | e << 25,
+    n ^= b = b + f + $[SIGMA[z++]] >>> 0,
+    n = n >>> 16 | n << 16,
+    f ^= j = j + n >>> 0,
+    f = f >>> 12 | f << 20,
+    n ^= b = b + f + $[SIGMA[z++]] >>> 0,
+    n = n >>> 8 | n << 24,
+    f ^= j = j + n >>> 0,
+    f = f >>> 7 | f << 25,
+    o ^= c = c + g + $[SIGMA[z++]] >>> 0,
+    o = o >>> 16 | o << 16,
+    g ^= k = k + o >>> 0,
+    g = g >>> 12 | g << 20,
+    o ^= c = c + g + $[SIGMA[z++]] >>> 0,
+    o = o >>> 8 | o << 24,
+    g ^= k = k + o >>> 0,
+    g = g >>> 7 | g << 25,
+    p ^= d = d + h + $[SIGMA[z++]] >>> 0,
+    p = p >>> 16 | p << 16,
+    h ^= l = l + p >>> 0,
+    h = h >>> 12 | h << 20,
+    p ^= d = d + h + $[SIGMA[z++]] >>> 0,
+    p = p >>> 8 | p << 24,
+    h ^= l = l + p >>> 0,
+    h = h >>> 7 | h << 25,
+    p ^= a = a + f + $[SIGMA[z++]] >>> 0,
+    p = p >>> 16 | p << 16,
+    f ^= k = k + p >>> 0,
+    f = f >>> 12 | f << 20,
+    p ^= a = a + f + $[SIGMA[z++]] >>> 0,
+    p = p >>> 8 | p << 24,
+    f ^= k = k + p >>> 0,
+    f = f >>> 7 | f << 25,
+    m ^= b = b + g + $[SIGMA[z++]] >>> 0,
+    m = m >>> 16 | m << 16,
+    g ^= l = l + m >>> 0,
+    g = g >>> 12 | g << 20,
+    m ^= b = b + g + $[SIGMA[z++]] >>> 0,
+    m = m >>> 8 | m << 24,
+    g ^= l = l + m >>> 0,
+    g = g >>> 7 | g << 25,
+    n ^= c = c + h + $[SIGMA[z++]] >>> 0,
+    n = n >>> 16 | n << 16,
+    h ^= i = i + n >>> 0,
+    h = h >>> 12 | h << 20,
+    n ^= c = c + h + $[SIGMA[z++]] >>> 0,
+    n = n >>> 8 | n << 24,
+    h ^= i = i + n >>> 0,
+    h = h >>> 7 | h << 25,
+    o ^= d = d + e + $[SIGMA[z++]] >>> 0,
+    o = o >>> 16 | o << 16,
+    e ^= j = j + o >>> 0,
+    e = e >>> 12 | e << 20,
+    o ^= d = d + e + $[SIGMA[z++]] >>> 0,
+    o = o >>> 8 | o << 24,
+    e ^= j = j + o >>> 0,
+    e = e >>> 7 | e << 25; while (z < 160);
+  $[16] ^= a ^ i, $[17] ^= b ^ j, $[18] ^= c ^ k, $[19] ^= d ^ l;
+  $[20] ^= e ^ m, $[21] ^= f ^ n, $[22] ^= g ^ o, $[23] ^= h ^ p;
+  $.fill(0, 0, 16);
 };
-/** Blake2s hasher. */
-export class Blake2s {
-  private state = new Uint32Array(43);
-  /** Creates a new hash instance. */
-  constructor(private length = 32, key?: Uint8Array) {
-    this.state.set(SHA256, 16);
-    this.state[16] ^= length | key?.length! << 8 | 0x01010000;
-    if (key?.length) this.update(key), this.state[24] = 64;
-  }
-  /** Updates the hash state. */
-  update(data: Uint8Array): this {
-    for (let z = 0; z < data.length; ++z) {
-      if (this.state[24] === 64) {
-        this.state[25] += 64, this.state[25] < 64 && ++this.state[26];
-        b2_mix(this.state, false), this.state[24] = 0;
-      }
-      const a = this.state[24] << 3 & 24, b = ++this.state[24] + 107 >> 2;
-      this.state[b] = this.state[b] & ~(255 << a) | data[z] << a & (255 << a);
+/** Initializes the BLAKE2s state. */
+export const blake2s_create = (
+  key?: Uint8Array,
+  length = 32,
+): Uint32Array<ArrayBuffer> => {
+  const state = new Uint32Array(28);
+  state[27] = length = length >>> 0 || 1, key &&= key.subarray(0, 32);
+  state.set(SHA256, 16), state[16] ^= length | key?.length! << 8 | 0x01010000;
+  return key?.length && (blake2s_update(state, key), state[24] = 64), state;
+};
+/** Processes a chunk of data and updates the BLAKE2s state. */
+export const blake2s_update = <A extends Uint32Array>(
+  $: A,
+  input: Uint8Array,
+): A => {
+  for (let z = 0; z < input.length; ++z) {
+    if ($[24] === 64) {
+      $[25] += 64, $[25] < 64 && ++$[26], blake2s_compress($, false), $[24] = 0;
     }
-    return this;
+    $[$[24] >> 2] |= input[z] << ($[24]++ << 3);
   }
-  /** Computes a digest from the current state. */
-  finalize<A extends Uint8Array = Uint8Array<ArrayBuffer>>(into?: A): A {
-    const a = new Uint8Array(this.length), b = new DataView(this.state.buffer);
-    let c = this.state[24] + 108;
-    this.state.fill(0, c + 3 >> 2)[25] += this.state[24];
-    this.state[25] < this.state[24] && ++this.state[26];
-    c & 3 && b.setUint8(c, 0), (c ^ c >> 1) & 1 && b.setUint8(c + 1, 0);
-    c & 1 & ~c >> 1 && b.setUint8(c + 2, 0), b2_mix(this.state, true), c = 0;
-    while (c < this.length) a[c] = this.state[c + 64 >> 2] >> (c++ << 3 & 24);
-    return into ? (into.set(a.subarray(0, into.length)), into) : a as A;
+  return $;
+};
+/** Finalizes a BLAKE2s state into a fixed-length hash. */
+export const blake2s_digest = ($: Uint32Array): Uint8Array<ArrayBuffer> => {
+  $[25] += $[24], $[25] < $[24] && ++$[26], blake2s_compress($, true);
+  const out = new Uint8Array($[27]);
+  for (let z = 0; z < out.length; ++z) out[z] = $[z + 64 >> 2] >> (z << 3);
+  return out;
+};
+/** Hashes with BLAKE2s. */
+export const blake2s = (
+  input: Uint8Array,
+  key?: Uint8Array,
+  length?: number,
+): Uint8Array<ArrayBuffer> =>
+  blake2s_digest(blake2s_update(blake2s_create(key, length), input));
+const LE = SHA512.map((_, z, $) => $[z ^ 1]), S2 = SIGMA.map(($) => $ << 1);
+// The BLAKE2s state block is a 54-word `Uint32Array`:
+// m[0:32] | h[0:16] | bytes in current block | t[0:4] | output length
+const blake2b_compress = ($: Uint32Array, final: boolean) => {
+  let a0 = $[32], a1 = $[33], b0 = $[34], b1 = $[35], c0 = $[36], c1 = $[37];
+  let d0 = $[38], d1 = $[39], e0 = $[40], e1 = $[41], f0 = $[42], f1 = $[43];
+  let g0 = $[44], g1 = $[45], h0 = $[46], h1 = $[47], i0 = LE[0], i1 = LE[1];
+  let j0 = LE[2], j1 = LE[3], k0 = LE[4], k1 = LE[5], l0 = LE[6], l1 = LE[7];
+  let m0 = LE[8] ^ $[49], m1 = LE[9] ^ $[50], n0 = LE[10] ^ $[51];
+  let n1 = LE[11] ^ $[52], o0 = final ? ~LE[12] : LE[12];
+  let o1 = final ? ~LE[13] : LE[13], p0 = LE[14], p1 = LE[15], q, z = 0;
+  do a0 += e0 + $[S2[z]],
+    a1 = a1 + e1 + $[S2[z++] + 1] + (a0 / Max.U | 0) | 0,
+    a0 >>>= 0,
+    q = m0 ^ a0,
+    m0 = (m1 ^ a1) >>> 0,
+    m1 = q >>> 0,
+    i0 += m0,
+    i1 = i1 + m1 + (i0 / Max.U | 0) | 0,
+    i0 >>>= 0,
+    q = e0 ^ i0,
+    e1 ^= i1,
+    e0 = (q >>> 24 ^ e1 << 8) >>> 0,
+    e1 = (e1 >>> 24 ^ q << 8) >>> 0,
+    a0 += e0 + $[S2[z]],
+    a1 = a1 + e1 + $[S2[z++] + 1] + (a0 / Max.U | 0) | 0,
+    a0 >>>= 0,
+    q = m0 ^ a0,
+    m1 ^= a1,
+    m0 = (q >>> 16 ^ m1 << 16) >>> 0,
+    m1 = (m1 >>> 16 ^ q << 16) >>> 0,
+    i0 += m0,
+    i1 = i1 + m1 + (i0 / Max.U | 0) | 0,
+    i0 >>>= 0,
+    q = e0 ^ i0,
+    e1 ^= i1,
+    e0 = (e1 >>> 31 ^ q << 1) >>> 0,
+    e1 = (q >>> 31 ^ e1 << 1) >>> 0,
+    b0 += f0 + $[S2[z]],
+    b1 = b1 + f1 + $[S2[z++] + 1] + (b0 / Max.U | 0) | 0,
+    b0 >>>= 0,
+    q = n0 ^ b0,
+    n0 = (n1 ^ b1) >>> 0,
+    n1 = q >>> 0,
+    j0 += n0,
+    j1 = j1 + n1 + (j0 / Max.U | 0) | 0,
+    j0 >>>= 0,
+    q = f0 ^ j0,
+    f1 ^= j1,
+    f0 = (q >>> 24 ^ f1 << 8) >>> 0,
+    f1 = (f1 >>> 24 ^ q << 8) >>> 0,
+    b0 += f0 + $[S2[z]],
+    b1 = b1 + f1 + $[S2[z++] + 1] + (b0 / Max.U | 0) | 0,
+    b0 >>>= 0,
+    q = n0 ^ b0,
+    n1 ^= b1,
+    n0 = (q >>> 16 ^ n1 << 16) >>> 0,
+    n1 = (n1 >>> 16 ^ q << 16) >>> 0,
+    j0 += n0,
+    j1 = j1 + n1 + (j0 / Max.U | 0) | 0,
+    j0 >>>= 0,
+    q = f0 ^ j0,
+    f1 ^= j1,
+    f0 = (f1 >>> 31 ^ q << 1) >>> 0,
+    f1 = (q >>> 31 ^ f1 << 1) >>> 0,
+    c0 += g0 + $[S2[z]],
+    c1 = c1 + g1 + $[S2[z++] + 1] + (c0 / Max.U | 0) | 0,
+    c0 >>>= 0,
+    q = o0 ^ c0,
+    o0 = (o1 ^ c1) >>> 0,
+    o1 = q >>> 0,
+    k0 += o0,
+    k1 = k1 + o1 + (k0 / Max.U | 0) | 0,
+    k0 >>>= 0,
+    q = g0 ^ k0,
+    g1 ^= k1,
+    g0 = (q >>> 24 ^ g1 << 8) >>> 0,
+    g1 = (g1 >>> 24 ^ q << 8) >>> 0,
+    c0 += g0 + $[S2[z]],
+    c1 = c1 + g1 + $[S2[z++] + 1] + (c0 / Max.U | 0) | 0,
+    c0 >>>= 0,
+    q = o0 ^ c0,
+    o1 ^= c1,
+    o0 = (q >>> 16 ^ o1 << 16) >>> 0,
+    o1 = (o1 >>> 16 ^ q << 16) >>> 0,
+    k0 += o0,
+    k1 = k1 + o1 + (k0 / Max.U | 0) | 0,
+    k0 >>>= 0,
+    q = g0 ^ k0,
+    g1 ^= k1,
+    g0 = (g1 >>> 31 ^ q << 1) >>> 0,
+    g1 = (q >>> 31 ^ g1 << 1) >>> 0,
+    d0 += h0 + $[S2[z]],
+    d1 = d1 + h1 + $[S2[z++] + 1] + (d0 / Max.U | 0) | 0,
+    d0 >>>= 0,
+    q = p0 ^ d0,
+    p0 = (p1 ^ d1) >>> 0,
+    p1 = q >>> 0,
+    l0 += p0,
+    l1 = l1 + p1 + (l0 / Max.U | 0) | 0,
+    l0 >>>= 0,
+    q = h0 ^ l0,
+    h1 ^= l1,
+    h0 = (q >>> 24 ^ h1 << 8) >>> 0,
+    h1 = (h1 >>> 24 ^ q << 8) >>> 0,
+    d0 += h0 + $[S2[z]],
+    d1 = d1 + h1 + $[S2[z++] + 1] + (d0 / Max.U | 0) | 0,
+    d0 >>>= 0,
+    q = p0 ^ d0,
+    p1 ^= d1,
+    p0 = (q >>> 16 ^ p1 << 16) >>> 0,
+    p1 = (p1 >>> 16 ^ q << 16) >>> 0,
+    l0 += p0,
+    l1 = l1 + p1 + (l0 / Max.U | 0) | 0,
+    l0 >>>= 0,
+    q = h0 ^ l0,
+    h1 ^= l1,
+    h0 = (h1 >>> 31 ^ q << 1) >>> 0,
+    h1 = (q >>> 31 ^ h1 << 1) >>> 0,
+    a0 += f0 + $[S2[z]],
+    a1 = a1 + f1 + $[S2[z++] + 1] + (a0 / Max.U | 0) | 0,
+    a0 >>>= 0,
+    q = p0 ^ a0,
+    p0 = (p1 ^ a1) >>> 0,
+    p1 = q >>> 0,
+    k0 += p0,
+    k1 = k1 + p1 + (k0 / Max.U | 0) | 0,
+    k0 >>>= 0,
+    q = f0 ^ k0,
+    f1 ^= k1,
+    f0 = (q >>> 24 ^ f1 << 8) >>> 0,
+    f1 = (f1 >>> 24 ^ q << 8) >>> 0,
+    a0 += f0 + $[S2[z]],
+    a1 = a1 + f1 + $[S2[z++] + 1] + (a0 / Max.U | 0) | 0,
+    a0 >>>= 0,
+    q = p0 ^ a0,
+    p1 ^= a1,
+    p0 = (q >>> 16 ^ p1 << 16) >>> 0,
+    p1 = (p1 >>> 16 ^ q << 16) >>> 0,
+    k0 += p0,
+    k1 = k1 + p1 + (k0 / Max.U | 0) | 0,
+    k0 >>>= 0,
+    q = f0 ^ k0,
+    f1 ^= k1,
+    f0 = (f1 >>> 31 ^ q << 1) >>> 0,
+    f1 = (q >>> 31 ^ f1 << 1) >>> 0,
+    b0 += g0 + $[S2[z]],
+    b1 = b1 + g1 + $[S2[z++] + 1] + (b0 / Max.U | 0) | 0,
+    b0 >>>= 0,
+    q = m0 ^ b0,
+    m0 = (m1 ^ b1) >>> 0,
+    m1 = q >>> 0,
+    l0 += m0,
+    l1 = l1 + m1 + (l0 / Max.U | 0) | 0,
+    l0 >>>= 0,
+    q = g0 ^ l0,
+    g1 ^= l1,
+    g0 = (q >>> 24 ^ g1 << 8) >>> 0,
+    g1 = (g1 >>> 24 ^ q << 8) >>> 0,
+    b0 += g0 + $[S2[z]],
+    b1 = b1 + g1 + $[S2[z++] + 1] + (b0 / Max.U | 0) | 0,
+    b0 >>>= 0,
+    q = m0 ^ b0,
+    m1 ^= b1,
+    m0 = (q >>> 16 ^ m1 << 16) >>> 0,
+    m1 = (m1 >>> 16 ^ q << 16) >>> 0,
+    l0 += m0,
+    l1 = l1 + m1 + (l0 / Max.U | 0) | 0,
+    l0 >>>= 0,
+    q = g0 ^ l0,
+    g1 ^= l1,
+    g0 = (g1 >>> 31 ^ q << 1) >>> 0,
+    g1 = (q >>> 31 ^ g1 << 1) >>> 0,
+    c0 += h0 + $[S2[z]],
+    c1 = c1 + h1 + $[S2[z++] + 1] + (c0 / Max.U | 0) | 0,
+    c0 >>>= 0,
+    q = n0 ^ c0,
+    n0 = (n1 ^ c1) >>> 0,
+    n1 = q >>> 0,
+    i0 += n0,
+    i1 = i1 + n1 + (i0 / Max.U | 0) | 0,
+    i0 >>>= 0,
+    q = h0 ^ i0,
+    h1 ^= i1,
+    h0 = (q >>> 24 ^ h1 << 8) >>> 0,
+    h1 = (h1 >>> 24 ^ q << 8) >>> 0,
+    c0 += h0 + $[S2[z]],
+    c1 = c1 + h1 + $[S2[z++] + 1] + (c0 / Max.U | 0) | 0,
+    c0 >>>= 0,
+    q = n0 ^ c0,
+    n1 ^= c1,
+    n0 = (q >>> 16 ^ n1 << 16) >>> 0,
+    n1 = (n1 >>> 16 ^ q << 16) >>> 0,
+    i0 += n0,
+    i1 = i1 + n1 + (i0 / Max.U | 0) | 0,
+    i0 >>>= 0,
+    q = h0 ^ i0,
+    h1 ^= i1,
+    h0 = (h1 >>> 31 ^ q << 1) >>> 0,
+    h1 = (q >>> 31 ^ h1 << 1) >>> 0,
+    d0 += e0 + $[S2[z]],
+    d1 = d1 + e1 + $[S2[z++] + 1] + (d0 / Max.U | 0) | 0,
+    d0 >>>= 0,
+    q = o0 ^ d0,
+    o0 = (o1 ^ d1) >>> 0,
+    o1 = q >>> 0,
+    j0 += o0,
+    j1 = j1 + o1 + (j0 / Max.U | 0) | 0,
+    j0 >>>= 0,
+    q = e0 ^ j0,
+    e1 ^= j1,
+    e0 = (q >>> 24 ^ e1 << 8) >>> 0,
+    e1 = (e1 >>> 24 ^ q << 8) >>> 0,
+    d0 += e0 + $[S2[z]],
+    d1 = d1 + e1 + $[S2[z++] + 1] + (d0 / Max.U | 0) | 0,
+    d0 >>>= 0,
+    q = o0 ^ d0,
+    o1 ^= d1,
+    o0 = (q >>> 16 ^ o1 << 16) >>> 0,
+    o1 = (o1 >>> 16 ^ q << 16) >>> 0,
+    j0 += o0,
+    j1 = j1 + o1 + (j0 / Max.U | 0) | 0,
+    j0 >>>= 0,
+    q = e0 ^ j0,
+    e1 ^= j1,
+    e0 = (e1 >>> 31 ^ q << 1) >>> 0,
+    e1 = (q >>> 31 ^ e1 << 1) >>> 0; while (z < 192);
+  $[32] ^= a0 ^ i0, $[33] ^= a1 ^ i1, $[34] ^= b0 ^ j0, $[35] ^= b1 ^ j1;
+  $[36] ^= c0 ^ k0, $[37] ^= c1 ^ k1, $[38] ^= d0 ^ l0, $[39] ^= d1 ^ l1;
+  $[40] ^= e0 ^ m0, $[41] ^= e1 ^ m1, $[42] ^= f0 ^ n0, $[43] ^= f1 ^ n1;
+  $[44] ^= g0 ^ o0, $[45] ^= g1 ^ o1, $[46] ^= h0 ^ p0, $[47] ^= h1 ^ p1;
+  $.fill(0, 0, 32);
+};
+export const blake2b_create = (key?: Uint8Array, length = 64) => {
+  const state = new Uint32Array(54);
+  state[53] = length = length >>> 0 || 1, key &&= key.subarray(0, 64);
+  state.set(LE, 32), state[32] ^= length | key?.length! << 8 | 0x01010000;
+  if (key?.length) blake2b_update(state, key), state[48] = 128;
+  return state;
+};
+export const blake2b_update = ($: Uint32Array, input: Uint8Array) => {
+  for (let z = 0; z < input.length; ++z) {
+    if ($[48] === 128) {
+      ($[49] += 128) < Max.U || ++$[50] < Max.U || ++$[51] < Max.U || ++$[52];
+      blake2b_compress($, false), $[48] = 0;
+    }
+    $[$[48] >> 2] |= input[z] << ($[48]++ << 3);
   }
-}
+  return $;
+};
+export const blake2b_digest = ($: Uint32Array): Uint8Array<ArrayBuffer> => {
+  ($[49] += $[48]) < Max.U || ++$[50] < Max.U || ++$[51] < Max.U || ++$[52];
+  blake2b_compress($, true);
+  const out = new Uint8Array($[53]);
+  for (let z = 0; z < out.length; ++z) out[z] = $[z + 128 >> 2] >> (z << 3);
+  return out;
+};
+export const blake2b = (input: Uint8Array, key?: Uint8Array, length?: number) =>
+  blake2b_digest(blake2b_update(blake2b_create(key, length), input));

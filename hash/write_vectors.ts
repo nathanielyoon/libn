@@ -48,17 +48,29 @@ await write_vectors(import.meta, {
         })),
     ),
   },
-  blake2: await get_rfc(7693, 49161, 54202).then(($) =>
-    $.matchAll(/blake2([bs])_res\[32\] = \{(.+?)\}.+?\{(.+?)\}.+?\{(.+?)\}/gs)
-      .reduce((to, [_, flavor, result, md_len, in_len]) => ({
-        ...to,
-        [flavor]: {
-          result: hex(result.toLowerCase()),
-          md: JSON.parse(`[${md_len}]`),
-          in: JSON.parse(`[${in_len}]`),
-        },
-      }), {})
-  ),
+  blake2: {
+    reference: await Array.fromAsync("bs", (flavor) =>
+      fetch(
+        `https://raw.githubusercontent.com/BLAKE2/BLAKE2/eec32b7170d8dbe4eb59c9afad2ee9297393fb5b/testvectors/blake2${flavor}-kat.txt`,
+      ).then(($) => $.text()).then((text) => [
+        flavor,
+        text.trim().split("\n\n").map(($) =>
+          Object.fromEntries($.split("\n").map((line) => line.split(":\t")))
+        ),
+      ])).then(Object.fromEntries),
+
+    selftest: await get_rfc(7693, 49161, 54202).then(($) =>
+      $.matchAll(/blake2([bs])_res\[32\] = \{(.+?)\}.+?\{(.+?)\}.+?\{(.+?)\}/gs)
+        .reduce((to, [_, flavor, result, md_len, in_len]) => ({
+          ...to,
+          [flavor]: {
+            result: hex(result.toLowerCase()),
+            md: JSON.parse(`[${md_len}]`),
+            in: JSON.parse(`[${in_len}]`),
+          },
+        }), {})
+    ),
+  },
   blake3: await fetch(
     "https://raw.githubusercontent.com/BLAKE3-team/BLAKE3/ae3e8e6b3a5ae3190ca5d62820789b17886a0038/test_vectors/test_vectors.json",
   ).then<{

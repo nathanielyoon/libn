@@ -1,4 +1,4 @@
-import { min, SHA256 } from "./common.ts";
+import { Max, min, SHA256 } from "./common.ts";
 
 const enum Size {
   BLOCK = 64,
@@ -15,11 +15,11 @@ const enum Flag {
 }
 const PERMUTE = /* @__PURE__ */ Uint8Array.from(
   "0123456789abcdef263a704d1bc59ef834acd27e6590bf81a7c9e3df40b25816cd9bfae8725301649eb58cf1d30a2647bf501986ea2c347d",
-  (Z) => parseInt(Z, 16) << 2,
+  ($) => parseInt($, 16) << 2,
 );
 const mix = (
   use: Uint32Array,
-  $: DataView,
+  state: DataView,
   at: number,
   byte: number,
   flag: number,
@@ -27,68 +27,68 @@ const mix = (
 ) => {
   let a = use[0], b = use[1], c = use[2], d = use[3], e = use[4], f = use[5];
   let g = use[6], h = use[7], i = SHA256[0], j = SHA256[1], k = SHA256[2];
-  let l = SHA256[3], m = at, n = at / 0x100000000, o = byte, p = flag, z = 0;
-  do m ^= a = a + e + $.getUint32(PERMUTE[z++], true) | 0,
+  let l = SHA256[3], m = at, n = at / Max.U, o = byte, p = flag, z = 0;
+  do m ^= a = a + e + state.getUint32(PERMUTE[z++], true) | 0,
     m = m << 16 | m >>> 16,
     e ^= i = i + m | 0,
     e = e << 20 | e >>> 12,
-    m ^= a = a + e + $.getUint32(PERMUTE[z++], true) | 0,
+    m ^= a = a + e + state.getUint32(PERMUTE[z++], true) | 0,
     m = m << 24 | m >>> 8,
     e ^= i = i + m | 0,
     e = e << 25 | e >>> 7,
-    n ^= b = b + f + $.getUint32(PERMUTE[z++], true) | 0,
+    n ^= b = b + f + state.getUint32(PERMUTE[z++], true) | 0,
     n = n << 16 | n >>> 16,
     f ^= j = j + n | 0,
     f = f << 20 | f >>> 12,
-    n ^= b = b + f + $.getUint32(PERMUTE[z++], true) | 0,
+    n ^= b = b + f + state.getUint32(PERMUTE[z++], true) | 0,
     n = n << 24 | n >>> 8,
     f ^= j = j + n | 0,
     f = f << 25 | f >>> 7,
-    o ^= c = c + g + $.getUint32(PERMUTE[z++], true) | 0,
+    o ^= c = c + g + state.getUint32(PERMUTE[z++], true) | 0,
     o = o << 16 | o >>> 16,
     g ^= k = k + o | 0,
     g = g << 20 | g >>> 12,
-    o ^= c = c + g + $.getUint32(PERMUTE[z++], true) | 0,
+    o ^= c = c + g + state.getUint32(PERMUTE[z++], true) | 0,
     o = o << 24 | o >>> 8,
     g ^= k = k + o | 0,
     g = g << 25 | g >>> 7,
-    p ^= d = d + h + $.getUint32(PERMUTE[z++], true) | 0,
+    p ^= d = d + h + state.getUint32(PERMUTE[z++], true) | 0,
     p = p << 16 | p >>> 16,
     h ^= l = l + p | 0,
     h = h << 20 | h >>> 12,
-    p ^= d = d + h + $.getUint32(PERMUTE[z++], true) | 0,
+    p ^= d = d + h + state.getUint32(PERMUTE[z++], true) | 0,
     p = p << 24 | p >>> 8,
     h ^= l = l + p | 0,
     h = h << 25 | h >>> 7,
-    p ^= a = a + f + $.getUint32(PERMUTE[z++], true) | 0,
+    p ^= a = a + f + state.getUint32(PERMUTE[z++], true) | 0,
     p = p << 16 | p >>> 16,
     f ^= k = k + p | 0,
     f = f << 20 | f >>> 12,
-    p ^= a = a + f + $.getUint32(PERMUTE[z++], true) | 0,
+    p ^= a = a + f + state.getUint32(PERMUTE[z++], true) | 0,
     p = p << 24 | p >>> 8,
     f ^= k = k + p | 0,
     f = f << 25 | f >>> 7,
-    m ^= b = b + g + $.getUint32(PERMUTE[z++], true) | 0,
+    m ^= b = b + g + state.getUint32(PERMUTE[z++], true) | 0,
     m = m << 16 | m >>> 16,
     g ^= l = l + m | 0,
     g = g << 20 | g >>> 12,
-    m ^= b = b + g + $.getUint32(PERMUTE[z++], true) | 0,
+    m ^= b = b + g + state.getUint32(PERMUTE[z++], true) | 0,
     m = m << 24 | m >>> 8,
     g ^= l = l + m | 0,
     g = g << 25 | g >>> 7,
-    n ^= c = c + h + $.getUint32(PERMUTE[z++], true) | 0,
+    n ^= c = c + h + state.getUint32(PERMUTE[z++], true) | 0,
     n = n << 16 | n >>> 16,
     h ^= i = i + n | 0,
     h = h << 20 | h >>> 12,
-    n ^= c = c + h + $.getUint32(PERMUTE[z++], true) | 0,
+    n ^= c = c + h + state.getUint32(PERMUTE[z++], true) | 0,
     n = n << 24 | n >>> 8,
     h ^= i = i + n | 0,
     h = h << 25 | h >>> 7,
-    o ^= d = d + e + $.getUint32(PERMUTE[z++], true) | 0,
+    o ^= d = d + e + state.getUint32(PERMUTE[z++], true) | 0,
     o = o << 16 | o >>> 16,
     e ^= j = j + o | 0,
     e = e << 20 | e >>> 12,
-    o ^= d = d + e + $.getUint32(PERMUTE[z++], true) | 0,
+    o ^= d = d + e + state.getUint32(PERMUTE[z++], true) | 0,
     o = o << 24 | o >>> 8,
     e ^= j = j + o | 0,
     e = e << 25 | e >>> 7; while (z < 112);
@@ -137,10 +137,12 @@ const blake3 = (
   } while (z < out);
   return h;
 };
-const b_b32 = ($: Uint8Array) => {
-  const a = new Uint32Array(8);
-  for (let z = 0; z < 32; ++z) a[z >> 2] |= $[z] << (z << 3);
-  return a;
+const en_u32 = ($: Uint8Array) => {
+  const words = new Uint32Array(8);
+  let z = 8, a;
+  do words[--z] = $[a = z << 2] | $[a + 1] << 8 | $[a + 2] << 16 |
+    $[a + 3] << 24; while (z);
+  return words;
 };
 /** Hashes with BLAKE3 (unkeyed). */
 export const blake3_hash = (
@@ -152,13 +154,13 @@ export const blake3_keyed = (
   key: Uint8Array,
   $: Uint8Array,
   out?: number,
-): Uint8Array<ArrayBuffer> => blake3(b_b32(key), Flag.KEYED, $, out);
+): Uint8Array<ArrayBuffer> => blake3(en_u32(key), Flag.KEYED, $, out);
 /** Creates a key derivation function with BLAKE3 (that can skip blocks). */
 export const blake3_derive = (
   context: Uint8Array,
 ): ($: Uint8Array, out?: number, at?: number) => Uint8Array<ArrayBuffer> =>
   blake3.bind(
     null,
-    b_b32(blake3(SHA256.subarray(0, 8), Flag.DERIVE_CONTEXT, context)),
+    en_u32(blake3(SHA256.subarray(0, 8), Flag.DERIVE_CONTEXT, context)),
     Flag.DERIVE_KEY,
   );

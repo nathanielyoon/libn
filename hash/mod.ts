@@ -30,10 +30,6 @@
  *   blake3_hash(data),
  *   new Uint8Array(await crypto.subtle.digest("BLAKE3", data)),
  * );
- * assertEquals(
- *   new Blake2s().update(data).finalize(),
- *   new Uint8Array(await crypto.subtle.digest("BLAKE2s", data)),
- * );
  * ```
  *
  * @example Signing
@@ -84,16 +80,6 @@
 import { sha256, sha512 } from "./src/sha2.ts";
 import { hmac } from "./src/hmac.ts";
 import { hkdf } from "./src/hkdf.ts";
-import { Blake2s } from "./src/blake2.ts";
 import { blake3_derive, blake3_hash, blake3_keyed } from "./src/blake3.ts";
 
-export {
-  Blake2s,
-  blake3_derive,
-  blake3_hash,
-  blake3_keyed,
-  hkdf,
-  hmac,
-  sha256,
-  sha512,
-};
+export { blake3_derive, blake3_hash, blake3_keyed, hkdf, hmac, sha256, sha512 };
