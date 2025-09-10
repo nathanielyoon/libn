@@ -36,11 +36,11 @@ import { polyxchacha, xchachapoly } from "./src/aead.ts";
 /** Encrypts with XChaCha20-Poly1305. */
 export const encrypt = (
   key: Uint8Array,
-  $: Uint8Array,
-  data?: Uint8Array,
+  plaintext: Uint8Array,
+  additional_data: Uint8Array = new Uint8Array(),
 ): Uint8Array<ArrayBuffer> | null => {
   const iv = crypto.getRandomValues(new Uint8Array(24));
-  const ciphertext_tag = xchachapoly(key, iv, $, data ?? new Uint8Array());
+  const ciphertext_tag = xchachapoly(key, iv, plaintext, additional_data);
   if (!ciphertext_tag) return ciphertext_tag;
   const iv_ciphertext_tag = new Uint8Array(ciphertext_tag.length + 24);
   iv_ciphertext_tag.set(iv), iv_ciphertext_tag.set(ciphertext_tag, 24);
@@ -49,7 +49,12 @@ export const encrypt = (
 /** Decrypts with XChaCha20-Poly1305. */
 export const decrypt = (
   key: Uint8Array,
-  $: Uint8Array,
-  data?: Uint8Array,
+  iv_ciphertext_tag: Uint8Array,
+  additional_data: Uint8Array = new Uint8Array(),
 ): Uint8Array<ArrayBuffer> | null =>
-  polyxchacha(key, $.subarray(0, 24), $.subarray(24), data ?? new Uint8Array());
+  polyxchacha(
+    key,
+    iv_ciphertext_tag.subarray(0, 24),
+    iv_ciphertext_tag.subarray(24),
+    additional_data,
+  );
