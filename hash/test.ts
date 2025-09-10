@@ -3,7 +3,7 @@ import { crypto } from "@std/crypto";
 import fc from "fast-check";
 import { de_b16, en_b16 } from "@libn/base";
 import { fc_bin, fc_check } from "../test.ts";
-import { sha256, sha512 } from "./src/sha2.ts";
+import { sha256, sha512 } from "./src/md.ts";
 import { hmac } from "./src/hmac.ts";
 import { hkdf } from "./src/hkdf.ts";
 import { blake3_derive, blake3_hash, blake3_keyed } from "./src/blake3.ts";

@@ -1,7 +1,29 @@
-import { HI, LO, Max, md, SHA256, SHA512 } from "./common.ts";
+import { HI, LO, Max, min, SHA256, SHA512 } from "./common.ts";
 
 /** SHA-2 function. */
 export type Sha2 = ($: Uint8Array) => Uint8Array<ArrayBuffer>;
+const md = (
+  base: Uint32Array,
+  block: number,
+  out: number,
+  pad: number,
+  mix: (use: Uint32Array, data: DataView, at: number, to: Uint32Array) => void,
+  $: Uint8Array,
+) => {
+  const length = $.length, data = new Uint8Array(block);
+  const use = new Uint32Array(block * 10 >> 3), state = new Uint32Array(base);
+  let view = new DataView($.buffer, $.byteOffset), z = 0, y = 0;
+  while (z < length) {
+    const size = min(block - y, length - z);
+    if (size !== block) data.set($.subarray(z, z += size)), y += size;
+    else do mix(use, view, z, state), z += block; while (length - z >= block);
+  }
+  view = new DataView(data.buffer), data[y] = 128;
+  block - ++y < pad && mix(use, view, y = 0, state), data.fill(0, y), y = out;
+  view.setBigUint64(block - 8, BigInt(length) << 3n), mix(use, view, 0, state);
+  do view.setUint32(y -= 4, state[y >> 2]); while (y);
+  return new Uint8Array(data.subarray(0, out));
+};
 /** Hashes with SHA-256. */
 export const sha256: Sha2 = /* @__PURE__ */
   md.bind(null, SHA256, 64, 32, 8, (use, data, at, to) => {

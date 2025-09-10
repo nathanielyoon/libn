@@ -77,7 +77,7 @@
  * @module hash
  */
 
-import { sha256, sha512 } from "./src/sha2.ts";
+import { sha256, sha512 } from "./src/md.ts";
 import { hmac } from "./src/hmac.ts";
 import { hkdf } from "./src/hkdf.ts";
 import { blake3_derive, blake3_hash, blake3_keyed } from "./src/blake3.ts";
