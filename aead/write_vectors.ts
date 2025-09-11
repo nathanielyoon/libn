@@ -24,6 +24,17 @@ await write_vectors(import.meta, {
       tag: hex($.slice(15019, 15066)),
     },
   })),
+  xchacha: await fetch(
+    "https://www.ietf.org/archive/id/draft-irtf-cfrg-xchacha-03.txt",
+  ).then(async ($) =>
+    (await $.text()).slice(31877, 34302).match(/(?:[\da-f]{32,}\s*)+/g)!
+  ).then(($) => ({
+    key: $[1].trim(),
+    iv: $[2].trim(),
+    plaintext: $[0].replace(/\s/g, ""),
+    keystream: $[3].replace(/\s/g, ""),
+    ciphertext: $[4].replace(/\s/g, ""),
+  })),
   donna: await fetch(
     `https://raw.githubusercontent.com/floodyberry/poly1305-donna/e6ad6e091d30d7f4ec2d4f978be1fcfcbce72781/poly1305-donna.c`,
   ).then(async ($) =>
