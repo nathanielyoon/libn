@@ -41,7 +41,7 @@ export class Presigner {
     // Endpoint should be a valid URL (i.e. with scheme) but this only preserves
     // the hostname and uses `https://` for all outputs.
     this.host = new URL(env.S3_ENDPOINT).hostname; // no need for port
-    // Converts to `yyyyMMddTHHmmssZ` format by removing the time's fractional
+    // Convert to `yyyyMMddTHHmmssZ` format by removing the time's fractional
     // part and all the "-" and ":" characters.
     const datetime = timestamp.toISOString().replace(/\....|\W/g, "");
     const date = datetime.slice(0, 8);
