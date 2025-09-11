@@ -31,8 +31,9 @@
  * @module aead
  */
 
-import { polyxchacha, xchachapoly } from "./src/aead.ts";
+import { polyxchacha, xchachapoly, xor } from "./src/aead.ts";
 
+export { xor };
 /** Encrypts with XChaCha20-Poly1305. */
 export const encrypt = (
   key: Uint8Array,

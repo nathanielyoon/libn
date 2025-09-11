@@ -1,13 +1,13 @@
 import { chacha, hchacha } from "./chacha.ts";
 import { poly } from "./poly.ts";
 
-const xor = (key: DataView, iv: DataView, text: Uint8Array) => {
-  // `iv_0` (first 4 bytes) is a constant `0`.
-  const iv_1 = iv.getUint32(16, true), iv_2 = iv.getUint32(20, true);
-  const state = new Uint32Array(16), most = text.length & ~63;
-  let a = new DataView(text.buffer, text.byteOffset), z = 0, y = 1;
+const crypt = (key: DataView, iv: DataView, $: Uint8Array, start = 1) => {
+  // `iv0` (first 4 bytes) is a constant `0`.
+  const iv1 = iv.getUint32(16, true), iv2 = iv.getUint32(20, true);
+  const state = new Uint32Array(16), most = $.length & ~63;
+  let a = new DataView($.buffer, $.byteOffset), z = 0, y = start;
   while (z < most) {
-    chacha(key, y++, 0, iv_1, iv_2, state);
+    chacha(key, y++, 0, iv1, iv2, state);
     a.setUint32(z, a.getUint32(z, true) ^ state[0], true);
     a.setUint32(z + 4, a.getUint32(z + 4, true) ^ state[1], true);
     a.setUint32(z + 8, a.getUint32(z + 8, true) ^ state[2], true);
@@ -25,9 +25,9 @@ const xor = (key: DataView, iv: DataView, text: Uint8Array) => {
     a.setUint32(z + 56, a.getUint32(z + 56, true) ^ state[14], true);
     a.setUint32(z + 60, a.getUint32(z + 60, true) ^ state[15], true), z += 64;
   }
-  if (most < text.length) {
-    chacha(key, y, y = 0, iv_1, iv_2, state), a = new DataView(state.buffer);
-    do text[z] ^= a.getUint8(y++); while (++z < text.length);
+  if (most < $.length) {
+    chacha(key, y, y = 0, iv1, iv2, state), a = new DataView(state.buffer);
+    do $[z] ^= a.getUint8(y++); while (++z < $.length);
   }
 };
 const mac = (key: Uint32Array, ciphertext: Uint8Array, data: Uint8Array) => {
@@ -36,6 +36,13 @@ const mac = (key: Uint32Array, ciphertext: Uint8Array, data: Uint8Array) => {
   message.set(data), view.setUint32(b, data.length, true);
   message.set(ciphertext, a), view.setUint32(b + 8, ciphertext.length, true);
   return poly(new DataView(key.buffer), message);
+};
+const UNUSED = new Uint32Array(32);
+/** If parameters are valid, XORs the text in-place. */
+export const xor = (key: Uint8Array, iv: Uint8Array, $: Uint8Array): void => {
+  if (key.length !== 32 || iv.length !== 24) return;
+  const a = new DataView(iv.buffer, iv.byteOffset);
+  crypt(hchacha(new DataView(key.buffer, key.byteOffset), a, UNUSED), a, $, 0);
 };
 /** If parameters are valid, XORs the plaintext in-place, then returns a tag. */
 export const xchachapoly = (
@@ -49,7 +56,7 @@ export const xchachapoly = (
   const mac_key = new Uint32Array(16);
   const xor_key = hchacha(new DataView(key.buffer, key.byteOffset), a, mac_key);
   chacha(xor_key, 0, 0, a.getUint32(16, true), a.getUint32(20, true), mac_key);
-  return xor(xor_key, a, plaintext), mac(mac_key, plaintext, associated_data);
+  return crypt(xor_key, a, plaintext), mac(mac_key, plaintext, associated_data);
 };
 /** If parameters are valid, checks a tag, then XORs the ciphertext in-place. */
 export const polyxchacha = (
@@ -67,5 +74,5 @@ export const polyxchacha = (
   const calculated_tag = mac(mac_key, ciphertext, associated_data);
   let z = 16, y = 0;
   do y |= tag[--z] ^ calculated_tag[z]; while (z);
-  return !y && (xor(xor_key, a, ciphertext), true);
+  return !y && (crypt(xor_key, a, ciphertext), true);
 };
