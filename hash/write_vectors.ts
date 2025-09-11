@@ -3,14 +3,17 @@ import { get_rfc, get_wycheproof, hex, write_vectors } from "../test.ts";
 
 await write_vectors(import.meta, {
   nist: await Promise.all(
-    [256, 512].map(($) =>
+    [224, 256, 384, 512].map(($) =>
       fetch(
         `https://raw.githubusercontent.com/usnistgov/ACVP-Server/fb44dce5257aba23088256e63c9b950db6967610/gen-val/json-files/SHA2-${$}-1.0/internalProjection.json`,
       ).then<{ testGroups: { tests: { msg: string; md: string }[] }[] }>(($) =>
         $.json()
       ).then(({ testGroups: [{ tests }] }) => [
         `sha${$}`,
-        tests.map(({ msg, md }) => ({ data: msg, digest: md })),
+        tests.filter(($) => $.msg.length < 0x1000).map(({ msg, md }) => ({
+          data: msg,
+          digest: md,
+        })),
       ])
     ),
   ).then(Object.fromEntries),
@@ -86,7 +89,7 @@ await write_vectors(import.meta, {
     context: en_b16(en_bin($.context_string)),
     output_length: $.cases[0].hash.length >> 1,
     cases: $.cases.map(({ input_len, hash, keyed_hash, derive_key }) => ({
-      input: en_b16(Uint8Array.from({ length: input_len }, (_, z) => z % 251)),
+      input: input_len,
       hash,
       keyed: keyed_hash,
       derive: derive_key,

@@ -8,11 +8,20 @@
  * @example SHA-2 hashing
  * ```ts
  * import { assertEquals } from "@std/assert";
+ * import { crypto } from "@std/crypto";
  *
  * const data = crypto.getRandomValues(new Uint8Array(100));
  * assertEquals(
+ *   sha224(data),
+ *   new Uint8Array(await crypto.subtle.digest("SHA-224", data)),
+ * );
+ * assertEquals(
  *   sha256(data),
  *   new Uint8Array(await crypto.subtle.digest("SHA-256", data)),
+ * );
+ * assertEquals(
+ *   sha384(data),
+ *   new Uint8Array(await crypto.subtle.digest("SHA-384", data)),
  * );
  * assertEquals(
  *   sha512(data),
@@ -26,6 +35,14 @@
  * import { crypto } from "@std/crypto";
  *
  * const data = crypto.getRandomValues(new Uint8Array(100));
+ * assertEquals(
+ *   b2s(data),
+ *   new Uint8Array(await crypto.subtle.digest("BLAKE2s", data)),
+ * );
+ * assertEquals(
+ *   b2b(data),
+ *   new Uint8Array(await crypto.subtle.digest("BLAKE2b", data)),
+ * );
  * assertEquals(
  *   b3(data),
  *   new Uint8Array(await crypto.subtle.digest("BLAKE3", data)),
@@ -77,9 +94,37 @@
  * @module hash
  */
 
-import { sha256, sha512 } from "./src/sha2.ts";
+import { sha224, sha256, sha384, sha512 } from "./src/sha2.ts";
 import { hmac } from "./src/hmac.ts";
 import { hkdf } from "./src/hkdf.ts";
+import {
+  b2b,
+  b2b_get,
+  b2b_new,
+  b2b_set,
+  b2s,
+  b2s_get,
+  b2s_new,
+  b2s_set,
+} from "./src/blake2.ts";
 import { b3, b3_derive, b3_keyed } from "./src/blake3.ts";
 
-export { b3, b3_derive, b3_keyed, hkdf, hmac, sha256, sha512 };
+export {
+  b2b,
+  b2b_get,
+  b2b_new,
+  b2b_set,
+  b2s,
+  b2s_get,
+  b2s_new,
+  b2s_set,
+  b3,
+  b3_derive,
+  b3_keyed,
+  hkdf,
+  hmac,
+  sha224,
+  sha256,
+  sha384,
+  sha512,
+};

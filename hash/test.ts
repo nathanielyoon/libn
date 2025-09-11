@@ -1,9 +1,9 @@
 import { assertEquals } from "@std/assert";
 import { crypto } from "@std/crypto";
 import fc from "fast-check";
-import { de_b16, en_b16, en_bin } from "@libn/base";
+import { de_b16, en_b16 } from "@libn/base";
 import { fc_bin, fc_check } from "../test.ts";
-import { sha256, sha512 } from "./src/sha2.ts";
+import { sha224, sha256, sha384, sha512 } from "./src/sha2.ts";
 import { hmac } from "./src/hmac.ts";
 import { hkdf } from "./src/hkdf.ts";
 import { b3, b3_derive, b3_keyed } from "./src/blake3.ts";
@@ -64,17 +64,29 @@ Deno.test("blake3 matches reference", () => {
   const derive = b3_derive(de_b16(vectors.blake3.context));
   const length = vectors.blake3.output_length;
   vectors.blake3.cases.forEach(($) => {
-    const input = de_b16($.input);
+    const input = Uint8Array.from({ length: $.input }, (_, z) => z % 251);
     assertEquals(b3(input, length), de_b16($.hash));
     assertEquals(keyed(input, length), de_b16($.keyed));
     assertEquals(derive(input, length), de_b16($.derive));
   });
 });
+Deno.test("sha224 matches webcrypto", () =>
+  fc_check(fc.asyncProperty(fc_bin(), async ($) =>
+    assertEquals(
+      sha224($),
+      new Uint8Array(await crypto.subtle.digest("SHA-224", $)),
+    ))));
 Deno.test("sha256 matches webcrypto", () =>
   fc_check(fc.asyncProperty(fc_bin(), async ($) =>
     assertEquals(
       sha256($),
       new Uint8Array(await crypto.subtle.digest("SHA-256", $)),
+    ))));
+Deno.test("sha384 matches webcrypto", () =>
+  fc_check(fc.asyncProperty(fc_bin(), async ($) =>
+    assertEquals(
+      sha384($),
+      new Uint8Array(await crypto.subtle.digest("SHA-384", $)),
     ))));
 Deno.test("sha512 matches webcrypto", () =>
   fc_check(fc.asyncProperty(fc_bin(), async ($) =>
