@@ -1,5 +1,5 @@
 import { en_b16, en_bin } from "@libn/base";
-import { get_rfc, get_wycheproof, hex, write_vectors } from "../test.ts";
+import { get_wycheproof, write_vectors } from "../test.ts";
 
 await write_vectors(import.meta, {
   nist: await Promise.all(
@@ -51,7 +51,7 @@ await write_vectors(import.meta, {
         })),
     ),
   },
-  blake2: await Array.fromAsync("bs", (flavor) =>
+  blake2: await Array.fromAsync("sb", (flavor) =>
     fetch(
       `https://raw.githubusercontent.com/BLAKE2/BLAKE2/eec32b7170d8dbe4eb59c9afad2ee9297393fb5b/testvectors/blake2${flavor}-kat.txt`,
     ).then(($) => $.text()).then((text) => [
