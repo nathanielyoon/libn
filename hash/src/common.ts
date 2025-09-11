@@ -7,7 +7,7 @@ export const enum Mod {
 /** Finds the minimum of two 32-bit integers. */
 export const min = (a: number, b: number): number => b + (a - b & a - b >> 31);
 /** Parses a base16-encoded initialization vector into 32-bit words. */
-export const en_iv = ($: string) =>
+export const en_iv = ($: string): Uint32Array<ArrayBuffer> =>
   Uint32Array.from($.match(/.{8}/g)!, ($) => parseInt($, 16));
 /** SHA-256 initialization vector. */
 export const SHA256 = /* @__PURE__ */ en_iv(
