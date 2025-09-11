@@ -158,6 +158,17 @@ Deno.test("blake3 matches webcrypto", () =>
       b3($),
       new Uint8Array(await crypto.subtle.digest("BLAKE3", $)),
     ))));
+Deno.test("blake2s/blake2b track long inputs", () =>
+  ([
+    [25, b2s_create, b2s_update, b2s_digest],
+    [49, b2b_create, b2b_update, b2b_digest],
+  ] as const).forEach(([offset, create, update, digest]) => {
+    const one = create().fill(-1, offset, -2), two = one.with(-2, 1);
+    assertNotEquals(
+      digest(update(one, new Uint8Array(1))),
+      digest(update(two, new Uint8Array(1))),
+    );
+  }));
 Deno.test("blake2s/blake2b clamp key/output lengths", () =>
   ([[32, b2s], [64, b2b]] as const).forEach(([size, hash]) =>
     fc_check(fc.property(
@@ -173,14 +184,8 @@ Deno.test("blake2s/blake2b clamp key/output lengths", () =>
       },
     ))
   ));
-Deno.test("blake2s/blake2b track long inputs", () =>
-  ([
-    [25, b2s_create, b2s_update, b2s_digest],
-    [49, b2b_create, b2b_update, b2b_digest],
-  ] as const).forEach(([offset, create, update, digest]) => {
-    const one = create().fill(-1, offset, -2), two = one.with(-2, 1);
-    assertNotEquals(
-      digest(update(one, new Uint8Array(1))),
-      digest(update(two, new Uint8Array(1))),
-    );
-  }));
+Deno.test("blake3 clamps key length", () =>
+  fc_check(
+    fc.property(fc_bin({ minLength: 32 }), fc_bin(), (key, input) =>
+      assertEquals(b3_keyed(key, input), b3_keyed(key.subarray(0, 32), input))),
+  ));
