@@ -45,9 +45,9 @@
     }
   },
   "tasks": {
-    "write": "deno run --allow-net --allow-write **/write_vectors.ts",
+    "write": "deno run --allow-net --allow-write ./write.ts",
     "test": "deno test --allow-all --no-check --doc --parallel",
     "coverage": "deno test --allow-all --no-check --reporter=dot --coverage --coverage-raw-data-only --clean && deno coverage --detailed --include=\"^file://$(pwd)\"; rm -r coverage",
-    "npm": "deno run --allow-all ./npm.ts"
+    "npm": "deno run --allow-all ../npm.ts"
   }
 }
