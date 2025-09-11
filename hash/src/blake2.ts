@@ -4,8 +4,7 @@ const PERMUTE = Uint8Array.from(
   "0123456789abcdefea489fd61c02b753b8c052fdae3671947931dcbe265a40f8905724afe1bc683d2c6a0b834d75fe19c51fed4a0763928bdb7ec13950f4862a6fe9b308c2d714a5a2847615fb9e3cd00123456789abcdefea489fd61c02b753",
   ($) => parseInt($, 16),
 );
-// The BLAKE2s state block is a 28-word `Uint32Array`:
-// m[0:16] | h[0:8] | bytes in current block | t[0:2] | output length
+// State: `m[0:16] | h[0:8] | bytes in current block | t[0:2] | output length`.
 const b2s_mix = ($: Uint32Array, final: 0 | 1) => {
   let a = $[16], b = $[17], c = $[18], d = $[19], e = $[20], f = $[21];
   let g = $[22], h = $[23], i = SHA256[0], j = SHA256[1], k = SHA256[2];
@@ -116,8 +115,7 @@ export const b2s: Hash<[$: Uint8Array, key?: Uint8Array, length?: number]> = (
 const PERMUTE_BOTH = PERMUTE.map(($) => $ << 1);
 // The BLAKE2b IV is SHA-512's but little-endian (with regard to word halves).
 const B2B = SHA512.map((_, z, $) => $[z ^ 1]);
-// The BLAKE2s state block is a 54-word `Uint32Array`:
-// m[0:32] | h[0:16] | bytes in current block | t[0:4] | output length
+// State: `m[0:32] | h[0:16] | bytes in current block | t[0:4] | output length`.
 const b2b_mix = ($: Uint32Array, final: 0 | 1) => {
   let a0 = $[32], a1 = $[33], b0 = $[34], b1 = $[35], c0 = $[36], c1 = $[37];
   let d0 = $[38], d1 = $[39], e0 = $[40], e1 = $[41], f0 = $[42], f1 = $[43];
