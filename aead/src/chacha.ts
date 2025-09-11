@@ -96,21 +96,16 @@ export const hchacha = (
   $: Uint32Array,
 ): DataView<ArrayBuffer> => {
   const subkey = new DataView(new ArrayBuffer(32));
-  chacha(
-    key,
-    iv.getUint32(0, true),
-    iv.getUint32(4, true),
-    iv.getUint32(8, true),
-    iv.getUint32(12, true),
-    $,
-  );
+  const iv0 = iv.getUint32(0, true), iv1 = iv.getUint32(4, true);
+  const iv2 = iv.getUint32(8, true), iv3 = iv.getUint32(12, true);
+  chacha(key, iv0, iv1, iv2, iv3, $);
   subkey.setUint32(0, $[0] - Word.EXPA, true);
   subkey.setUint32(4, $[1] - Word.ND_3, true);
   subkey.setUint32(8, $[2] - Word["2_BY"], true);
   subkey.setUint32(12, $[3] - Word.TE_K, true);
-  subkey.setUint32(16, $[12] - iv.getUint32(0, true), true);
-  subkey.setUint32(20, $[13] - iv.getUint32(4, true), true);
-  subkey.setUint32(24, $[14] - iv.getUint32(8, true), true);
-  subkey.setUint32(28, $[15] - iv.getUint32(12, true), true);
+  subkey.setUint32(16, $[12] - iv0, true);
+  subkey.setUint32(20, $[13] - iv1, true);
+  subkey.setUint32(24, $[14] - iv2, true);
+  subkey.setUint32(28, $[15] - iv3, true);
   return subkey;
 };
