@@ -1,7 +1,7 @@
 /**
  * S3 presigned URLs.
  *
- * @example Sign query parameters
+ * @example Signing query parameters
  * ```ts
  * import { assertMatch } from "@std/assert";
  *
