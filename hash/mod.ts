@@ -99,25 +99,25 @@ import { hmac } from "./src/hmac.ts";
 import { hkdf } from "./src/hkdf.ts";
 import {
   b2b,
-  b2b_get,
-  b2b_new,
-  b2b_set,
+  b2b_create,
+  b2b_digest,
+  b2b_update,
   b2s,
-  b2s_get,
-  b2s_new,
-  b2s_set,
+  b2s_create,
+  b2s_digest,
+  b2s_update,
 } from "./src/blake2.ts";
 import { b3, b3_derive, b3_keyed } from "./src/blake3.ts";
 
 export {
   b2b,
-  b2b_get,
-  b2b_new,
-  b2b_set,
+  b2b_create,
+  b2b_digest,
+  b2b_update,
   b2s,
-  b2s_get,
-  b2s_new,
-  b2s_set,
+  b2s_create,
+  b2s_digest,
+  b2s_update,
   b3,
   b3_derive,
   b3_keyed,
