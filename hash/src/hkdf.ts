@@ -1,18 +1,21 @@
 import { hmac } from "./hmac.ts";
 
-/** Derives a key with HMAC. */
+/** Derives a key with HMAC-SHA256. */
 export const hkdf = (
   key: Uint8Array,
   info: Uint8Array = new Uint8Array(),
   salt: Uint8Array = new Uint8Array(32),
-  out = 32,
+  length = 32,
 ): Uint8Array<ArrayBuffer> => {
-  if (out < 1 || out > 255 << 5) return new Uint8Array();
-  let a;
-  if (salt.length < 32) a = new Uint8Array(32), a.set(salt), salt = a;
-  const b = hmac(salt, key), c = Math.ceil(out / 32), d = info.length + 32;
-  const e = new Uint8Array(d + 1), f = new Uint8Array(c << 5);
-  e.set(info, 32), e[d] = 1, f.set(a = hmac(b, e.subarray(32)));
-  for (let z = 1; z < c; ++z) e.set(a), ++e[d], f.set(a = hmac(b, e), z << 5);
-  return new Uint8Array(f.subarray(0, out));
+  if (length < 1 || length > 255 << 5) return new Uint8Array();
+  const size = info.length + 32, parts = length + 31 >> 5;
+  let temp, z = 1;
+  if (salt.length < 32) temp = new Uint8Array(32), temp.set(salt), salt = temp;
+  const extracted = hmac(salt, key), to = new Uint8Array(size + 1);
+  to.set(info, 32), to[size] = 1;
+  const output = new Uint8Array(parts << 5);
+  for (output.set(temp = hmac(extracted, to.subarray(32))); z < parts; ++z) {
+    to.set(temp), ++to[size], output.set(temp = hmac(extracted, to), z << 5);
+  }
+  return new Uint8Array(output.subarray(0, length));
 };
