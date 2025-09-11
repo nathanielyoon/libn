@@ -1,4 +1,4 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertNotEquals } from "@std/assert";
 import { crypto } from "@std/crypto";
 import fc from "fast-check";
 import { de_b16, en_b16 } from "@libn/base";
@@ -6,7 +6,16 @@ import { fc_bin, fc_check } from "../test.ts";
 import { sha224, sha256, sha384, sha512 } from "./src/sha2.ts";
 import { hmac } from "./src/hmac.ts";
 import { hkdf } from "./src/hkdf.ts";
-import { b2b, b2s } from "./src/blake2.ts";
+import {
+  b2b,
+  b2b_create,
+  b2b_digest,
+  b2b_update,
+  b2s,
+  b2s_create,
+  b2s_digest,
+  b2s_update,
+} from "./src/blake2.ts";
 import { b3, b3_derive, b3_keyed } from "./src/blake3.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
@@ -149,3 +158,29 @@ Deno.test("blake3 matches webcrypto", () =>
       b3($),
       new Uint8Array(await crypto.subtle.digest("BLAKE3", $)),
     ))));
+Deno.test("blake2s/blake2b clamp key/output lengths", () =>
+  ([[32, b2s], [64, b2b]] as const).forEach(([size, hash]) =>
+    fc_check(fc.property(
+      fc_bin(),
+      fc_bin({ minLength: size }),
+      fc.nat({ max: size }),
+      (input, key, length) => {
+        assertEquals(hash(input, key), hash(input, key.subarray(0, size)));
+        const keyed = hash.bind(null, input, key);
+        assertEquals(keyed(), keyed(size));
+        assertEquals(keyed(length + size), keyed(size));
+        assertEquals(keyed(-length), keyed(-length >>> 0 || 1));
+      },
+    ))
+  ));
+Deno.test("blake2s/blake2b track long inputs", () =>
+  ([
+    [25, b2s_create, b2s_update, b2s_digest],
+    [49, b2b_create, b2b_update, b2b_digest],
+  ] as const).forEach(([offset, create, update, digest]) => {
+    const one = create().fill(-1, offset, -2), two = one.with(-2, 1);
+    assertNotEquals(
+      digest(update(one, new Uint8Array(1))),
+      digest(update(two, new Uint8Array(1))),
+    );
+  }));
