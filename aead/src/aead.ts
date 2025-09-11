@@ -38,9 +38,8 @@ const mac = (key: Uint32Array, ciphertext: Uint8Array, data: Uint8Array) => {
   return poly(new DataView(key.buffer), message);
 };
 const UNUSED = new Uint32Array(32);
-/** If parameters are valid, XORs the text in-place. */
+/** XORs the text in-place without checking parameters. */
 export const xor = (key: Uint8Array, iv: Uint8Array, $: Uint8Array): void => {
-  if (key.length !== 32 || iv.length !== 24) return;
   const a = new DataView(iv.buffer, iv.byteOffset);
   crypt(hchacha(new DataView(key.buffer, key.byteOffset), a, UNUSED), a, $, 0);
 };

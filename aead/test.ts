@@ -68,15 +68,6 @@ const fc_at_least_one_wrong = <const A extends number[]>(...lengths: A) =>
           : fc_wrong($)
       ),
     )));
-Deno.test("xor rejects wrong-size arguments", () =>
-  fc_check(fc.property(
-    fc_at_least_one_wrong(32, 24),
-    fc_bin(),
-    ([key, iv], text) => {
-      const copy = new Uint8Array(text);
-      xor(key, iv, text), assertEquals(text, copy);
-    },
-  )));
 Deno.test("xchachapoly rejects wrong-size arguments", () =>
   fc_check(fc.property(
     fc_at_least_one_wrong(32, 24),
