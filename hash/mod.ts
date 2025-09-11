@@ -37,11 +37,11 @@
  * const data = crypto.getRandomValues(new Uint8Array(100));
  * assertEquals(
  *   b2s(data),
- *   new Uint8Array(await crypto.subtle.digest("BLAKE2s", data)),
+ *   new Uint8Array(await crypto.subtle.digest("BLAKE2S", data)),
  * );
  * assertEquals(
  *   b2b(data),
- *   new Uint8Array(await crypto.subtle.digest("BLAKE2b", data)),
+ *   new Uint8Array(await crypto.subtle.digest("BLAKE2B", data)),
  * );
  * assertEquals(
  *   b3(data),

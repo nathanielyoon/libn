@@ -6,22 +6,21 @@ import { fc_bin, fc_check } from "../test.ts";
 import { sha224, sha256, sha384, sha512 } from "./src/sha2.ts";
 import { hmac } from "./src/hmac.ts";
 import { hkdf } from "./src/hkdf.ts";
+import { b2b, b2s } from "./src/blake2.ts";
 import { b3, b3_derive, b3_keyed } from "./src/blake3.ts";
 import vectors from "./vectors.json" with { type: "json" };
-import {
-  b2b,
-  b2b_get,
-  b2b_new,
-  b2b_set,
-  b2s,
-  b2s_get,
-  b2s_new,
-  b2s_set,
-} from "./src/blake2.ts";
 
+Deno.test("sha224 matches nist aft", () =>
+  vectors.nist.sha224.forEach(($) =>
+    assertEquals(sha224(de_b16($.data)), de_b16($.digest))
+  ));
 Deno.test("sha256 matches nist aft", () =>
   vectors.nist.sha256.forEach(($) =>
     assertEquals(sha256(de_b16($.data)), de_b16($.digest))
+  ));
+Deno.test("sha384 matches nist aft", () =>
+  vectors.nist.sha384.forEach(($) =>
+    assertEquals(sha384(de_b16($.data)), de_b16($.digest))
   ));
 Deno.test("sha512 matches nist aft", () =>
   vectors.nist.sha512.forEach(($) =>
@@ -43,22 +42,20 @@ Deno.test("hkdf matches wycheproof", () =>
       de_b16($.derived),
     )
   ));
-Deno.test("blake2 matches selftest", () => {
-  const a = [...vectors.blake2.selftest.s.md, ...vectors.blake2.selftest.s.in];
-  const b = new Uint8Array(1056), c = b2s_new();
-  let z = 0, y = 0, x = 0, w, e, f, g, h, i, j, k;
-  do do do {
-    e = (x & 1) ^ 1, f = a[z], g = a[y % 6 + 4], h = e ? g : f;
-    for (i = 0xDEAD4BAD * h | 0, j = 1, k, w = 0; w < h; ++w) {
-      k = i + j | 0, i = j, j = k, b[w + (-e & 32)] = k >> 24;
-    }
-    b2s_set(
-      c,
-      b2s(b.subarray(32, g + 32), b.subarray(0, -(x & 1) & a[z]), f),
-    );
-  } while (++x & 1); while (++y % 6); while (++z < 4);
-  assertEquals(b2s_get(c), de_b16(vectors.blake2.selftest.s.result));
-});
+Deno.test("blake2s matches reference", () =>
+  vectors.blake2.s.forEach(($) =>
+    assertEquals(
+      b2s(de_b16($.in), de_b16($.key), $.hash.length >> 1),
+      de_b16($.hash),
+    )
+  ));
+Deno.test("blake2b matches reference", () =>
+  vectors.blake2.b.forEach(($) =>
+    assertEquals(
+      b2b(de_b16($.in), de_b16($.key), $.hash.length >> 1),
+      de_b16($.hash),
+    )
+  ));
 Deno.test("blake3 matches reference", () => {
   const keyed = b3_keyed.bind(null, de_b16(vectors.blake3.key));
   const derive = b3_derive(de_b16(vectors.blake3.context));
@@ -134,11 +131,17 @@ Deno.test("hkdf matches webcrypto", () =>
         ),
       ),
   )));
-Deno.test("blake2 matches webcrypto", () =>
+Deno.test("blake2s matches webcrypto", () =>
   fc_check(fc.asyncProperty(fc_bin(), async ($) =>
     assertEquals(
       b2s($),
       new Uint8Array(await crypto.subtle.digest("BLAKE2S", $)),
+    ))));
+Deno.test("blake2b matches webcrypto", () =>
+  fc_check(fc.asyncProperty(fc_bin(), async ($) =>
+    assertEquals(
+      b2b($),
+      new Uint8Array(await crypto.subtle.digest("BLAKE2B", $)),
     ))));
 Deno.test("blake3 matches webcrypto", () =>
   fc_check(fc.asyncProperty(fc_bin(), async ($) =>
@@ -146,19 +149,3 @@ Deno.test("blake3 matches webcrypto", () =>
       b3($),
       new Uint8Array(await crypto.subtle.digest("BLAKE3", $)),
     ))));
-Deno.test("blake2b/blake2s match refence vectors", () => {
-  for (
-    const [blake, reference] of [[
-      b2s,
-      vectors.blake2.reference.s,
-    ], [b2b, vectors.blake2.reference.b]] as const
-  ) {
-    reference.forEach(($) =>
-      assertEquals(
-        blake(de_b16($.in), de_b16($.key), $.hash.length >> 1),
-        de_b16($.hash),
-        JSON.stringify($),
-      )
-    );
-  }
-});
