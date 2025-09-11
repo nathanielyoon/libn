@@ -71,7 +71,7 @@ export const polyxchacha = (
   const xor_key = hchacha(new DataView(key.buffer, key.byteOffset), a, mac_key);
   chacha(xor_key, 0, 0, a.getUint32(16, true), a.getUint32(20, true), mac_key);
   const calculated_tag = mac(mac_key, ciphertext, associated_data);
-  let z = 16, y = 0;
-  do y |= tag[--z] ^ calculated_tag[z]; while (z);
-  return !y && (crypt(xor_key, a, ciphertext), true);
+  let is_different = 0, z = 16;
+  do is_different |= tag[--z] ^ calculated_tag[z]; while (z);
+  return !is_different && (crypt(xor_key, a, ciphertext), true);
 };
