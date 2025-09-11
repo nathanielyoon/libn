@@ -6,11 +6,11 @@ await write_vectors(import.meta, {
     [224, 256, 384, 512].map(($) =>
       fetch(
         `https://raw.githubusercontent.com/usnistgov/ACVP-Server/fb44dce5257aba23088256e63c9b950db6967610/gen-val/json-files/SHA2-${$}-1.0/internalProjection.json`,
-      ).then<{ testGroups: { tests: { msg: string; md: string }[] }[] }>(($) =>
-        $.json()
-      ).then(({ testGroups: [{ tests }] }) => [
+      ).then<
+        { testGroups: { tests: { msg: string; len: number; md: string }[] }[] }
+      >(($) => $.json()).then(({ testGroups: [{ tests }] }) => [
         `sha${$}`,
-        tests.filter(($) => $.msg.length < 0x1000).map(({ msg, md }) => ({
+        tests.filter(($) => $.len % 8 === 0).map(({ msg, md }) => ({
           data: msg,
           digest: md,
         })),
