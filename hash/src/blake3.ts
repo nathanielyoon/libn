@@ -1,4 +1,4 @@
-import { type Hash, min, Mod, UP } from "./common.ts";
+import { type Hash, min, Mod, SHA256 } from "./common.ts";
 
 const enum Size {
   BLOCK = 64,
@@ -10,7 +10,7 @@ const enum Flag {
   PARENT = 1 << 2,
   ROOT = 1 << 3,
   KEYED = 1 << 4,
-  DERIVE_CONTEXT = 1 << 5,
+  DERIVE_CTX = 1 << 5,
   DERIVE_KEY = 1 << 6,
 }
 const PERMUTE = /* @__PURE__ */ Uint8Array.from(
@@ -26,8 +26,8 @@ const mix = (
   to: Uint32Array,
 ) => {
   let a = key[0], b = key[1], c = key[2], d = key[3], e = key[4], f = key[5];
-  let g = key[6], h = key[7], i = UP[0], j = UP[1], k = UP[2], l = UP[3];
-  let m = at, n = at / Mod.U, o = byte, p = flag, z = 0;
+  let g = key[6], h = key[7], i = SHA256[0], j = SHA256[1], k = SHA256[2];
+  let l = SHA256[3], m = at, n = at / Mod.U, o = byte, p = flag, z = 0;
   do m ^= a = a + e + $.getUint32(PERMUTE[z++], true) | 0,
     m = m << 16 | m >>> 16,
     e ^= i = i + m | 0,
@@ -110,43 +110,43 @@ const blake3 = (
   length = 32,
   seek = 0,
 ) => {
-  const a = new Uint32Array(8), b = [], c = new Uint8Array(Size.BLOCK);
-  let d = new DataView(c.buffer), e = 0, f = 0, z = 8, y = 0, x;
-  do a[--z] = key[x = z << 2] | key[x + 1] << 8 | key[x + 2] << 16 |
-    key[x + 3] << 24; while (z);
-  const g = new Uint32Array(a), h = new Uint32Array(16);
-  while (z < $.length) {
-    if (e + f * Size.BLOCK === Size.CHUNK) {
-      for (mix(g, d, y, e, flags | Flag.END, h), x = ++y; x & 1 ^ 1; x >>= 1) {
-        mix(a, merge(b.pop()!, h), 0, Size.BLOCK, flags | Flag.PARENT, h);
+  const stack = [], block = new Uint8Array(Size.BLOCK), a = new Uint32Array(8);
+  let b = new DataView(block.buffer), c = 0, d = 0, e, z = 8, y = 0;
+  do a[--z] = key[e = z << 2] | key[e + 1] << 8 | key[e + 2] << 16 |
+    key[e + 3] << 24; while (z);
+  const f = new Uint32Array(a), g = new Uint32Array(16), max = $.length;
+  while (z < max) {
+    if (c + d * Size.BLOCK === Size.CHUNK) {
+      for (mix(f, b, y, c, flags | Flag.END, g), e = ++y; e & 1 ^ 1; e >>= 1) {
+        mix(a, merge(stack.pop()!, g), 0, Size.BLOCK, flags | Flag.PARENT, g);
       }
-      b.push(new Uint32Array(h)), g.set(a), c.fill(e = f = 0);
+      stack.push(new Uint32Array(g)), f.set(a), block.fill(c = d = 0);
     }
-    const i = min(z + Size.CHUNK - e - f * Size.BLOCK, $.length);
-    do e < Size.BLOCK ||
-      (mix(g, d, y, e, flags | +!f++ & Flag.START, g), c.fill(e = 0)),
-      c.set($.subarray(z, z += x = min(Size.BLOCK - e, i - z)), e),
-      e += x; while (z < i);
+    const take = min(z + Size.CHUNK - c - d * Size.BLOCK, max);
+    do c < Size.BLOCK ||
+      (mix(f, b, y, c, flags | +!d++ & Flag.START, f), block.fill(c = 0)),
+      block.set($.subarray(z, z += e = min(Size.BLOCK - c, take - z)), c),
+      c += e; while (z < take);
   }
-  if (x = flags | +!f & Flag.START | Flag.END, z = b.length) {
-    mix(g, d, y, e, x, h), x = flags | Flag.PARENT;
-    while (--z) mix(a, merge(b[z], h), 0, Size.BLOCK, x, h);
-    g.set(a), d = merge(b[0], h), e = Size.BLOCK;
+  if (e = flags | +!d & Flag.START | Flag.END, z = stack.length) {
+    mix(f, b, y, c, e, g), e = flags | Flag.PARENT;
+    while (--z) mix(a, merge(stack[z], g), 0, Size.BLOCK, e, g);
+    f.set(a), b = merge(stack[0], g), c = Size.BLOCK;
   }
-  const i = new Uint8Array(length);
+  const out = new Uint8Array(length);
   do {
-    mix(g, d, seek++, e, x | Flag.ROOT, h), y = min(z + Size.BLOCK, length);
-    do i[z] = h[z >> 2 & 15] >> (z << 3); while (++z < y);
+    mix(f, b, seek++, c, e | Flag.ROOT, g), y = min(z + Size.BLOCK, length);
+    do out[z] = g[z >> 2 & 15] >> (z << 3); while (++z < y);
   } while (z < length);
-  return i;
+  return out;
 };
-const IV = /* @__PURE__ */ Uint8Array.from(
+const BLAKE3 = /* @__PURE__ */ Uint8Array.from(
   { length: 32 },
-  (_, z) => UP[z >> 2] >> (z << 3),
+  (_, z) => SHA256[z >> 2] >> (z << 3),
 );
 /** Hashes with BLAKE3 (unkeyed). */
 export const b3: Hash<[$: Uint8Array, length?: number, seek?: number]> =
-  /* @__PURE__ */ blake3.bind(null, 0, IV);
+  /* @__PURE__ */ blake3.bind(null, 0, BLAKE3);
 /** Hashes with BLAKE3 (keyed). */
 export const b3_keyed: Hash<
   [key: Uint8Array, $: Uint8Array, length?: number, seek?: number]
@@ -155,4 +155,4 @@ export const b3_keyed: Hash<
 export const b3_derive = (context: Uint8Array): Hash<
   [$: Uint8Array, length?: number, seek?: number]
 > =>
-  blake3.bind(null, Flag.DERIVE_KEY, blake3(Flag.DERIVE_CONTEXT, IV, context));
+  blake3.bind(null, Flag.DERIVE_KEY, blake3(Flag.DERIVE_CTX, BLAKE3, context));
