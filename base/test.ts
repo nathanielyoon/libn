@@ -7,7 +7,7 @@ import { de_b64, de_u64, en_b64, en_u64 } from "./src/64.ts";
 import { de_bin, en_bin } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
-Deno.test("encoding and decoding round-trips losslessly", () =>
+Deno.test("encode/decode round-trip losslessly", () =>
   ([
     [en_b16, de_b16],
     [en_b32, de_b32],
