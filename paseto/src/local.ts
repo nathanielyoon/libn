@@ -21,7 +21,7 @@ export const en_local: Encode = (
   footer: Uint8Array = new Uint8Array(),
   assertion: Uint8Array = new Uint8Array(),
 ): ReturnType<Encode> => {
-  if (!is_local(key)) return;
+  if (!is_local(key)) return null;
   const nonce = crypto.getRandomValues(new Uint8Array(32));
   const payload = new Uint8Array(message.length + 64);
   payload.set(nonce), payload.set(message, 32);
@@ -39,17 +39,16 @@ export const de_local: Decode = (
   token: string,
   assertion: Uint8Array = new Uint8Array(),
 ): ReturnType<Decode> => {
-  if (!is_local(key)) return;
+  if (!is_local(key)) return null;
   const exec = REG.exec(token);
-  if (!exec) return;
+  if (!exec) return null;
   const payload = de_u64(exec[1]), footer = de_u64(exec[2] ?? "");
   const nonce = payload.subarray(0, 32), text = payload.subarray(32, -32);
   const parts = split(key, nonce);
   const tag = b2b(pae(BIN, nonce, text, footer, assertion), parts.mac_key, 32);
   let is_different = 0, z = 32, y = payload.length;
   do is_different |= tag[--z] ^ payload[--y]; while (z);
-  if (!is_different) {
-    xor(parts.xor_key, parts.counter, text);
-    return { message: new Uint8Array(text), footer };
-  }
+  if (is_different) return null;
+  xor(parts.xor_key, parts.counter, text);
+  return { message: new Uint8Array(text), footer };
 };

@@ -94,3 +94,53 @@ Deno.test("en_public/de_public reject wrong-use keys", () =>
     ({ secret_key, public_key }, message, token) =>
       !en_public(secret_key, message) && !de_public(public_key, token),
   )));
+const different: fc.UniqueArrayConstraintsCustomCompare<Uint8Array> = {
+  minLength: 2,
+  maxLength: 2,
+  comparator: (one, two) => {
+    for (let z = 0; z < 32; ++z) if (one[z] !== two[z]) return false;
+    return true;
+  },
+};
+Deno.test("en_local/de_local round-trip losslessly", () =>
+  fc_check(fc.property(
+    fc.uniqueArray(fc_key.map(key_local), {
+      minLength: 2,
+      maxLength: 2,
+      comparator: (one, two) => {
+        for (let z = 0; z < 32; ++z) if (one[z] !== two[z]) return false;
+        return true;
+      },
+    }),
+    fc_bin(),
+    fc.option(fc_bin(), { nil: undefined }),
+    fc.option(fc_bin(), { nil: undefined }),
+    ([key, wrong_key], message, footer, assertion) => {
+      const token = en_local(key, message, footer, assertion);
+      assert(token);
+      assertEquals(
+        de_local(key, token, assertion),
+        { message, footer: footer ?? new Uint8Array() },
+      );
+      assert(!de_local(wrong_key, token, assertion));
+    },
+  )));
+Deno.test("en_public/de_public round-trip losslessly", () =>
+  fc_check(fc.property(
+    fc.uniqueArray(fc_key.map(key_public), {
+      minLength: 2,
+      maxLength: 2,
+      comparator: ({ public_key: one }, { public_key: two }) => {
+        for (let z = 0; z < 32; ++z) if (one[z] !== two[z]) return false;
+        return true;
+      },
+    }),
+    fc_bin(),
+    fc.option(fc_bin(), { nil: undefined }),
+    fc.option(fc_bin(), { nil: undefined }),
+    ([keys, wrong_keys], message, footer, assertion) => {
+      const token = en_public(keys.secret_key, message, footer, assertion);
+      assert(token);
+      assert(!de_public(wrong_keys.public_key, token, assertion));
+    },
+  )));

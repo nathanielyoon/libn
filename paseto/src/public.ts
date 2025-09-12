@@ -11,7 +11,7 @@ export const en_public: Encode = (
   footer: Uint8Array = new Uint8Array(),
   assertion: Uint8Array = new Uint8Array(),
 ): ReturnType<Encode> => {
-  if (!is_public(secret_key)) return;
+  if (!is_public(secret_key)) return null;
   const length = message.length, payload = new Uint8Array(length + 64);
   payload.set(message);
   payload.set(sign(secret_key, pae(BIN, message, footer, assertion)), length);
@@ -24,15 +24,16 @@ export const de_public: Decode = (
   token: string,
   assertion: Uint8Array = new Uint8Array(),
 ): ReturnType<Decode> => {
-  if (!is_public(public_key)) return;
+  if (!is_public(public_key)) return null;
   const exec = REG.exec(token);
-  if (!exec) return;
+  if (!exec) return null;
   const payload = de_u64(exec[1]), footer = de_u64(exec[2] ?? "");
   if (
-    verify(
+    !verify(
       public_key,
       pae(BIN, payload.subarray(0, -64), footer, assertion),
       payload.subarray(-64),
     )
-  ) return { message: new Uint8Array(payload.subarray(0, -64)), footer };
+  ) return null;
+  return { message: new Uint8Array(payload.subarray(0, -64)), footer };
 };

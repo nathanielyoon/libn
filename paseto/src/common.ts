@@ -6,10 +6,10 @@ export type Encode = (
   message: Uint8Array,
   footer?: Uint8Array,
   assertion?: Uint8Array,
-) => void | `v4.${string}`;
+) => null | `v4.${string}`;
 /** PASETO-decoding function. */
 export type Decode = (key: Uint8Array, token: string, assertion?: Uint8Array) =>
-  | void
+  | null
   | { message: Uint8Array<ArrayBuffer>; footer: Uint8Array<ArrayBuffer> };
 /** Pre-auth-encodes a list of binary pieces. */
 export const pae = (...pieces: Uint8Array[]): Uint8Array<ArrayBuffer> => {
