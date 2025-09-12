@@ -1,16 +1,16 @@
 import { sign, verify } from "@libn/25519";
 import { de_u64, en_bin, en_u64 } from "@libn/base";
-import { type Decode, type Encode, is_public, pae, regex } from "./common.ts";
+import { type Detoken, type Entoken, is_public, pae, regex } from "./common.ts";
 
 const STR = "v4.public.", BIN = /* @__PURE__ */ en_bin(STR);
 const REG = /* @__PURE__ */ regex(STR);
 /** Encodes and signs a public PASETO. */
-export const en_public: Encode = (
+export const en_public: Entoken = (
   secret_key: Uint8Array,
   message: Uint8Array,
   footer: Uint8Array = new Uint8Array(),
   assertion: Uint8Array = new Uint8Array(),
-): ReturnType<Encode> => {
+): ReturnType<Entoken> => {
   if (!is_public(secret_key)) return null;
   const length = message.length, payload = new Uint8Array(length + 64);
   payload.set(message);
@@ -19,11 +19,11 @@ export const en_public: Encode = (
   return footer.length ? `${token}.${en_u64(footer)}` : token;
 };
 /** Decodes and verifies a public PASETO. */
-export const de_public: Decode = (
+export const de_public: Detoken = (
   public_key: Uint8Array,
   token: string,
   assertion: Uint8Array = new Uint8Array(),
-): ReturnType<Decode> => {
+): ReturnType<Detoken> => {
   if (!is_public(public_key)) return null;
   const exec = REG.exec(token);
   if (!exec) return null;

@@ -1,14 +1,18 @@
 import { generate } from "@libn/25519";
 
 /** PASETO-encoding function. */
-export type Encode = (
+export type Entoken = (
   key: Uint8Array,
   message: Uint8Array,
   footer?: Uint8Array,
   assertion?: Uint8Array,
 ) => null | `v4.${string}`;
 /** PASETO-decoding function. */
-export type Decode = (key: Uint8Array, token: string, assertion?: Uint8Array) =>
+export type Detoken = (
+  key: Uint8Array,
+  token: string,
+  assertion?: Uint8Array,
+) =>
   | null
   | { message: Uint8Array<ArrayBuffer>; footer: Uint8Array<ArrayBuffer> };
 /** Pre-auth-encodes a list of binary pieces. */

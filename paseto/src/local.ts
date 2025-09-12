@@ -1,7 +1,7 @@
 import { xor } from "@libn/aead";
 import { de_u64, en_bin, en_u64 } from "@libn/base";
 import { b2b } from "@libn/hash";
-import { type Decode, type Encode, is_local, pae, regex } from "./common.ts";
+import { type Detoken, type Entoken, is_local, pae, regex } from "./common.ts";
 
 const STR = "v4.local.", BIN = /* @__PURE__ */ en_bin(STR);
 const REG = /* @__PURE__ */ regex(STR);
@@ -15,12 +15,12 @@ const split = (key: Uint8Array, nonce: Uint8Array) => {
   XOR.fill(0, 21), MAC.fill(0, 24);
   return { xor_key: temp.subarray(0, 32), counter: temp.subarray(32), mac_key };
 };
-export const en_local: Encode = (
+export const en_local: Entoken = (
   key: Uint8Array,
   message: Uint8Array,
   footer: Uint8Array = new Uint8Array(),
   assertion: Uint8Array = new Uint8Array(),
-): ReturnType<Encode> => {
+): ReturnType<Entoken> => {
   if (!is_local(key)) return null;
   const nonce = crypto.getRandomValues(new Uint8Array(32));
   const payload = new Uint8Array(message.length + 64);
@@ -34,11 +34,11 @@ export const en_local: Encode = (
   const token = STR + en_u64(payload) as `v4.${string}`;
   return footer.length ? `${token}.${en_u64(footer)}` : token;
 };
-export const de_local: Decode = (
+export const de_local: Detoken = (
   key: Uint8Array,
   token: string,
   assertion: Uint8Array = new Uint8Array(),
-): ReturnType<Decode> => {
+): ReturnType<Detoken> => {
   if (!is_local(key)) return null;
   const exec = REG.exec(token);
   if (!exec) return null;
