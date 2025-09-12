@@ -1,4 +1,4 @@
-import { map } from "./map.ts";
+import { Decode, Encode, map } from "./common.ts";
 
 const encode = (str: string, $: Uint8Array) => {
   let string = "";
@@ -27,16 +27,36 @@ const decode = (bin: Uint8Array, $: string) => {
 };
 const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const H32 = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
+const Z32 = "ybndrfg8ejkmcpqxot1uwisza345h769";
+const C32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+const W32 = "23456789CFGHJMPQRVWXcfghjmpqrvwx";
 /** Encodes binary -> base32 string. */
-export const en_b32: ($: Uint8Array) => string = /* @__PURE__ */
+export const en_b32: Encode = /* @__PURE__ */
   encode.bind(null, B32);
 /** Decodes base32 string -> binary. */
-export const de_b32: ($: string) => Uint8Array<ArrayBuffer> = /* @__PURE__ */
+export const de_b32: Decode = /* @__PURE__ */
   decode.bind(null, /* @__PURE__ */ map(B32));
-
 /** Encodes binary -> base32hex string. */
-export const en_h32: ($: Uint8Array) => string = /* @__PURE__ */
+export const en_h32: Encode = /* @__PURE__ */
   encode.bind(null, H32);
 /** Decodes base32hex string -> binary. */
-export const de_h32: ($: string) => Uint8Array<ArrayBuffer> = /* @__PURE__ */
+export const de_h32: Decode = /* @__PURE__ */
   decode.bind(null, /* @__PURE__ */ map(H32));
+/** Encodes binary -> z-base-32 string. */
+export const en_z32: Encode = /* @__PURE__ */
+  encode.bind(null, Z32);
+/** Decodes z-base-32 string -> binary. */
+export const de_z32: Decode = /* @__PURE__ */
+  decode.bind(null, /* @__PURE__ */ map(Z32));
+/** Encodes binary -> Crockford base 32 string. */
+export const en_c32: Encode = /* @__PURE__ */
+  encode.bind(null, C32);
+/** Decodes Crockford base 32 string -> binary. */
+export const de_c32: Decode = /* @__PURE__ */
+  decode.bind(null, /* @__PURE__ */ map(C32));
+/** Encodes binary -> word-safe base32 string. */
+export const en_w32: Encode = /* @__PURE__ */
+  encode.bind(null, W32);
+/** Decodes word-safe base32 string -> binary. */
+export const de_w32: Decode = /* @__PURE__ */
+  decode.bind(null, /* @__PURE__ */ map(W32));

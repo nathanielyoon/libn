@@ -1,8 +1,9 @@
 /**
  * Base16, base32, base32hex, base64, and base64url
- * ([RFC 4648](https://www.rfc-editor.org/rfc/rfc4648)).
+ * ([RFC 4648](https://www.rfc-editor.org/rfc/rfc4648)), and some
+ * [base-32 variants](https://en.wikipedia.org/wiki/Base32#Alternative_encoding_schemes).
  *
- * @example Encoding, decoding
+ * @example RFC4648 schemes
  * ```ts
  * import { assertEquals } from "@std/assert";
  *
@@ -19,7 +20,18 @@
  */
 
 import { de_b16, en_b16 } from "./src/16.ts";
-import { de_b32, de_h32, en_b32, en_h32 } from "./src/32.ts";
+import {
+  de_b32,
+  de_c32,
+  de_h32,
+  de_w32,
+  de_z32,
+  en_b32,
+  en_c32,
+  en_h32,
+  en_w32,
+  en_z32,
+} from "./src/32.ts";
 import { de_b64, de_u64, en_b64, en_u64 } from "./src/64.ts";
 
 /** Encodes arbitrary string -> binary. */
@@ -32,11 +44,17 @@ export {
   de_b16,
   de_b32,
   de_b64,
+  de_c32,
   de_h32,
   de_u64,
+  de_w32,
+  de_z32,
   en_b16,
   en_b32,
   en_b64,
+  en_c32,
   en_h32,
   en_u64,
+  en_w32,
+  en_z32,
 };
