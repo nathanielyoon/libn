@@ -403,14 +403,14 @@
           "jsr:@std/crypto@^1.0.5"
         ]
       },
-      "inline": {
-        "dependencies": [
-          "npm:rolldown-vite@^7.1.5"
-        ]
-      },
       "signal": {
         "dependencies": [
           "jsr:@std/testing@^1.0.15"
+        ]
+      },
+      "vite": {
+        "dependencies": [
+          "npm:rolldown-vite@^7.1.5"
         ]
       }
     }
