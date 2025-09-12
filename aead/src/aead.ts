@@ -49,8 +49,8 @@ export const xchachapoly = (
   iv: Uint8Array,
   plaintext: Uint8Array,
   associated_data: Uint8Array,
-): Uint8Array | void => {
-  if (key.length !== 32 || iv.length !== 24) return;
+): null | Uint8Array => {
+  if (key.length !== 32 || iv.length !== 24) return null;
   const a = new DataView(iv.buffer, iv.byteOffset);
   const mac_key = new Uint32Array(16);
   const xor_key = hchacha(new DataView(key.buffer, key.byteOffset), a, mac_key);

@@ -74,7 +74,7 @@ Deno.test("xchachapoly rejects wrong-size arguments", () =>
     fc_bin(),
     fc_bin(),
     ([key, iv], plaintext, data) =>
-      assertEquals(xchachapoly(key, iv, plaintext, data), undefined),
+      assertEquals(xchachapoly(key, iv, plaintext, data), null),
   )));
 Deno.test("polyxchacha rejects wrong-size arguments", () =>
   fc_check(fc.property(
@@ -90,7 +90,7 @@ Deno.test("encrypt/decrypt reject wrong-size arguments", () =>
     fc_bin(),
     fc_bin(),
     (key, $, data) => {
-      assertEquals(encrypt(key, $, data), undefined);
-      assertEquals(decrypt(key, $, data), undefined);
+      assertEquals(encrypt(key, $, data), null);
+      assertEquals(decrypt(key, $, data), null);
     },
   )));
