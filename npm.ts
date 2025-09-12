@@ -12,7 +12,7 @@ await build({
     license: "GPL-3.0-or-later",
     repository: {
       type: "git",
-      url: "git+https://github.com/nathanielyoon/lib.git",
+      url: "git+https://github.com/nathanielyoon/libn.git",
     },
   },
   shims: {},
