@@ -1,19 +1,3 @@
-/**
- * Inline Vite assets.
- *
- * @example Config
- * ```ts
- * import { defineConfig } from "rolldown-vite";
- * import inline from "@libn/inline";
- *
- * export default defineConfig({
- *   plugins: [inline()],
- * });
- * ```
- *
- * @module inline
- */
-
 import type { PluginOption } from "rolldown-vite";
 
 function assert($: unknown): asserts $ {
@@ -49,7 +33,7 @@ export interface Options {
   };
 }
 /** Updates config (unless passed `false`) and inlines assets. */
-export default (build: Options | false = {}): PluginOption => ({
+export const inline = (build: Options | false = {}): PluginOption => ({
   name: "vite-plugin-inline",
   config: (config) => {
     if (build) {

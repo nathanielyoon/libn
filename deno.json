@@ -8,12 +8,12 @@
     "./element",
     "./fuzz",
     "./hash",
-    "./inline",
     "./json",
     "./paseto",
     "./result",
     "./signal",
     "./url",
+    "./vite",
     "./weight"
   ],
   "imports": {
