@@ -36,6 +36,7 @@ const handler = {
   apply: (create, _, [tag, parent, assign]: [string, (Node | null)?, any?]) =>
     Object.assign(parent?.appendChild(create(tag)) ?? create(tag), assign),
 } satisfies ProxyHandler<(tag: string) => Element>;
+/** @internal */
 type Elementer<A> =
   & { [B in keyof A]: Builder<A[B]> }
   & (<B extends keyof A>(

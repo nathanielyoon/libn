@@ -1,10 +1,13 @@
+/** @internal */
 type Html = keyof HTMLElementTagNameMap;
+/** @internal */
 type Svg = keyof SVGElementTagNameMap;
 type Trim<A extends string> = A extends `${any}${" " | ">"}${infer B}` ? Trim<B>
   : A extends `${infer B}${"#" | "." | "[" | ":"}${any}` ? Trim<B>
   : A extends Html ? HTMLElementTagNameMap[A]
   : A extends Svg ? SVGElementTagNameMap[A]
   : never;
+/** @internal */
 type TrimSvgFirst<A extends string> = A extends `${any}${" " | ">"}${infer B}`
   ? TrimSvgFirst<B>
   : A extends `${infer B}${"#" | "." | "[" | ":"}${any}` ? TrimSvgFirst<B>
