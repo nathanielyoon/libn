@@ -1,25 +1,74 @@
-import { assertEquals, assertRejects, assertThrows } from "@std/assert";
+import {
+  assertEquals,
+  assertNotEquals,
+  assertRejects,
+  assertThrows,
+} from "@std/assert";
 import fc from "fast-check";
-import { fc_check } from "../test.ts";
+import { fc_check, fc_str } from "../test.ts";
+import { no, ok, Or, or } from "./src/or.ts";
 import {
   drop,
+  each,
+  each_async,
   exec,
   exec_async,
-  no,
-  ok,
-  Or,
   save,
   save_async,
   some,
-  wrap,
-  wrap_async,
-} from "./mod.ts";
+} from "./src/wrap.ts";
+import { Err } from "./src/error.ts";
 
+Deno.test("err serializes", () =>
+  fc_check(fc.property(
+    fc_str(),
+    fc.anything(),
+    (message, cause) => {
+      const err = new Err(message, cause);
+      assertEquals(
+        err.toJSON(),
+        { name: err.name, message, cause, stack: err.stack },
+      );
+    },
+  )));
+Deno.test("err stringifies differently", () =>
+  fc_check(fc.property(
+    fc_str(),
+    fc.anything(),
+    (message, cause) =>
+      assertNotEquals(
+        `${new Err(message, cause)}`,
+        `${Error(message, { cause })}`,
+      ),
+  )));
+Deno.test("throw throws", () =>
+  fc_check(fc.property(
+    fc_str(),
+    fc.anything(),
+    (message, cause) => void assertThrows(() => Err.throw(message, cause)),
+  )));
+Deno.test("ok always passes", () =>
+  fc_check(fc.property(
+    fc.anything(),
+    ($) => assertEquals(ok($).result, { state: true, value: $ }),
+  )));
+Deno.test("no always fails", () =>
+  fc_check(fc.property(
+    fc.anything(),
+    ($) => assertEquals(no($).result, { state: false, value: $ }),
+  )));
+Deno.test("or sometimes passes sometimes fails", () =>
+  fc_check(fc.property(
+    fc.boolean(),
+    fc.anything(),
+    (state, value) =>
+      assertEquals(or({ state, value }).result, { state, value }),
+  )));
 const fc_or = fc.boolean().map(($) => $ ? ok($) : no($));
 Deno.test("constructor takes promises", () =>
   fc_check(fc.asyncProperty(fc_or, async ($) =>
     assertEquals(
-      await new Or(Promise.resolve($.result)).result_async,
+      await new Or(null, Promise.resolve($.result)).result_async,
       $.result,
     ))));
 Deno.test("fmap/fmap_async apply conditionally", async () => {
@@ -102,24 +151,13 @@ Deno.test("sync openers throw if result is async", () =>
       assertThrows(() => $.unwrap());
     },
   )));
-Deno.test("some lifts nullish values", () => {
+Deno.test("some converts nullish values", () =>
   fc_check(fc.property(
     fc.option(fc.nat()),
     fc.option(fc.nat()),
-    (if_nullish, $) =>
-      assertEquals(some(if_nullish)($).unwrap(), $ == null ? if_nullish : $),
-  ));
-  fc_check(fc.property(
-    fc.nat(),
-    fc.nat(),
-    fc.option(fc.nat()),
-    (if_nullish, if_nonnull, $) =>
-      assertEquals(
-        some(if_nullish, () => if_nonnull)($).unwrap(),
-        $ == null ? if_nullish : if_nonnull,
-      ),
-  ));
-});
+    ($, if_nullish) =>
+      assertEquals(some($, if_nullish).unwrap(), $ == null ? if_nullish : $),
+  )));
 Deno.test("drop filters by predicate", () =>
   fc_check(fc.property(
     fc.boolean(),
@@ -215,7 +253,7 @@ Deno.test("exec/exec_async return early", async () => {
 Deno.test("wrap/wrap_async fail/pass all together", async () => {
   fc_check(fc.property(fc_or, fc_or, (one, two) =>
     assertEquals<any>(
-      wrap([one, two]),
+      each([one, two]),
       one.result.state && two.result.state
         ? ok([one.unwrap(), two.unwrap()])
         : no([one.result, two.result]),
@@ -225,7 +263,7 @@ Deno.test("wrap/wrap_async fail/pass all together", async () => {
     fc_or.map(($) => $.fmap_async(($) => Promise.resolve(!$))),
     async (one, two) =>
       assertEquals<any>(
-        await wrap_async([one, two]),
+        await each_async([one, two]),
         (await one.result_async).state && (await two.result_async).state
           ? ok([await one.unwrap_async(), await two.unwrap_async()])
           : no([await one.result_async, await two.result_async]),
