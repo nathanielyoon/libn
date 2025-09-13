@@ -29,7 +29,6 @@ const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const H32 = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
 const Z32 = "ybndrfg8ejkmcpqxot1uwisza345h769";
 const C32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-const W32 = "23456789CFGHJMPQRVWXcfghjmpqrvwx";
 /** Encodes binary -> base32 string. */
 export const en_b32: Encode = /* @__PURE__ */
   encode.bind(null, B32);
@@ -54,9 +53,3 @@ export const en_c32: Encode = /* @__PURE__ */
 /** Decodes Crockford base 32 string -> binary. */
 export const de_c32: Decode = /* @__PURE__ */
   decode.bind(null, /* @__PURE__ */ map(C32));
-/** Encodes binary -> word-safe base32 string. */
-export const en_w32: Encode = /* @__PURE__ */
-  encode.bind(null, W32);
-/** Decodes word-safe base32 string -> binary. */
-export const de_w32: Decode = /* @__PURE__ */
-  decode.bind(null, /* @__PURE__ */ map(W32));
