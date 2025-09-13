@@ -34,8 +34,8 @@ await write_vectors(import.meta, {
         ? to.local.push({
           key: $.key,
           nonce: $.nonce,
-          message: en_b16(en_bin($.payload ?? "")),
-          footer: en_b16(en_bin($.footer)),
+          body: en_b16(en_bin($.payload ?? "")),
+          foot: en_b16(en_bin($.footer)),
           assertion: en_b16(en_bin($["implicit-assertion"])),
           token: $.token,
           result: !$["expect-fail"],
@@ -43,8 +43,8 @@ await write_vectors(import.meta, {
         : to.public.push({
           secret_key: $["secret-key-seed"],
           public_key: $["public-key"],
-          message: en_b16(en_bin($.payload ?? "")),
-          footer: en_b16(en_bin($.footer)),
+          body: en_b16(en_bin($.payload ?? "")),
+          foot: en_b16(en_bin($.footer)),
           assertion: en_b16(en_bin($["implicit-assertion"])),
           token: $.token,
           result: !$["expect-fail"],

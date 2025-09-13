@@ -9,7 +9,7 @@
  * const { secret_key, public_key } = key_public();
  *
  * assert(is_local(key));
- * assert(is_public(secret_key) && is_public(public_key));
+ * assert(is_secret(secret_key) && is_public(public_key));
  * ```
  *
  * @example Local encryption and decryption
@@ -17,11 +17,11 @@
  * import { assert, assertEquals } from "@std/assert";
  *
  * const key = key_local();
- * const message = crypto.getRandomValues(new Uint8Array(100));
+ * const body = crypto.getRandomValues(new Uint8Array(100));
  *
- * const token = en_local(key, message);
+ * const token = en_local(key, body);
  * assert(token);
- * assertEquals(de_local(key, token)?.message, message);
+ * assertEquals(de_local(key, token)?.body, body);
  * ```
  *
  * @example Public signing and verification
@@ -29,10 +29,10 @@
  * import { assert, assertEquals } from "@std/assert";
  *
  * const { secret_key, public_key } = key_public();
- * const message = crypto.getRandomValues(new Uint8Array(100));
+ * const body = crypto.getRandomValues(new Uint8Array(100));
  *
- * const token = en_public(secret_key, message);
- * assert(token), assertEquals(de_public(public_key, token)?.message, message);
+ * const token = en_public(secret_key, body);
+ * assert(token), assertEquals(de_public(public_key, token)?.body, body);
  * ```
  * @module paseto
  */
@@ -40,10 +40,9 @@
 import {
   is_local,
   is_public,
-  key_local,
-  key_public,
-  type Local,
-  type Public,
+  is_secret,
+  make_local,
+  make_public,
 } from "./src/common.ts";
 import { de_local, en_local } from "./src/local.ts";
 import { de_public, en_public } from "./src/public.ts";
@@ -55,8 +54,7 @@ export {
   en_public,
   is_local,
   is_public,
-  key_local,
-  key_public,
-  type Local,
-  type Public,
+  is_secret,
+  make_local as key_local,
+  make_public as key_public,
 };
