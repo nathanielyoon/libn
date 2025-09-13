@@ -1,5 +1,5 @@
 /**
- * SHA-256 and SHA-512 ([RFC 6234](https://www.rfc-editor.org/rfc/rfc6234)),
+ * SHA-2 ([RFC 6234](https://www.rfc-editor.org/rfc/rfc6234)),
  * BLAKE2 ([RFC 7693](https://www.rfc-editor.org/rfc/rfc7693)) and BLAKE3
  * ([specification](https://github.com/BLAKE3-team/BLAKE3-specs/)),
  * HMAC-SHA256 ([RFC 2104](https://www.rfc-editor.org/rfc/rfc2104)), and
