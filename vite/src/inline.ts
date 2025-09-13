@@ -9,13 +9,29 @@ const regex = (
 ) => RegExp($.join(`(?:[^"]*?/)?${file.replace(/[$(-+./?[-^{|}]/g, "\\$&")}`));
 /** Options to pass to Vite's build configuration. */
 export interface Options {
-  /** @default true */
+  /**
+   * Whether to uselessly split CSS (before recombining into the single file).
+   *
+   * @default false
+   */
   cssCodeSplit?: boolean;
-  /** @default "" */
+  /**
+   * Custom subdirectory for output assets (only during build, removed after).
+   *
+   * @default ""
+   */
   assetsDir?: string;
-  /** @default 1e9 */
+  /**
+   * Max size of assets to inline.
+   *
+   * @default 1e9
+   */
   assetsInlineLimit?: number;
-  /** @default 1e9 */
+  /**
+   * Max size of code chunks to inline.
+   *
+   * @default 1e9
+   */
   chunkSizeWarningLimit?: number;
   /**
    * This should match the shape of the actual `build.rolldownOptions.output`
