@@ -12,16 +12,22 @@
  * @module result
  */
 
+/** @internal */
+type Result<A, B> = { state: false; value: A } | { state: true; value: B };
 /** Result type. */
 export class Or<A = any, B = any> {
   private promise?: Promise<Result<any, any>>;
-  /** Creates a failure or success. */
+  /** Creates a failure. */
   constructor(value: A, state: false);
+  /** Creates a success. */
   constructor(value: B, state: true);
+  /** Creates a promised failure or success. */
   constructor(value: Promise<Result<A, B>>);
+  /** Creates a failure or success. */
   constructor(private value: any, private state = false) {
     if (value instanceof Promise) this.promise = value;
   }
+  /** Promises a result. */
   private await(then: ($: Result<A, B>) => Promise<Result<any, any>>): Or {
     return new Or((this.promise ?? Promise.resolve(this.result)).then(then));
   }
@@ -86,7 +92,6 @@ export class Or<A = any, B = any> {
     return value;
   }
 }
-type Result<A, B> = { state: false; value: A } | { state: true; value: B };
 /** Creates a failure. */
 export const no = <const A = void>($?: A): Or<A, never> => new Or($!, false);
 /** Creates a success. */
