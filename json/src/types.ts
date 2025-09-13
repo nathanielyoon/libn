@@ -14,6 +14,7 @@ export type Formats = {
   uri: `${string}:${string}`;
   uuid: `${string}-${string}-${string}-${string}-${string}`;
 };
+/** @internal */
 type Types = {
   boolean: { enum?: readonly [boolean] };
   number: {
@@ -67,6 +68,7 @@ export type Data<A extends Type> = A extends { enum: readonly (infer B)[] } ? B
       & (A extends { additionalProperties: false } ? {} : { [_: string]: Json })
   : A["type"] extends "object" ? { [_: string]: Json }
   : never;
+/** @internal */
 type Esc<A extends PropertyKey, B extends number, C extends string> = C extends
   `${infer D}${A & string}${infer E}` ? `${D}~${B}${Esc<A, B, E>}` : C;
 /** Union of error indicators. */
