@@ -1,4 +1,4 @@
-import { de_big, en_big, P, p, prune, r, s, v } from "./curve.ts";
+import { de_big, en_big, P, p, prune, r, s, v } from "./field.ts";
 
 const F = ~(1n << 255n); // mask for top bit
 const ladder = (scalar: bigint, point: bigint) => {
@@ -27,7 +27,7 @@ export const x25519 = (
   secret_key: Uint8Array,
   public_key?: Uint8Array,
 ): Uint8Array<ArrayBuffer> =>
-  de_big(ladder(
+  de_big(ladder( // clamping in bigint form won't mutate passed-in buffers
     en_big(secret_key) & ~7n & F | 1n << 254n,
     public_key ? en_big(public_key) & F : 9n,
   ));

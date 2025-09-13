@@ -1,6 +1,6 @@
 import { sha512 } from "@libn/hash";
-import { de_big, en_big, N, prune } from "./curve.ts";
-import { add, de_point, double, en_point, equal, wnaf } from "./point.ts";
+import { de_big, en_big, N, prune } from "./field.ts";
+import { add, de_point, double, en_point, equal, I, wnaf } from "./curve.ts";
 
 const int = ($: Uint8Array) => {
   const a = sha512($);
@@ -33,9 +33,9 @@ export const verify = (
   b.set(signature), b.set(public_key, 32), b.set(data, 64);
   let c = de_point(public_key);
   if (c < 0n) return false;
-  let d = int(b), e = 1n << 256n | 1n << 512n;
+  let d = int(b), e = I;
   // No secret information involved, so unsafe double-and-add is ok.
   do if (d & 1n) e = add(e, c); while (c = double(c), d >>= 1n);
   c = de_point(signature);
-  return c >= 0n && equal(wnaf(a)[0], add(e, c));
+  return c >= 0n && equal(wnaf(a).a, add(e, c));
 };

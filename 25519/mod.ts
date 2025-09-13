@@ -39,4 +39,5 @@
 
 import { generate, sign, verify } from "./src/ed25519.ts";
 import { convert_public, convert_secret, x25519 } from "./src/x25519.ts";
+
 export { convert_public, convert_secret, generate, sign, verify, x25519 };
