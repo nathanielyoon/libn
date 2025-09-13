@@ -16,7 +16,7 @@ import { de_b64, de_u64, en_b64, en_u64 } from "./src/64.ts";
 import { de_bin, en_bin } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
-Deno.test.only("encode/decode round-trip losslessly", () =>
+Deno.test("encode/decode round-trip losslessly", () =>
   ([
     [en_b16, de_b16],
     [en_b32, de_b32],
@@ -25,7 +25,7 @@ Deno.test.only("encode/decode round-trip losslessly", () =>
     [en_c32, de_c32],
     [en_b64, de_b64],
     [en_u64, de_u64],
-  ] as const).forEach(([encode, decode], z) =>
+  ] as const).forEach(([encode, decode]) =>
     fc_check(fc.property(fc_bin(), ($) => assertEquals(decode(encode($)), $)))
   ));
 Deno.test("encoding and decoding matches rfc4648 section 10", () =>

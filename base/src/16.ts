@@ -1,4 +1,4 @@
-import { Decode, Encode, map } from "./common.ts";
+import { type Decode, type Encode, map } from "./common.ts";
 
 const BIN = /* @__PURE__ */ map("0123456789abcdef");
 const STR = /* @__PURE__ */ Array.from(

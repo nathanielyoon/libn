@@ -1,4 +1,4 @@
-import { Decode, Encode, map } from "./common.ts";
+import { type Decode, type Encode, map } from "./common.ts";
 
 const encode = (str: string, $: Uint8Array) => {
   let string = "";

@@ -1,11 +1,13 @@
+import type { Decode, Encode } from "./common.ts";
+
 /** Encodes binary -> base64 string. */
-export const en_b64 = ($: Uint8Array): string => {
+export const en_b64: Encode = ($: Uint8Array): string => {
   let string = "";
   for (let z = 0; z < $.length; ++z) string += String.fromCharCode($[z]);
   return btoa(string);
 };
 /** Decodes base64 string -> binary. */
-export const de_b64 = ($: string): Uint8Array<ArrayBuffer> => {
+export const de_b64: Decode = ($: string): Uint8Array<ArrayBuffer> => {
   const raw = atob($), at = raw.charCodeAt.bind(raw);
   const binary = new Uint8Array(raw.length);
   for (let z = 0; z < raw.length; ++z) binary[z] = at(z);
@@ -19,7 +21,7 @@ const de_c64 = ($: number) =>
   ((45 - $ & $ - 58) >> 8 & $ + 5) + ((44 - $ & $ - 46) >> 8 & 63) +
   ((94 - $ & $ - 96) >> 8 & 64) - 1;
 /** Encodes binary -> base64url string. */
-export const en_u64 = ($: Uint8Array): string => {
+export const en_u64: Encode = ($: Uint8Array): string => {
   let string = "";
   for (let z = 0, a, b, c; z < $.length;) {
     a = $[z++], string += String.fromCharCode(en_c64(a >> 2));
@@ -30,7 +32,7 @@ export const en_u64 = ($: Uint8Array): string => {
   return string.slice(0, Math.ceil($.length / 3 * 4));
 };
 /** Decodes base64url string -> binary. */
-export const de_u64 = ($: string): Uint8Array<ArrayBuffer> => {
+export const de_u64: Decode = ($: string): Uint8Array<ArrayBuffer> => {
   const binary = new Uint8Array($.length * 3 >> 2);
   for (let a, b, c, d, z = 0, y = 0; z < $.length;) {
     a = de_c64($.charCodeAt(z++)), b = de_c64($.charCodeAt(z++));
