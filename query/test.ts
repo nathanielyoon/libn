@@ -2,7 +2,7 @@ import { assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { DOMParser } from "@b-fuze/deno-dom/native";
 import { fc_check, fc_str } from "../test.ts";
-import { ce, type Child, qa, qs } from "./mod.ts";
+import { ce, qa, qs } from "./mod.ts";
 
 globalThis.document = new DOMParser().parseFromString("", "text/html") as any;
 const fc_tag = fc.constantFrom("b", "u", "s");
