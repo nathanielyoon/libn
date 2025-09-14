@@ -633,3 +633,805 @@ Deno.test("reactively", async ({ step }) => {
     });
   });
 });
+Deno.test("preact", async ({ step }) => {
+  await step("signal", async ({ step }) => {
+    await step("return value", () => {
+      const a = [1, 2];
+      const b = signal(a);
+      assertEquals(b(), a);
+    });
+    await step(
+      "notify other listeners of changes after one is disposed",
+      () => {
+        const a = signal(0);
+        const b = spy(() => a());
+        const c = spy(() => a());
+        const d = spy(() => a());
+        effect(b);
+        const e = effect(c);
+        effect(d);
+        assertSpyCalls(b, 1);
+        assertSpyCalls(c, 1);
+        assertSpyCalls(d, 1);
+        e();
+        a(1);
+        assertSpyCalls(b, 2);
+        assertSpyCalls(c, 1);
+        assertSpyCalls(d, 2);
+      },
+    );
+  });
+  await step("effect()", async ({ step }) => {
+    await step("run the callback immediately", () => {
+      const a = signal(123);
+      const b = spy(() => a());
+      effect(b);
+      assertSpyCalls(b, 1);
+    });
+    await step("subscribe to signals", () => {
+      const a = signal(123);
+      const b = spy(() => a());
+      effect(b);
+      b.calls.length = 0;
+      a(42);
+      assertSpyCalls(b, 1);
+    });
+    await step("subscribe to multiple signals", () => {
+      const a = signal("a");
+      const b = signal("b");
+      const c = spy(() => (a(), b()));
+      effect(c);
+      c.calls.length = 0;
+      a("aa");
+      b("bb");
+      assertSpyCalls(c, 2);
+    });
+    await step("dispose of subscriptions", () => {
+      const a = signal("a");
+      const b = signal("b");
+      const c = spy(() => a() + " " + b());
+      const d = effect(c);
+      c.calls.length = 0;
+      d();
+      assertSpyCalls(c, 0);
+      a("aa");
+      b("bb");
+      assertSpyCalls(c, 0);
+    });
+    await step("dispose of subscriptions", () => {
+      const a = signal("a");
+      const b = signal("b");
+      const c = spy(() => a() + " " + b());
+      const d = effect(() => (c(), a() === "aa" && d()));
+      assertSpyCalls(c, 1);
+      a("aa");
+      assertSpyCalls(c, 2);
+      a("aaa");
+      assertSpyCalls(c, 2);
+    });
+    await step("dispose of subscriptions when called twice", () => {
+      const a = signal("a");
+      const b = signal("b");
+      const c = spy(() => a() + " " + b());
+      const d = effect(() => (c(), a() === "aa" && d()));
+      assertSpyCalls(c, 1);
+      a("aa");
+      assertSpyCalls(c, 2);
+      d();
+      a("aaa");
+      assertSpyCalls(c, 2);
+    });
+    await step("unsubscribe from signal", () => {
+      const a = signal(123);
+      const b = spy(() => a());
+      const c = effect(b);
+      b.calls.length = 0;
+      c();
+      a(42);
+      assertSpyCalls(b, 0);
+    });
+    await step("conditionally unsubscribe from signals", () => {
+      const a = signal("a");
+      const b = signal("b");
+      const c = signal(true);
+      const d = spy(() => c() ? a() : b());
+      effect(d);
+      assertSpyCalls(d, 1);
+      b("bb");
+      assertSpyCalls(d, 1);
+      c(false);
+      assertSpyCalls(d, 2);
+      d.calls.length = 0;
+      a("aaa");
+      assertSpyCalls(d, 0);
+    });
+    await step(
+      "not recompute if the effect has been notified about changes, but no direct dependency has actually changed",
+      () => {
+        const a = signal(0);
+        const b = signal(() => (a(), 0));
+        const c = spy(() => b());
+        effect(c);
+        assertSpyCalls(c, 1);
+        c.calls.length = 0;
+        a(1);
+        assertSpyCalls(c, 0);
+      },
+    );
+    await step("not recompute dependencies unnecessarily", () => {
+      const a = spy();
+      const b = signal(0);
+      const c = signal(0);
+      const d = signal(() => (c(), a()));
+      effect(() => b() || d());
+      assertSpyCalls(a, 1);
+      batch(() => (c(1), b(1)));
+      assertSpyCalls(a, 1);
+    });
+    await step("not recompute dependencies out of order", () => {
+      const a = signal(1);
+      const b = signal(1);
+      const c = signal(1);
+      const d = spy(() => c());
+      const e = signal(d);
+      effect(() => a() > 0 ? (b(), e()) : b());
+      d.calls.length = 0;
+      batch(() => (a(2), b(2), c(2)));
+      assertSpyCalls(d, 1);
+      d.calls.length = 0;
+      batch(() => (a(-1), b(-1), c(-1)));
+      assertSpyCalls(d, 0);
+      d.calls.length = 0;
+    });
+    await step(
+      "recompute if a dependency changes during computation after becoming a dependency",
+      () => {
+        const a = signal(0);
+        const b = spy(() => a() || a(($) => $ + 1));
+        effect(b);
+        assertSpyCalls(b, 2);
+      },
+    );
+    await step("allow disposing the effect multiple times", () => {
+      const a = effect(() => undefined);
+      a();
+      assertThrows(() => {
+        try {
+          a();
+        } catch {
+          return;
+        }
+        throw Error();
+      });
+    });
+    await step("allow disposing a running effect", () => {
+      const a = signal(0);
+      const b = spy();
+      const c = effect(() => a() === 1 && (c(), b()));
+      assertSpyCalls(b, 0);
+      a(1);
+      assertSpyCalls(b, 1);
+      a(2);
+      assertSpyCalls(b, 1);
+    });
+    await step(
+      "not run if it's first been triggered and then disposed in a batch",
+      () => {
+        const a = signal(0);
+        const b = spy(() => a());
+        const c = effect(b);
+        b.calls.length = 0;
+        batch(() => (a(1), c()));
+        assertSpyCalls(b, 0);
+      },
+    );
+    await step(
+      "not run if it's been triggered, disposed and then triggered again in a batch",
+      () => {
+        const a = signal(0);
+        const b = spy(() => a());
+        const c = effect(b);
+        b.calls.length = 0;
+        batch(() => (a(1), c(), a(2)));
+        assertSpyCalls(b, 0);
+      },
+    );
+    await step(
+      "not rerun parent effect if a nested child effect's signal's value changes",
+      () => {
+        const a = signal(0);
+        const b = signal(0);
+        const c = spy(() => a());
+        const d = spy(() => b());
+        effect(() => (c(), effect(d)));
+        assertSpyCalls(c, 1);
+        assertSpyCalls(d, 1);
+        b(1);
+        assertSpyCalls(c, 1);
+        assertSpyCalls(d, 2);
+        a(1);
+        assertSpyCalls(c, 2);
+        assertSpyCalls(d, 3);
+      },
+    );
+  });
+  await step("computed()", async ({ step }) => {
+    await step("return value", () => {
+      const a = signal("a");
+      const b = signal("b");
+      const c = signal(() => a() + b());
+      assertEquals(c(), "ab");
+    });
+    await step("return updated value", () => {
+      const a = signal("a");
+      const b = signal("b");
+      const c = signal(() => a() + b());
+      assertEquals(c(), "ab");
+      a("aa");
+      assertEquals(c(), "aab");
+    });
+    await step("be lazily computed on demand", () => {
+      const a = signal("a");
+      const b = signal("b");
+      const c = spy(() => a() + b());
+      const d = signal(c);
+      assertSpyCalls(c, 0);
+      d();
+      assertSpyCalls(c, 1);
+      a("x");
+      b("y");
+      assertSpyCalls(c, 1);
+      d();
+      assertSpyCalls(c, 2);
+    });
+    await step(
+      "be computed only when a dependency has changed at some point",
+      () => {
+        const a = signal("a");
+        const b = spy(() => a());
+        const c = signal(b);
+        c();
+        assertSpyCalls(b, 1);
+        a("a");
+        c();
+        assertSpyCalls(b, 1);
+      },
+    );
+    await step("conditionally unsubscribe from signals", () => {
+      const a = signal("a");
+      const b = signal("b");
+      const c = signal(true);
+      const d = spy(() => c() ? a() : b());
+      const e = signal(d);
+      assertEquals(e(), "a");
+      assertSpyCalls(d, 1);
+      b("bb");
+      assertEquals(e(), "a");
+      assertSpyCalls(d, 1);
+      c(false);
+      assertEquals(e(), "bb");
+      assertSpyCalls(d, 2);
+      d.calls.length = 0;
+      a("aaa");
+      assertEquals(e(), "bb");
+      assertSpyCalls(d, 0);
+    });
+    await step(
+      "consider undefined value separate from uninitialized value",
+      () => {
+        const a = signal(0);
+        const b = spy(() => undefined);
+        const c = signal(b);
+        assertEquals(c(), undefined);
+        a(1);
+        assertEquals(c(), undefined);
+        assertSpyCalls(b, 1);
+      },
+    );
+    await step("not leak errors raised by dependencies", () => {
+      const a = signal(0);
+      const b = signal(() => {
+        a();
+        throw 0;
+      });
+      const c = signal(() => {
+        try {
+          b();
+        } catch {
+          return "ok";
+        }
+      });
+      assertEquals(c(), "ok");
+      a(1);
+      assertEquals(c(), "ok");
+    });
+    await step(
+      "propagate notifications even right after first subscription",
+      () => {
+        const a = signal(0);
+        const b = signal(() => a());
+        const c = signal(() => b());
+        c();
+        const d = spy(() => c());
+        effect(d);
+        assertSpyCalls(d, 1);
+        d.calls.length = 0;
+        a(1);
+        assertSpyCalls(d, 1);
+      },
+    );
+    await step("get marked as outdated right after first subscription", () => {
+      const a = signal(0);
+      const b = signal(() => a());
+      b();
+      a(1);
+      effect(() => b());
+      assertEquals(b(), 1);
+    });
+    await step(
+      "propagate notification to other listeners after one listener is disposed",
+      () => {
+        const a = signal(0);
+        const b = signal(() => a());
+        const c = spy(() => b());
+        const d = spy(() => b());
+        const e = spy(() => b());
+        effect(c);
+        const f = effect(d);
+        effect(e);
+        assertSpyCalls(c, 1);
+        assertSpyCalls(d, 1);
+        assertSpyCalls(e, 1);
+        f();
+        a(1);
+        assertSpyCalls(c, 2);
+        assertSpyCalls(d, 1);
+        assertSpyCalls(e, 2);
+      },
+    );
+    await step("not recompute dependencies out of order", () => {
+      const a = signal(1);
+      const b = signal(1);
+      const c = signal(1);
+      const d = spy(() => c());
+      const e = signal(d);
+      const f = signal(() => a() > 0 ? (b(), e()) : b());
+      f();
+      d.calls.length = 0;
+      a(2);
+      b(2);
+      c(2);
+      f();
+      assertSpyCalls(d, 1);
+      d.calls.length = 0;
+      a(-1);
+      b(-1);
+      c(-1);
+      f();
+      assertSpyCalls(d, 0);
+      d.calls.length = 0;
+    });
+    await step("not recompute dependencies unnecessarily", () => {
+      const a = spy();
+      const b = signal(0);
+      const c = signal(0);
+      const d = signal(() => (c(), a()));
+      const e = signal(() => b() || d());
+      e();
+      assertSpyCalls(a, 1);
+      batch(() => (c(1), b(1)));
+      e();
+      assertSpyCalls(a, 1);
+    });
+    await step("graph updates", async ({ step }) => {
+      await step("run computeds once for multiple dep changes", async () => {
+        const a = signal("a");
+        const b = signal("b");
+        const c = spy(() => a() + b());
+        const d = signal(c);
+        assertEquals(d(), "ab");
+        assertSpyCalls(c, 1);
+        c.calls.length = 0;
+        a("aa");
+        b("bb");
+        d();
+        assertSpyCalls(c, 1);
+      });
+      await step("drop A->B->A updates", async () => {
+        //     A
+        //   / |
+        //  B  | <- Looks like a flag doesn't it? :D
+        //   \ |
+        //     C
+        //     |
+        //     D
+        const a = signal(2);
+        const b = signal(() => a() - 1);
+        const c = signal(() => a() + b());
+        const d = spy(() => "d: " + c());
+        const e = signal(d);
+        // Trigger read
+        assertEquals(e(), "d: 3");
+        assertSpyCalls(d, 1);
+        d.calls.length = 0;
+        a(4);
+        e();
+        assertSpyCalls(d, 1);
+      });
+      await step("only update every signal once (diamond graph)", () => {
+        // In this scenario "D" should only update once when "A" receives
+        // an update. This is sometimes referred to as the "diamond" scenario.
+        //     A
+        //   /   \
+        //  B     C
+        //   \   /
+        //     D
+        const a = signal("a");
+        const b = signal(() => a());
+        const c = signal(() => a());
+        const d = spy(() => b() + " " + c());
+        const e = signal(d);
+        assertEquals(e(), "a a");
+        assertSpyCalls(d, 1);
+        a("aa");
+        assertEquals(e(), "aa aa");
+        assertSpyCalls(d, 2);
+      });
+      await step("only update every signal once (diamond graph + tail)", () => {
+        // "E" will be likely updated twice if our mark+sweep logic is buggy.
+        //     A
+        //   /   \
+        //  B     C
+        //   \   /
+        //     D
+        //     |
+        //     E
+        const a = signal("a");
+        const b = signal(() => a());
+        const c = signal(() => a());
+        const d = signal(() => b() + " " + c());
+        const e = spy(() => d());
+        const f = signal(e);
+        assertEquals(f(), "a a");
+        assertSpyCalls(e, 1);
+        a("aa");
+        assertEquals(f(), "aa aa");
+        assertSpyCalls(e, 2);
+      });
+      await step("bail out if result is the same", () => {
+        // Bail out if value of "B" never changes
+        // A->B->C
+        const a = signal("a");
+        const b = signal(() => (a(), "foo"));
+        const c = spy(() => b());
+        const d = signal(c);
+        assertEquals(d(), "foo");
+        assertSpyCalls(c, 1);
+        a("aa");
+        assertEquals(d(), "foo");
+        assertSpyCalls(c, 1);
+      });
+      await step(
+        "only update every signal once (jagged diamond graph + tails)",
+        () => {
+          // "F" and "G" will be likely updated twice if our mark+sweep logic is buggy.
+          //     A
+          //   /   \
+          //  B     C
+          //  |     |
+          //  |     D
+          //   \   /
+          //     E
+          //   /   \
+          //  F     G
+          const a = signal("a");
+          const b = signal(() => a());
+          const c = signal(() => a());
+          const d = signal(() => c());
+          const e: Spy[] = [];
+          const f: Spy<any, [], string> = spy(
+            () => (e.push(f), b() + " " + d()),
+          );
+          const g = signal(f);
+          const h: Spy<any, [], string> = spy(() => (e.push(h), g()));
+          const i = signal(h);
+          const j: Spy<any, [], string> = spy(() => (e.push(j), g()));
+          const k = signal(j);
+          assertEquals(i(), "a a");
+          assertSpyCalls(h, 1);
+          assertEquals(k(), "a a");
+          assertSpyCalls(j, 1);
+          e.length = 0;
+          f.calls.length = 0;
+          h.calls.length = 0;
+          j.calls.length = 0, a("b");
+          assertEquals(g(), "b b");
+          assertSpyCalls(f, 1);
+          assertEquals(i(), "b b");
+          assertSpyCalls(h, 1);
+          assertEquals(k(), "b b");
+          assertSpyCalls(j, 1);
+          e.length = 0;
+          f.calls.length = 0;
+          h.calls.length = 0;
+          j.calls.length = 0, a("c");
+          assertEquals(g(), "c c");
+          assertSpyCalls(f, 1);
+          assertEquals(i(), "c c");
+          assertSpyCalls(h, 1);
+          assertEquals(k(), "c c");
+          assertSpyCalls(j, 1);
+          // top to bottom
+          assertLess(e.indexOf(f), e.indexOf(h));
+          // left to right
+          assertLess(e.indexOf(h), e.indexOf(j));
+        },
+      );
+      await step("only subscribe to signals listened to", () => {
+        //    *A
+        //   /   \
+        // *B     C <- we don't listen to C
+        const a = signal("a");
+        const b = signal(() => a());
+        const c = spy(() => a());
+        signal(c);
+        assertEquals(b(), "a");
+        assertSpyCalls(c, 0);
+        a("aa");
+        assertEquals(b(), "aa");
+        assertSpyCalls(c, 0);
+      });
+      await step("only subscribe to signals listened to", () => {
+        // Here both "B" and "C" are active in the beginning, but
+        // "B" becomes inactive later. At that point it should
+        // not receive any updates anymore.
+        //    *A
+        //   /   \
+        // *B     D <- we don't listen to C
+        //  |
+        // *C
+        const a = signal("a");
+        const b = spy(() => a());
+        const c = signal(b);
+        const d = spy(() => c());
+        const e = signal(d);
+        const f = signal(() => a());
+        let g = "";
+        const h = effect(() => g = e());
+        assertEquals(g, "a");
+        assertEquals(f(), "a");
+        b.calls.length = 0;
+        d.calls.length = 0;
+        h();
+        a("aa");
+        assertSpyCalls(b, 0);
+        assertSpyCalls(d, 0);
+        assertEquals(f(), "aa");
+      });
+      await step("ensure subs update even if one dep unmarks it", () => {
+        // In this scenario "C" always returns the same value. When "A"
+        // changes, "B" will update, then "C" at which point its update
+        // to "D" will be unmarked. But "D" must still update because
+        // "B" marked it. If "D" isn't updated, then we have a bug.
+        //     A
+        //   /   \
+        //  B     *C <- returns same value every time
+        //   \   /
+        //     D
+        const a = signal("a");
+        const b = signal(() => a());
+        const c = signal(() => (a(), "c"));
+        const d = spy(() => b() + " " + c());
+        const e = signal(d);
+        assertEquals(e(), "a c");
+        d.calls.length = 0;
+        a("aa");
+        e();
+        assertSpyCall(d, 0, { returned: "aa c" });
+      });
+      await step("ensure subs update even if two deps unmark it", () => {
+        // In this scenario both "C" and "D" always return the same
+        // value. But "E" must still update because "A"  marked it.
+        // If "E" isn't updated, then we have a bug.
+        //     A
+        //   / | \
+        //  B *C *D
+        //   \ | /
+        //     E
+        const a = signal("a");
+        const b = signal(() => a());
+        const c = signal(() => (a(), "c"));
+        const d = signal(() => (a(), "d"));
+        const e = spy(() => b() + " " + c() + " " + d());
+        const f = signal(e);
+        assertEquals(f(), "a c d");
+        e.calls.length = 0;
+        a("aa");
+        f();
+        assertSpyCall(e, 0, { returned: "aa c d" });
+      });
+    });
+    await step("error handling", async ({ step }) => {
+      await step("keep graph consistent on errors during activation", () => {
+        const a = signal(0);
+        const b = signal(() => {
+          throw 0;
+        });
+        const c = signal(() => a());
+        assertThrows(b);
+        a(1);
+        assertEquals(c(), 1);
+      });
+
+      await step("keep graph consistent on errors in computeds", () => {
+        const a = signal(0);
+        const b = signal(() => {
+          if (a() === 1) throw 0;
+          return a();
+        });
+        const c = signal(() => b());
+        assertEquals(c(), 0);
+        a(1);
+        assertThrows(b);
+        a(2);
+        assertEquals(c(), 2);
+      });
+
+      await step("support lazy branches", () => {
+        const a = signal(0);
+        const b = signal(() => a());
+        const c = signal(() => (a() > 0 ? a() : b()));
+        assertEquals(c(), 0);
+        a(1);
+        assertEquals(c(), 1);
+        a(0);
+        assertEquals(c(), 0);
+      });
+      await step("not update a sub if all deps unmark it", () => {
+        // In this scenario "B" and "C" always return the same value. When "A"
+        // changes, "D" should not update.
+        //     A
+        //   /   \
+        // *B     *C
+        //   \   /
+        //     D
+        const a = signal("a");
+        const b = signal(() => (a(), "b"));
+        const c = signal(() => (a(), "c"));
+        const d = spy(() => b() + " " + c());
+        const e = signal(d);
+        assertEquals(e(), "b c");
+        d.calls.length = 0;
+        a("aa");
+        assertSpyCalls(d, 0);
+      });
+    });
+  });
+  await step("batch/transaction", async ({ step }) => {
+    await step("return the value from the callback", () => {
+      assertEquals(batch(() => 1), 1);
+    });
+    await step("throw errors thrown from the callback", () => {
+      assertThrows(() =>
+        batch(() => {
+          throw 0;
+        })
+      );
+    });
+    await step("throw non-errors thrown from the callback", () => {
+      try {
+        batch(() => {
+          throw undefined;
+        });
+        throw 0;
+      } catch ($) {
+        assertEquals($, undefined);
+      }
+    });
+    await step("delay writes", () => {
+      const a = signal("a");
+      const b = signal("b");
+      const c = spy(() => a() + " " + b());
+      effect(c);
+      c.calls.length = 0;
+      batch(() => (a("aa"), b("bb")));
+      assertSpyCalls(c, 1);
+    });
+    await step("delay writes until outermost batch is complete", () => {
+      const a = signal("a");
+      const b = signal("b");
+      const c = spy(() => a() + ", " + b());
+      effect(c);
+      c.calls.length = 0;
+      batch(() => {
+        batch(() => (a(($) => $ + " inner"), b(($) => $ + " inner")));
+        a(($) => $ + " outer"), b(($) => $ + " outer");
+      });
+      // If the inner batch() would have flushed the update
+      // this spyer would've been called twice.
+      assertSpyCalls(c, 1);
+    });
+    await step("read signals written to", () => {
+      const a = signal("a");
+      let b = "";
+      batch(() => (a("aa"), b = a()));
+      assertEquals(b, "aa");
+    });
+    await step("read computed signals with updated source signals", () => {
+      // A->B->C->D->E
+      const a = signal("a");
+      const b = signal(() => a());
+      const c = spy(() => b());
+      const d = signal(c);
+      const e = spy(() => d());
+      const f = signal(e);
+      const g = spy(() => f());
+      const h = signal(g);
+      c.calls.length = 0;
+      e.calls.length = 0;
+      g.calls.length = 0;
+      let i = "";
+      batch(() => {
+        a("aa");
+        i = d();
+        // Since "D" isn't accessed during batching, we should not
+        // update it, only after batching has completed
+        assertSpyCalls(e, 0);
+      });
+      assertEquals(i, "aa");
+      assertEquals(f(), "aa");
+      assertEquals(h(), "aa");
+      assertSpyCalls(c, 1);
+      assertSpyCalls(e, 1);
+      assertSpyCalls(g, 1);
+    });
+    await step("not block writes after batching completed", () => {
+      // If no further writes after batch() are possible, than we
+      // didn't restore state properly. Most likely "pending" still
+      // holds elements that are already processed.
+      const a = signal("a");
+      const b = signal("b");
+      const c = signal("c");
+      const d = signal(() => a() + " " + b() + " " + c());
+      let e;
+      effect(() => e = d());
+      batch(() => (a("aa"), b("bb")));
+      c("cc");
+      assertEquals(e, "aa bb cc");
+    });
+    await step("not lead to stale signals with () in batch", () => {
+      const a: number[][] = [];
+      const b = signal(0);
+      const c = signal(() => b() * 2);
+      const d = signal(() => b() * 3);
+      effect(() => a.push([c(), d()]));
+      assertEquals(a, [[0, 0]]);
+      batch(() => (b(1), assertEquals(c(), 2)));
+      assertEquals(a[1], [2, 3]);
+    });
+    await step("run pending effects even if the callback throws", () => {
+      const a = signal(0);
+      const b = signal(1);
+      const c = spy(() => a());
+      const d = spy(() => b());
+      effect(c);
+      effect(d);
+      c.calls.length = 0;
+      d.calls.length = 0;
+      assertThrows(() =>
+        batch(() => {
+          a(($) => $ + 1), b(($) => $ + 1);
+          throw Error("hello");
+        })
+      );
+      assertSpyCalls(c, 1);
+      assertSpyCalls(d, 1);
+    });
+    await step("run effect's first run immediately even inside a batch", () => {
+      let a = 0;
+      const b = spy();
+      batch(() => (effect(b), a = b.calls.length));
+      assertEquals(a, 1);
+    });
+  });
+});
