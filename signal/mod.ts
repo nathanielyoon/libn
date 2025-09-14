@@ -53,13 +53,13 @@ type Link =
   & { step: number; dep: Reactive; sub: Reactive }
   & { [_ in `${"dep" | "sub"}_${"prev" | "next"}`]: Link | null };
 // This can only have `Effect`s and `Scoper`s, since those are always run (as
-// opposed to when their "value" is read - they have none). Typing it broadly
-// is wrong, but elides explicit casts when pushing.
+// opposed to when something reads their "value" - they have none). Typing it
+// broadly is wrong, but elides wronger-feeling explicit casts when pushing.
 const queue: (Reactive | null)[] = [];
 // Global (increasing) version counter and batch depth tracker.
 let step = 0, depth = 0;
 // Active subscribers (and helper to swap variables).
-let actor: Reactive | null = null, scope: Scoper | null = null, setter;
+let actor: Reactive | null = null, scope: Scoper | null = null, swapper;
 const flush = () => {
   for (let a; a = queue.shift(); run(a, a.flags &= ~Flag.QUEUE));
 };
@@ -73,9 +73,9 @@ export const batch = <A>($: () => A): A => {
 };
 /** Manually sets the current subscriber. */
 export const set_actor = ($: Reactive | null): Reactive | null => (
-  setter = actor, actor = $, setter
+  swapper = actor, actor = $, swapper
 );
-const set_scope = ($: Scoper | null) => (setter = scope, scope = $, setter);
+const set_scope = ($: Scoper | null) => (swapper = scope, scope = $, swapper);
 const link = (dep: Reactive, sub: Reactive | null) => {
   if (!sub) return;
   const a = sub.head;
