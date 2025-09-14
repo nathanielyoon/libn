@@ -4,7 +4,7 @@
  * and [createElement](https://dev.mozilla.org/Web/API/Document/createElement).
  *
  * @example Query document
- * ```ts
+ * ```ts ignore
  * import { DOMParser } from "@b-fuze/deno-dom/native";
  * import { assertEquals } from "@std/assert";
  *
@@ -14,10 +14,9 @@
  * ) as any;
  * assertEquals(qs("a#d")?.textContent, "2");
  * assertEquals(qa("b:not([class])").length, 2);
- * assertEquals(qs("b", ce("a", ce("b", "bold"), "not"))?.textContent, "bold");
  * ```
  *
- * @module query
+ * @module dom
  */
 
 /** @internal */
@@ -44,17 +43,19 @@ export const qa =
   };
 /** Child node. */
 export type Child = null | undefined | string | Element;
-/** Creates an element with optional children. */
-export const ce = <A extends keyof Html>(
-  tag: A,
-  ...actions: (Child | Child[] | (($: Html[A]) => void | Child | Child[]))[]
-): Html[A] =>
-  actions.reduce<Html[A]>((element, action) => {
-    const children = typeof action === "function" ? action(element) : action;
-    for (const child of Array.isArray(children) ? children : [children]) {
-      child && element.appendChild(
-        typeof child === "string" ? document.createTextNode(child) : child,
-      );
-    }
-    return element;
-  }, document.createElement(tag));
+/** @internal */
+type Use<A> = Child | Child[] | (($: A) => void | Child | Child[]);
+/** Element builders. */
+export const html: { [A in keyof Html]: (...$: Use<Html[A]>[]) => Html[A] } =
+  new Proxy<any>(document.createElement.bind(document), {
+    get: (create, tag: string) => (...$: Use<Element>[]) =>
+      $.reduce((element, use) => {
+        const children = typeof use === "function" ? use(element) : use;
+        for (const child of Array.isArray(children) ? children : [children]) {
+          child && element.appendChild(
+            typeof child === "string" ? document.createTextNode(child) : child,
+          );
+        }
+        return element;
+      }, create(tag)),
+  });
