@@ -55,6 +55,6 @@ export {
   is_local,
   is_public,
   is_secret,
-  make_local as key_local,
-  make_public as key_public,
+  make_local,
+  make_public,
 };
