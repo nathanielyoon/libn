@@ -5,7 +5,6 @@
     "./aead",
     "./base",
     "./csv",
-    "./element",
     "./fuzz",
     "./hash",
     "./json",
