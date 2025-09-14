@@ -5,8 +5,8 @@
  * ```ts
  * import { assert } from "@std/assert";
  *
- * const key = key_local();
- * const { secret_key, public_key } = key_public();
+ * const key = make_local();
+ * const { secret_key, public_key } = make_public();
  *
  * assert(is_local(key));
  * assert(is_secret(secret_key) && is_public(public_key));
@@ -16,7 +16,7 @@
  * ```ts
  * import { assert, assertEquals } from "@std/assert";
  *
- * const key = key_local();
+ * const key = make_local();
  * const body = crypto.getRandomValues(new Uint8Array(100));
  *
  * const token = en_local(key, body);
@@ -28,7 +28,7 @@
  * ```ts
  * import { assert, assertEquals } from "@std/assert";
  *
- * const { secret_key, public_key } = key_public();
+ * const { secret_key, public_key } = make_public();
  * const body = crypto.getRandomValues(new Uint8Array(100));
  *
  * const token = en_public(secret_key, body);
