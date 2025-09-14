@@ -14,7 +14,7 @@
  * ) as any;
  * assertEquals(qs("a#d")?.textContent, "2");
  * assertEquals(qa("b:not([class])").length, 2);
- * assertEquals(qs("b", ce("a", ce("b", "bold"), "not")).textContent, "bold");
+ * assertEquals(qs("b", ce("a", ce("b", "bold"), "not"))?.textContent, "bold");
  * ```
  *
  * @module query
