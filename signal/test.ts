@@ -1024,7 +1024,7 @@ Deno.test("preact", async ({ step }) => {
       assertSpyCalls(a, 1);
     });
     await step("graph updates", async ({ step }) => {
-      await step("run computeds once for multiple dep changes", async () => {
+      await step("run computeds once for multiple dep changes", () => {
         const a = signal("a");
         const b = signal("b");
         const c = spy(() => a() + b());
@@ -1037,7 +1037,7 @@ Deno.test("preact", async ({ step }) => {
         d();
         assertSpyCalls(c, 1);
       });
-      await step("drop A->B->A updates", async () => {
+      await step("drop A->B->A updates", () => {
         //     A
         //   / |
         //  B  | <- Looks like a flag doesn't it? :D
