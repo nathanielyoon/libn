@@ -64,7 +64,7 @@ const flush = () => {
   for (let a; a = queue.shift(); run(a, a.flags &= ~Flag.QUEUE));
 };
 /** Pauses updates, executes a function, then resumes. */
-export const batch = ($: () => void): void => {
+export const batch = <A>($: () => A): A => {
   try {
     return ++depth, $();
   } finally {
