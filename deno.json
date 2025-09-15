@@ -48,8 +48,8 @@
     "check": "deno check --doc",
     "lint": "deno lint --permit-no-files --compact && deno doc --lint **/*.ts",
     "write": "deno run --allow-net --allow-write ./write.ts",
-    "test": "deno test --allow-all --no-check --doc --parallel",
-    "coverage": "deno test --allow-all --no-check --reporter=dot --coverage --coverage-raw-data-only --clean && deno coverage --detailed --include=\"^file://$(pwd)\"; rm -r coverage",
+    "test": "deno test --permit-no-files --allow-all --no-check --doc --parallel",
+    "coverage": "deno test --permit-no-files --allow-all --no-check --reporter=dot --coverage --coverage-raw-data-only --clean && deno coverage --detailed --include=\"^file://$(pwd)\"; rm -r coverage",
     "all": "deno task --cwd=. check && deno task --cwd=. lint && deno task --cwd=. coverage && deno publish --dry-run --allow-dirty",
     "npm": "deno run --allow-all ../npm.ts"
   }
