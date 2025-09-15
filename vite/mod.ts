@@ -4,7 +4,6 @@
  * @example Inline assets
  * ```ts
  * import { defineConfig } from "rolldown-vite";
- * import { inline } from "@libn/vite";
  *
  * export default defineConfig({
  *   plugins: [inline()],
