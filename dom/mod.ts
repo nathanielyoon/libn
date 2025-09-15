@@ -4,7 +4,7 @@
  * and [createElement](https://dev.mozilla.org/Web/API/Document/createElement).
  *
  * @example Query document
- * ```ts ignore
+ * ```ts
  * import { DOMParser } from "@b-fuze/deno-dom/native";
  * import { assertEquals } from "@std/assert";
  *
@@ -45,17 +45,27 @@ export const qa =
 export type Child = null | undefined | string | Element;
 /** @internal */
 type Use<A> = Child | Child[] | (($: A) => void | Child | Child[]);
-/** Element builders. */
-export const html: { [A in keyof Html]: (...$: Use<Html[A]>[]) => Html[A] } =
-  new Proxy<any>(document.createElement.bind(document), {
-    get: (create, tag: string) => (...$: Use<Element>[]) =>
-      $.reduce((element, use) => {
-        const children = typeof use === "function" ? use(element) : use;
-        for (const child of Array.isArray(children) ? children : [children]) {
-          child && element.appendChild(
-            typeof child === "string" ? document.createTextNode(child) : child,
-          );
-        }
-        return element;
-      }, create(tag)),
-  });
+/** @internal */
+type Name<A, B> = (<C>() => C extends A ? true : false) extends
+  (<C>() => C extends Readonly<A> ? true : false) ? never : B;
+/** @internal */
+type Value<A, B> = B extends (event: infer C extends Event) => any
+  ? (event: C & { currentTarget: A }) => any
+  : B;
+/** @internal */
+type Attributes<A> = { [B in keyof A as Name<Pick<A, B>, B>]?: Value<A, A[B]> };
+const append = <A extends HTMLElement>($: A, use: Use<A>) => {
+  const children = typeof use === "function" ? use($) : use;
+  for (const child of Array.isArray(children) ? children : [children]) {
+    child && $.appendChild(
+      typeof child === "string" ? document.createTextNode(child) : child,
+    );
+  }
+  return $;
+};
+/** Element builder. */
+export const html = <A extends keyof Html>(
+  tag: A,
+  assign?: Attributes<Html[A]>,
+): (...$: Use<Html[A]>[]) => Html[A] =>
+(...$) => $.reduce(append, Object.assign(document.createElement(tag), assign));
