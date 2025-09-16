@@ -44,6 +44,17 @@ Deno.test("throw throws", () =>
     fc.anything(),
     (message, cause) => void assertThrows(() => Err.throw(message, cause)),
   )));
+Deno.test("catch catches", () =>
+  fc_check(fc.property(
+    fc_str(),
+    fc.anything(),
+    (message, cause) =>
+      assertEquals({ ...Err.catch(message)(cause).toJSON(), stack: null }, {
+        message,
+        cause,
+        stack: null,
+      }),
+  )));
 Deno.test("ok always passes", () =>
   fc_check(fc.property(
     fc.anything(),
