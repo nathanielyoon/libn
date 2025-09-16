@@ -25,10 +25,7 @@ Deno.test("err serializes", () =>
     fc.anything(),
     (message, cause) => {
       const err = new Err(message, cause);
-      assertEquals(
-        err.toJSON(),
-        { name: err.name, message, cause, stack: err.stack },
-      );
+      assertEquals(err.toJSON(), { message, cause, stack: err.stack });
     },
   )));
 Deno.test("err stringifies differently", () =>
