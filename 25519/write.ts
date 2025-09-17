@@ -21,12 +21,12 @@ await Promise.all([
 ]).then(([rfc7748, rfc8032, wycheproof_x25519, wycheproof_ed25519]) => ({
   x25519: {
     "rfc7748 5.2": into(
-      rfc7748.slice(18300, 19695).match(/(?<=^ {5})[\da-f]{64}$/gm)!,
       ["scalar", "coordinate", "output"],
+      rfc7748.slice(18300, 19695).match(/(?<=^ {5})[\da-f]{64}$/gm)!,
     ),
     "rfc7748 6.1": into(
-      rfc7748.slice(23217, 25093).match(/(?<=^ {5})[\da-f]{64}$/gm)!,
       ["secret_a", "public_a", "secret_b", "public_b", "shared"],
+      rfc7748.slice(23217, 25093).match(/(?<=^ {5})[\da-f]{64}$/gm)!,
     )[0],
     wycheproof: wycheproof_x25519.testGroups.flatMap((group) =>
       group.tests.map(($) => ({
@@ -38,13 +38,13 @@ await Promise.all([
   },
   ed25519: {
     "rfc8032 7.1": into(
+      ["secret_key", "public_key", "message", "signature"],
       rfc8032.slice(46947, 52155).replace(
         /\n{3}Josefsson {1}& {1}Liusvaara {9}Informational {20}\[Page {1}2[56]\]\n\f\nRFC {1}8032 {16}EdDSA: {1}Ed25519 {1}and {1}Ed448 {12}January {1}2017\n{3}/g,
         "",
       ).match(
         /(?<=^ {3}(?:(?:SECRET|PUBLIC) KEY|MESSAGE \(length \d+ bytes?\)|SIGNATURE):\n)(?: {3}(?:[\da-f]{2})+\n)*/gm,
       )!.map(trim),
-      ["secret_key", "public_key", "message", "signature"],
     ),
     wycheproof: wycheproof_ed25519.testGroups.flatMap((group) =>
       group.tests.map(($) => ({
