@@ -17,12 +17,12 @@ const export_pair = ($: CryptoKeyPair) =>
     public_key: new Uint8Array($[1]),
   }));
 Deno.test("x25519", async ({ step }) => {
-  await step("x25519 : rfc7748 section 5.2", () => {
+  await step("x25519 : rfc7748 5.2", () => {
     for (const $ of read(vectors.x25519["rfc7748 5.2"])) {
       assertEquals(x25519($.scalar, $.coordinate), $.output);
     }
   });
-  await step("x25519 : rfc7748 section 6.1", () => {
+  await step("x25519 : rfc7748 6.1", () => {
     const [$] = read([vectors.x25519["rfc7748 6.1"]]);
     assertEquals(x25519($.secret_a), $.public_a);
     assertEquals(x25519($.secret_b), $.public_b);
@@ -84,7 +84,7 @@ Deno.test("x25519", async ({ step }) => {
   });
 });
 Deno.test("ed25519", async ({ step }) => {
-  await step("generate/sign/verify : rfc8032 section 7.1", () => {
+  await step("generate/sign/verify : rfc8032 7.1", () => {
     for (const $ of read(vectors.ed25519["rfc8032 7.1"])) {
       assertEquals(generate($.secret_key), $.public_key);
       assertEquals(sign($.secret_key, $.message), $.signature);
