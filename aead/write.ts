@@ -1,64 +1,67 @@
-import { get_rfc, get_wycheproof, hex, write_vectors } from "../test.ts";
+import { into, save, trim } from "@libn/lib";
 
-await write_vectors(import.meta, {
-  rfc8439: await get_rfc(8439, 17603, 62179).then(($) => ({
-    "2.3.2": {
-      key: hex($.slice(156, 258)),
-      iv: hex($.slice(391, 426)),
-      count: +$[449],
-      state: hex($.slice(1639, 1930)),
+await Promise.all([
+  fetch("https://www.rfc-editor.org/rfc/rfc8439.txt").then(($) => $.text()),
+  fetch("https://www.ietf.org/archive/id/draft-irtf-cfrg-xchacha-03.txt").then(
+    ($) => $.text(),
+  ),
+  fetch(
+    "https://raw.githubusercontent.com/floodyberry/poly1305-donna/e6ad6e091d30d7f4ec2d4f978be1fcfcbce72781/poly1305-donna.c",
+  ).then(($) => $.text()),
+  fetch(
+    "https://raw.githubusercontent.com/C2SP/wycheproof/9261e367c14fb762ae28dda9bb5e84b606cdc2fc/testvectors_v1/xchacha20_poly1305_test.json",
+  ).then<{
+    testGroups: {
+      ivSize: number;
+      tests: {
+        key: string;
+        iv: string;
+        aad: string;
+        msg: string;
+        ct: string;
+        tag: string;
+        result: "valid" | "invalid";
+      }[];
+    }[];
+  }>(($) => $.json()),
+]).then(([rfc8439, xchacha, donna, wycheproof]) => ({
+  chacha: {
+    "rfc8439 2.3.2": {
+      key: trim(rfc8439.slice(17759, 17861)),
+      iv: trim(rfc8439.slice(17994, 18029)),
+      count: +rfc8439[18052],
+      state: trim(rfc8439.slice(19249, 19515)),
     },
-    "A.1": $.matchAll(
+    "rfc8439 A.1": rfc8439.slice(57774, 62180).matchAll(
       /Test Vector #\d:.+?Key:\n(.+?\n)\n.+?Nonce:\n(.+?\n)\n.+?Block Counter = (\d)\n.+?Keystream:\n(.+?\n)\n/gs,
     ).map(([_, key, iv, count, state]) => ({
-      key: hex(key),
-      iv: hex(iv),
+      key: trim(key),
+      iv: trim(iv),
       count: +count,
-      state: hex(state),
+      state: trim(state),
     })).toArray(),
-    "2.5.2": {
-      key: hex($.slice(12855, 12957).replace(/\s+/, "")),
-      raw: hex(
-        $.slice(13324, 13371) + $.slice(13397, 13444) + $.slice(13470, 13475),
+    xchacha: into(
+      ["plaintext", "key", "iv", "keystream", "ciphertext"],
+      xchacha.slice(31877, 34302).match(/(?:[\da-f]{32,}\s*)+/g)!.map(trim),
+    ),
+  },
+  poly: {
+    "rfc8439 2.5.2": {
+      key: trim(rfc8439.slice(30458, 30560).replace(/\s+/, "")),
+      raw: trim(
+        rfc8439.slice(30927, 30974) + rfc8439.slice(31000, 31047) +
+          rfc8439.slice(31073, 31078),
       ),
-      tag: hex($.slice(15019, 15066)),
+      tag: trim(rfc8439.slice(32622, 32669)),
     },
-  })),
-  xchacha: await fetch(
-    "https://www.ietf.org/archive/id/draft-irtf-cfrg-xchacha-03.txt",
-  ).then(async ($) =>
-    (await $.text()).slice(31877, 34302).match(/(?:[\da-f]{32,}\s*)+/g)!
-  ).then(($) => ({
-    key: $[1].trim(),
-    iv: $[2].trim(),
-    plaintext: $[0].replace(/\s/g, ""),
-    keystream: $[3].replace(/\s/g, ""),
-    ciphertext: $[4].replace(/\s/g, ""),
-  })),
-  donna: await fetch(
-    `https://raw.githubusercontent.com/floodyberry/poly1305-donna/e6ad6e091d30d7f4ec2d4f978be1fcfcbce72781/poly1305-donna.c`,
-  ).then(async ($) =>
-    (await $.text()).matchAll(
+    donna: donna.matchAll(
       /key\[32\] = \{(.+?)\};.+?msg\[\d+\] = \{(.+?)\};.+?mac\[16\] = \{(.+?)\};/gs,
-    ).map(([_, key, raw, tag]) => ({
-      key: hex(key),
-      raw: hex(raw),
-      tag: hex(tag),
-    })).toArray()
-  ),
-  wycheproof: await get_wycheproof<{
-    key: string;
-    iv: string;
-    aad: string;
-    msg: string;
-    ct: string;
-    tag: string;
-    result: "valid" | "invalid";
-  }, { ivSize: number }>(
-    "9261e367c14fb762ae28dda9bb5e84b606cdc2fc",
-    "xchacha20_poly1305",
-    ({ ivSize, tests }) =>
-      ivSize !== 192 ? [] : tests.map(($) => ({
+    ).map(($) => into(["", "key", "raw", "tag"], $.map(trim))[0]).toArray(),
+  },
+  aead: {
+    "rfc8439 2.8.2": {},
+    wycheproof: wycheproof.testGroups.flatMap((group) =>
+      group.ivSize !== 192 ? [] : group.tests.map(($) => ({
         key: $.key,
         iv: $.iv,
         plaintext: $.msg,
@@ -66,6 +69,7 @@ await write_vectors(import.meta, {
         ciphertext: $.ct,
         tag: $.tag,
         result: $.result === "valid",
-      })),
-  ),
-});
+      }))
+    ),
+  },
+})).then(save(import.meta));

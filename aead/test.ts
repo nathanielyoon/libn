@@ -1,96 +1,122 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { de_b16 } from "@libn/base";
-import { fc_bin, fc_check, fc_key } from "../test.ts";
+import { fc_binary, fc_check, read } from "@libn/lib";
 import { chacha } from "./src/chacha.ts";
 import { poly } from "./src/poly.ts";
 import { polyxchacha, xchachapoly } from "./src/aead.ts";
 import { decrypt, encrypt, xor } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
-Deno.test("chacha matches rfc8439 sections 2.3.2, A.1", () =>
-  [vectors.rfc8439["2.3.2"], ...vectors.rfc8439["A.1"]].forEach(
-    ({ key, iv, count, state }) => {
-      const view = new DataView(de_b16(iv).buffer), to = new Uint32Array(16);
+Deno.test("chacha", async ({ step }) => {
+  await step("chacha : rfc8439 2.3.2/rfc 8439 A.1", () => {
+    for (
+      const $ of read([
+        vectors.chacha["rfc8439 2.3.2"],
+        ...vectors.chacha["rfc8439 A.1"],
+      ])
+    ) {
+      const iv = new DataView($.iv.buffer);
+      const state = new Uint32Array(16);
       chacha(
-        new DataView(de_b16(key).buffer),
-        count,
-        view.getUint32(0, true),
-        view.getUint32(4, true),
-        view.getUint32(8, true),
-        to,
-      ), assertEquals(new Uint8Array(to.buffer), de_b16(state));
-    },
-  ));
-Deno.test("poly matches rfc8439 section 2.5.2, donna selftests", () =>
-  [vectors.rfc8439["2.5.2"], ...vectors.donna].forEach(({ key, raw, tag }) =>
-    assertEquals(
-      poly(new DataView(de_b16(key).buffer), de_b16(raw)),
-      de_b16(tag),
-    )
-  ));
-Deno.test("xchacha matches draft-irtf-cfrg-xchacha-03 section A.3.2.1", () => {
-  const key = de_b16(vectors.xchacha.key), iv = de_b16(vectors.xchacha.iv);
-  const text = de_b16(vectors.xchacha.plaintext);
-  const keystream = new Uint8Array(text.length);
-  xor(key, iv, keystream);
-  assertEquals(keystream, de_b16(vectors.xchacha.keystream));
-  xor(key, iv, text);
-  assertEquals(text, de_b16(vectors.xchacha.ciphertext));
+        new DataView($.key.buffer),
+        $.count,
+        iv.getUint32(0, true),
+        iv.getUint32(4, true),
+        iv.getUint32(8, true),
+        state,
+      );
+      assertEquals(new Uint8Array(state.buffer), $.state);
+    }
+  });
+  await step("xchacha : xchacha-03 A.3.2.1", () => {
+    for (const $ of read(vectors.chacha.xchacha)) {
+      const text = new Uint8Array($.plaintext.length);
+      xor($.key, $.iv, text);
+      assertEquals(text, $.keystream);
+      text.set($.plaintext);
+      xor($.key, $.iv, text);
+      assertEquals(text, $.ciphertext);
+    }
+  });
 });
-Deno.test("xchachapoly/polyxchacha match wycheproof", () =>
-  vectors.wycheproof.forEach(($) => {
-    const key = de_b16($.key), iv = de_b16($.iv);
-    const plaintext = de_b16($.plaintext), ciphertext = de_b16($.ciphertext);
-    const associated_data = de_b16($.associated_data);
-    const tag = de_b16($.tag);
-    if ($.result) {
-      const temp = new Uint8Array(plaintext);
-      assertEquals(xchachapoly(key, iv, temp, associated_data), tag);
-      assertEquals(temp, ciphertext);
-      assert(polyxchacha(key, iv, tag, temp, associated_data));
-      assertEquals(temp, plaintext);
-    } else assert(!polyxchacha(key, iv, tag, ciphertext, associated_data));
-  }));
-Deno.test("encryption/decryption round-trips losslessly", () =>
-  fc_check(fc.property(fc_key, fc_bin(), fc_bin(), (key, $, data) => {
-    assertEquals(decrypt(key, encrypt(key, $, data)!, data)!, $);
-    assertEquals(decrypt(key, encrypt(key, $)!)!, $);
-  })));
+Deno.test("poly", async ({ step }) => {
+  await step("poly : rfc8439 2.5.2/donna", () => {
+    for (
+      const $ of read([vectors.poly["rfc8439 2.5.2"], ...vectors.poly.donna])
+    ) assertEquals(poly(new DataView($.key.buffer), $.raw), $.tag);
+  });
+});
 const fc_wrong = ($: number) =>
-  fc.oneof(fc_bin({ maxLength: $ - 1 }), fc_bin({ minLength: $ + 1 }));
+  fc.oneof(fc_binary({ maxLength: $ - 1 }), fc_binary({ minLength: $ + 1 }));
 const fc_at_least_one_wrong = <const A extends number[]>(...lengths: A) =>
   fc.oneof(...Array.from(lengths, (_, index) =>
     fc.tuple(
       ...lengths.map(($, z) =>
         z !== index
-          ? fc.oneof(fc_bin({ minLength: $, maxLength: $ }), fc_wrong($))
+          ? fc.oneof(fc_binary({ minLength: $, maxLength: $ }), fc_wrong($))
           : fc_wrong($)
       ),
     )));
-Deno.test("xchachapoly rejects wrong-size arguments", () =>
-  fc_check(fc.property(
-    fc_at_least_one_wrong(32, 24),
-    fc_bin(),
-    fc_bin(),
-    ([key, iv], plaintext, data) =>
-      assertEquals(xchachapoly(key, iv, plaintext, data), null),
-  )));
-Deno.test("polyxchacha rejects wrong-size arguments", () =>
-  fc_check(fc.property(
-    fc_at_least_one_wrong(32, 24, 16),
-    fc_bin(),
-    fc_bin(),
-    ([key, iv, tag], ciphertext, data) =>
-      assertEquals(polyxchacha(key, iv, tag, ciphertext, data), false),
-  )));
-Deno.test("encrypt/decrypt reject wrong-size arguments", () =>
-  fc_check(fc.property(
-    fc_wrong(32),
-    fc_bin(),
-    fc_bin(),
-    (key, $, data) => {
-      assertEquals(encrypt(key, $, data), null);
-      assertEquals(decrypt(key, $, data), null);
-    },
-  )));
+Deno.test("aead", async ({ step }) => {
+  await step("xchachapoly/polyxchacha : wycheproof", () => {
+    for (const $ of read(vectors.aead.wycheproof)) {
+      if ($.result) {
+        const text = new Uint8Array($.plaintext);
+        assertEquals(xchachapoly($.key, $.iv, text, $.associated_data), $.tag);
+        assertEquals(text, $.ciphertext);
+        assert(polyxchacha($.key, $.iv, $.tag, text, $.associated_data));
+        assertEquals(text, $.plaintext);
+      } else {
+        assert(
+          !polyxchacha($.key, $.iv, $.tag, $.ciphertext, $.associated_data),
+        );
+      }
+    }
+  });
+  await step("xchachapoly : wrong-size arguments", () => {
+    fc_check(fc.property(
+      fc_at_least_one_wrong(32, 24),
+      fc_binary(),
+      fc_binary(),
+      ([key, iv], plaintext, data) =>
+        assertEquals(xchachapoly(key, iv, plaintext, data), null),
+    ));
+  });
+  await step("polyxchacha : wrong-size arguments", () => {
+    fc_check(fc.property(
+      fc_at_least_one_wrong(32, 24, 16),
+      fc_binary(),
+      fc_binary(),
+      ([key, iv, tag], ciphertext, data) =>
+        assertEquals(polyxchacha(key, iv, tag, ciphertext, data), false),
+    ));
+  });
+});
+Deno.test("mod", async ({ step }) => {
+  await step("encrypt/decrypt : arbitrary round-trip", () => {
+    fc_check(fc.property(
+      fc_binary(32),
+      fc_binary(),
+      fc_binary(),
+      (key, plaintext, data) => {
+        const text_1 = encrypt(key, plaintext, data);
+        assert(text_1);
+        assertEquals(decrypt(key, text_1, data)!, plaintext);
+        const text_2 = encrypt(key, plaintext);
+        assert(text_2);
+        assertEquals(decrypt(key, text_2), plaintext);
+      },
+    ));
+  });
+  await step("encrypt/decrypt : wrong-size arguments", () => {
+    fc_check(fc.property(
+      fc_wrong(32),
+      fc_binary(),
+      fc_binary(),
+      (key, $, data) => {
+        assertEquals(encrypt(key, $, data), null);
+        assertEquals(decrypt(key, $, data), null);
+      },
+    ));
+  });
+});
