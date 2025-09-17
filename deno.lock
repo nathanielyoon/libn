@@ -384,7 +384,6 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@deno/dnt@~0.42.3",
       "jsr:@std/assert@^1.0.14",
       "npm:fast-check@^4.3.0"
     ],
@@ -397,6 +396,11 @@
       "hash": {
         "dependencies": [
           "jsr:@std/crypto@^1.0.5"
+        ]
+      },
+      "lib": {
+        "dependencies": [
+          "jsr:@deno/dnt@~0.42.3"
         ]
       },
       "signal": {

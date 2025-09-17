@@ -1,0 +1,9 @@
+{
+  "name": "@libn/lib",
+  "version": "0.1.0",
+  "license": "GPL-3.0-or-later",
+  "exports": "./mod.ts",
+  "imports": {
+    "@deno/dnt": "jsr:@deno/dnt@^0.42.3"
+  }
+}
