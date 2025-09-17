@@ -23,13 +23,11 @@ Deno.test("x25519", async ({ step }) => {
     }
   });
   await step("x25519 : rfc7748 section 6.1", () => {
-    const [{ secret_a, public_a, secret_b, public_b, shared }] = read([
-      vectors.x25519["rfc7748 6.1"],
-    ]);
-    assertEquals(x25519(secret_a), public_a);
-    assertEquals(x25519(secret_b), public_b);
-    assertEquals(x25519(secret_a, public_b), shared);
-    assertEquals(x25519(secret_b, public_a), shared);
+    const [$] = read([vectors.x25519["rfc7748 6.1"]]);
+    assertEquals(x25519($.secret_a), $.public_a);
+    assertEquals(x25519($.secret_b), $.public_b);
+    assertEquals(x25519($.secret_a, $.public_b), $.shared);
+    assertEquals(x25519($.secret_b, $.public_a), $.shared);
   });
   await step("x25519 : wycheproof", () => {
     for (const $ of read(vectors.x25519.wycheproof)) {
@@ -110,7 +108,8 @@ Deno.test("ed25519", async ({ step }) => {
     fc_check(fc.property(
       fc_binary(32),
       fc_binary(),
-      (key, $) => assert(verify(generate(key), $, sign(key, $))),
+      (key, message) =>
+        assert(verify(generate(key), message, sign(key, message))),
     ));
   });
   await step("generate :: webcrypto", async () => {
@@ -122,19 +121,24 @@ Deno.test("ed25519", async ({ step }) => {
   await step("sign/verify :: webcrypto", async () => {
     await fc_check(fc.asyncProperty(
       fc_binary(),
-      async ($) => {
+      async (message) => {
         const pair = await generate_pair("Ed25519", ["sign", "verify"]);
         const { secret_key, public_key } = await export_pair(pair);
-        const signature = sign(secret_key, $);
+        const signature = sign(secret_key, message);
         assertEquals(
           signature,
           new Uint8Array(
-            await crypto.subtle.sign("Ed25519", pair.privateKey, $),
+            await crypto.subtle.sign("Ed25519", pair.privateKey, message),
           ),
         );
         assertEquals(
-          verify(public_key, $, signature),
-          await crypto.subtle.verify("Ed25519", pair.publicKey, signature, $),
+          verify(public_key, message, signature),
+          await crypto.subtle.verify(
+            "Ed25519",
+            pair.publicKey,
+            signature,
+            message,
+          ),
         );
       },
     ));
