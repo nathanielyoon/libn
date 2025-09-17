@@ -39,10 +39,7 @@ await Promise.all([
   ed25519: {
     "rfc8032 7.1": into(
       ["secret_key", "public_key", "message", "signature"],
-      rfc8032.slice(46947, 52155).replace(
-        /\n{3}Josefsson {1}& {1}Liusvaara {9}Informational {20}\[Page {1}2[56]\]\n\f\nRFC {1}8032 {16}EdDSA: {1}Ed25519 {1}and {1}Ed448 {12}January {1}2017\n{3}/g,
-        "",
-      ).match(
+      rfc8032.slice(46947, 52155).replace(/\n{3}.+?\n\f\n.+?\n{3}/g, "").match(
         /(?<=^ {3}(?:(?:SECRET|PUBLIC) KEY|MESSAGE \(length \d+ bytes?\)|SIGNATURE):\n)(?: {3}(?:[\da-f]{2})+\n)*/gm,
       )!.map(trim),
     ),
