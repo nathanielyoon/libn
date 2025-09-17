@@ -1,61 +1,11 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { de_b16 } from "@libn/base";
-import { fc_bin, fc_check, fc_key } from "../test.ts";
+import { fc_binary, fc_check, read } from "@libn/lib";
 import { generate, sign, verify } from "./src/ed25519.ts";
 import { convert_public, convert_secret, x25519 } from "./src/x25519.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
-Deno.test("x25519 matches rfc7748 sections 5.2, 6.1", () =>
-  vectors.rfc7748.forEach(($) =>
-    assertEquals(
-      x25519(de_b16($.secret_key), de_b16($.public_key)),
-      de_b16($.shared_secret),
-    )
-  ));
-Deno.test("sign/verify match rfc8032 section 7.1", () =>
-  vectors.rfc8032.forEach(($) => {
-    const secret_key = de_b16($.secret_key), public_key = de_b16($.public_key);
-    assertEquals(generate(secret_key), public_key);
-    const data = de_b16($.data), signature = sign(secret_key, data);
-    assertEquals(signature, de_b16($.signature));
-    assert(verify(public_key, data, signature));
-  }));
-Deno.test("x25519 matches wycheproof", () =>
-  vectors.wycheproof_x25519.forEach(($) =>
-    assertEquals(
-      x25519(de_b16($.secret_key), de_b16($.public_key)),
-      $.shared_secret && de_b16($.shared_secret),
-    )
-  ));
-Deno.test("verify matches wycheproof", () =>
-  vectors.wycheproof_ed25519.forEach(($) =>
-    assertEquals(
-      verify(de_b16($.public_key), de_b16($.data), de_b16($.signature)),
-      $.result,
-    )
-  ));
-Deno.test("verify rejects bad points", () => {
-  const big = de_b16((1n | 1n << 255n).toString(16)).reverse();
-  const empty = new Uint8Array(32);
-  assert(!verify(empty, empty, empty));
-  assert(!verify(big, empty, new Uint8Array(64)));
-  assert(!verify(empty, empty, new Uint8Array(64).fill(-1, 32)));
-  assert(!verify(empty, empty, new Uint8Array([...big, ...empty])));
-});
-Deno.test("verify validates correctly-generated signatures", () =>
-  fc_check(
-    fc.property(fc_key, fc_bin(), (key, data) =>
-      assert(verify(generate(key), data, sign(key, data)))),
-  ));
-Deno.test("x25519 works on montgomery or converted edwards keys", () =>
-  fc_check(fc.property(fc_key, fc_key, (key_1, key_2) => {
-    assertEquals(x25519(key_1, x25519(key_2)), x25519(key_2, x25519(key_1)));
-    assertEquals(
-      x25519(convert_secret(key_1), convert_public(generate(key_2))),
-      x25519(convert_secret(key_2), convert_public(generate(key_1))),
-    );
-  })));
 const generate_pair = (algorithm: `${"Ed" | "X"}25519`, use: KeyUsage[]) =>
   crypto.subtle.generateKey(algorithm, true, use) as Promise<CryptoKeyPair>;
 const export_pair = ($: CryptoKeyPair) =>
@@ -66,11 +16,54 @@ const export_pair = ($: CryptoKeyPair) =>
     secret_key: new Uint8Array($[0].slice(16)),
     public_key: new Uint8Array($[1]),
   }));
-Deno.test("x25519 matches webcrypto", () =>
-  Promise.all(
-    Array.from({ length: 2 }, () => generate_pair("X25519", ["deriveBits"])),
-  ).then(([pair_1, pair_2]) =>
-    Promise.all([
+Deno.test("x25519", async ({ step }) => {
+  await step("x25519 : rfc7748 section 5.2", () => {
+    for (const $ of read(vectors.x25519["rfc7748 5.2"])) {
+      assertEquals(x25519($.scalar, $.coordinate), $.output);
+    }
+  });
+  await step("x25519 : rfc7748 section 6.1", () => {
+    const [{ secret_a, public_a, secret_b, public_b, shared }] = read([
+      vectors.x25519["rfc7748 6.1"],
+    ]);
+    assertEquals(x25519(secret_a), public_a);
+    assertEquals(x25519(secret_b), public_b);
+    assertEquals(x25519(secret_a, public_b), shared);
+    assertEquals(x25519(secret_b, public_a), shared);
+  });
+  await step("x25519 : wycheproof", () => {
+    for (const $ of read(vectors.x25519.wycheproof)) {
+      assertEquals(x25519($.secret_key, $.public_key), $.shared_secret);
+    }
+  });
+  await step("x25519 : arbitrary exchange", () => {
+    fc_check(fc.property(
+      fc_binary(32),
+      fc_binary(32),
+      (key_1, key_2) =>
+        assertEquals(
+          x25519(key_1, x25519(key_2)),
+          x25519(key_2, x25519(key_1)),
+        ),
+    ));
+  });
+  await step("convert_secret/convert_public : arbitrary exchange", () => {
+    fc_check(fc.property(
+      fc_binary(32),
+      fc_binary(32),
+      (key_1, key_2) =>
+        assertEquals(
+          x25519(convert_secret(key_1), convert_public(generate(key_2))),
+          x25519(convert_secret(key_2), convert_public(generate(key_1))),
+        ),
+    ));
+  });
+  await step("x25519 :: webcrypto", async () => {
+    const [pair_1, pair_2] = await Promise.all([
+      generate_pair("X25519", ["deriveBits"]),
+      generate_pair("X25519", ["deriveBits"]),
+    ]);
+    const [keys_1, keys_2, secret_1, secret_2] = await Promise.all([
       export_pair(pair_1),
       export_pair(pair_2),
       crypto.subtle.deriveBits(
@@ -83,28 +76,67 @@ Deno.test("x25519 matches webcrypto", () =>
         pair_2.privateKey,
         256,
       ).then(($) => new Uint8Array($)),
-    ])
-  ).then(([pair_1, pair_2, secret_1, secret_2]) => {
-    assertEquals(x25519(pair_1.secret_key), pair_1.public_key);
-    assertEquals(x25519(pair_2.secret_key), pair_2.public_key);
+    ]);
+    assertEquals(x25519(keys_1.secret_key), keys_1.public_key);
+    assertEquals(x25519(keys_2.secret_key), keys_2.public_key);
     assertEquals({
-      secret_1: x25519(pair_1.secret_key, pair_2.public_key),
-      secret_2: x25519(pair_2.secret_key, pair_1.public_key),
+      secret_1: x25519(keys_1.secret_key, keys_2.public_key),
+      secret_2: x25519(keys_2.secret_key, keys_1.public_key),
     }, { secret_1, secret_2 });
-  }));
-Deno.test("generate matches webcrypto", () =>
-  generate_pair("Ed25519", ["sign", "verify"])
-    .then(export_pair)
-    .then(($) => assertEquals(generate($.secret_key), $.public_key)));
-Deno.test("sign/verify match webcrypto", () =>
-  fc_check(fc.asyncProperty(fc_bin(), async ($) => {
-    const pair = await generate_pair("Ed25519", ["sign", "verify"]);
-    const { secret_key, public_key } = await export_pair(pair);
-    const signature = sign(secret_key, $);
-    assertEquals(
-      signature,
-      new Uint8Array(await crypto.subtle.sign("Ed25519", pair.privateKey, $)),
+  });
+});
+Deno.test("ed25519", async ({ step }) => {
+  await step("generate/sign/verify : rfc8032 section 7.1", () => {
+    for (const $ of read(vectors.ed25519["rfc8032 7.1"])) {
+      assertEquals(generate($.secret_key), $.public_key);
+      assertEquals(sign($.secret_key, $.message), $.signature);
+      assert(verify($.public_key, $.message, $.signature));
+    }
+  });
+  await step("verify : wycheproof", () => {
+    for (const $ of read(vectors.ed25519.wycheproof)) {
+      assertEquals(verify($.public_key, $.message, $.signature), $.result);
+    }
+  });
+  await step("verify : bad points", () => {
+    const over = de_b16((1n | 1n << 255n).toString(16)).reverse();
+    const zero = new Uint8Array(32);
+    assert(!verify(zero, zero, zero));
+    assert(!verify(over, zero, new Uint8Array(64)));
+    assert(!verify(zero, zero, new Uint8Array(64).fill(-1, 32)));
+    assert(!verify(zero, zero, new Uint8Array([...over, ...zero])));
+  });
+  await step("sign/verify : arbitrary signatures", () => {
+    fc_check(fc.property(
+      fc_binary(32),
+      fc_binary(),
+      (key, $) => assert(verify(generate(key), $, sign(key, $))),
+    ));
+  });
+  await step("generate :: webcrypto", async () => {
+    const { secret_key, public_key } = await export_pair(
+      await generate_pair("Ed25519", ["sign", "verify"]),
     );
-    assert(verify(public_key, $, signature));
-    assert(await crypto.subtle.verify("Ed25519", pair.publicKey, signature, $));
-  })));
+    assertEquals(generate(secret_key), public_key);
+  });
+  await step("sign/verify :: webcrypto", async () => {
+    await fc_check(fc.asyncProperty(
+      fc_binary(),
+      async ($) => {
+        const pair = await generate_pair("Ed25519", ["sign", "verify"]);
+        const { secret_key, public_key } = await export_pair(pair);
+        const signature = sign(secret_key, $);
+        assertEquals(
+          signature,
+          new Uint8Array(
+            await crypto.subtle.sign("Ed25519", pair.privateKey, $),
+          ),
+        );
+        assertEquals(
+          verify(public_key, $, signature),
+          await crypto.subtle.verify("Ed25519", pair.publicKey, signature, $),
+        );
+      },
+    ));
+  });
+});
