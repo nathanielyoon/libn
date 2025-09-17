@@ -12,25 +12,25 @@ export const generate = ($: Uint8Array): Uint8Array<ArrayBuffer> =>
 /** Creates an Ed25519 digital signature. */
 export const sign = (
   secret_key: Uint8Array,
-  data: Uint8Array,
+  message: Uint8Array,
 ): Uint8Array<ArrayBuffer> => {
-  const a = prune(secret_key), b = new Uint8Array(data.length + 64);
-  b.set(a.subarray(32)), b.set(data, 32);
+  const a = prune(secret_key), b = new Uint8Array(message.length + 64);
+  b.set(a.subarray(32)), b.set(message, 32);
   const c = en_big(a), d = int(b.subarray(0, -32));
-  a.set(en_point(d)), b.set(a), b.set(en_point(c), 32), b.set(data, 64);
+  a.set(en_point(d)), b.set(a), b.set(en_point(c), 32), b.set(message, 64);
   return a.set(de_big((d + c * int(b) % N) % N), 32), a;
 };
 /** Verifies a signed message. */
 export const verify = (
   public_key: Uint8Array,
-  data: Uint8Array,
+  message: Uint8Array,
   signature: Uint8Array,
 ): boolean => {
   if (signature.length !== 64) return false;
   const a = en_big(signature.subarray(32));
   if (a >= N) return false;
-  const b = new Uint8Array(data.length + 64);
-  b.set(signature), b.set(public_key, 32), b.set(data, 64);
+  const b = new Uint8Array(message.length + 64);
+  b.set(signature), b.set(public_key, 32), b.set(message, 64);
   let c = de_point(public_key);
   if (c < 0n) return false;
   let d = int(b), e = I;
