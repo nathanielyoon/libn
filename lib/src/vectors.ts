@@ -4,7 +4,7 @@ import type { Json } from "./types.ts";
 /** Extracts base16 from enclosing text. */
 export const trim = ($: string): string =>
   $.match(
-    /(?<=(?:^|0x|\W)(?:[\da-f]{2})*)[\da-f]{2}(?=(?:[\da-f]{2})*(?:\W|$))/gi,
+    /(?<=(?:^|0x|\W)(?:[\da-f]{2})*)[\da-f]{2}(?=(?:[\da-f]{2})*(?:\W|$))/g,
   )?.join("") ?? "";
 /** Groups into objects. */
 export const into = <A extends string, B>(
