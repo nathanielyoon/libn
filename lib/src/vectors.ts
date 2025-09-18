@@ -7,10 +7,10 @@ export const trim = ($: string): string =>
     /(?<=(?:^|0x|\W)(?:[\da-f]{2})*)[\da-f]{2}(?=(?:[\da-f]{2})*(?:\W|$))/g,
   )?.join("") ?? "";
 /** Groups into objects. */
-export const into = <A extends string, B>(
-  keys: [A, ...A[]],
+export const into = <A extends string[], B>(
+  keys: A,
   $: B[],
-): { [_ in Exclude<A, "">]: B }[] => {
+): { [_ in Exclude<A[number], "">]: B }[] => {
   const size = keys.length, out = Array($.length / size);
   for (let at, target: { [key: string]: any }, z = 0, y; z < out.length; ++z) {
     at = z * size, target = out[z] = {}, y = 0;
