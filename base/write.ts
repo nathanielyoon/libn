@@ -1,7 +1,7 @@
 import { save } from "@libn/lib";
 
 await fetch("https://www.rfc-editor.org/rfc/rfc4648")
-  .then(($) => $.text())
+  .then(async ($) => (await $.text()).slice(25691, 26723))
   .then((rfc4648) => ({
     rfc4648: ["16", "32", "32-hex", "64", "64url"].reduce((to, base) => ({
       ...to,
