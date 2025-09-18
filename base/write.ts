@@ -1,12 +1,16 @@
-import { get_rfc, write_vectors } from "../test.ts";
+import { save } from "@libn/lib";
 
-await write_vectors(import.meta, {
-  rfc4648: await get_rfc(4648, 25691, 26723).then((text) =>
-    ["16", "32", "32-hex", "64", "64url"].reduce((to, base) => ({
+await fetch("https://www.rfc-editor.org/rfc/rfc4648")
+  .then(($) => $.text())
+  .then((rfc4648) => ({
+    rfc4648: ["16", "32", "32-hex", "64", "64url"].reduce((to, base) => ({
       ...to,
-      [`base${base.replace("-", "")}`]: text.matchAll(
-        RegExp(`^ {3}BASE${base.toUpperCase()}\\("(.*)"\\) = "(.*)"$`, "gm"),
-      ).map(([_, ascii, binary]) => ({
+      [`base${base.replace("-", "")}`]: rfc4648.matchAll(RegExp(
+        `^ {3}BASE${
+          base.replace("url", "").toUpperCase()
+        }\\("(.*)"\\) = "(.*)"$`,
+        "gm",
+      )).map(([_, ascii, binary]) => ({
         ascii,
         binary: base === "16"
           ? binary.toLowerCase()
@@ -14,6 +18,6 @@ await write_vectors(import.meta, {
           ? binary
           : binary.replace(/=+$/, ""),
       })).toArray(),
-    }), {})
-  ),
-});
+    }), {}),
+  }))
+  .then(save(import.meta));

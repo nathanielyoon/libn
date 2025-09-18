@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { fc_bin, fc_check, fc_str } from "../test.ts";
+import { fc_binary, fc_check, fc_string } from "@libn/lib";
 import { de_b16, en_b16 } from "./src/16.ts";
 import {
   de_b32,
@@ -16,7 +16,7 @@ import { de_b64, de_u64, en_b64, en_u64 } from "./src/64.ts";
 import { de_bin, en_bin } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
-Deno.test("encode/decode round-trip losslessly", () =>
+Deno.test("en_$base/de_$base : arbitrary round-trip", () =>
   ([
     [en_b16, de_b16],
     [en_b32, de_b32],
@@ -26,9 +26,11 @@ Deno.test("encode/decode round-trip losslessly", () =>
     [en_b64, de_b64],
     [en_u64, de_u64],
   ] as const).forEach(([encode, decode]) =>
-    fc_check(fc.property(fc_bin(), ($) => assertEquals(decode(encode($)), $)))
+    fc_check(
+      fc.property(fc_binary(), ($) => assertEquals(decode(encode($)), $)),
+    )
   ));
-Deno.test("encoding and decoding matches rfc4648 section 10", () =>
+Deno.test("en_$base/de_$base : rfc4648 10", () =>
   ([
     [en_b16, de_b16, vectors.rfc4648.base16],
     [en_b32, de_b32, vectors.rfc4648.base32],
@@ -41,13 +43,13 @@ Deno.test("encoding and decoding matches rfc4648 section 10", () =>
       assertEquals(de_bin(decode(binary)), ascii);
     })
   ));
-Deno.test("bound functions match separate instantiations", () => {
+Deno.test("en_bin/de_bin :: separate instantiations and calls", () => {
   fc_check(fc.property(
-    fc_str(),
+    fc_string(),
     ($) => assertEquals(en_bin($), new TextEncoder().encode($)),
   ));
   fc_check(fc.property(
-    fc_bin(),
+    fc_binary(),
     ($) => assertEquals(de_bin($), new TextDecoder().decode($)),
   ));
 });
