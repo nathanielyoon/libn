@@ -1,24 +1,19 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { fc_binary, fc_check, read } from "@libn/lib";
-import { chacha } from "./src/chacha.ts";
+import { chacha, xor } from "./src/chacha.ts";
 import { poly } from "./src/poly.ts";
 import { polyxchacha, xchachapoly } from "./src/aead.ts";
-import { decrypt, encrypt, xor } from "./mod.ts";
+import { cipher, decrypt, encrypt } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("chacha", async ({ step }) => {
   await step("chacha : rfc8439 2.3.2/rfc 8439 A.1", () => {
-    for (
-      const $ of read([
-        vectors.chacha["rfc8439 2.3.2"],
-        ...vectors.chacha["rfc8439 A.1"],
-      ])
-    ) {
+    for (const $ of read(vectors.chacha["rfc8439 2.3.2/rfc8439 A.1"])) {
       const iv = new DataView($.iv.buffer);
       const state = new Uint32Array(16);
       chacha(
-        new DataView($.key.buffer),
+        new Uint32Array($.key.buffer),
         $.count,
         iv.getUint32(0, true),
         iv.getUint32(4, true),
@@ -28,22 +23,56 @@ Deno.test("chacha", async ({ step }) => {
       assertEquals(new Uint8Array(state.buffer), $.state);
     }
   });
-  await step("xchacha : xchacha-03 A.3.2.1", () => {
+  await step("xor : rfc8439 2.4.2/rfc8439 A.2", () => {
+    for (const $ of read(vectors.chacha["rfc8439 2.4.2/rfc8439 A.2"])) {
+      const iv = new DataView($.iv.buffer);
+      xor(
+        new Uint32Array($.key.buffer),
+        iv.getUint32(0, true),
+        iv.getUint32(4, true),
+        iv.getUint32(8, true),
+        $.plaintext,
+        $.count,
+      );
+      assertEquals($.plaintext, $.ciphertext);
+    }
+  });
+  await step("chacha : rfc8439 2.6.2/rfc8439 A.4", () => {
+    for (const $ of read(vectors.chacha["rfc8439 2.6.2/rfc8439 A.4"])) {
+      const iv = new DataView($.iv.buffer);
+      const state = new Uint32Array(16);
+      chacha(
+        new Uint32Array($.key.buffer),
+        0,
+        iv.getUint32(0, true),
+        iv.getUint32(4, true),
+        iv.getUint32(8, true),
+        state,
+      );
+      assertEquals(new Uint8Array(state.buffer).subarray(0, 32), $.subkey);
+    }
+  });
+  await step("hchacha : xchacha-03 A.3.2.1", () => {
     for (const $ of read(vectors.chacha.xchacha)) {
       const text = new Uint8Array($.plaintext.length);
-      xor($.key, $.iv, text);
+      cipher($.key, $.iv, text);
       assertEquals(text, $.keystream);
       text.set($.plaintext);
-      xor($.key, $.iv, text);
+      cipher($.key, $.iv, text);
       assertEquals(text, $.ciphertext);
     }
   });
 });
 Deno.test("poly", async ({ step }) => {
-  await step("poly : rfc8439 2.5.2/donna", () => {
-    for (
-      const $ of read([vectors.poly["rfc8439 2.5.2"], ...vectors.poly.donna])
-    ) assertEquals(poly(new DataView($.key.buffer), $.raw), $.tag);
+  await step("poly : rfc8439 2.5.2/rfc8439 A.3", () => {
+    for (const $ of read(vectors.poly["rfc8439 2.5.2/rfc8439 A.3"])) {
+      assertEquals(poly(new Uint32Array($.key.buffer), $.message), $.tag);
+    }
+  });
+  await step("poly : poly1305donna", () => {
+    for (const $ of read(vectors.poly.donna)) {
+      assertEquals(poly(new Uint32Array($.key.buffer), $.message), $.tag);
+    }
   });
 });
 const fc_wrong = ($: number) =>
