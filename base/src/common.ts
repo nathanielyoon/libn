@@ -2,7 +2,7 @@
 export type Encode = ($: Uint8Array) => string;
 /** Text-to-binary decoder. */
 export type Decode = ($: string) => Uint8Array<ArrayBuffer>;
-/** Creates a code-to-byte map. */
+/** Creates a case-insensitive code-to-byte map. */
 export const map = ($: string): Uint8Array<ArrayBuffer> => {
   const bin = new Uint8Array(256);
   for (let char, z = 0; z < 32; ++z) {

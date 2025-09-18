@@ -13,43 +13,37 @@ const encode = (str: string, $: Uint8Array) => {
 const decode = (bin: Uint8Array, $: string) => {
   const binary = new Uint8Array($.length * 5 >> 3);
   for (let a, b, c, d, z = 0, y = 0; z < $.length;) {
-    a = bin[$.charCodeAt(++z)];
-    binary[y++] = bin[$.charCodeAt(z++ - 1)] << 3 | a >> 2 & 7;
-    b = bin[$.charCodeAt(++z)];
-    binary[y++] = a << 6 & 192 | bin[$.charCodeAt(z++ - 1)] << 1 | b >> 4 & 1;
-    c = bin[$.charCodeAt(z++)];
+    a = bin[$.charCodeAt(++z)], b = bin[$.charCodeAt(++z + 1)];
+    binary[y++] = bin[$.charCodeAt(++z - 3)] << 3 | a >> 2 & 7;
+    binary[y++] = a << 6 & 192 | bin[$.charCodeAt(++z - 2)] << 1 | b >> 4 & 1;
+    c = bin[$.charCodeAt(z++)], d = bin[$.charCodeAt(++z)];
     binary[y++] = b << 4 & 240 | c >> 1 & 15;
-    d = bin[$.charCodeAt(++z)];
-    binary[y++] = c << 7 & 128 | bin[$.charCodeAt(z++ - 1)] << 2 | d >> 3 & 7;
+    binary[y++] = c << 7 & 128 | bin[$.charCodeAt(++z - 2)] << 2 | d >> 3 & 7;
     binary[y++] = d << 5 & 224 | bin[$.charCodeAt(z++)];
   }
   return binary;
 };
-const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-const H32 = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
-const Z32 = "ybndrfg8ejkmcpqxot1uwisza345h769";
-const C32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+const B32_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+const B32_BIN = /* @__PURE__ */ map(B32_STR);
 /** Encodes binary -> base32 string. */
-export const en_b32: Encode = /* @__PURE__ */
-  encode.bind(null, B32);
+export const en_b32: Encode = /* @__PURE__ */ encode.bind(null, B32_STR);
 /** Decodes base32 string -> binary. */
-export const de_b32: Decode = /* @__PURE__ */
-  decode.bind(null, /* @__PURE__ */ map(B32));
+export const de_b32: Decode = /* @__PURE__ */ decode.bind(null, B32_BIN);
+const H32_STR = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
+const H32_BIN = /* @__PURE__ */ map(H32_STR);
 /** Encodes binary -> base32hex string. */
-export const en_h32: Encode = /* @__PURE__ */
-  encode.bind(null, H32);
+export const en_h32: Encode = /* @__PURE__ */ encode.bind(null, H32_STR);
 /** Decodes base32hex string -> binary. */
-export const de_h32: Decode = /* @__PURE__ */
-  decode.bind(null, /* @__PURE__ */ map(H32));
+export const de_h32: Decode = /* @__PURE__ */ decode.bind(null, H32_BIN);
+const Z32_STR = "ybndrfg8ejkmcpqxot1uwisza345h769";
+const Z32_BIN = /* @__PURE__ */ map(Z32_STR);
 /** Encodes binary -> z-base-32 string. */
-export const en_z32: Encode = /* @__PURE__ */
-  encode.bind(null, Z32);
+export const en_z32: Encode = /* @__PURE__ */ encode.bind(null, Z32_STR);
 /** Decodes z-base-32 string -> binary. */
-export const de_z32: Decode = /* @__PURE__ */
-  decode.bind(null, /* @__PURE__ */ map(Z32));
+export const de_z32: Decode = /* @__PURE__ */ decode.bind(null, Z32_BIN);
+const C32_STR = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+const C32_BIN = /* @__PURE__ */ map(C32_STR);
 /** Encodes binary -> Crockford base 32 string. */
-export const en_c32: Encode = /* @__PURE__ */
-  encode.bind(null, C32);
+export const en_c32: Encode = /* @__PURE__ */ encode.bind(null, C32_STR);
 /** Decodes Crockford base 32 string -> binary. */
-export const de_c32: Decode = /* @__PURE__ */
-  decode.bind(null, /* @__PURE__ */ map(C32));
+export const de_c32: Decode = /* @__PURE__ */ decode.bind(null, C32_BIN);
