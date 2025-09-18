@@ -1,64 +1,42 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { fc_binary, fc_check, read } from "@libn/lib";
-import { chacha, xor } from "./src/chacha.ts";
+import { chacha, stream } from "./src/chacha.ts";
 import { poly } from "./src/poly.ts";
 import { polyxchacha, xchachapoly } from "./src/aead.ts";
-import { cipher, decrypt, encrypt } from "./mod.ts";
+import { decrypt, encrypt, xchacha } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("chacha", async ({ step }) => {
+  const get = ($: Uint8Array) =>
+    [...new Uint32Array($.buffer)] as [number, number, number];
   await step("chacha : rfc8439 2.3.2/rfc 8439 A.1", () => {
     for (const $ of read(vectors.chacha["rfc8439 2.3.2/rfc8439 A.1"])) {
-      const iv = new DataView($.iv.buffer);
       const state = new Uint32Array(16);
-      chacha(
-        new Uint32Array($.key.buffer),
-        $.count,
-        iv.getUint32(0, true),
-        iv.getUint32(4, true),
-        iv.getUint32(8, true),
-        state,
-      );
+      chacha(new Uint32Array($.key.buffer), $.count, ...get($.iv), state);
       assertEquals(new Uint8Array(state.buffer), $.state);
     }
   });
   await step("xor : rfc8439 2.4.2/rfc8439 A.2", () => {
     for (const $ of read(vectors.chacha["rfc8439 2.4.2/rfc8439 A.2"])) {
-      const iv = new DataView($.iv.buffer);
-      xor(
-        new Uint32Array($.key.buffer),
-        iv.getUint32(0, true),
-        iv.getUint32(4, true),
-        iv.getUint32(8, true),
-        $.plaintext,
-        $.count,
-      );
+      stream(new Uint32Array($.key.buffer), ...get($.iv), $.plaintext, $.count);
       assertEquals($.plaintext, $.ciphertext);
     }
   });
   await step("chacha : rfc8439 2.6.2/rfc8439 A.4", () => {
     for (const $ of read(vectors.chacha["rfc8439 2.6.2/rfc8439 A.4"])) {
-      const iv = new DataView($.iv.buffer);
       const state = new Uint32Array(16);
-      chacha(
-        new Uint32Array($.key.buffer),
-        0,
-        iv.getUint32(0, true),
-        iv.getUint32(4, true),
-        iv.getUint32(8, true),
-        state,
-      );
+      chacha(new Uint32Array($.key.buffer), 0, ...get($.iv), state);
       assertEquals(new Uint8Array(state.buffer).subarray(0, 32), $.subkey);
     }
   });
   await step("hchacha : xchacha-03 A.3.2.1", () => {
     for (const $ of read(vectors.chacha.xchacha)) {
       const text = new Uint8Array($.plaintext.length);
-      cipher($.key, $.iv, text);
+      xchacha($.key, $.iv, text);
       assertEquals(text, $.keystream);
       text.set($.plaintext);
-      cipher($.key, $.iv, text);
+      xchacha($.key, $.iv, text);
       assertEquals(text, $.ciphertext);
     }
   });
