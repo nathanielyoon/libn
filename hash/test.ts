@@ -1,8 +1,8 @@
 import { assertEquals, assertNotEquals } from "@std/assert";
 import { crypto } from "@std/crypto";
 import fc from "fast-check";
-import { de_b16, en_b16 } from "@libn/base";
 import { fc_binary, fc_check, read } from "@libn/lib";
+import { de_b16 } from "@libn/base";
 import { sha224, sha256, sha384, sha512 } from "./src/sha2.ts";
 import { hkdf_sha256, hmac_sha256 } from "./src/hmac.ts";
 import {
