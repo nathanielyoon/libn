@@ -1,6 +1,5 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { de_b16 } from "@libn/base";
 import { fc_binary, fc_check, read } from "@libn/lib";
 import { generate, sign, verify } from "./src/ed25519.ts";
 import { convert_public, convert_secret, x25519 } from "./src/x25519.ts";
@@ -97,7 +96,7 @@ Deno.test("ed25519", async ({ step }) => {
     }
   });
   await step("verify : bad points", () => {
-    const over = de_b16((1n | 1n << 255n).toString(16)).reverse();
+    const over = new Uint8Array([...new Uint8Array(31), 1]);
     const zero = new Uint8Array(32);
     assert(!verify(zero, zero, zero));
     assert(!verify(over, zero, new Uint8Array(64)));
