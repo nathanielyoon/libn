@@ -1,5 +1,5 @@
 import fc from "fast-check";
-import { fc_check, fc_str } from "../test.ts";
+import { fc_check, fc_string } from "@libn/lib";
 import { myers } from "./mod.ts";
 
 const levenshtein = (one: string, two: string) => {
@@ -17,9 +17,12 @@ const levenshtein = (one: string, two: string) => {
   }
   return c[a];
 };
-Deno.test("myers matches levenshtein", () =>
-  fc_check(fc.property(
-    fc_str({ size: "large" }),
-    fc_str({ size: "large" }),
-    (one, two) => myers(one, two) === levenshtein(one, two),
-  )));
+Deno.test("mod", async ({ step }) => {
+  await step("myers :: levenshtein", () => {
+    fc_check(fc.property(
+      fc_string({ size: "large" }),
+      fc_string({ size: "large" }),
+      (one, two) => myers(one, two) === levenshtein(one, two),
+    ));
+  });
+});
