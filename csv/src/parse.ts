@@ -46,7 +46,7 @@ export const de_csv = <A extends {} | null = null>(
     case Case.LF_INSIDE:
     case Case.CR_INSIDE:
       if (!raw) break;
-      y || rows.push(row = Array(size)), row[y++] = $.slice(x, z) || nil;
+      y || rows.push(row = Array(size)), row[y++] = $.slice(x, z);
       fix = raw = false; // falls through
     case Case.LF_FINISH:
     case Case.CR_FINISH:
@@ -81,7 +81,7 @@ export const de_csv = <A extends {} | null = null>(
       break;
     case Case.CM_INSIDE:
       if (!raw) break;
-      y || rows.push(row = Array(size)), row[y++] = $.slice(x, z) || nil;
+      y || rows.push(row = Array(size)), row[y++] = $.slice(x, z);
       raw = false; // falls through
     case Case.CM_FINISH:
       part = Part.BEFORE;
@@ -91,7 +91,7 @@ export const de_csv = <A extends {} | null = null>(
         if (eager && size) {
           w = $.indexOf(temp = y === size - 1 ? eol : ",", z + 1);
           if (~w) {
-            y || rows.push(row = Array(size)), row[y] = $.slice(z, w) || nil;
+            y || rows.push(row = Array(size)), row[y] = $.slice(z, w);
             ++y === size && (y = 0), z = w + temp.length - 1;
             part = Part.BEFORE, raw = false;
             break;
