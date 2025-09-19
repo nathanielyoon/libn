@@ -18,11 +18,7 @@ export class Err<const A extends string, B = void> extends Error {
   }
   /** Serializes relevant data. */
   toJSON(): { message: A; cause: B; stack: string | undefined } {
-    return {
-      message: this.message,
-      cause: this.cause,
-      stack: this.stack,
-    };
+    return { message: this.message, cause: this.cause, stack: this.stack };
   }
   /** Stringifies. */
   override toString(): string {
