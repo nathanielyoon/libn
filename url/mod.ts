@@ -20,7 +20,7 @@
  */
 
 import { en_b16, en_bin } from "@libn/base";
-import { hmac, sha256 } from "@libn/hash";
+import { hmac_sha256, sha256 } from "@libn/hash";
 
 const escape = ($: string) =>
   "%" + $.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0");
@@ -52,10 +52,13 @@ export class Presigner {
       Date: datetime,
     };
     this.string_to_sign = `AWS4-HMAC-SHA256\n${datetime}\n${scope}\n`;
-    const date_key = hmac(en_bin(`AWS4${env.S3_KEY}`), en_bin(date));
-    const date_region_key = hmac(date_key, en_bin(env.S3_REGION));
-    const date_region_service_key = hmac(date_region_key, en_bin("s3"));
-    this.signing_key = hmac(date_region_service_key, en_bin("aws4_request"));
+    const date_key = hmac_sha256(en_bin(`AWS4${env.S3_KEY}`), en_bin(date));
+    const date_region_key = hmac_sha256(date_key, en_bin(env.S3_REGION));
+    const date_region_service_key = hmac_sha256(date_region_key, en_bin("s3"));
+    this.signing_key = hmac_sha256(
+      date_region_service_key,
+      en_bin("aws4_request"),
+    );
   }
   /** Generates a presigned URL. */
   presign(
@@ -86,7 +89,7 @@ export class Presigner {
     return `https://${this.host}${pathname}?${search}&${
       search_parameterize([
         "Signature",
-        en_b16(hmac(this.signing_key, en_bin(string_to_sign))),
+        en_b16(hmac_sha256(this.signing_key, en_bin(string_to_sign))),
       ])
     }`;
   }
