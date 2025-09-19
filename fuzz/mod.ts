@@ -20,7 +20,7 @@ const TEMP = new Uint32Array(0x10000);
 /** Calculates the distance between two strings. */
 export const myers = (one: string, two: string): number => {
   if (one.length > two.length) {
-    let temp = one;
+    const temp = one;
     one = two, two = temp;
   }
   const min = one.length;
