@@ -1,3 +1,4 @@
+// deno-coverage-ignore-file
 import { de_b16 } from "@libn/base";
 import type { Json } from "./types.ts";
 
