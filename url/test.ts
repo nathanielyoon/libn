@@ -5,7 +5,7 @@ import { Presigner } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("mod", async ({ step }) => {
-  await step("Presigner : signature v4 documentation", () => {
+  await step("Presigner.presign : signature v4 documentation", () => {
     assertEquals(
       new Presigner({
         S3_ENDPOINT: `https://${vectors.docs.bucket}.s3.amazonaws.com`,
@@ -21,7 +21,7 @@ Deno.test("mod", async ({ step }) => {
       vectors.docs.url.replaceAll("&amp;", "&"),
     );
   });
-  await step("Presigner : additional headers", () => {
+  await step("Presigner.presign : additional headers", () => {
     fc_check(fc.property(
       fc.dictionary(fc_str(), fc_str()),
       (headers) =>
