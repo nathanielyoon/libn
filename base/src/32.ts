@@ -25,24 +25,24 @@ const decode = (bin: Uint8Array, $: string) => {
 };
 const B32_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const B32_BIN = /* @__PURE__ */ map(B32_STR);
+const H32_STR = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
+const H32_BIN = /* @__PURE__ */ map(H32_STR);
+const Z32_STR = "ybndrfg8ejkmcpqxot1uwisza345h769";
+const Z32_BIN = /* @__PURE__ */ map(Z32_STR);
+const C32_STR = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+const C32_BIN = /* @__PURE__ */ map(C32_STR);
 /** Encodes binary -> base32 string. */
 export const en_b32: Encode = /* @__PURE__ */ encode.bind(null, B32_STR);
 /** Decodes base32 string -> binary. */
 export const de_b32: Decode = /* @__PURE__ */ decode.bind(null, B32_BIN);
-const H32_STR = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
-const H32_BIN = /* @__PURE__ */ map(H32_STR);
 /** Encodes binary -> base32hex string. */
 export const en_h32: Encode = /* @__PURE__ */ encode.bind(null, H32_STR);
 /** Decodes base32hex string -> binary. */
 export const de_h32: Decode = /* @__PURE__ */ decode.bind(null, H32_BIN);
-const Z32_STR = "ybndrfg8ejkmcpqxot1uwisza345h769";
-const Z32_BIN = /* @__PURE__ */ map(Z32_STR);
 /** Encodes binary -> z-base-32 string. */
 export const en_z32: Encode = /* @__PURE__ */ encode.bind(null, Z32_STR);
 /** Decodes z-base-32 string -> binary. */
 export const de_z32: Decode = /* @__PURE__ */ decode.bind(null, Z32_BIN);
-const C32_STR = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-const C32_BIN = /* @__PURE__ */ map(C32_STR);
 /** Encodes binary -> Crockford base 32 string. */
 export const en_c32: Encode = /* @__PURE__ */ encode.bind(null, C32_STR);
 /** Decodes Crockford base 32 string -> binary. */
