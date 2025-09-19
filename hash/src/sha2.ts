@@ -1,20 +1,22 @@
 import { en_iv, type Hash, min, SHA256, SHA512 } from "./common.ts";
 
 type Mix = (block: DataView, at: number, $: Uint32Array) => void;
+const STATE = new Uint32Array(16), BLOCK = new Uint8Array(128);
+const BLOCK_VIEW = new DataView(BLOCK.buffer);
 const md = (length: number, iv: Uint32Array, mix: Mix, $: Uint8Array) => {
-  const size = iv.length << 3, max = $.length, block = new Uint8Array(size);
-  const state = new Uint32Array(iv);
-  let view = new DataView($.buffer, $.byteOffset), z = 0, y = 0;
-  while (z < max) {
+  BLOCK.fill(0), STATE.set(iv);
+  const size = iv.length << 3, max = $.length;
+  let z = 0, y = 0;
+  for (const view = new DataView($.buffer, $.byteOffset); z < max;) {
     const chunk = min(size - y, max - z);
-    if (chunk !== size) block.set($.subarray(z, z += chunk)), y += chunk;
-    else do mix(view, z, state), z += size; while (max - z >= size);
+    if (chunk !== size) BLOCK.set($.subarray(z, z += chunk)), y += chunk;
+    else do mix(view, z, STATE), z += size; while (max - z >= size);
   }
-  view = new DataView(block.buffer), block[y] = 128, z = length;
-  size - ++y < size >> 3 && mix(view, y = 0, state), block.fill(0, y);
-  view.setBigUint64(size - 8, BigInt(max) << 3n), mix(view, 0, state);
-  do view.setUint32(z -= 4, state[z >> 2]); while (z);
-  return new Uint8Array(block.subarray(0, length));
+  BLOCK[y] = 128, size - ++y < size >> 3 && mix(BLOCK_VIEW, y = 0, STATE);
+  BLOCK.fill(0, y), BLOCK_VIEW.setBigUint64(size - 8, BigInt(max) << 3n);
+  mix(BLOCK_VIEW, 0, STATE), z = length;
+  do BLOCK_VIEW.setUint32(z -= 4, STATE[z >> 2]); while (z);
+  return new Uint8Array(BLOCK.subarray(0, length));
 };
 const W64 = /* @__PURE__ */ new Uint32Array(64);
 const K64 = /* @__PURE__ */ en_iv(
