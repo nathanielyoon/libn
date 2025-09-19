@@ -104,7 +104,7 @@ export const hchacha = (
   SUBKEY[5] = STATE[13] - iv1, SUBKEY[6] = STATE[14] - iv2;
   return SUBKEY[7] = STATE[15] - iv3, SUBKEY;
 };
-const VIEW = new DataView(STATE.buffer);
+const STATE_VIEW = new DataView(STATE.buffer);
 /** XORs text with a keystream. */
 export const stream = (
   key: Uint32Array,
@@ -126,6 +126,6 @@ export const stream = (
   }
   if (most < $.length) {
     chacha(key, start_block, iv0, iv1, iv2, STATE), y = 0;
-    do $[z] ^= VIEW.getUint8(y++); while (++z < $.length);
+    do $[z] ^= STATE_VIEW.getUint8(y++); while (++z < $.length);
   }
 };
