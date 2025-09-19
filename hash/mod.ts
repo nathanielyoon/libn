@@ -56,7 +56,7 @@
  * const key = crypto.getRandomValues(new Uint8Array(32));
  * const data = crypto.getRandomValues(new Uint8Array(100));
  * assertEquals(
- *   hmac(key, data),
+ *   hmac_sha256(key, data),
  *   await crypto.subtle.sign(
  *     "HMAC",
  *     await crypto.subtle.importKey(
@@ -77,7 +77,7 @@
  *
  * const key = crypto.getRandomValues(new Uint8Array(32));
  * assertEquals(
- *   hkdf(key),
+ *   hkdf_sha256(key),
  *   await crypto.subtle.deriveBits(
  *     {
  *       name: "HKDF",
