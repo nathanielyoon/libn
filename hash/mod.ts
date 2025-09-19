@@ -95,7 +95,7 @@
  */
 
 import { sha224, sha256, sha384, sha512 } from "./src/sha2.ts";
-import { hkdf, hmac } from "./src/hmac.ts";
+import { hkdf_sha256, hmac_sha256 } from "./src/hmac.ts";
 import {
   b2b,
   b2b_create,
@@ -120,8 +120,8 @@ export {
   b3,
   b3_derive,
   b3_keyed,
-  hkdf,
-  hmac,
+  hkdf_sha256,
+  hmac_sha256,
   sha224,
   sha256,
   sha384,
