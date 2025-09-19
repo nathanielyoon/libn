@@ -1,4 +1,4 @@
-import { type Hash, min, Mod, SHA256 } from "./common.ts";
+import { type Hash, min, SHA256 } from "./common.ts";
 
 const enum Size {
   BLOCK = 64,
@@ -27,7 +27,7 @@ const mix = (
 ) => {
   let a = key[0], b = key[1], c = key[2], d = key[3], e = key[4], f = key[5];
   let g = key[6], h = key[7], i = SHA256[0], j = SHA256[1], k = SHA256[2];
-  let l = SHA256[3], m = at, n = at / Mod.U, o = byte, p = flag, z = 0;
+  let l = SHA256[3], m = at, n = at / 0x100000000, o = byte, p = flag, z = 0;
   do m ^= a = a + e + $.getUint32(PERMUTE[z++], true) | 0,
     m = m << 16 | m >>> 16,
     e ^= i = i + m | 0,
