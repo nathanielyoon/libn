@@ -102,7 +102,7 @@ export const de_csv = <A extends {} | null = null>(
   } while (++z < $.length);
   if (part === Part.INSIDE) {
     if (!raw) return null;
-    y || rows.push(row = Array(size)), row[y] = $.slice(x) || nil;
+    y || rows.push(row = Array(size)), row[y] = $.slice(x);
   }
   return rows;
 };
