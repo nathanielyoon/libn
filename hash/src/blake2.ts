@@ -339,7 +339,7 @@ export const b2s_create: (key?: Uint8Array, length?: number) => B2State =
 export const b2s_digest: ($: B2State) => Uint8Array<ArrayBuffer> =
   /* @__PURE__ */ b2_digest.bind(null, 68, b2s_add, b2s_mix);
 /** Hashes with BLAKE2s. */
-export const b2s: Hash<[$: Uint8Array, key?: Uint8Array, length?: number]> =
+export const b2s: Hash<[data: Uint8Array, key?: Uint8Array, length?: number]> =
   /* @__PURE__ */ b2.bind(null, b2s_create, b2s_update, b2s_digest);
 /** Processes a chunk of data and updates the BLAKE2b state. */
 export const b2b_update: ($: B2State, input: Uint8Array) => B2State =
@@ -351,5 +351,5 @@ export const b2b_create: (key?: Uint8Array, length?: number) => B2State =
 export const b2b_digest: ($: B2State) => Uint8Array<ArrayBuffer> =
   /* @__PURE__ */ b2_digest.bind(null, 132, b2b_add, b2b_mix);
 /** Hashes with BLAKE2b. */
-export const b2b: Hash<[$: Uint8Array, key?: Uint8Array, length?: number]> =
+export const b2b: Hash<[data: Uint8Array, key?: Uint8Array, length?: number]> =
   /* @__PURE__ */ b2.bind(null, b2b_create, b2b_update, b2b_digest);

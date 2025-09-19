@@ -109,14 +109,14 @@ const SHA384 = /* @__PURE__ */ en_iv(
   "cbbb9d5dc1059ed8629a292a367cd5079159015a3070dd17152fecd8f70e593967332667ffc00b318eb44a8768581511db0c2e0d64f98fa747b5481dbefa4fa4",
 );
 /** Hashes with SHA-224. */
-export const sha224: Hash<[$: Uint8Array]> = /* @__PURE__ */
+export const sha224: Hash<[data: Uint8Array]> = /* @__PURE__ */
   md.bind(null, 28, SHA224, mix_64);
 /** Hashes with SHA-256. */
-export const sha256: Hash<[$: Uint8Array]> = /* @__PURE__ */
+export const sha256: Hash<[data: Uint8Array]> = /* @__PURE__ */
   md.bind(null, 32, SHA256, mix_64);
 /** Hashes with SHA-384. */
-export const sha384: Hash<[$: Uint8Array]> = /* @__PURE__ */
+export const sha384: Hash<[data: Uint8Array]> = /* @__PURE__ */
   md.bind(null, 48, SHA384, mix_80);
 /** Hashes with SHA-512. */
-export const sha512: Hash<[$: Uint8Array]> = /* @__PURE__ */
+export const sha512: Hash<[data: Uint8Array]> = /* @__PURE__ */
   md.bind(null, 64, SHA512, mix_80);

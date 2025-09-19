@@ -145,13 +145,13 @@ const B3 = /* @__PURE__ */ Uint8Array.from(
   (_, z) => SHA256[z >> 2] >> (z << 3),
 );
 /** Hashes with BLAKE3 (unkeyed). */
-export const b3: Hash<[$: Uint8Array, length?: number, seek?: number]> =
+export const b3: Hash<[data: Uint8Array, length?: number, seek?: number]> =
   /* @__PURE__ */ blake3.bind(null, 0, B3);
 /** Hashes with BLAKE3 (keyed). */
 export const b3_keyed: Hash<
-  [key: Uint8Array, $: Uint8Array, length?: number, seek?: number]
+  [key: Uint8Array, data: Uint8Array, length?: number, seek?: number]
 > = /* @__PURE__ */ blake3.bind(null, Flag.KEYED);
 /** Creates a key derivation function with BLAKE3. */
 export const b3_derive = (context: Uint8Array): Hash<
-  [$: Uint8Array, length?: number, seek?: number]
+  [key: Uint8Array, length?: number, seek?: number]
 > => blake3.bind(null, Flag.DERIVE_KEY, blake3(Flag.DERIVE_CTX, B3, context));
