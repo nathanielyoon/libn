@@ -9,15 +9,15 @@ export type Key<A extends Use> = Uint8Array<ArrayBuffer> & { [USE]: A };
 const to = <A extends Use>(use: A, key: Uint8Array) =>
   Object.defineProperty<any>(key, USE, { value: use });
 /** Generates a local key. */
-export const make_local = (
+export const to_local = (
   $: Uint8Array = crypto.getRandomValues(new Uint8Array(32)),
 ): Key<"local"> => to("local", $);
 /** Generates a secret key. */
-export const make_secret = (
+export const to_secret = (
   $: Uint8Array = crypto.getRandomValues(new Uint8Array(32)),
 ): Key<"secret"> => to("secret", $);
 /** Generates a public key. */
-export const make_public = ($: Key<"public">): Key<"public"> =>
+export const to_public = ($: Key<"public">): Key<"public"> =>
   to("public", generate($));
 const is = <A extends Use>(use: A) => ($: Uint8Array): $ is Key<A> =>
   $.length === 32 && Object.hasOwn($, USE) && $[USE as any] as any === use;
