@@ -118,4 +118,4 @@ await Promise.all([
       })),
     },
   },
-}));
+})).then(save(import.meta));
