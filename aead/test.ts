@@ -4,7 +4,7 @@ import { fc_binary, fc_check, read } from "@libn/lib";
 import { chacha, xor } from "./src/chacha.ts";
 import { poly } from "./src/poly.ts";
 import { polyxchacha, xchachapoly } from "./src/aead.ts";
-import { decrypt, encrypt, xchacha } from "./mod.ts";
+import { cipher, decrypt, encrypt } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("chacha", async ({ step }) => {
@@ -33,10 +33,10 @@ Deno.test("chacha", async ({ step }) => {
   await step("hchacha : xchacha-03 A.3.2.1", () => {
     for (const $ of read(vectors.chacha.xchacha)) {
       const text = new Uint8Array($.plaintext.length);
-      xchacha($.key, $.iv, text);
+      cipher($.key, $.iv, text);
       assertEquals(text, $.keystream);
       text.set($.plaintext);
-      xchacha($.key, $.iv, text);
+      cipher($.key, $.iv, text);
       assertEquals(text, $.ciphertext);
     }
   });

@@ -66,7 +66,7 @@ export const decrypt = (
     : null;
 };
 /** XORs the text in-place (without checking parameters). */
-export const xchacha = (key: Uint8Array, iv: Uint8Array, $: Uint8Array): void =>
+export const cipher = (key: Uint8Array, iv: Uint8Array, $: Uint8Array): void =>
   xor(
     hchacha(key, iv),
     0,

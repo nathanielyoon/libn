@@ -1,4 +1,4 @@
-import { xchacha } from "@libn/aead";
+import { cipher } from "@libn/aead";
 import { de_u64, en_bin, en_u64 } from "@libn/base";
 import { b2b } from "@libn/hash";
 import { is_local, type Key } from "./key.ts";
@@ -30,7 +30,7 @@ export const en_local: Entoken<"local"> = (
   const payload = new Uint8Array(body.length + 64);
   payload.set(nonce), payload.set(body, 32);
   const parts = split(key, nonce), text = payload.subarray(32, -32);
-  xchacha(parts.xor_key, parts.counter, text);
+  cipher(parts.xor_key, parts.counter, text);
   payload.set(
     b2b(pae(BIN, nonce, text, foot, assertion), parts.mac_key, 32),
     body.length + 32,
@@ -54,6 +54,6 @@ export const de_local: Detoken<"local"> = (
   let is_different = 0, z = 32, y = payload.length;
   do is_different |= tag[--z] ^ payload[--y]; while (z);
   if (is_different) return null;
-  xchacha(parts.xor_key, parts.counter, body);
+  cipher(parts.xor_key, parts.counter, body);
   return { body: new Uint8Array(body), foot };
 };
