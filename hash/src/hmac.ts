@@ -8,7 +8,7 @@ const enum Byte {
   INNER = 54,
   OUTER = 92,
 }
-const OPAD = new Uint8Array(96);
+const OPAD = /* @__PURE__ */ new Uint8Array(96);
 /** Creates a hash-based message authentication code with SHA-256. */
 export const hmac_sha256 = (
   key: Uint8Array,
@@ -22,8 +22,8 @@ export const hmac_sha256 = (
   ipad.set(data, size), OPAD.set(sha256(ipad), size);
   return sha256(OPAD.subarray(0, size + Size.DIGEST));
 };
-const SALT = new Uint8Array(Size.DIGEST);
-const DATA = new Uint8Array(255 * Size.DIGEST);
+const SALT = /* @__PURE__ */ new Uint8Array(Size.DIGEST);
+const DATA = /* @__PURE__ */ new Uint8Array(8160);
 /** Derives a key with HMAC-SHA256. */
 export const hkdf_sha256 = (
   key: Uint8Array,
@@ -31,7 +31,7 @@ export const hkdf_sha256 = (
   salt: Uint8Array = new Uint8Array(Size.DIGEST),
   length = 32,
 ): Uint8Array<ArrayBuffer> => {
-  if (length < 1 || length > DATA.length) return new Uint8Array();
+  if (length < 1 || length > 8160) return new Uint8Array();
   if (salt.length < Size.DIGEST) SALT.fill(0).set(salt), salt = SALT;
   const use = info.length + Size.DIGEST, to = new Uint8Array(use + 1);
   to.set(info, Size.DIGEST), to[use] = 1, key = hmac_sha256(salt, key);

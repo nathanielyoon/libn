@@ -103,9 +103,10 @@ const mix = (
 const merge = (left: Uint32Array<ArrayBuffer>, right: Uint32Array) => (
   left.set(right.subarray(0, 8), 8), new DataView(left.buffer)
 );
-const K0 = new Uint32Array(8), K1 = new Uint32Array(8);
-const TEMP = new Uint32Array(16), BLOCK = new Uint8Array(Size.BLOCK);
-const BLOCK_VIEW = new DataView(BLOCK.buffer);
+const K0 = /* @__PURE__ */ new Uint32Array(8);
+const K1 = /* @__PURE__ */ new Uint32Array(8);
+const TEMP = /* @__PURE__ */ new Uint32Array(16);
+const BLOCK = /* @__PURE__ */ new Uint8Array(Size.BLOCK);
 const blake3 = (
   flags: number,
   key: Uint8Array,
@@ -114,7 +115,7 @@ const blake3 = (
   seek = 0,
 ) => {
   const stack = [], out = new Uint8Array(length);
-  let a = BLOCK_VIEW, b = 0, c = 0, e, f, z = 8, y = 0;
+  let a = new DataView(BLOCK.buffer), b = 0, c = 0, e, f, z = 8, y = 0;
   do K0[--z] = K1[z] = key[e = z << 2] | key[e + 1] << 8 |
     key[e + 2] << 16 | key[e + 3] << 24; while (z);
   for (BLOCK.fill(0); z < $.length;) {
