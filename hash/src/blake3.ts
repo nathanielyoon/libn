@@ -103,6 +103,9 @@ const mix = (
 const merge = (left: Uint32Array<ArrayBuffer>, right: Uint32Array) => (
   left.set(right.subarray(0, 8), 8), new DataView(left.buffer)
 );
+const K0 = new Uint32Array(8), K1 = new Uint32Array(8);
+const TEMP = new Uint32Array(16), BLOCK = new Uint8Array(Size.BLOCK);
+const BLOCK_VIEW = new DataView(BLOCK.buffer);
 const blake3 = (
   flags: number,
   key: Uint8Array,
@@ -110,33 +113,32 @@ const blake3 = (
   length = 32,
   seek = 0,
 ) => {
-  const stack = [], block = new Uint8Array(Size.BLOCK), a = new Uint32Array(8);
-  let b = new DataView(block.buffer), c = 0, d = 0, e, z = 8, y = 0;
-  do a[--z] = key[e = z << 2] | key[e + 1] << 8 | key[e + 2] << 16 |
-    key[e + 3] << 24; while (z);
-  const f = new Uint32Array(a), g = new Uint32Array(16), max = $.length;
-  while (z < max) {
-    if (c + d * Size.BLOCK === Size.CHUNK) {
-      for (mix(f, b, y, c, flags | Flag.END, g), e = ++y; e & 1 ^ 1; e >>= 1) {
-        mix(a, merge(stack.pop()!, g), 0, Size.BLOCK, flags | Flag.PARENT, g);
+  const stack = [], out = new Uint8Array(length);
+  let a = BLOCK_VIEW, b = 0, c = 0, e, f, z = 8, y = 0;
+  do K0[--z] = K1[z] = key[e = z << 2] | key[e + 1] << 8 |
+    key[e + 2] << 16 | key[e + 3] << 24; while (z);
+  for (BLOCK.fill(0); z < $.length;) {
+    if (b + c * Size.BLOCK === Size.CHUNK) {
+      mix(K1, a, y, b, flags | Flag.END, TEMP);
+      for (e = ++y, f = flags | Flag.PARENT; e & 1 ^ 1; e >>= 1) {
+        mix(K0, merge(stack.pop()!, TEMP), 0, Size.BLOCK, f, TEMP);
       }
-      stack.push(new Uint32Array(g)), f.set(a), block.fill(c = d = 0);
+      stack.push(new Uint32Array(TEMP)), K1.set(K0), BLOCK.fill(b = c = 0);
     }
-    const take = min(z + Size.CHUNK - c - d * Size.BLOCK, max);
-    do c < Size.BLOCK ||
-      (mix(f, b, y, c, flags | +!d++ & Flag.START, f), block.fill(c = 0)),
-      block.set($.subarray(z, z += e = min(Size.BLOCK - c, take - z)), c),
-      c += e; while (z < take);
+    f = min(z + Size.CHUNK - b - c * Size.BLOCK, $.length);
+    do b < Size.BLOCK ||
+      (mix(K1, a, y, b, flags | +!c++ & Flag.START, K1), BLOCK.fill(b = 0)),
+      BLOCK.set($.subarray(z, z += e = min(Size.BLOCK - b, f - z)), b),
+      b += e; while (z < f);
   }
-  if (e = flags | +!d & Flag.START | Flag.END, z = stack.length) {
-    mix(f, b, y, c, e, g), e = flags | Flag.PARENT;
-    while (--z) mix(a, merge(stack[z], g), 0, Size.BLOCK, e, g);
-    f.set(a), b = merge(stack[0], g), c = Size.BLOCK;
+  if (e = flags | +!c & Flag.START | Flag.END, z = stack.length) {
+    mix(K1, a, y, b, e, TEMP), e = flags | Flag.PARENT;
+    while (--z) mix(K0, merge(stack[z], TEMP), 0, Size.BLOCK, e, TEMP);
+    K1.set(K0), a = merge(stack[0], TEMP), b = Size.BLOCK;
   }
-  const out = new Uint8Array(length);
   do {
-    mix(f, b, seek++, c, e | Flag.ROOT, g), y = min(z + Size.BLOCK, length);
-    do out[z] = g[z >> 2 & 15] >> (z << 3); while (++z < y);
+    mix(K1, a, seek++, b, e | Flag.ROOT, TEMP), y = min(z + Size.BLOCK, length);
+    do out[z] = TEMP[z >> 2 & 15] >> (z << 3); while (++z < y);
   } while (z < length);
   return out;
 };
