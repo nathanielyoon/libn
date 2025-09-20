@@ -1,147 +1,161 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { fc_bin, fc_check, fc_key } from "../test.ts";
-import { de_b16, de_bin } from "@libn/base";
+import { fc_binary, fc_check, read } from "@libn/lib";
+import { de_bin, en_bin } from "@libn/base";
 import {
   is_local,
   is_public,
   is_secret,
-  make_local,
-  make_public,
-  pae,
-  regex,
-} from "./src/common.ts";
+  set_use,
+  type Use,
+} from "./src/key.ts";
+import { pae, regex } from "./src/common.ts";
 import { de_local, en_local } from "./src/local.ts";
 import { de_public, en_public } from "./src/public.ts";
 import vectors from "./vectors.json" with { type: "json" };
 import { generate } from "@libn/25519";
 
-Deno.test("pae matches spec examples", () =>
-  vectors.pae.forEach(({ pieces, output }) =>
-    assertEquals(pae(...pieces.map(de_b16)), de_b16(output))
-  ));
-Deno.test("is_local/is_secret/is_public validate correctly", () => {
-  fc_check(fc.property(
-    fc.oneof(fc_key, fc.constant(undefined)).map(make_local),
-    is_local,
-  ));
-  const fc_wrong_length = fc.oneof(
-    fc_bin({ maxLength: 31 }),
-    fc_bin({ minLength: 33 }),
-  );
-  fc_check(fc.property(
-    fc.oneof(fc_wrong_length.map(make_local), fc_bin()),
-    ($) => !is_local($),
-  ));
-  fc_check(fc.property(
-    fc.oneof(fc_key, fc.constant(undefined)).map(make_public),
-    ($) =>
-      is_secret($.secret_key) && !is_public($.secret_key) &&
-      is_public($.public_key) && !is_secret($.public_key),
-  ));
-  fc_check(fc.property(
-    fc.oneof(
-      fc_wrong_length.map(make_public).map(($) => ({
-        secret_key: $.secret_key.subarray(1),
-        public_key: $.public_key.subarray(1),
-      })),
-      fc.record({ secret_key: fc_bin(), public_key: fc_bin() }),
-    ),
-    ($) =>
-      !is_secret($.secret_key) && !is_public($.secret_key) &&
-      !is_secret($.public_key) && !is_public($.public_key),
-  ));
+Deno.test("key", async ({ step }) => {
+  for (
+    const [use, is] of [
+      ["local", is_local],
+      ["secret", is_secret],
+      ["public", is_public],
+    ] as const
+  ) {
+    await step(`is_${use} : validate`, () => {
+      const set = set_use.bind(null, use);
+      fc_check(fc.property(fc_binary(32).map(set), is));
+      fc_check(fc.property(
+        fc.oneof(
+          fc_binary({ maxLength: 31 }).map(set),
+          fc_binary({ minLength: 33 }).map(set),
+          fc_binary(32),
+        ),
+        ($) => !is($),
+      ));
+    });
+  }
 });
-Deno.test("en_local/de_local match spec", () =>
-  vectors.spec.local.forEach(($) => {
-    const key = make_local(de_b16($.key)), assertion = de_b16($.assertion);
-    const maybe = de_local(key, $.token, assertion);
-    if ($.result) {
-      const body = de_b16($.body), foot = de_b16($.foot);
-      // Forces randomly-generated nonce to match the test vector.
-      const { getRandomValues } = crypto;
-      crypto.getRandomValues = (buffer) => (
-        buffer instanceof Uint8Array && buffer.set(de_b16($.nonce)), buffer
-      );
-      assertEquals(en_local(key, body, foot, assertion), $.token);
-      crypto.getRandomValues = getRandomValues;
-      assertEquals(maybe, { body, foot });
-    } else {
-      assert(
-        !maybe || +new Date(JSON.parse(de_bin(maybe.body)).exp) < Date.now(),
-      );
+Deno.test("common", async ({ step }) => {
+  await step("pae : spec examples", () => {
+    for (const $ of read(vectors.common.pae)) {
+      assertEquals(pae(...$.pieces.map(en_bin)), $.output);
     }
-  }));
-Deno.test("en_public/de_public match spec", () =>
-  vectors.spec.public.forEach(($) => {
-    const { secret_key, public_key } = make_public(de_b16($.secret_key));
-    assertEquals(public_key, de_b16($.public_key));
-    const assertion = de_b16($.assertion);
-    const maybe = de_public(public_key, $.token, assertion);
-    if ($.result) {
-      const body = de_b16($.body), foot = de_b16($.foot);
-      assertEquals(en_public(secret_key, body, foot, assertion), $.token);
-      assertEquals(maybe, { body, foot });
-    } else assert(!maybe);
-  }));
-Deno.test("en_local/de_local reject wrong-use keys", () =>
-  fc_check(fc.property(
-    fc_key,
-    fc_bin(),
-    fc.stringMatching(regex("v4.local.")),
-    (key, body, token) =>
-      !en_local(key as any, body) && !de_local(key as any, token),
-  )));
-Deno.test("en_public/de_public reject wrong-use keys", () =>
-  fc_check(fc.property(
-    fc_key.map(($) => ({ secret_key: $, public_key: generate($) })),
-    fc_bin(),
-    fc.stringMatching(regex("v4.public.")),
-    ({ secret_key, public_key }, message, token) =>
-      !en_public(secret_key as any, message) &&
-      !de_public(public_key as any, token),
-  )));
-Deno.test("en_local/de_local round-trip losslessly", () =>
-  fc_check(fc.property(
-    fc.uniqueArray(fc_key.map(make_local), {
-      minLength: 2,
-      maxLength: 2,
-      comparator: (one, two) => {
-        for (let z = 0; z < 32; ++z) if (one[z] !== two[z]) return false;
-        return true;
+  });
+});
+const fc_wrong_use = (wrong: Use[]) =>
+  fc.tuple(fc.option(fc.constantFrom(...wrong)), fc_binary(32)).map((
+    [use, key],
+  ) => use ? set_use(use, key) : key);
+const unique: fc.UniqueArrayConstraintsCustomCompare<Uint8Array> = {
+  minLength: 2,
+  maxLength: 2,
+  comparator: (one, two) => {
+    for (let z = 0; z < 32; ++z) if (one[z] !== two[z]) return false;
+    return true;
+  },
+};
+Deno.test("local", async ({ step }) => {
+  await step("en_local/de_local : spec", () => {
+    for (const $ of read(vectors.local.spec)) {
+      const key = set_use("local", $.key);
+      const maybe = de_local(key, $.token[0], $.assertion);
+      if ($.result) {
+        const body = $.body, foot = $.foot;
+        // Force randomly-generated nonce to match the test vector.
+        const { getRandomValues } = crypto;
+        crypto.getRandomValues = (buffer) => (
+          buffer instanceof Uint8Array && buffer.set($.nonce), buffer
+        );
+        assertEquals(en_local(key, body, foot, $.assertion), $.token[0]);
+        crypto.getRandomValues = getRandomValues;
+        assertEquals(maybe, { body, foot });
+      } else {
+        assert(
+          !maybe || +new Date(JSON.parse(de_bin(maybe.body)).exp) < Date.now(),
+        );
+      }
+    }
+  });
+  await step("en_local/de_local : wrong-use keys", () => {
+    fc_check(fc.property(
+      fc_wrong_use(["secret", "public"]),
+      fc_binary(),
+      fc.stringMatching(regex("v4.local.")),
+      (key, body, token) =>
+        !en_local(key as any, body) && !de_local(key as any, token),
+    ));
+  });
+  await step("en_local/de_local : arbitrary round-trip", () => {
+    fc_check(fc.property(
+      fc.uniqueArray(fc_binary(32).map(($) => set_use("local", $)), unique),
+      fc_binary(),
+      fc.option(fc_binary(), { nil: undefined }),
+      fc.option(fc_binary(), { nil: undefined }),
+      ([key, wrong_key], body, foot, assertion) => {
+        const token = en_local(key, body, foot, assertion);
+        assert(token);
+        assertEquals(
+          de_local(key, token, assertion),
+          { body, foot: foot ?? new Uint8Array() },
+        );
+        assert(!de_local(wrong_key, token, assertion));
+        assertion?.length && assert(!de_local(key, token));
       },
-    }),
-    fc_bin(),
-    fc.option(fc_bin(), { nil: undefined }),
-    fc.option(fc_bin(), { nil: undefined }),
+    ));
+  });
+});
+Deno.test("public", async ({ step }) => {
+  await step("en_public/de_public : spec", () => {
+    for (const $ of read(vectors.public.spec)) {
+      const maybe = de_public(
+        set_use("public", $.public_key),
+        $.token[0],
+        $.assertion,
+      );
+      if ($.result) {
+        assertEquals(
+          en_public(
+            set_use("secret", $.secret_key),
+            $.body,
+            $.foot,
+            $.assertion,
+          ),
+          $.token[0],
+        );
+        assertEquals(maybe, { body: $.body, foot: $.foot });
+      } else assert(!maybe);
+    }
+  });
+  await step("en_public/de_public : wrong-use keys", () => {
+    fc_check(fc.property(
+      fc_wrong_use(["local", "public"]),
+      fc_wrong_use(["local", "secret"]),
+      fc_binary(),
+      fc.stringMatching(regex("v4.public.")),
+      (secret_key, public_key, body, token) =>
+        !en_public(secret_key as any, body) &&
+        !de_public(public_key as any, token),
+    ));
+  });
+  fc_check(fc.property(
+    fc.uniqueArray(fc_binary(32).map(($) => set_use("secret", $)), unique),
+    fc_binary(),
+    fc.option(fc_binary(), { nil: undefined }),
+    fc.option(fc_binary(), { nil: undefined }),
     ([key, wrong_key], body, foot, assertion) => {
-      const token = en_local(key, body, foot, assertion);
+      const token = en_public(key, body, foot, assertion);
       assert(token);
       assertEquals(
-        de_local(key, token, assertion),
+        de_public(set_use("public", generate(key)), token, assertion),
         { body, foot: foot ?? new Uint8Array() },
       );
-      assert(!de_local(wrong_key, token, assertion));
-      assertion?.length && assert(!de_local(key, token));
+      assert(
+        !de_public(set_use("public", generate(wrong_key)), token, assertion),
+      );
+      assertion?.length &&
+        assert(!de_public(set_use("public", generate(key)), token));
     },
-  )));
-Deno.test("en_public/de_public round-trip losslessly", () =>
-  fc_check(fc.property(
-    fc.uniqueArray(fc_key.map(make_public), {
-      minLength: 2,
-      maxLength: 2,
-      comparator: ({ public_key: one }, { public_key: two }) => {
-        for (let z = 0; z < 32; ++z) if (one[z] !== two[z]) return false;
-        return true;
-      },
-    }),
-    fc_bin(),
-    fc.option(fc_bin(), { nil: undefined }),
-    fc.option(fc_bin(), { nil: undefined }),
-    ([keys, wrong_keys], body, foot, assertion) => {
-      const token = en_public(keys.secret_key, body, foot, assertion);
-      assert(token);
-      assert(!de_public(wrong_keys.public_key, token, assertion));
-      assertion?.length && assert(!de_public(keys.public_key, token));
-    },
-  )));
+  ));
+});
