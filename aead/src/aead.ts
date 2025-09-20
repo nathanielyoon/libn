@@ -1,4 +1,4 @@
-import { chacha, hchacha, stream } from "./chacha.ts";
+import { chacha, hchacha, xor } from "./chacha.ts";
 import { poly } from "./poly.ts";
 
 const message = (ciphertext: Uint8Array, additional: Uint8Array) => {
@@ -8,7 +8,7 @@ const message = (ciphertext: Uint8Array, additional: Uint8Array) => {
   full.set(ciphertext, a), view.setUint32(b + 8, ciphertext.length, true);
   return full;
 };
-const ZERO = new Uint32Array(16);
+const ZERO = /* @__PURE__ */ new Uint32Array(16);
 /** If parameters are valid, XORs the plaintext in-place, then returns a tag. */
 export const xchachapoly = (
   key: Uint8Array,
@@ -20,7 +20,7 @@ export const xchachapoly = (
   const xorer = hchacha(key, iv);
   const iv0 = iv[16] | iv[17] << 8 | iv[18] << 16 | iv[19] << 24;
   const iv1 = iv[20] | iv[21] << 8 | iv[22] << 16 | iv[23] << 24;
-  chacha(xorer, 0, 0, iv0, iv1, ZERO), stream(xorer, 0, iv0, iv1, plaintext, 1);
+  chacha(xorer, 0, 0, iv0, iv1, ZERO), xor(xorer, 0, iv0, iv1, plaintext, 1);
   return poly(ZERO, message(plaintext, associated_data));
 };
 /** If parameters are valid, checks a tag, then XORs the ciphertext in-place. */
@@ -39,5 +39,5 @@ export const polyxchacha = (
   const calculated_tag = poly(ZERO, message(ciphertext, associated_data));
   let is_different = 0, z = 16;
   do is_different |= tag[--z] ^ calculated_tag[z]; while (z);
-  return !is_different && (stream(xorer, 0, iv0, iv1, ciphertext, 1), true);
+  return !is_different && (xor(xorer, 0, iv0, iv1, ciphertext, 1), true);
 };

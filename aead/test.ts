@@ -1,7 +1,7 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { fc_binary, fc_check, read } from "@libn/lib";
-import { chacha, stream } from "./src/chacha.ts";
+import { chacha, xor } from "./src/chacha.ts";
 import { poly } from "./src/poly.ts";
 import { polyxchacha, xchachapoly } from "./src/aead.ts";
 import { decrypt, encrypt, xchacha } from "./mod.ts";
@@ -19,7 +19,7 @@ Deno.test("chacha", async ({ step }) => {
   });
   await step("xor : rfc8439 2.4.2/rfc8439 A.2", () => {
     for (const $ of read(vectors.chacha["rfc8439 2.4.2/rfc8439 A.2"])) {
-      stream(new Uint32Array($.key.buffer), ...get($.iv), $.plaintext, $.count);
+      xor(new Uint32Array($.key.buffer), ...get($.iv), $.plaintext, $.count);
       assertEquals($.plaintext, $.ciphertext);
     }
   });

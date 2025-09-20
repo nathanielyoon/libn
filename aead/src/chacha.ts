@@ -85,7 +85,8 @@ export const chacha = (
   $[8] = key[4] + i, $[9] = key[5] + j, $[10] = key[6] + k, $[11] = key[7] + l;
   $[12] = count + m, $[13] = iv0 + n, $[14] = iv1 + o, $[15] = iv2 + p;
 };
-const SUBKEY = new Uint32Array(8), STATE = new Uint32Array(16);
+const SUBKEY = /* @__PURE__ */ new Uint32Array(8);
+const STATE = /* @__PURE__ */ new Uint32Array(16);
 /** Creates a subkey using part of the IV. */
 export const hchacha = (
   key: Uint8Array,
@@ -104,9 +105,8 @@ export const hchacha = (
   SUBKEY[5] = STATE[13] - iv1, SUBKEY[6] = STATE[14] - iv2;
   return SUBKEY[7] = STATE[15] - iv3, SUBKEY;
 };
-const STATE_VIEW = new DataView(STATE.buffer);
 /** XORs text with a keystream. */
-export const stream = (
+export const xor = (
   key: Uint32Array,
   iv0: number,
   iv1: number,
@@ -114,8 +114,8 @@ export const stream = (
   $: Uint8Array,
   start_block: number,
 ): void => {
-  const most = $.length & ~63, view = new DataView($.buffer, $.byteOffset);
-  let offset, z = 0, y;
+  const most = $.length & ~63;
+  let view = new DataView($.buffer, $.byteOffset), offset, z = 0, y;
   while (z < most) {
     chacha(key, start_block++, iv0, iv1, iv2, STATE), offset = z, y = z += 64;
     do view.setUint32(
@@ -125,7 +125,8 @@ export const stream = (
     ); while (y > offset);
   }
   if (most < $.length) {
-    chacha(key, start_block, iv0, iv1, iv2, STATE), y = 0;
-    do $[z] ^= STATE_VIEW.getUint8(y++); while (++z < $.length);
+    chacha(key, start_block, iv0, iv1, iv2, STATE);
+    view = new DataView(STATE.buffer), y = 0;
+    do $[z] ^= view.getUint8(y++); while (++z < $.length);
   }
 };

@@ -32,7 +32,7 @@
  */
 
 import { polyxchacha, xchachapoly } from "./src/aead.ts";
-import { hchacha, stream } from "./src/chacha.ts";
+import { hchacha, xor } from "./src/chacha.ts";
 
 /** Encrypts with XChaCha20-Poly1305. */
 export const encrypt = (
@@ -67,7 +67,7 @@ export const decrypt = (
 };
 /** XORs the text in-place (without checking parameters). */
 export const xchacha = (key: Uint8Array, iv: Uint8Array, $: Uint8Array): void =>
-  stream(
+  xor(
     hchacha(key, iv),
     0,
     iv[16] | iv[17] << 8 | iv[18] << 16 | iv[19] << 24,
