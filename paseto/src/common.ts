@@ -12,12 +12,13 @@ const to = <A extends Use>(use: A, key: Uint8Array) =>
 export const make_local = (
   $: Uint8Array = crypto.getRandomValues(new Uint8Array(32)),
 ): Key<"local"> => to("local", $);
-/** Generates a public key pair. */
-export const make_public = (
+/** Generates a secret key. */
+export const make_secret = (
   $: Uint8Array = crypto.getRandomValues(new Uint8Array(32)),
-): { secret_key: Key<"secret">; public_key: Key<"public"> } => (
-  { secret_key: to("secret", $), public_key: to("public", generate($)) }
-);
+): Key<"secret"> => to("secret", $);
+/** Generates a public key. */
+export const make_public = ($: Key<"public">): Key<"public"> =>
+  to("public", generate($));
 const is = <A extends Use>(use: A) => ($: Uint8Array): $ is Key<A> =>
   $.length === 32 && Object.hasOwn($, USE) && $[USE as any] as any === use;
 /** Checks for local-use keys. */
