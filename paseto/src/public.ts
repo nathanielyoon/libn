@@ -1,14 +1,7 @@
 import { sign, verify } from "@libn/25519";
 import { de_u64, en_bin, en_u64 } from "@libn/base";
-import {
-  type Detoken,
-  type Entoken,
-  is_public,
-  is_secret,
-  type Key,
-  pae,
-  regex,
-} from "./common.ts";
+import { is_public, is_secret, type Key } from "./key.ts";
+import { type Detoken, type Entoken, pae, regex } from "./common.ts";
 
 const STR = "v4.public.";
 const BIN = /* @__PURE__ */ en_bin(STR);

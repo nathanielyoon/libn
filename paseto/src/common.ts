@@ -1,32 +1,5 @@
-import { generate } from "@libn/25519";
+import type { Key, Use } from "./key.ts";
 
-/** Key type property. */
-export const USE = Symbol("use");
-/** Key usage values, with additional distinction between keys in a pair. */
-export type Use = "local" | "secret" | "public";
-/** Typed key. */
-export type Key<A extends Use> = Uint8Array<ArrayBuffer> & { [USE]: A };
-const to = <A extends Use>(use: A, key: Uint8Array) =>
-  Object.defineProperty<any>(key, USE, { value: use });
-/** Generates a local key. */
-export const to_local = (
-  $: Uint8Array = crypto.getRandomValues(new Uint8Array(32)),
-): Key<"local"> => to("local", $);
-/** Generates a secret key. */
-export const to_secret = (
-  $: Uint8Array = crypto.getRandomValues(new Uint8Array(32)),
-): Key<"secret"> => to("secret", $);
-/** Generates a public key. */
-export const to_public = ($: Key<"public">): Key<"public"> =>
-  to("public", generate($));
-const is = <A extends Use>(use: A) => ($: Uint8Array): $ is Key<A> =>
-  $.length === 32 && Object.hasOwn($, USE) && $[USE as any] as any === use;
-/** Checks for local-use keys. */
-export const is_local: ($: Uint8Array) => $ is Key<"local"> = is("local");
-/** Checks for secret public-use keys. */
-export const is_secret: ($: Uint8Array) => $ is Key<"secret"> = is("secret");
-/** Checks for public public-use keys. */
-export const is_public: ($: Uint8Array) => $ is Key<"public"> = is("public");
 /** PASETO-encoding function. */
 export type Entoken<A extends Use = Use> = (
   key: Key<A>,

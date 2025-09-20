@@ -1,14 +1,8 @@
 import { xchacha } from "@libn/aead";
 import { de_u64, en_bin, en_u64 } from "@libn/base";
 import { b2b } from "@libn/hash";
-import {
-  type Detoken,
-  type Entoken,
-  is_local,
-  type Key,
-  pae,
-  regex,
-} from "./common.ts";
+import { is_local, type Key } from "./key.ts";
+import { type Detoken, type Entoken, pae, regex } from "./common.ts";
 
 const STR = "v4.local.";
 const BIN = /* @__PURE__ */ en_bin(STR);
