@@ -1,7 +1,7 @@
 import { type Hash, SHA256, SHA512 } from "./common.ts";
 
-/** Byte counter, message block, hash state, offset counter, output length. */
-export type B2State = Uint32Array<ArrayBuffer>;
+// Byte counter, message block, hash state, offset counter, output length.
+type B2State = Uint32Array<ArrayBuffer>;
 const PERMUTE = /* @__PURE__ */ Uint8Array.from(
   "0123456789abcdefea489fd61c02b753b8c052fdae3671947931dcbe265a40f8905724afe1bc683d2c6a0b834d75fe19c51fed4a0763928bdb7ec13950f4862a6fe9b308c2d714a5a2847615fb9e3cd00123456789abcdefea489fd61c02b753",
   // Since the state buffer's first word stores the current block's length, this
