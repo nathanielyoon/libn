@@ -1,6 +1,6 @@
 import { assertEquals, assertThrows } from "@std/assert";
 import fc from "fast-check";
-import { fc_check, fc_num, fc_str } from "../test.ts";
+import { fc_check, fc_number, fc_string } from "@libn/lib";
 import type { Data, Type } from "./src/types.ts";
 import { array, boolean, number, object, string } from "./src/build.ts";
 import { coder } from "./src/code.ts";
@@ -18,10 +18,10 @@ const test_fc = <A extends Type["type"]>(type: A, tests: {
   Deno.test(type, async ($) => {
     const { [type]: data, ...fail } = {
       boolean: fc.boolean(),
-      number: fc_num(),
-      string: fc_str().map(($) => $.normalize()),
+      number: fc_number(),
+      string: fc_string().map(($) => $.normalize()),
       array: fc.array(fc.jsonValue()),
-      object: fc.dictionary(fc_str(), fc.jsonValue()),
+      object: fc.dictionary(fc_string(), fc.jsonValue()),
     };
     const a: typeof tests = {
       type: fc.tuple(
@@ -62,7 +62,7 @@ const fc_enum = <A>($: fc.Arbitrary<A>) =>
     minLength: 2,
     comparator: "SameValueZero",
   }) as fc.Arbitrary<[A, A, ...A[]]>;
-const fc_min_max = fc.uniqueArray(fc_num(), {
+const fc_min_max = fc.uniqueArray(fc_number(), {
   minLength: 2,
   maxLength: 2,
   comparator: "SameValueZero",
@@ -71,7 +71,7 @@ const fc_min_max = fc.uniqueArray(fc_num(), {
   return { min, max };
 });
 test_fc("number", {
-  enum: fc_enum(fc_num()).chain(([head, ...rest]) =>
+  enum: fc_enum(fc_number()).chain(([head, ...rest]) =>
     fc.oneof(
       fc.record({
         type: fc.constant(number().enum([head])),
@@ -142,7 +142,9 @@ const bases = Object.entries(BASES).map(([key, value]) =>
   [key as keyof typeof BASES, fc.stringMatching(value)] as const
 );
 test_fc("string", {
-  enum: fc_enum(fc_str().map(($) => $.normalize())).chain(([head, ...rest]) =>
+  enum: fc_enum(fc_string().map(($) => $.normalize())).chain((
+    [head, ...rest],
+  ) =>
     fc.oneof(
       fc.record({
         type: fc.constant(string().enum([head])),
@@ -164,12 +166,12 @@ test_fc("string", {
       }),
     )
   ),
-  minLength: fc_str({ minLength: 1 }).map(($) => ($ = $.normalize(), {
+  minLength: fc_string({ minLength: 1 }).map(($) => ($ = $.normalize(), {
     type: string().minLength($.length),
     data: $,
     fail: { path: "", raw: $.slice(1), error: ["minLength", $.length] },
   })),
-  maxLength: fc_str({ minLength: 1 }).map(($) => ($ = $.normalize(), {
+  maxLength: fc_string({ minLength: 1 }).map(($) => ($ = $.normalize(), {
     type: string().maxLength($.length - 1),
     data: $.slice(1),
     fail: { path: "", raw: $, error: ["maxLength", $.length - 1] },
@@ -178,7 +180,7 @@ test_fc("string", {
     fc.record({
       type: fc.constant(string().contentEncoding(base)),
       data,
-      fail: fc_str().map(($) => ({
+      fail: fc_string().map(($) => ({
         path: "",
         raw: $.normalize(),
         error: ["contentEncoding", base],
@@ -189,20 +191,20 @@ test_fc("string", {
     fc.record({
       type: fc.constant(string().format(format)),
       data,
-      fail: fc_str().map(($) => ({
+      fail: fc_string().map(($) => ({
         path: "",
         raw: $.normalize(),
         error: ["format", format],
       })).filter(($) => !FORMATS[format].test($.raw)),
     })
   )),
-  pattern: fc_str().map(($) =>
+  pattern: fc_string().map(($) =>
     RegExp(`^${$.normalize().replaceAll(/[$(-+./?[-^{|}]/g, "\\$&")}$`)
   ).chain((pattern) =>
     fc.record({
       type: fc.constant(string().pattern(pattern.source)),
       data: fc.stringMatching(pattern),
-      fail: fc_str().map(($) => ({
+      fail: fc_string().map(($) => ({
         path: "",
         raw: $.normalize(),
         error: ["pattern", pattern.source],
@@ -234,7 +236,7 @@ test_fc("array", {
   })),
 });
 test_fc("object", {
-  properties: fc.tuple(fc_str(), fc.boolean()).map(([key, value]) => ({
+  properties: fc.tuple(fc_string(), fc.boolean()).map(([key, value]) => ({
     type: object().properties({
       [key = key.normalize()]: boolean().enum([value]),
     }),
@@ -246,7 +248,7 @@ test_fc("object", {
     },
     raw: { [key]: !value },
   })),
-  required: fc_str().chain(($) =>
+  required: fc_string().chain(($) =>
     fc.tuple(
       fc.constant($ = $.normalize()),
       fc.option(fc.constant([$]), { nil: undefined }),
@@ -257,7 +259,7 @@ test_fc("object", {
     fail: { path: "", raw: null, error: ["required", key] },
     raw: {},
   })),
-  additionalProperties: fc.tuple(fc_str(), fc.boolean()).map(([key, $]) => ({
+  additionalProperties: fc.tuple(fc_string(), fc.boolean()).map(([key, $]) => ({
     type: object().properties({}).additionalProperties($),
     data: $ ? { [key.normalize()]: 0 } : {},
     out: {},
@@ -274,7 +276,7 @@ Deno.test("arrays encode/decode with any items", () =>
       fc.oneof(
         fc.oneof(
           fc.tuple(fc.constant(boolean()), fc.array(fc.boolean())),
-          fc.tuple(fc.constant(number()), fc.array(fc_num())),
+          fc.tuple(fc.constant(number()), fc.array(fc_number())),
           ...formats.map(([format, data]) =>
             fc.tuple(fc.constant(string().format(format)), fc.array(data))
           ),
@@ -304,7 +306,7 @@ Deno.test("arrays encode/decode with any items", () =>
             fc.tuple(fc.constant(array()), fc.array(fc.array(fc.jsonValue()))),
             fc.tuple(
               fc.constant(object()),
-              fc.array(fc.dictionary(fc_str(), fc.jsonValue())),
+              fc.array(fc.dictionary(fc_string(), fc.jsonValue())),
             ),
           ),
         ).map(([[use_max, max], [typer, data]]) => {
