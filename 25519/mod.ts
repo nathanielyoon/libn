@@ -40,4 +40,11 @@
 import { generate, sign, verify } from "./src/ed25519.ts";
 import { convert_public, convert_secret, x25519 } from "./src/x25519.ts";
 
-export { convert_public, convert_secret, generate, sign, verify, x25519 };
+/** Derives a Montgomery-curve public key. */
+export const derive: (key: Uint8Array) => Uint8Array<ArrayBuffer> = x25519;
+/** Derives a shared secret from two Montgomery-curve keys. */
+export const exchange: (
+  secret_key: Uint8Array,
+  public_key: Uint8Array,
+) => Uint8Array<ArrayBuffer> = x25519;
+export { convert_public, convert_secret, generate, sign, verify };

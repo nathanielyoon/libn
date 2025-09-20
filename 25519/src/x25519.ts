@@ -31,10 +31,10 @@ export const x25519 = (
     en_big(secret_key) & ~7n & F | 1n << 254n,
     public_key ? en_big(public_key) & F : 9n,
   ));
-/** Converts a secret key to its Montgomery equivalent. */
+/** Converts an Edwards-curve secret key to its Montgomery-curve equivalent. */
 export const convert_secret = ($: Uint8Array): Uint8Array<ArrayBuffer> =>
   new Uint8Array(prune($).subarray(0, 32));
-/** Converts a public key to its Montgomery equivalent. */
+/** Converts an Edwards-curve public key to its Montgomery-curve equivalent. */
 export const convert_public = ($: Uint8Array): Uint8Array<ArrayBuffer> => {
   const a = en_big($) & F;
   return de_big(p((1n + a) * v(1n - a)) & F);

@@ -6,7 +6,7 @@ const int = ($: Uint8Array) => {
   const a = sha512($);
   return (en_big(a) | en_big(a.subarray(32)) << 256n) % N;
 };
-/** Derives a public key from a secret key. */
+/** Derives an Edwards-curve public key from a secret key. */
 export const generate = ($: Uint8Array): Uint8Array<ArrayBuffer> =>
   en_point(en_big(prune($)));
 /** Creates an Ed25519 digital signature. */
@@ -20,7 +20,7 @@ export const sign = (
   a.set(en_point(d)), b.set(a), b.set(en_point(c), 32), b.set(message, 64);
   return a.set(de_big((d + c * int(b) % N) % N), 32), a;
 };
-/** Verifies a signed message. */
+/** Verifies a message's Ed25519 signature. */
 export const verify = (
   public_key: Uint8Array,
   message: Uint8Array,
