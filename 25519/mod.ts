@@ -19,7 +19,7 @@
  *
  * const key_1 = crypto.getRandomValues(new Uint8Array(32));
  * const key_2 = crypto.getRandomValues(new Uint8Array(32));
- * assertEquals(x25519(key_1, x25519(key_2)), x25519(key_2, x25519(key_1)));
+ * assertEquals(exchange(key_1, derive(key_2)), exchange(key_2, derive(key_1)));
  * ```ts
  *
  * @example Key exchange with converted Edwards keys
@@ -29,8 +29,8 @@
  * const key_1 = crypto.getRandomValues(new Uint8Array(32));
  * const key_2 = crypto.getRandomValues(new Uint8Array(32));
  * assertEquals(
- *   x25519(convert_secret(key_1), convert_public(generate(key_2))),
- *   x25519(convert_secret(key_2), convert_public(generate(key_1))),
+ *   exchange(convert_secret(key_1), convert_public(generate(key_2))),
+ *   exchange(convert_secret(key_2), convert_public(generate(key_1))),
  * );
  * ```ts
  *
