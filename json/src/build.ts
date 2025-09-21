@@ -1,7 +1,7 @@
 import type { Intersect, Tuple } from "@libn/lib";
 import type { Type } from "./types.ts";
 
-type To<A extends Type, B extends PropertyKey, C = true> =
+type To<A extends Type, B extends PropertyKey, C> =
   Omit<A, B> & { [_ in B]-?: C } extends infer D
     ? D extends {} ? { [E in keyof D]: D[E] } : never
     : never;
@@ -77,6 +77,4 @@ export const string = (): Typer<{ type: "string" }> => typer("string");
 /** Creates an array schema. */
 export const array = (): Typer<{ type: "array" }> => typer("array");
 /** Creates an object schema. */
-export const object = (): Typer<
-  { type: "object"; additionalProperties: false }
-> => typer("object", { additionalProperties: false });
+export const object = (): Typer<{ type: "object" }> => typer("object");
