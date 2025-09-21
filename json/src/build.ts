@@ -1,15 +1,10 @@
+import type { Intersect, Tuple } from "@libn/lib";
 import type { Type } from "./types.ts";
 
 type To<A extends Type, B extends PropertyKey, C = true> =
   Omit<A, B> & { [_ in B]-?: C } extends infer D
     ? D extends {} ? { [E in keyof D]: D[E] } : never
     : never;
-type Intersect<A> = (A extends never ? never : (_: A) => void) extends
-  (_: infer B) => void ? B : never;
-type Tuple<A extends string> = string extends A ? string[]
-  : Intersect<A extends never ? never : (_: A) => A> extends
-    ((_: never) => infer B extends A) ? [...Tuple<Exclude<A, B>>, B]
-  : [];
 type Typer<A extends Type> =
   & { type: A }
   & (Type<A["type"]> extends infer B ? B extends Type ? {

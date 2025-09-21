@@ -1,7 +1,5 @@
-/** JSON types. */
-export type Json =
-  | (null | boolean | number | string | readonly Json[] | { [_: string]: Json })
-  | undefined;
+import type { Json } from "@libn/lib";
+
 /** Content encoding types. */
 export type Base = `base${16 | 32 | "32hex" | 64 | "64url"}`;
 /** String formats (asserted). */
