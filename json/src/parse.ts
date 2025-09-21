@@ -9,15 +9,13 @@ export const BASES: { [_ in Base]: RegExp } = {
   base32: /^[2-7A-Za-z]*$/,
   base32hex: /^[\dA-Va-v]*$/,
   base64: /^[+/\dA-Za-z]*={0,2}$/,
-  base64url: /^[\w-]*$/,
+  base64url: /^[-\w]*$/,
 };
 /** Format patterns. */
 export const FORMATS: { [_ in keyof Formats]: RegExp } = {
   date,
   time,
   "date-time": RegExp(`${date.source.slice(0, -1)}T${time.source.slice(1)}$`),
-  duration:
-    /^-?P(?:\d+Y(?:\d+M)?(?:\d+[DW])?(?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?|(?:\d+Y)?\d+M(?:\d+[DW])?(?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?|(?:\d+Y)?(?:\d+M)?\d+[DW](?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?|(?:\d+Y)?(?:\d+M)?(?:\d+[DW])?T\d+H(?:\d+M)?(?:\d+(?:\.\d+)?S)?|(?:\d+Y)?(?:\d+M)?(?:\d+[DW])?T(?:\d+H)?\d+M(?:\d+(?:\.\d+)?S)?|(?:\d+Y)?(?:\d+M)?(?:\d+[DW])?T(?:\d+H)?(?:\d+M)?\d+(?:\.\d+)?S)$/,
   email: /^[\w'+-](?:\.?[\w'+-])*@(?:[\dA-Za-z][\dA-Za-z-]*\.)+[A-Za-z]{2,}$/,
   uri: /^[^\s#/:?]+:(?:\/\/[^\s\/?#]*)?[^\s#?]*(?:\?[^\s#]*)?(?:#\S*)?$/,
   uuid: /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/,
@@ -101,10 +99,12 @@ const parsers = ($: Type): string => {
 /** Creates a parsing function. */
 export const parser = <A extends Type>(
   $: A,
-): ($: unknown) => Or<Fail<A>[], Data<A>> =>
+): ($: unknown) => Or<Fail, Data<A>> =>
   Function(
+    "no",
+    "ok",
     "raw",
     `let path="",data;const errors=[];${
       parsers($)
-    }return errors.length?this.no(errors):this.ok(data)`,
-  ).bind({ no, ok });
+    }return errors.length?no(errors):ok(data)`,
+  ).bind(null, no, ok);

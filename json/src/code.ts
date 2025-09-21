@@ -7,7 +7,6 @@ const FORMATS = {
   date: iso.slice(0, -1) + ".slice(0,10)}",
   time: iso.slice(0, -1) + ".slice(11)}",
   "date-time": iso,
-  duration: fix,
   email: fix,
   uri: fix,
   uuid: fix.slice(0, -7) + ".toLowerCase()??null;",

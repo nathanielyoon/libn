@@ -1,13 +1,12 @@
 import type { Json } from "@libn/lib";
 
 /** Content encoding types. */
-export type Base = `base${16 | 32 | "32hex" | 64 | "64url"}`;
+export type Base = `base${"16" | "32" | "32hex" | "64" | "64url"}`;
 /** String formats (asserted). */
 export type Formats = {
   date: `${number}-${number}-${number}`;
   time: `${number}:${number}:${number}.${number}Z`;
   "date-time": `${Formats["date"]}T${Formats["time"]}`;
-  duration: `P${string}`;
   email: `${string}@${string}.${string}`;
   uri: `${string}:${string}`;
   uuid: `${string}-${string}-${string}-${string}-${string}`;
@@ -66,28 +65,5 @@ export type Data<A extends Type> = A extends { enum: readonly (infer B)[] } ? B
       & (A extends { additionalProperties: false } ? {} : { [_: string]: Json })
   : A["type"] extends "object" ? { [_: string]: Json }
   : never;
-/** @internal */
-type Esc<A extends PropertyKey, B extends number, C extends string> = C extends
-  `${infer D}${A & string}${infer E}` ? `${D}~${B}${Esc<A, B, E>}` : C;
-/** Union of error indicators. */
-export type Fail<A extends Type, B extends string = ""> =
-  Exclude<keyof A, "title" | "description"> extends infer C
-    ? C extends keyof A
-      ? A[C] extends infer D ? D extends Type ? Fail<D, `${B}/${number}`>
-        : D extends { [key: string]: Type }
-          ? keyof D extends infer E
-            ? E extends keyof D & string
-              ? Fail<D[E], `${B}/${Esc<"/", 1, Esc<"~", 0, E>>}`>
-            : never
-          : never
-        : {
-          path: B;
-          raw: unknown;
-          error: readonly [
-            C,
-            [C, D] extends ["required", readonly (infer E)[]] ? E : D,
-          ];
-        }
-      : never
-    : never
-    : never;
+/** Error indicators. */
+export type Fail = { path: string; raw: unknown; error: [string, Json] }[];
