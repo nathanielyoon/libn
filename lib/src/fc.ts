@@ -1,5 +1,6 @@
 // deno-coverage-ignore-file
 import fc from "fast-check";
+import type { Json } from "./types.ts";
 
 /** Creates a number arbitrary. */
 export const fc_number = ($?: fc.DoubleConstraints): fc.Arbitrary<number> =>
@@ -16,6 +17,8 @@ export const fc_binary = (
       ? { minLength: $, maxLength: $ }
       : { size: "large", ...$ },
   );
+export const fc_json = ($?: fc.JsonSharedConstraints): fc.Arbitrary<Json> =>
+  fc.jsonValue($) as fc.Arbitrary<Json>;
 const fc_report = <A>($: fc.RunDetails<A>) => {
   if ($.failed) {
     console.error(
