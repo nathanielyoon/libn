@@ -1,5 +1,4 @@
-/** Key type property. */
-export const USE = Symbol("use");
+const USE = Symbol("use");
 /** Key usage values, with additional distinction between keys in a pair. */
 export type Use = "local" | "secret" | "public";
 /** Typed key. */

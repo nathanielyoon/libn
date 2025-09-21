@@ -28,7 +28,14 @@
  * @module paseto
  */
 
-import { is_local, is_public, is_secret, set_use } from "./src/key.ts";
+import {
+  is_local,
+  is_public,
+  is_secret,
+  type Key,
+  set_use,
+  type Use,
+} from "./src/key.ts";
 import { de_local, en_local } from "./src/local.ts";
 import { de_public, en_public } from "./src/public.ts";
 
@@ -40,5 +47,7 @@ export {
   is_local,
   is_public,
   is_secret,
+  type Key,
   set_use,
+  type Use,
 };
