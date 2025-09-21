@@ -1,4 +1,4 @@
-import type { Intersect, Tuple } from "@libn/lib";
+import type { Tuple } from "@libn/lib";
 import type { Type } from "./types.ts";
 
 type To<A extends Type, B extends PropertyKey, C> =
