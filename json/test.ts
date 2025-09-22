@@ -139,22 +139,31 @@ Deno.test("build", async ({ step }) => {
       fc_check(fc.property(
         fc_schema[type],
         (schema) => {
+          const entries = Object.entries(schema).filter(($) => $[0] !== "type");
           let parent = TYPERS[type]();
-          for (const [key, value] of Object.entries(schema)) {
-            if (key !== "type") {
-              parent = parent[key as Exclude<keyof typeof parent, "type">](
-                key === "items"
-                  ? { type: value }
-                  : key === "properties"
-                  ? Object.entries(value).reduce((to, [name, property]) => ({
-                    ...to,
-                    [name]: { type: property },
-                  }), {})
-                  : value,
+          for (const [key, value] of entries) {
+            const argument = key === "items"
+              ? { type: value }
+              : key === "properties"
+              ? Object.entries(value).reduce((to, [name, property]) => ({
+                ...to,
+                [name]: { type: property },
+              }), {})
+              : value;
+            // @ts-expect-error: definitely compatible
+            parent = parent[key](argument);
+          }
+          assertEquals(parent.type, schema);
+          for (const [key, value] of entries) {
+            if (key !== "required" && typeof value !== "boolean") {
+              const { [key as keyof typeof parent.type]: _, ...rest } =
+                parent.type;
+              assertEquals(
+                parent[key as Exclude<keyof typeof parent, "type">]().type,
+                rest,
               );
             }
           }
-          assertEquals(parent.type, schema);
         },
       ));
     });
@@ -567,15 +576,23 @@ Deno.test("parse", async ({ step }) => {
         fc.option(fc.constant([$]), { nil: undefined }),
       )
     ).chain(([key, required]) =>
-      fc.constantFrom([
-        object().properties({ [key]: boolean() }).required(required!),
-        { data: { [key]: true } },
-        { raw: {}, fail: [{ path: "", raw: null, error: ["required", key] }] },
-      ], [
-        object().properties({ [key]: boolean() }).required([]),
-        { data: { [key]: true } },
-        {},
-      ])
+      fc.constantFrom(
+        [
+          object().properties({ [key]: boolean() }).required(required!),
+          { data: { [key]: true } },
+          {
+            raw: {},
+            fail: [{ path: "", raw: null, error: ["required", key] }],
+          },
+        ],
+        [
+          object().properties({ [key]: boolean() }).required([]),
+          { data: fc.constantFrom({}, { [key]: true }) },
+          {},
+        ],
+        [object().required([]), {}, {}],
+        [object().required(), {}, {}],
+      )
     ),
   );
   await test(
@@ -585,7 +602,7 @@ Deno.test("parse", async ({ step }) => {
       fc_enum(fc_types.string()),
       fc.option(fc_types.boolean(), { nil: undefined }),
     ).map(([[key_1, key_2], $]) => [
-      object().properties({ [key_1]: boolean() }).additionalProperties($),
+      object().properties({ [key_1]: boolean() }).additionalProperties($!),
       { data: $ === false ? {} : { [key_2]: 0 }, out: {} },
       {
         raw: $ === false ? { [key_2]: 0 } : undefined,
