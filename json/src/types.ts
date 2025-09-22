@@ -66,4 +66,8 @@ export type Data<A extends Type> = A extends { enum: readonly (infer B)[] } ? B
   : A["type"] extends "object" ? { [_: string]: Json }
   : never;
 /** Error indicators. */
-export type Fail = { path: string; raw: unknown; error: [string, Json] }[];
+export type Fail = {
+  path: string;
+  raw: unknown;
+  error: readonly [string, Json];
+}[];
