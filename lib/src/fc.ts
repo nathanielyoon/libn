@@ -17,6 +17,7 @@ export const fc_binary = (
       ? { minLength: $, maxLength: $ }
       : { size: "large", ...$ },
   );
+/** Creates a correctly-typed JSON value arbitrary. */
 export const fc_json = ($?: fc.JsonSharedConstraints): fc.Arbitrary<Json> =>
   fc.jsonValue($) as fc.Arbitrary<Json>;
 const fc_report = <A>($: fc.RunDetails<A>) => {
