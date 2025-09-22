@@ -22,9 +22,22 @@
  * @module json
  */
 
-export type { Base, Data, Fail, Formats, Type } from "./src/types.ts";
+import type { Base, Data, Fail, Formats, Type } from "./src/types.ts";
 import { array, boolean, number, object, string } from "./src/build.ts";
 import { coder } from "./src/code.ts";
 import { parser } from "./src/parse.ts";
 
-export { array, boolean, coder, number, object, parser, string };
+export {
+  array,
+  type Base,
+  boolean,
+  coder,
+  type Data,
+  type Fail,
+  type Formats,
+  number,
+  object,
+  parser,
+  string,
+  type Type,
+};
