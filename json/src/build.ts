@@ -1,4 +1,4 @@
-import type { Base, Formats, Type } from "./types.ts";
+import type { Base, Format, Type } from "./types.ts";
 
 type Un<A extends Type, B extends keyof A> = Omit<A, B> extends infer C
   ? C extends {} ? { [D in keyof C]: C[D] } : never
@@ -127,8 +127,8 @@ class Stringer<A extends Type<"string"> = Type<"string">>
     return this.to("contentEncoding", $);
   }
   format(): Stringer<Un<A, "format">>;
-  format<const B extends keyof Formats>($: B): Stringer<To<A, "format", B>>;
-  format($?: keyof Formats): Stringer {
+  format<const B extends Format>($: B): Stringer<To<A, "format", B>>;
+  format($?: Format): Stringer {
     return this.to("format", $);
   }
   pattern(): Stringer<Un<A, "pattern">>;

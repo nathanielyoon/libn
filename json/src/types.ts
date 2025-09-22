@@ -12,6 +12,8 @@ export type Formats = {
   uri: `${string}:${string}`;
   uuid: `${string}-${string}-${string}-${string}-${string}`;
 };
+/** String format types. */
+export type Format = keyof Formats;
 /** @internal */
 type Types = {
   boolean: { enum?: readonly [boolean] };
@@ -28,7 +30,7 @@ type Types = {
     minLength?: number;
     maxLength?: number;
     contentEncoding?: Base;
-    format?: keyof Formats;
+    format?: Format;
     pattern?: string;
   };
   array: {
@@ -53,7 +55,7 @@ export type Type<A extends keyof Types = keyof Types> = A extends string
 export type Data<A extends Type> = A extends { enum: readonly (infer B)[] } ? B
   : A["type"] extends "boolean" ? boolean
   : A["type"] extends "number" ? number
-  : A extends { format: infer B extends keyof Formats } ? Formats[B]
+  : A extends { format: infer B extends Format } ? Formats[B]
   : A["type"] extends "string" ? string
   : A extends { items: infer B extends Type } ? readonly Data<B>[]
   : A["type"] extends "array" ? readonly Json[]

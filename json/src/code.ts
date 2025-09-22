@@ -1,16 +1,18 @@
 import type { Data, Type } from "./types.ts";
 
-const fix = "raw=row[at++]?.trim().normalize()??null;";
-const iso =
-  '{const r=new Date(row[at++]||"");raw=isNaN(r)?row[at-1]:r.toISOString()}';
-const FORMATS = {
-  date: iso.slice(0, -1) + ".slice(0,10)}",
-  time: iso.slice(0, -1) + ".slice(11)}",
-  "date-time": iso,
-  email: fix,
-  uri: fix,
-  uuid: fix.slice(0, -7) + ".toLowerCase()??null;",
-};
+const FORMATS = /* @__PURE__ */ (() => {
+  const fix = "raw=row[at++]?.trim().normalize()??null;";
+  const iso =
+    '{const r=new Date(row[at++]||"");raw=isNaN(r)?row[at-1]:r.toISOString()}';
+  return {
+    date: iso.slice(0, -1) + ".slice(0,10)}",
+    time: iso.slice(0, -1) + ".slice(11)}",
+    "date-time": iso,
+    email: fix,
+    uri: fix,
+    uuid: fix.slice(0, -7) + ".toLowerCase()??null;",
+  };
+})();
 const coders = ($: Type): { length: number; en: string; de: string } => {
   switch ($.type) {
     case "boolean":

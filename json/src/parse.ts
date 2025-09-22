@@ -1,8 +1,6 @@
 import { no, ok, type Or } from "@libn/result";
-import type { Base, Data, Fail, Formats, Type } from "./types.ts";
+import type { Base, Data, Fail, Format, Type } from "./types.ts";
 
-const date = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
-const time = /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{3}Z$/;
 /** Content encoding patterns. */
 export const BASES: { [_ in Base]: RegExp } = {
   base16: /^[\dA-Fa-f]*$/,
@@ -12,14 +10,18 @@ export const BASES: { [_ in Base]: RegExp } = {
   base64url: /^[-\w]*$/,
 };
 /** Format patterns. */
-export const FORMATS: { [_ in keyof Formats]: RegExp } = {
-  date,
-  time,
-  "date-time": RegExp(`${date.source.slice(0, -1)}T${time.source.slice(1)}$`),
-  email: /^[\w'+-](?:\.?[\w'+-])*@(?:[\dA-Za-z][\dA-Za-z-]*\.)+[A-Za-z]{2,}$/,
-  uri: /^[^\s#/:?]+:(?:\/\/[^\s\/?#]*)?[^\s#?]*(?:\?[^\s#]*)?(?:#\S*)?$/,
-  uuid: /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/,
-};
+export const FORMATS: { [_ in Format]: RegExp } = /* @__PURE__ */ (() => {
+  const date = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
+  const time = /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{3}Z$/;
+  return {
+    date,
+    time,
+    "date-time": RegExp(`${date.source.slice(0, -1)}T${time.source.slice(1)}$`),
+    email: /^[\w'+-](?:\.?[\w'+-])*@(?:[\dA-Za-z][\dA-Za-z-]*\.)+[A-Za-z]{2,}$/,
+    uri: /^[^\s#/:?]+:(?:\/\/[^\s\/?#]*)?[^\s#?]*(?:\?[^\s#]*)?(?:#\S*)?$/,
+    uuid: /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/,
+  };
+})();
 const NOT = {
   boolean: 'typeof raw!=="boolean"',
   number: "!Number.isFinite(raw)",
