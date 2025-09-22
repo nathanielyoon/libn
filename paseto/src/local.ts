@@ -7,10 +7,11 @@ import { type Detoken, type Entoken, pae, regex } from "./common.ts";
 const STR = "v4.local.";
 const BIN = /* @__PURE__ */ en_bin(STR);
 const REG = /* @__PURE__ */ regex(STR);
+const XOR = /* @__PURE__ */ en_bin("paseto-encryption-key");
+const MAC = /* @__PURE__ */ en_bin("paseto-auth-key-for-aead");
 const split = (key: Uint8Array, nonce: Uint8Array) => {
   const xor = new Uint8Array(53), mac = new Uint8Array(56);
-  xor.set(en_bin("paseto-encryption-key")), xor.set(nonce, 21);
-  mac.set(en_bin("paseto-auth-key-for-aead")), mac.set(nonce, 24);
+  xor.set(XOR), xor.set(nonce, 21), mac.set(MAC), mac.set(nonce, 24);
   return { xor_key: b2b(xor, key, 56), mac_key: b2b(mac, key, 32) };
 };
 /** Encrypts and encodes a local PASETO. */
