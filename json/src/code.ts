@@ -83,12 +83,12 @@ const coders = ($: Type): { length: number; en: string; de: string } => {
   };
 };
 /** Creates encoding and decoding functions. */
-export const coder = <A extends Type>($: A): {
+export const coder = <A extends Type>(type: A): {
   length: number;
   encode: (data: Data<A>) => (string | null)[];
   decode: (row: (string | null)[]) => unknown;
 } => {
-  const { length, en, de } = coders($);
+  const { length, en, de } = coders(type);
   return {
     length,
     encode: Function(

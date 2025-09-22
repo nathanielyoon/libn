@@ -1,4 +1,4 @@
-import { no, ok, type Or } from "@libn/result";
+import type { Result } from "@libn/result";
 import type { Base, Data, Fail, Format, Type } from "./types.ts";
 
 /** Content encoding patterns. */
@@ -100,13 +100,13 @@ const parsers = ($: Type): string => {
 };
 /** Creates a parsing function. */
 export const parser = <A extends Type>(
-  $: A,
-): ($: unknown) => Or<Fail, Data<A>> =>
+  type: A,
+): ($: unknown) => Result<Fail, Data<A>> =>
   Function(
     "no",
     "ok",
     "raw",
     `let path="",data;const errors=[];${
-      parsers($)
-    }return errors.length?no(errors):ok(data)`,
-  ).bind(null, no, ok);
+      parsers(type)
+    }return errors.length?{state:false,value:errors}:{state:true,value:data}`,
+  ) as any;
