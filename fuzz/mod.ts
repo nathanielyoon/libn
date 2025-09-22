@@ -16,7 +16,7 @@
  * @module fuzz
  */
 
-const TEMP = new Uint32Array(0x10000);
+const TEMP = /* @__PURE__ */ new Uint32Array(0x10000);
 /** Calculates the distance between two strings. */
 export const myers = (one: string, two: string): number => {
   if (one.length > two.length) {
