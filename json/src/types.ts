@@ -1,3 +1,4 @@
+/** @internal */
 import type { Json } from "@libn/lib";
 
 /** Content encoding types. */
