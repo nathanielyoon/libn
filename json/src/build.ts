@@ -10,17 +10,17 @@ type To<A extends Type, B extends keyof A, C> =
 abstract class Typer<A extends Type, B> {
   constructor(public type: A) {}
   protected abstract get child(): { new (type: A): B };
-  protected to<B extends keyof A, C>(key: B, value: C) {
+  protected to<C extends keyof A, D>(key: C, value: D): B {
     if (value === undefined) {
       const { [key]: _, ...type } = this.type;
-      return new this.child(type as Un<A, B>);
+      return new this.child(type as Un<A, C>);
     }
-    return new this.child({ ...this.type, [key]: value } as To<A, B, C>);
+    return new this.child({ ...this.type, [key]: value } as To<A, C, D>);
   }
 }
 class Booleaner<A extends Type<"boolean"> = Type<"boolean">>
   extends Typer<A, Booleaner> {
-  protected get child() {
+  protected get child(): { new (type: Type<"boolean">): Booleaner } {
     return Booleaner;
   }
   title(): Booleaner<Un<A, "title">>;
@@ -41,7 +41,7 @@ class Booleaner<A extends Type<"boolean"> = Type<"boolean">>
 }
 class Numberer<A extends Type<"number"> = Type<"number">>
   extends Typer<A, Numberer> {
-  protected get child() {
+  protected get child(): { new (type: Type<"number">): Numberer } {
     return Numberer;
   }
   title(): Numberer<Un<A, "title">>;
@@ -91,7 +91,7 @@ class Numberer<A extends Type<"number"> = Type<"number">>
 }
 class Stringer<A extends Type<"string"> = Type<"string">>
   extends Typer<A, Stringer> {
-  protected get child() {
+  protected get child(): { new (type: Type<"string">): Stringer } {
     return Stringer;
   }
   title(): Stringer<Un<A, "title">>;
@@ -139,7 +139,7 @@ class Stringer<A extends Type<"string"> = Type<"string">>
 }
 class Arrayer<A extends Type<"array"> = Type<"array">>
   extends Typer<A, Arrayer> {
-  protected get child() {
+  protected get child(): { new (type: Type<"array">): Arrayer } {
     return Arrayer;
   }
   title(): Arrayer<Un<A, "title">>;
@@ -175,7 +175,7 @@ class Arrayer<A extends Type<"array"> = Type<"array">>
 }
 class Objecter<A extends Type<"object"> = Type<"object">>
   extends Typer<A, Objecter> {
-  protected get child() {
+  protected get child(): { new (type: Type<"object">): Objecter } {
     return Objecter;
   }
   title(): Objecter<Un<A, "title">>;
