@@ -103,8 +103,6 @@ export const parser = <A extends Type>(
   type: A,
 ): ($: unknown) => Result<Fail, Data<A>> =>
   Function(
-    "no",
-    "ok",
     "raw",
     `let path="",data;const errors=[];${
       parsers(type)

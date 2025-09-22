@@ -193,7 +193,9 @@ Deno.test("code", async ({ step }) => {
       $,
       ([typer, value]) => {
         const { length, encode, decode } = coder(typer.type);
-        const encoded = encode(parser(typer.type)(value).unwrap(true));
+        const result = parser(typer.type)(value);
+        assert(result.state);
+        const encoded = encode(result.value);
         assertEquals(encoded.length, length);
         assertEquals(decode(encoded), value);
       },
@@ -323,7 +325,7 @@ Deno.test("parse", async ({ step }) => {
           ({ type, ok, no }) => {
             const parse = parser(type);
             if (ok.data !== undefined) {
-              const { result } = parse(ok.data);
+              const result = parse(ok.data);
               assertEquals(result, { state: true, value: ok.out ?? ok.data });
               assert(
                 type !== "array" || type !== "object" ||
@@ -332,7 +334,7 @@ Deno.test("parse", async ({ step }) => {
             }
             if (no.raw !== undefined) {
               const { type: _, ...rest } = type;
-              assertEquals(parse(no.raw).result, {
+              assertEquals(parse(no.raw), {
                 state: false,
                 value: no.fail ??
                   [{ path: "", raw: no.raw, error: Object.entries(rest)[0] }],

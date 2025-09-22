@@ -3,7 +3,7 @@
  *
  * @example Building, decoding, parsing, encoding
  * ```ts
- * import { assertEquals } from "@std/assert";
+ * import { assert, assertEquals } from "@std/assert";
  *
  * const { type } = object().properties({
  *   true: boolean().enum([true]),
@@ -16,7 +16,9 @@
  * const row = [null, "0, 3.14", "12345", "john@jh.edu"];
  *
  * const { decode, encode } = coder(type), parse = parser(type);
- * assertEquals(encode(parse(decode(row)).unwrap(true)), row);
+ * const result = parse(decode(row));
+ * assert(result.state);
+ * assertEquals(encode(result.value), row);
  * ```
  *
  * @module json
