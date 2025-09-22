@@ -7,16 +7,11 @@ import { type Detoken, type Entoken, pae, regex } from "./common.ts";
 const STR = "v4.local.";
 const BIN = /* @__PURE__ */ en_bin(STR);
 const REG = /* @__PURE__ */ regex(STR);
-const [XOR, MAC] = /* @__PURE__ */
-  ["encryption-key", "auth-key-for-aead"].map(($) => {
-    const buffer = new Uint8Array($.length + 39); // 7 for "paseto-" + 32 for key
-    return buffer.set(en_bin(`paseto-${$}`)), buffer;
-  });
 const split = (key: Uint8Array, nonce: Uint8Array) => {
-  XOR.set(nonce, 21), MAC.set(nonce, 24);
-  const temp = b2b(XOR, key, 56), mac_key = b2b(MAC, key, 32);
-  XOR.fill(0, 21), MAC.fill(0, 24);
-  return { xor_key: temp.subarray(0, 32), counter: temp.subarray(32), mac_key };
+  const xor = new Uint8Array(53), mac = new Uint8Array(56);
+  xor.set(en_bin("paseto-encryption-key")), xor.set(nonce, 21);
+  mac.set(en_bin("paseto-auth-key-for-aead")), mac.set(nonce, 24);
+  return { xor_key: b2b(xor, key, 56), mac_key: b2b(mac, key, 32) };
 };
 /** Encrypts and encodes a local PASETO. */
 export const en_local: Entoken<"local"> = (
@@ -30,7 +25,7 @@ export const en_local: Entoken<"local"> = (
   const payload = new Uint8Array(body.length + 64);
   payload.set(nonce), payload.set(body, 32);
   const parts = split(key, nonce), text = payload.subarray(32, -32);
-  cipher(parts.xor_key, parts.counter, text);
+  cipher(parts.xor_key, parts.xor_key.subarray(32), text);
   payload.set(
     b2b(pae(BIN, nonce, text, foot, assertion), parts.mac_key, 32),
     body.length + 32,
@@ -54,6 +49,6 @@ export const de_local: Detoken<"local"> = (
   let is_different = 0, z = 32, y = payload.length;
   do is_different |= tag[--z] ^ payload[--y]; while (z);
   if (is_different) return null;
-  cipher(parts.xor_key, parts.counter, body);
+  cipher(parts.xor_key, parts.xor_key.subarray(32), body);
   return { body: new Uint8Array(body), foot };
 };
