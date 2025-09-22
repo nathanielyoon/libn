@@ -1,13 +1,13 @@
 import { en_iv, type Hash, min, SHA256, SHA512 } from "./common.ts";
 
 type Mix = (block: DataView, at: number, $: Uint32Array) => void;
-const STATE = /* @__PURE__ */ new Uint32Array(16);
 const BLOCK = /* @__PURE__ */ new Uint8Array(128);
+const STATE = /* @__PURE__ */ new Uint32Array(16);
 const md = (length: number, iv: Uint32Array, mix: Mix, $: Uint8Array) => {
-  BLOCK.fill(0), STATE.set(iv);
   const size = iv.length << 3, max = $.length;
   let view = new DataView($.buffer, $.byteOffset), z = 0, y = 0;
-  for (; z < max;) {
+  BLOCK.fill(0), STATE.set(iv);
+  while (z < max) {
     const chunk = min(size - y, max - z);
     if (chunk !== size) BLOCK.set($.subarray(z, z += chunk)), y += chunk;
     else do mix(view, z, STATE), z += size; while (max - z >= size);
