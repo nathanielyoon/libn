@@ -1,6 +1,6 @@
 import { sha512 } from "@libn/hash";
-import { de_big, en_big, N, prune } from "./field.ts";
-import { add, de_point, double, en_point, equal, I, wnaf } from "./curve.ts";
+import { de_big, en_big, prune } from "./bigint.ts";
+import { add, de_point, double, en_point, equal, I, N, wnaf } from "./curve.ts";
 
 const int = ($: Uint8Array) => {
   const a = sha512($);

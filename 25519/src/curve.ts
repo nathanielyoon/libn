@@ -1,16 +1,43 @@
-import { de_big, en_big, P, p, r, v } from "./field.ts";
+import { de_big, en_big } from "./bigint.ts";
 
+/** Curve25519 prime. */
+export const P = /* @__PURE__ */ BigInt(
+  "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed",
+);
+/** Curve25519 order. */
+export const N = /* @__PURE__ */ BigInt(
+  "0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed",
+);
+/** Reduces modulo P. */
+export const p = ($: bigint): bigint => ($ %= P) < 0n ? $ + P : $;
+/** Raises to a power modulo P. */
+export const s = (base: bigint, power: number, multiplier = base): bigint => {
+  do base = base * base % P; while (--power); // use `% P` to avoid bigint limit
+  return base * multiplier % P;
+};
+/** Inverts modulo P. */
+export const v = ($: bigint): bigint => {
+  let a = 0n, b = p($), c = P, d = 1n, e = 0n, f, g;
+  while (f = b) b = c % f, c /= f, g = a - c * d, a = d, d = g, e *= ~c, c = f;
+  return p(a);
+};
+/** Common exponentiation. */
+export const r = (base: bigint, cube = base ** 3n): bigint => {
+  const a = s(cube ** 10n % P * base % P, 5), b = s(s(s(a, 10), 20), 40);
+  return s(s(s(b, 80), 80, b), 10, a) ** 4n % P * base % P;
+};
 const D = 0x52036cee2b6ffe738cc740797779e89800700a4d4141d8ab75eb4dca135978a3n;
 const R = 0x2b8324804fc1df0b2b4d00993dfbd7a72f431806ad2fe478c4ee1b274a0ea0b0n;
 const X = 0x216936d3cd6e53fec0a4e231fdd6dc5c692cc7609525a7b2c9562d608f25d51an;
 const Y = 0x6666666666666666666666666666666666666666666666666666666666666658n;
 // An extended point with 256-bit coordinates `(X, Y, Z, T)` is a 1024-bit
 // integer `X | Y << 256n | Z << 512n | T << 768n`.
-const Z1 = 1n << 512n, MX = (1n << 256n) - 1n, MYZ = MX << 256n | MX << 512n;
+const Z1 =
+  0x100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000n;
+const MX = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffn;
 /** Identity point. */
-export const I = 1n << 256n | Z1;
-// Base point.
-const B = X | Y << 256n | Z1 | X * Y % P << 768n;
+export const I =
+  0x100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000n;
 /** Adds two points. */
 export const add = (one: bigint, two: bigint): bigint => {
   const a = one & MX, b = one >> 256n & MX, c = two & MX, d = two >> 256n & MX;
@@ -28,19 +55,22 @@ export const double = ($: bigint): bigint => {
 };
 const G = /* @__PURE__ */ (() => {
   const a = Array<bigint>(4224);
-  for (let b = B, c, z = 0, y; z < 4224; b = double(c)) {
-    for (y = 0, a[z++] = c = b; y < 127; ++y) a[z++] = c = add(c, b);
-  }
+  let b = X | Y << 256n | Z1 | X * Y % P << 768n, c, z = 0, y;
+  do {
+    y = 0, a[z++] = c = b;
+    do a[z++] = c = add(c, b); while (++y < 127);
+    b = double(c);
+  } while (z < 4224);
   return a;
 })();
 /** Multiplies the base point by a scalar. */
 export const wnaf = ($: bigint): { a: bigint; _: bigint } => {
-  let a = I, b = B, c, d, e, z = 0;
+  let a = I, b = X | Y << 256n | Z1 | X * Y % P << 768n, c, d, e, z = 0;
   do c = Number($ & 255n),
     $ >>= 8n,
     c > 128 && (c -= 256, ++$),
     d = G[(z << 7) + (c + (c >> 31) ^ (c >> 31)) - (c ? 1 : 0)],
-    e = P - (d & MX) | d & MYZ | P - (d >> 768n) << 768n,
+    e = P - (d & MX) | d & (MX << 256n | MX << 512n) | P - (d >> 768n) << 768n,
     c ? a = add(a, c < 0 ? e : d) : b = add(b, z & 1 ? e : d); while (++z < 33);
   return { a, _: b };
 };

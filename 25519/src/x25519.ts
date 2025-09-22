@@ -1,6 +1,9 @@
-import { de_big, en_big, P, p, prune, r, s, v } from "./field.ts";
+import { de_big, en_big, prune } from "./bigint.ts";
+import { P, p, r, s, v } from "./curve.ts";
 
-const F = ~(1n << 255n); // mask for top bit
+const F = /* @__PURE__ */ BigInt(
+  "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+);
 const ladder = (scalar: bigint, point: bigint) => {
   let a = 1n, b = 0n, c = point, d = 1n, e = 0n, f, g, z = 254n; // t = bits - 1
   do e ^= f = scalar >> z & 1n,
