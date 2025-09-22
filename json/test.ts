@@ -5,7 +5,7 @@ import {
   fc_json,
   fc_number,
   fc_string,
-  Json,
+  type Json,
   type Tuple,
 } from "@libn/lib";
 import type { Data, Fail, Type } from "./src/types.ts";
@@ -25,7 +25,7 @@ const fc_types = {
   object: ($?: fc.DictionaryConstraints) => fc_object(fc_json(), $),
 };
 const fc_other = <A extends Type["type"]>(type: A) => {
-  const { [type]: data, ...rest } = fc_types;
+  const { [type]: _, ...rest } = fc_types;
   return fc.oneof(
     ...Object.values<() => fc.Arbitrary<Json>>(rest).map(($) => $()),
   );
