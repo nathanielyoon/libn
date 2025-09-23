@@ -1,4 +1,4 @@
-import { assertEquals, assertLess, assertThrows } from "@std/assert";
+import { assert, assertEquals, assertLess, assertThrows } from "@std/assert";
 import {
   assertSpyCall,
   assertSpyCalls,
@@ -1439,5 +1439,14 @@ Deno.test("preact", async ({ step }) => {
 Deno.test("mod", async ({ step }) => {
   await step("bundle : pure", async () => {
     assertEquals(await bundle(import.meta), "");
+  });
+  await step("effect : dispose when nested", () => {
+    const a = signal(0);
+    effect(() => {
+      effect(() => {
+        if (a() === 1) assert(0);
+      })();
+    });
+    a(1);
   });
 });
