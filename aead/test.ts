@@ -3,7 +3,7 @@ import fc from "fast-check";
 import { bundle, fc_binary, fc_check, read } from "@libn/lib";
 import { chacha, xor } from "./src/chacha.ts";
 import { poly } from "./src/poly.ts";
-import { polyxchacha, xchachapoly } from "./src/xchachapoly.ts";
+import { polyxchacha, xchachapoly } from "./src/aead.ts";
 import { cipher, decrypt, encrypt } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
@@ -28,16 +28,6 @@ Deno.test("chacha", async ({ step }) => {
       const state = new Uint32Array(16);
       chacha(new Uint32Array($.key.buffer), 0, ...get($.iv), state);
       assertEquals(new Uint8Array(state.buffer).subarray(0, 32), $.subkey);
-    }
-  });
-  await step("hchacha : xchacha-03 A.3.2.1", () => {
-    for (const $ of read(vectors.chacha.xchacha)) {
-      const text = new Uint8Array($.plaintext.length);
-      cipher($.key, $.iv, text);
-      assertEquals(text, $.keystream);
-      text.set($.plaintext);
-      cipher($.key, $.iv, text);
-      assertEquals(text, $.ciphertext);
     }
   });
 });
@@ -100,6 +90,16 @@ Deno.test("aead", async ({ step }) => {
   });
 });
 Deno.test("mod", async ({ step }) => {
+  await step("cipher : xchacha-03 A.3.2.1", () => {
+    for (const $ of read(vectors.mod["xchacha A.3.2.1"])) {
+      const text = new Uint8Array($.plaintext.length);
+      cipher($.key, $.iv, text);
+      assertEquals(text, $.keystream);
+      text.set($.plaintext);
+      cipher($.key, $.iv, text);
+      assertEquals(text, $.ciphertext);
+    }
+  });
   await step("encrypt/decrypt : arbitrary round-trip", () => {
     fc_check(fc.property(
       fc_binary(32),

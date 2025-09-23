@@ -32,7 +32,7 @@
  */
 
 import { hchacha, xor } from "./src/chacha.ts";
-import { polyxchacha, xchachapoly } from "./src/xchachapoly.ts";
+import { polyxchacha, xchachapoly } from "./src/aead.ts";
 
 /** XORs the text in-place (without checking parameters). */
 export const cipher = (key: Uint8Array, iv: Uint8Array, $: Uint8Array): void =>

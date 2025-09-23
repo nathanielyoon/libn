@@ -63,10 +63,6 @@ await Promise.all([
         /Key:?\n(.+?)\n\n.*?nonce:\n(.+?)\n\n.*?key:\n(.+?)\n\n/gs,
       ),
     ], ["key", "iv", "subkey"]),
-    xchacha: into(
-      ["plaintext", "key", "iv", "keystream", "ciphertext"],
-      xchacha.slice(31877, 34302).match(/(?:[\da-f]{32,}\s*)+/g)!.map(trim),
-    ),
   },
   poly: {
     "rfc8439 2.5.2/rfc8439 A.3": sections([
@@ -98,6 +94,13 @@ await Promise.all([
         tag: $.tag,
         result: $.result === "valid",
       }))
+    ),
+    "xchacha A.3.1": xchacha.slice(30715, 31722),
+  },
+  mod: {
+    "xchacha A.3.2.1": into(
+      ["plaintext", "key", "iv", "keystream", "ciphertext"],
+      xchacha.slice(31876, 34302).match(/(?:[\da-f]{32,}\s*)+/g)!.map(trim),
     ),
   },
 })).then(save(import.meta));
