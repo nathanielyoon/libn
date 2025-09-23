@@ -1,5 +1,6 @@
+import { assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { fc_check, fc_string } from "@libn/lib";
+import { bundle, fc_check, fc_string } from "@libn/lib";
 import { myers } from "./mod.ts";
 
 const levenshtein = (one: string, two: string) => {
@@ -24,5 +25,8 @@ Deno.test("mod", async ({ step }) => {
       fc_string({ size: "large" }),
       (one, two) => myers(one, two) === levenshtein(one, two),
     ));
+  });
+  await step("bundle : pure", async () => {
+    assertEquals(await bundle(import.meta), "");
   });
 });
