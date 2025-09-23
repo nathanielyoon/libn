@@ -20,6 +20,7 @@
  * const key_1 = crypto.getRandomValues(new Uint8Array(32));
  * const key_2 = crypto.getRandomValues(new Uint8Array(32));
  * assertEquals(exchange(key_1, derive(key_2)), exchange(key_2, derive(key_1)));
+ * assertEquals(exchange(key_1, new Uint8Array(32)), null);
  * ```
  *
  * @example Key exchange with converted Edwards keys
@@ -38,13 +39,19 @@
  */
 
 import { generate, sign, verify } from "./src/ed25519.ts";
-import { convert_public, convert_secret, x25519 } from "./src/x25519.ts";
+import {
+  convert_public,
+  convert_secret,
+  derive,
+  exchange,
+} from "./src/x25519.ts";
 
-/** Derives a Montgomery-curve public key. */
-export const derive: (key: Uint8Array) => Uint8Array<ArrayBuffer> = x25519;
-/** Derives a shared secret from two Montgomery-curve keys. */
-export const exchange: (
-  secret_key: Uint8Array,
-  public_key: Uint8Array,
-) => Uint8Array<ArrayBuffer> = x25519;
-export { convert_public, convert_secret, generate, sign, verify };
+export {
+  convert_public,
+  convert_secret,
+  derive,
+  exchange,
+  generate,
+  sign,
+  verify,
+};

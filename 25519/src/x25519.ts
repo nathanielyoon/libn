@@ -25,15 +25,22 @@ const ladder = (scalar: bigint, point: bigint) => {
   // Final cswap is outside the loop.
   return p(s(r(b ^= (b ^ d) & -e, b **= 3n), 3, a ^ (a ^ c) & -e) * b) & F;
 };
-/** Multiplies a public coordinate (if omitted, the generator) by a scalar. */
-export const x25519 = (
+// Clamping in bigint form isn't as efficient, but doesn't mutate the passed-in
+// key buffers.
+const clamp = ($: Uint8Array) => en_big($) & ~7n & F | 1n << 254n;
+/** Derives a Montgomery-curve public key. */
+export const derive = (secret_key: Uint8Array): Uint8Array<ArrayBuffer> =>
+  de_big(ladder(clamp(secret_key), 9n));
+/** Derives a not-all-zero shared secret from two Montgomery-curve keys. */
+export const exchange = (
   secret_key: Uint8Array,
-  public_key?: Uint8Array,
-): Uint8Array<ArrayBuffer> =>
-  de_big(ladder( // clamping in bigint form won't mutate passed-in buffers
-    en_big(secret_key) & ~7n & F | 1n << 254n,
-    public_key ? en_big(public_key) & F : 9n,
-  ));
+  public_key: Uint8Array,
+): Uint8Array<ArrayBuffer> | null => {
+  const shared = de_big(ladder(clamp(secret_key), en_big(public_key) & F));
+  let byte = 0;
+  for (let z = 0; z < 32; ++z) byte |= shared[z];
+  return byte ? shared : null;
+};
 /** Converts an Edwards-curve secret key to its Montgomery-curve equivalent. */
 export const convert_secret = ($: Uint8Array): Uint8Array<ArrayBuffer> =>
   new Uint8Array(prune($).subarray(0, 32));

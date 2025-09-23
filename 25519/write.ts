@@ -32,7 +32,7 @@ await Promise.all([
       group.tests.map(($) => ({
         secret_key: $.private,
         public_key: $.public,
-        shared_secret: $.shared,
+        shared_secret: /^0{64}$/.test($.shared) ? null : $.shared,
       }))
     ),
   },
