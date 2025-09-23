@@ -1,6 +1,6 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { fc_binary, fc_check, read } from "@libn/lib";
+import { bundle, fc_binary, fc_check, read } from "@libn/lib";
 import { chacha, xor } from "./src/chacha.ts";
 import { poly } from "./src/poly.ts";
 import { polyxchacha, xchachapoly } from "./src/aead.ts";
@@ -125,5 +125,8 @@ Deno.test("mod", async ({ step }) => {
         assertEquals(decrypt(key, $, data), null);
       },
     ));
+  });
+  await step("bundle : pure", async () => {
+    assertEquals(await bundle(import.meta), "");
   });
 });
