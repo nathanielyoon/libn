@@ -75,7 +75,6 @@ export const batch = <A>($: () => A): A => {
 export const set_actor = ($: Node | null): Node | null => (
   swapper = actor, actor = $, swapper
 );
-const set_scope = ($: Scoper | null) => (swapper = scope, scope = $, swapper);
 const link = (dep: Node, sub: Node | null) => {
   if (!sub) return;
   const a = sub.head;
@@ -123,34 +122,11 @@ const reget = ($: Node) => {
   try {
     return follow($), $.was !== ($.was = $.is($.was));
   } finally {
-    set_actor(a), ignore($);
+    actor = a, ignore($);
   }
 };
 const rerun = ($: Node): number => ($.flags & Flag.QUEUE ||
   ($.flags |= Flag.QUEUE, $.sub ? rerun($.sub.sub) : queue.push($)));
-const valid = ($: Node, link: Link) => {
-  for (let a = $.head; a; a = a.dep_prev) if (a === link) return true;
-};
-const deep = ($: Link) => {
-  top: for (let a: (Link | null)[] = [], b = $.sub_next, c, d;;) {
-    if (c = $.sub, d = c.flags, !(d & Flag.KNOWN)) c.flags |= Flag.READY;
-    else if (!(d & Flag.GOING)) d = Flag.CLEAR;
-    else if (!(d & Flag.CHECK)) c.flags = d & ~Flag.RECUR | Flag.READY;
-    else if (d & Flag.SETUP || !valid(c, $)) d = Flag.CLEAR;
-    else c.flags |= Flag.EARLY, d &= Flag.BEGIN;
-    if (d & Flag.WATCH && rerun(c), d & Flag.BEGIN) {
-      if (c.sub && ($ = c.sub).sub_next) a.push(b), b = $.sub_next;
-    } else if (!b) {
-      while (a.length) {
-        if ($ = a.pop()!) {
-          b = $.sub_next;
-          continue top;
-        }
-      }
-      break;
-    } else b = ($ = b).sub_next;
-  }
-};
 const flat = ($: Link) => {
   do if (($.sub.flags & Flag.SETUP) === Flag.READY) {
     ($.sub.flags |= Flag.DIRTY) & Flag.WATCH && rerun($.sub);
@@ -184,7 +160,7 @@ const run = ($: Node, flags: Flag) => {
     try {
       follow($), ($ as Effect).is();
     } finally {
-      set_actor(a), ignore($);
+      actor = a, ignore($);
     }
   } else {
     flags & Flag.READY && ($.flags = flags & ~Flag.READY);
@@ -193,6 +169,9 @@ const run = ($: Node, flags: Flag) => {
     }
   }
 };
+const valid = ($: Node, link: Link) => {
+  for (let a = $.head; a; a = a.dep_prev) if (a === link) return true;
+};
 function sourcer(this: Source, ...$: [unknown]) {
   if (!$.length) {
     this.flags & Flag.DIRTY && reuse(this) && this.sub && flat(this.sub);
@@ -200,7 +179,28 @@ function sourcer(this: Source, ...$: [unknown]) {
   } else if (
     this.is !== (this.is = typeof $[0] === "function" ? $[0](this.is) : $[0]) &&
     (this.flags = Flag.RESET, this.sub)
-  ) deep(this.sub), depth || flush();
+  ) {
+    let sub = this.sub;
+    top: for (let a: (Link | null)[] = [], b = sub.sub_next, c, d;;) {
+      if (c = sub.sub, d = c.flags, !(d & Flag.KNOWN)) c.flags |= Flag.READY;
+      else if (!(d & Flag.GOING)) d = Flag.CLEAR;
+      else if (!(d & Flag.CHECK)) c.flags = d & ~Flag.RECUR | Flag.READY;
+      else if (d & Flag.SETUP || !valid(c, sub)) d = Flag.CLEAR;
+      else c.flags |= Flag.EARLY, d &= Flag.BEGIN;
+      if (d & Flag.WATCH && rerun(c), d & Flag.BEGIN) {
+        if (c.sub && (sub = c.sub).sub_next) a.push(b), b = sub.sub_next;
+      } else if (!b) {
+        while (a.length) {
+          if (sub = a.pop()!) {
+            b = sub.sub_next;
+            continue top;
+          }
+        }
+        break;
+      } else b = (sub = b).sub_next;
+    }
+    depth || flush();
+  }
   return this.is;
 }
 function deriver(this: Derive) {
@@ -238,7 +238,7 @@ export const effect = (is: () => void): () => void => {
   try {
     a.is();
   } finally {
-    set_actor(b);
+    actor = b;
   }
   return dispose.bind(a);
 };
@@ -246,11 +246,11 @@ export const effect = (is: () => void): () => void => {
 export const scoper = (all: () => void): () => void => {
   const a = node(Kind.SCOPER, Flag.CLEAR, {});
   link(a, scope);
-  const b = set_actor(null), c = set_scope(a);
+  const b = set_actor(null), c = scope;
   try {
-    all();
+    scope = a, all();
   } finally {
-    set_actor(b), set_scope(c);
+    actor = b, scope = c;
   }
   return dispose.bind(a);
 };
