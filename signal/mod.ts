@@ -174,7 +174,7 @@ const valid = ($: Node, link: Link) => {
 };
 function sourcer(this: Source, ...$: [unknown]) {
   if (!$.length) {
-    this.flags & Flag.DIRTY && reuse(this) && this.sub && flat(this.sub);
+    if (this.flags & Flag.DIRTY && reuse(this) && this.sub) flat(this.sub);
     link(this, actor);
   } else if (
     this.is !== (this.is = typeof $[0] === "function" ? $[0](this.is) : $[0]) &&
