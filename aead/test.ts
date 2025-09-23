@@ -73,9 +73,9 @@ Deno.test("aead", async ({ step }) => {
   await step("xchachapoly/polyxchacha : xchacha-03 A.3.1", () => {
     const [$] = read(vectors.aead["xchacha-03 A.3.1"]);
     const text = new Uint8Array($.plaintext);
-    assertEquals(xchachapoly($.key, $.iv, text, $.aad), $.tag);
+    assertEquals(xchachapoly($.key, $.iv, text, $.associated_data), $.tag);
     assertEquals(text, $.ciphertext);
-    assert(polyxchacha($.key, $.iv, $.tag, text, $.aad));
+    assert(polyxchacha($.key, $.iv, $.tag, text, $.associated_data));
     assertEquals(text, $.plaintext);
   });
   await step("xchachapoly : wrong-size arguments", () => {

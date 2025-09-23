@@ -96,7 +96,7 @@ await Promise.all([
       }))
     ),
     "xchacha-03 A.3.1": into(
-      ["plaintext", "aad", "key", "iv", "", "ciphertext", "tag"],
+      ["plaintext", "associated_data", "key", "iv", "", "ciphertext", "tag"],
       xchacha.slice(30715, 31722).match(/(?:[\da-f]{24,}\s*)+/g)!.map(trim),
     ),
   },
