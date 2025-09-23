@@ -5,12 +5,25 @@ import {
   type Spy,
   spy,
 } from "@std/testing/mock";
-import { bundle } from "@libn/lib";
+import fc from "fast-check";
+import { bundle, fc_check } from "@libn/lib";
 import { batch, effect, scoper, set_actor, signal } from "./mod.ts";
 
-Deno.test("alien-signals", async ({ step }) => {
-  await step("signal", async ({ step }) => {
-    await step("correctly propagate changes through signal signals", () => {
+Deno.test("mod", async ({ step }) => {
+  await step("bundle : pure", async () => {
+    assertEquals(await bundle(import.meta), "");
+  });
+  await step("effect : dispose when nested", () => {
+    const a = signal(0);
+    effect(() => {
+      effect(() => {
+        if (a() === 1) assert(0);
+      })();
+    });
+    a(1);
+  });
+  await step("signal : alien-signals signal tests", () => {
+    { // correctly propagate changes through signal signals
       const a = signal(0);
       const b = signal(() => a() % 2);
       const c = signal(() => b());
@@ -20,8 +33,8 @@ Deno.test("alien-signals", async ({ step }) => {
       c(); // c1 -> none, c2 -> none
       a(3); // c1 -> dirty, c2 -> toCheckDirty
       assertEquals(d(), 1);
-    });
-    await step("propagate updated source through chained computations", () => {
+    }
+    { // propagate updated source through chained computations
       const a = signal(0);
       const b = signal(() => a());
       const c = signal(() => b() % 2);
@@ -29,25 +42,25 @@ Deno.test("alien-signals", async ({ step }) => {
       const e = signal(() => c() + d());
       assertEquals(e(), 0);
       a(2), assertEquals(e(), 2);
-    });
-    await step("handle flags are indirectly updated during checkDirty", () => {
+    }
+    { // handle flags are indirectly updated during checkDirty
       const a = signal(false);
       const b = signal(() => a());
       const c = signal(() => (b(), 0));
       const d = signal(() => (c(), b()));
       assertEquals(d(), false);
       a(true), assertEquals(d(), true);
-    });
-    await step("not update if the signal value is reverted", () => {
+    }
+    { // not update if the signal value is reverted
       let a = 0;
       const b = signal(0);
       const c = signal(() => (a++, b()));
       c(), assertEquals(a, 1);
       b(1), b(0), c(), assertEquals(a, 1);
-    });
+    }
   });
-  await step("effect", async ({ step }) => {
-    await step("clear subscriptions when untracked by all subscribers", () => {
+  await step("effect : alien-signals effect tests", () => {
+    { // clear subscriptions when untracked by all subscribers
       let a = 0;
       const b = signal(1);
       const c = signal(() => (a++, b() * 2));
@@ -55,8 +68,8 @@ Deno.test("alien-signals", async ({ step }) => {
       assertEquals(a, 1);
       b(2), assertEquals(a, 2);
       d(), b(3), assertEquals(a, 2);
-    });
-    await step("not run untracked inner effect", () => {
+    }
+    { // not run untracked inner effect
       const a = signal(3);
       const b = signal(() => a() > 0);
       effect(() =>
@@ -65,8 +78,8 @@ Deno.test("alien-signals", async ({ step }) => {
         })
       );
       a(2), a(1), a(0);
-    });
-    await step("run outer effect first", () => {
+    }
+    { // run outer effect first
       const a = signal(1);
       const b = signal(1);
       effect(() =>
@@ -75,8 +88,8 @@ Deno.test("alien-signals", async ({ step }) => {
         })
       );
       batch(() => (b(0), a(0)));
-    });
-    await step("not trigger inner effect when resolve maybe dirty", () => {
+    }
+    { // not trigger inner effect when resolve maybe dirty
       const a = signal(0);
       const b = signal(() => a() % 2);
       let c = 0;
@@ -85,8 +98,8 @@ Deno.test("alien-signals", async ({ step }) => {
           if (b(), ++c >= 2) throw 0;
         })
       ), a(2);
-    });
-    await step("trigger inner effects in sequence", () => {
+    }
+    { // trigger inner effects in sequence
       const a = signal(0);
       const b = signal(0);
       const c = signal(() => a() - b());
@@ -99,8 +112,8 @@ Deno.test("alien-signals", async ({ step }) => {
       d.length = 0;
       batch(() => (b(1), a(1)));
       assertEquals(d, ["first inner", "last inner"]);
-    });
-    await step("trigger inner effects in sequence in effect scope", () => {
+    }
+    { // trigger inner effects in sequence in effect scope
       const a = signal(0);
       const b = signal(0);
       const c: string[] = [];
@@ -111,8 +124,8 @@ Deno.test("alien-signals", async ({ step }) => {
       c.length = 0;
       batch(() => (b(1), a(1)));
       assertEquals(c, ["first inner", "last inner"]);
-    });
-    await step("custom effect support batch", () => {
+    }
+    { // custom effect support batch
       const batch_effect = ($: () => void) => batch(() => effect($));
       const a: string[] = [];
       const b = signal(0);
@@ -122,8 +135,8 @@ Deno.test("alien-signals", async ({ step }) => {
       batch_effect(() => e());
       batch_effect(() => d());
       assertEquals(a, ["bb", "aa-0", "aa-1", "bb"]);
-    });
-    await step("duplicate subscribers do not affect the notify order", () => {
+    }
+    { // duplicate subscribers do not affect the notify order
       const a = signal(0);
       const b = signal(0);
       const c: string[] = [];
@@ -135,8 +148,8 @@ Deno.test("alien-signals", async ({ step }) => {
       effect(() => (c.push("b"), a()));
       b(1); // src1.subs: a -> b -> a
       c.length = 0, a(a() + 1), assertEquals(c, ["a", "b"]);
-    });
-    await step("handle side effect with inner effects", () => {
+    }
+    { // handle side effect with inner effects
       const a = signal(0);
       const b = signal(0);
       const c: string[] = [];
@@ -146,8 +159,8 @@ Deno.test("alien-signals", async ({ step }) => {
         assertEquals(c, ["a", "b"]);
         c.length = 0, b(1), a(1), assertEquals(c, ["b", "a"]);
       });
-    });
-    await step("handle flags are indirectly updated during checkDirty", () => {
+    }
+    { // handle flags are indirectly updated during checkDirty
       const a = signal(false);
       const b = signal(() => a());
       const c = signal(() => (b(), 0));
@@ -156,10 +169,10 @@ Deno.test("alien-signals", async ({ step }) => {
       effect(() => (d(), ++e));
       assertEquals(e, 1);
       a(true), assertEquals(e, 2);
-    });
+    }
   });
-  await step("scoper", async ({ step }) => {
-    await step("not trigger after stop", () => {
+  await step("scoper : alien-signals scoper tests", () => {
+    { // not trigger after stop
       const a = signal(1);
       let b = 0;
       const c = scoper(() => {
@@ -168,8 +181,8 @@ Deno.test("alien-signals", async ({ step }) => {
       });
       a(3), assertEquals(b, 3);
       c(), a(4), assertEquals(b, 3);
-    });
-    await step("dispose inner effects if created in an effect", () => {
+    }
+    { // dispose inner effects if created in an effect
       const a = signal(1);
       let b = 0;
       effect(() => {
@@ -178,9 +191,9 @@ Deno.test("alien-signals", async ({ step }) => {
         a(2), assertEquals(b, 2);
         c(), a(3), assertEquals(b, 2);
       });
-    });
+    }
   });
-  await step("issue 48", () => {
+  await step("effect : alien-signals issue 48", () => {
     const untracked = <A>(callback: () => A) => {
       const currentSub = set_actor(null);
       try {
@@ -251,8 +264,8 @@ Deno.test("alien-signals", async ({ step }) => {
     );
     source(1), source(2), source(3);
   });
-  await step("graph updates", async ({ step }) => {
-    await step("drop A->B->A updates", () => {
+  await step("signal : alien-signals graph tests", () => {
+    { // drop A->B->A updates
       //     A
       //   / |
       //  B  | <- Looks like a flag doesn't it? :D
@@ -268,9 +281,8 @@ Deno.test("alien-signals", async ({ step }) => {
       // Trigger read
       assertEquals(e(), "d: 3"), assertSpyCalls(d, 1);
       d.calls.length = 0, a(4), e(), assertSpyCalls(d, 1);
-    });
-    await step("only update every signal once", () => {
-      // (diamond graph)
+    }
+    { // only update every signal once (diamond graph)
       // In this scenario "D" should only update once when "A" receives
       // an update. This is sometimes referred to as the "diamond" scenario.
       //     A
@@ -285,9 +297,8 @@ Deno.test("alien-signals", async ({ step }) => {
       const e = signal(d);
       assertEquals(e(), "a a"), assertSpyCalls(d, 1);
       a("aa"), assertEquals(e(), "aa aa"), assertSpyCalls(d, 2);
-    });
-    await step("only update every signal once", () => {
-      // (diamond graph + tail)
+    }
+    { // only update every signal once (diamond graph + tail)
       // "E" will be likely updated twice if our mark+sweep logic is buggy.
       //     A
       //   /   \
@@ -304,8 +315,8 @@ Deno.test("alien-signals", async ({ step }) => {
       const f = signal(e);
       assertEquals(f(), "a a"), assertSpyCalls(e, 1);
       a("aa"), assertEquals(f(), "aa aa"), assertSpyCalls(e, 2);
-    });
-    await step("bail out if result is the same", () => {
+    }
+    { // bail out if result is the same
       // Bail out if value of "B" never changes
       // A->B->C
       const a = signal("a");
@@ -314,9 +325,8 @@ Deno.test("alien-signals", async ({ step }) => {
       const d = signal(c);
       assertEquals(d(), "foo"), assertSpyCalls(c, 1);
       a("aa"), assertEquals(d(), "foo"), assertSpyCalls(c, 1);
-    });
-    await step("only update every signal once", () => {
-      // (jagged diamond graph + tails)
+    }
+    { // only update every signal once (jagged diamond graph + tails)
       // "F" and "G" will be likely updated twice if our mark+sweep logic is buggy.
       //     A
       //   /   \
@@ -354,8 +364,8 @@ Deno.test("alien-signals", async ({ step }) => {
       assertLess(e.indexOf(f), e.indexOf(h));
       // left to right
       assertLess(e.indexOf(h), e.indexOf(j));
-    });
-    await step("only subscribe to signals listened to", () => {
+    }
+    { // only subscribe to signals listened to
       //    *A
       //   /   \
       // *B     C <- we don't listen to C
@@ -364,8 +374,8 @@ Deno.test("alien-signals", async ({ step }) => {
       const c = spy(() => a());
       signal(c), assertEquals(b(), "a"), assertSpyCalls(c, 0);
       a("aa"), assertEquals(b(), "aa"), assertSpyCalls(c, 0);
-    });
-    await step("only subscribe to signals listened to II", () => {
+    }
+    { // only subscribe to signals listened to II
       // Here both "B" and "C" are active in the beginning, but
       // "B" becomes inactive later. At that point it should
       // not receive any updates anymore.
@@ -385,8 +395,8 @@ Deno.test("alien-signals", async ({ step }) => {
       assertEquals(g, "a"), assertEquals(f(), "a");
       b.calls.length = d.calls.length = 0, h(), a("aa");
       assertSpyCalls(b, 0), assertSpyCalls(d, 0), assertEquals(f(), "aa");
-    });
-    await step("ensure subs update even if one dep unmarks it", () => {
+    }
+    { // ensure subs update even if one dep unmarks it
       // In this scenario "C" always returns the same value. When "A"
       // changes, "B" will update, then "C" at which point its update
       // to "D" will be unmarked. But "D" must still update because
@@ -404,8 +414,8 @@ Deno.test("alien-signals", async ({ step }) => {
       assertEquals(e(), "a c");
       d.calls.length = 0, a("aa"), e();
       assertSpyCall(d, 0, { returned: "aa c" });
-    });
-    await step("ensure subs update even if two deps unmark it", () => {
+    }
+    { // ensure subs update even if two deps unmark it
       // In this scenario both "C" and "D" always return the same
       // value. But "E" must still update because "A" marked it.
       // If "E" isn't updated, then we have a bug.
@@ -423,16 +433,16 @@ Deno.test("alien-signals", async ({ step }) => {
       assertEquals(f(), "a c d");
       e.calls.length = 0, a("aa"), f();
       assertSpyCall(e, 0, { returned: "aa c d" });
-    });
-    await step("support lazy branches", () => {
+    }
+    { // support lazy branches
       const a = signal(0);
       const b = signal(() => a());
       const c = signal(() => (a() > 0 ? a() : b()));
       assertEquals(c(), 0);
       a(1), assertEquals(c(), 1);
       a(0), assertEquals(c(), 0);
-    });
-    await step("not update a sub if all deps unmark it", () => {
+    }
+    { // not update a sub if all deps unmark it
       // In this scenario "B" and "C" always return the same value. When "A"
       // changes, "D" should not update.
       //     A
@@ -447,10 +457,10 @@ Deno.test("alien-signals", async ({ step }) => {
       const e = signal(d);
       assertEquals(e(), "b c");
       d.calls.length = 0, a("aa"), assertSpyCalls(d, 0);
-    });
+    }
   });
-  await step("error handling", async ({ step }) => {
-    await step("keep graph consistent on errors during activation", () => {
+  await step("signal : alien-signals error handling tests", () => {
+    { // keep graph consistent on errors during activation
       const a = signal(0);
       const b = signal(() => {
         throw 0;
@@ -458,8 +468,8 @@ Deno.test("alien-signals", async ({ step }) => {
       const c = signal(() => a());
       assertThrows(b);
       a(1), assertEquals(c(), 1);
-    });
-    await step("keep graph consistent on errors in signals", () => {
+    }
+    { // keep graph consistent on errors in signals
       const a = signal(0);
       const b = signal(() => {
         if (a() === 1) throw 0;
@@ -469,10 +479,10 @@ Deno.test("alien-signals", async ({ step }) => {
       assertEquals(c(), 0);
       a(1), assertThrows(b);
       a(2), assertEquals(c(), 2);
-    });
+    }
   });
-  await step("untrack", async ({ step }) => {
-    await step("pause tracking in signal", () => {
+  await step("set_actor : alien-signals untrack tests", () => {
+    { // pause tracking in signal
       let a = 0;
       const b = signal(0);
       const c = signal(() => {
@@ -482,8 +492,8 @@ Deno.test("alien-signals", async ({ step }) => {
       });
       assertEquals(c(), 0), assertEquals(a, 1);
       b(1), b(2), b(3), assertEquals(c(), 0), assertEquals(a, 1);
-    });
-    await step("pause tracking in effect", () => {
+    }
+    { // pause tracking in effect
       let a = 0;
       const b = signal(0);
       const c = signal(0);
@@ -501,8 +511,8 @@ Deno.test("alien-signals", async ({ step }) => {
       b(4), b(5), b(6), assertEquals(a, 3);
       c(0), assertEquals(a, 4);
       b(7), b(8), b(9), assertEquals(a, 4);
-    });
-    await step("pause tracking in effect scope", () => {
+    }
+    { // pause tracking in effect scope
       let a = 0;
       const b = signal(0);
       scoper(() =>
@@ -514,20 +524,18 @@ Deno.test("alien-signals", async ({ step }) => {
       );
       assertEquals(a, 1);
       b(1), b(2), b(3), assertEquals(a, 1);
-    });
+    }
   });
-});
-Deno.test("reactively", async ({ step }) => {
-  await step("core", async ({ step }) => {
-    await step("two signals", () => {
+  await step("signal : reactively core tests", () => {
+    { // two signals
       const a = signal(7), b = signal(1);
       let c = 0;
       const d = signal(() => (++c, a() * b()));
       a(2), assertEquals(d(), 2);
       b(3), assertEquals(d(), 6);
       assertEquals(c, 2), d(), assertEquals(c, 2);
-    });
-    await step("dependent computed", () => {
+    }
+    { // dependent computed
       const a = signal(7), b = signal(1);
       let c = 0;
       const d = signal(() => (++c, a() * b()));
@@ -535,14 +543,14 @@ Deno.test("reactively", async ({ step }) => {
       const f = signal(() => (++e, d() + 1));
       assertEquals(f(), 8), assertEquals(c, 1), assertEquals(e, 1);
       a(3), assertEquals(f(), 4), assertEquals(c, 2), assertEquals(e, 2);
-    });
-    await step("equality check", () => {
+    }
+    { // equality check
       let a = 0;
       const b = signal(7), c = signal(() => (++a, b() + 10));
       c(), c(), assertEquals(a, 1);
       b(7), assertEquals(a, 1);
-    });
-    await step("dynamic computed", () => {
+    }
+    { // dynamic computed
       const a = signal(1), b = signal(2);
       let c = 0, d = 0, e = 0;
       const f = signal(() => (++c, a()));
@@ -554,16 +562,16 @@ Deno.test("reactively", async ({ step }) => {
       assertEquals(c, 3), assertEquals(d, 1), assertEquals(e, 3);
       b(4), assertEquals(h(), 4);
       assertEquals(c, 3), assertEquals(d, 2), assertEquals(e, 4);
-    });
-    await step("boolean equality check", () => {
+    }
+    { // boolean equality check
       const a = signal(0), b = signal(() => a() > 0);
       let c = 0;
       const d = signal(() => (++c, b() ? 1 : 0));
       assertEquals(d(), 0), assertEquals(c, 1);
       a(1), assertEquals(d(), 1), assertEquals(c, 2);
       a(2), assertEquals(d(), 1), assertEquals(c, 2);
-    });
-    await step("diamond computeds", () => {
+    }
+    { // diamond computeds
       const a = signal(1), b = signal(() => a());
       const c = signal(() => b() * 2), d = signal(() => b() * 3);
       let e = 0;
@@ -571,41 +579,41 @@ Deno.test("reactively", async ({ step }) => {
       assertEquals(f(), 5), assertEquals(e, 1);
       a(2), assertEquals(f(), 10), assertEquals(e, 2);
       a(3), assertEquals(f(), 15), assertEquals(e, 3);
-    });
-    await step("set inside reaction", () => {
+    }
+    { // set inside reaction
       const a = signal(1), b = signal(() => a(2)), c = signal(() => a() + 100);
       b(), assertEquals(c(), 102);
-    });
+    }
   });
-  await step("async", async ({ step }) => {
+  await step("signal : reactively async tests", async () => {
     const sleep = ($: number) =>
       new Promise((resolve) => setTimeout(resolve, $));
-    await step("async modify", async () => {
+    { // async modify
       const a = signal(1), b = signal(() => a() + 10);
       await sleep(10).then(() => a(2));
       assertEquals(b(), 12);
-    });
-    await step("async modify in reaction before await", async () => {
+    }
+    { // async modify in reaction before await
       const a = signal(1), b = signal(() => (a(2), sleep(10)));
       const c = signal(() => a() + 100);
       await b(), assertEquals(c(), 102);
-    });
-    await step("async modify in reaction after await", async () => {
+    }
+    { // async modify in reaction after await
       const a = signal(1), b = signal(async () => (await sleep(10), a(2)));
       const c = signal(() => a() + 100);
       await b(), assertEquals(c(), 102);
-    });
+    }
   });
-  await step("dynamic", async ({ step }) => {
-    await step("dynamic sources recalculate correctly", () => {
+  await step("signal : reactively dynamic tests", () => {
+    { // dynamic sources recalculate correctly
       const a = signal(false), b = signal(2);
       let c = 0;
       const d = signal(() => (++c, a() || b()));
       d(), assertEquals(c, 1);
       a(true), d(), assertEquals(c, 2);
       b(4), d(), assertEquals(c, 2);
-    });
-    await step("dynamic sources don't re-execute parent unnecessarily", () => {
+    }
+    { // dynamic sources don't re-execute parent unnecessarily
       const a = signal(2), b = signal(() => a() + 1);
       let c = 0;
       const d = signal(() => (++c, a() + 10));
@@ -616,8 +624,8 @@ Deno.test("reactively", async ({ step }) => {
       });
       assertEquals(e(), 15), assertEquals(c, 1);
       a(3), assertEquals(e(), 4), assertEquals(c, 1);
-    });
-    await step("dynamic source disappears entirely", () => {
+    }
+    { // dynamic source disappears entirely
       const a = signal(1);
       let b = false, c = 0;
       const d = signal(() => {
@@ -631,53 +639,48 @@ Deno.test("reactively", async ({ step }) => {
       a(3), assertEquals(d(), 3), assertEquals(c, 2);
       a(1), assertEquals(d(), 0), assertEquals(c, 3);
       a(0), assertEquals(d(), 0), assertEquals(c, 3);
-    });
+    }
   });
-});
-Deno.test("preact", async ({ step }) => {
-  await step("signal", async ({ step }) => {
-    await step("return value", () => {
+  await step("signal : preact signal tests", () => {
+    { // return value
       const a = [1, 2];
       const b = signal(a);
       assertEquals(b(), a);
-    });
-    await step(
-      "notify other listeners of changes after one is disposed",
-      () => {
-        const a = signal(0);
-        const b = spy(() => a());
-        const c = spy(() => a());
-        const d = spy(() => a());
-        effect(b);
-        const e = effect(c);
-        effect(d);
-        assertSpyCalls(b, 1);
-        assertSpyCalls(c, 1);
-        assertSpyCalls(d, 1);
-        e();
-        a(1);
-        assertSpyCalls(b, 2);
-        assertSpyCalls(c, 1);
-        assertSpyCalls(d, 2);
-      },
-    );
+    }
+    { // notify other listeners of changes after one is disposed
+      const a = signal(0);
+      const b = spy(() => a());
+      const c = spy(() => a());
+      const d = spy(() => a());
+      effect(b);
+      const e = effect(c);
+      effect(d);
+      assertSpyCalls(b, 1);
+      assertSpyCalls(c, 1);
+      assertSpyCalls(d, 1);
+      e();
+      a(1);
+      assertSpyCalls(b, 2);
+      assertSpyCalls(c, 1);
+      assertSpyCalls(d, 2);
+    }
   });
-  await step("effect()", async ({ step }) => {
-    await step("run the callback immediately", () => {
+  await step("effect : preact effect tests", () => {
+    { // run the callback immediately
       const a = signal(123);
       const b = spy(() => a());
       effect(b);
       assertSpyCalls(b, 1);
-    });
-    await step("subscribe to signals", () => {
+    }
+    { // subscribe to signals
       const a = signal(123);
       const b = spy(() => a());
       effect(b);
       b.calls.length = 0;
       a(42);
       assertSpyCalls(b, 1);
-    });
-    await step("subscribe to multiple signals", () => {
+    }
+    { // subscribe to multiple signals
       const a = signal("a");
       const b = signal("b");
       const c = spy(() => (a(), b()));
@@ -686,8 +689,8 @@ Deno.test("preact", async ({ step }) => {
       a("aa");
       b("bb");
       assertSpyCalls(c, 2);
-    });
-    await step("dispose of subscriptions", () => {
+    }
+    { // dispose of subscriptions
       const a = signal("a");
       const b = signal("b");
       const c = spy(() => a() + " " + b());
@@ -698,8 +701,8 @@ Deno.test("preact", async ({ step }) => {
       a("aa");
       b("bb");
       assertSpyCalls(c, 0);
-    });
-    await step("dispose of subscriptions", () => {
+    }
+    { // dispose of subscriptions
       const a = signal("a");
       const b = signal("b");
       const c = spy(() => a() + " " + b());
@@ -709,8 +712,8 @@ Deno.test("preact", async ({ step }) => {
       assertSpyCalls(c, 2);
       a("aaa");
       assertSpyCalls(c, 2);
-    });
-    await step("dispose of subscriptions when called twice", () => {
+    }
+    { // dispose of subscriptions when called twice
       const a = signal("a");
       const b = signal("b");
       const c = spy(() => a() + " " + b());
@@ -721,8 +724,8 @@ Deno.test("preact", async ({ step }) => {
       d();
       a("aaa");
       assertSpyCalls(c, 2);
-    });
-    await step("unsubscribe from signal", () => {
+    }
+    { // unsubscribe from signal
       const a = signal(123);
       const b = spy(() => a());
       const c = effect(b);
@@ -730,8 +733,8 @@ Deno.test("preact", async ({ step }) => {
       c();
       a(42);
       assertSpyCalls(b, 0);
-    });
-    await step("conditionally unsubscribe from signals", () => {
+    }
+    { // conditionally unsubscribe from signals
       const a = signal("a");
       const b = signal("b");
       const c = signal(true);
@@ -745,21 +748,18 @@ Deno.test("preact", async ({ step }) => {
       d.calls.length = 0;
       a("aaa");
       assertSpyCalls(d, 0);
-    });
-    await step(
-      "not recompute if the effect has been notified about changes, but no direct dependency has actually changed",
-      () => {
-        const a = signal(0);
-        const b = signal(() => (a(), 0));
-        const c = spy(() => b());
-        effect(c);
-        assertSpyCalls(c, 1);
-        c.calls.length = 0;
-        a(1);
-        assertSpyCalls(c, 0);
-      },
-    );
-    await step("not recompute dependencies unnecessarily", () => {
+    }
+    { // not recompute if the effect has been notified about changes, but no direct dependency has actually changed
+      const a = signal(0);
+      const b = signal(() => (a(), 0));
+      const c = spy(() => b());
+      effect(c);
+      assertSpyCalls(c, 1);
+      c.calls.length = 0;
+      a(1);
+      assertSpyCalls(c, 0);
+    }
+    { // not recompute dependencies unnecessarily
       const a = spy();
       const b = signal(0);
       const c = signal(0);
@@ -768,8 +768,8 @@ Deno.test("preact", async ({ step }) => {
       assertSpyCalls(a, 1);
       batch(() => (c(1), b(1)));
       assertSpyCalls(a, 1);
-    });
-    await step("not recompute dependencies out of order", () => {
+    }
+    { // not recompute dependencies out of order
       const a = signal(1);
       const b = signal(1);
       const c = signal(1);
@@ -783,17 +783,14 @@ Deno.test("preact", async ({ step }) => {
       batch(() => (a(-1), b(-1), c(-1)));
       assertSpyCalls(d, 0);
       d.calls.length = 0;
-    });
-    await step(
-      "recompute if a dependency changes during computation after becoming a dependency",
-      () => {
-        const a = signal(0);
-        const b = spy(() => a() || a(($) => $ + 1));
-        effect(b);
-        assertSpyCalls(b, 2);
-      },
-    );
-    await step("allow disposing the effect multiple times", () => {
+    }
+    { // recompute if a dependency changes during computation after becoming a dependency
+      const a = signal(0);
+      const b = spy(() => a() || a(($) => $ + 1));
+      effect(b);
+      assertSpyCalls(b, 2);
+    }
+    { // allow disposing the effect multiple times
       const a = effect(() => undefined);
       a();
       assertThrows(() => {
@@ -804,8 +801,8 @@ Deno.test("preact", async ({ step }) => {
         }
         throw Error();
       });
-    });
-    await step("allow disposing a running effect", () => {
+    }
+    { // allow disposing a running effect
       const a = signal(0);
       const b = spy();
       const c = effect(() => a() === 1 && (c(), b()));
@@ -814,64 +811,55 @@ Deno.test("preact", async ({ step }) => {
       assertSpyCalls(b, 1);
       a(2);
       assertSpyCalls(b, 1);
-    });
-    await step(
-      "not run if it's first been triggered and then disposed in a batch",
-      () => {
-        const a = signal(0);
-        const b = spy(() => a());
-        const c = effect(b);
-        b.calls.length = 0;
-        batch(() => (a(1), c()));
-        assertSpyCalls(b, 0);
-      },
-    );
-    await step(
-      "not run if it's been triggered, disposed and then triggered again in a batch",
-      () => {
-        const a = signal(0);
-        const b = spy(() => a());
-        const c = effect(b);
-        b.calls.length = 0;
-        batch(() => (a(1), c(), a(2)));
-        assertSpyCalls(b, 0);
-      },
-    );
-    await step(
-      "not rerun parent effect if a nested child effect's signal's value changes",
-      () => {
-        const a = signal(0);
-        const b = signal(0);
-        const c = spy(() => a());
-        const d = spy(() => b());
-        effect(() => (c(), effect(d)));
-        assertSpyCalls(c, 1);
-        assertSpyCalls(d, 1);
-        b(1);
-        assertSpyCalls(c, 1);
-        assertSpyCalls(d, 2);
-        a(1);
-        assertSpyCalls(c, 2);
-        assertSpyCalls(d, 3);
-      },
-    );
+    }
+    { // not run if it's first been triggered and then disposed in a batch
+      const a = signal(0);
+      const b = spy(() => a());
+      const c = effect(b);
+      b.calls.length = 0;
+      batch(() => (a(1), c()));
+      assertSpyCalls(b, 0);
+    }
+    { // not run if it's been triggered, disposed and then triggered again in a batch
+      const a = signal(0);
+      const b = spy(() => a());
+      const c = effect(b);
+      b.calls.length = 0;
+      batch(() => (a(1), c(), a(2)));
+      assertSpyCalls(b, 0);
+    }
+    { // not rerun parent effect if a nested child effect's signal's value changes
+      const a = signal(0);
+      const b = signal(0);
+      const c = spy(() => a());
+      const d = spy(() => b());
+      effect(() => (c(), effect(d)));
+      assertSpyCalls(c, 1);
+      assertSpyCalls(d, 1);
+      b(1);
+      assertSpyCalls(c, 1);
+      assertSpyCalls(d, 2);
+      a(1);
+      assertSpyCalls(c, 2);
+      assertSpyCalls(d, 3);
+    }
   });
-  await step("computed()", async ({ step }) => {
-    await step("return value", () => {
+  await step("signal : preact computed tests", () => {
+    { // return value
       const a = signal("a");
       const b = signal("b");
       const c = signal(() => a() + b());
       assertEquals(c(), "ab");
-    });
-    await step("return updated value", () => {
+    }
+    { // return updated value
       const a = signal("a");
       const b = signal("b");
       const c = signal(() => a() + b());
       assertEquals(c(), "ab");
       a("aa");
       assertEquals(c(), "aab");
-    });
-    await step("be lazily computed on demand", () => {
+    }
+    { // be lazily computed on demand
       const a = signal("a");
       const b = signal("b");
       const c = spy(() => a() + b());
@@ -884,21 +872,18 @@ Deno.test("preact", async ({ step }) => {
       assertSpyCalls(c, 1);
       d();
       assertSpyCalls(c, 2);
-    });
-    await step(
-      "be computed only when a dependency has changed at some point",
-      () => {
-        const a = signal("a");
-        const b = spy(() => a());
-        const c = signal(b);
-        c();
-        assertSpyCalls(b, 1);
-        a("a");
-        c();
-        assertSpyCalls(b, 1);
-      },
-    );
-    await step("conditionally unsubscribe from signals", () => {
+    }
+    { // be computed only when a dependency has changed at some point
+      const a = signal("a");
+      const b = spy(() => a());
+      const c = signal(b);
+      c();
+      assertSpyCalls(b, 1);
+      a("a");
+      c();
+      assertSpyCalls(b, 1);
+    }
+    { // conditionally unsubscribe from signals
       const a = signal("a");
       const b = signal("b");
       const c = signal(true);
@@ -916,20 +901,17 @@ Deno.test("preact", async ({ step }) => {
       a("aaa");
       assertEquals(e(), "bb");
       assertSpyCalls(d, 0);
-    });
-    await step(
-      "consider undefined value separate from uninitialized value",
-      () => {
-        const a = signal(0);
-        const b = spy(() => undefined);
-        const c = signal(b);
-        assertEquals(c(), undefined);
-        a(1);
-        assertEquals(c(), undefined);
-        assertSpyCalls(b, 1);
-      },
-    );
-    await step("not leak errors raised by dependencies", () => {
+    }
+    { // consider undefined value separate from uninitialized value
+      const a = signal(0);
+      const b = spy(() => undefined);
+      const c = signal(b);
+      assertEquals(c(), undefined);
+      a(1);
+      assertEquals(c(), undefined);
+      assertSpyCalls(b, 1);
+    }
+    { // not leak errors raised by dependencies
       const a = signal(0);
       const b = signal(() => {
         a();
@@ -945,52 +927,46 @@ Deno.test("preact", async ({ step }) => {
       assertEquals(c(), "ok");
       a(1);
       assertEquals(c(), "ok");
-    });
-    await step(
-      "propagate notifications even right after first subscription",
-      () => {
-        const a = signal(0);
-        const b = signal(() => a());
-        const c = signal(() => b());
-        c();
-        const d = spy(() => c());
-        effect(d);
-        assertSpyCalls(d, 1);
-        d.calls.length = 0;
-        a(1);
-        assertSpyCalls(d, 1);
-      },
-    );
-    await step("get marked as outdated right after first subscription", () => {
+    }
+    { // propagate notifications even right after first subscription
+      const a = signal(0);
+      const b = signal(() => a());
+      const c = signal(() => b());
+      c();
+      const d = spy(() => c());
+      effect(d);
+      assertSpyCalls(d, 1);
+      d.calls.length = 0;
+      a(1);
+      assertSpyCalls(d, 1);
+    }
+    { // get marked as outdated right after first subscription
       const a = signal(0);
       const b = signal(() => a());
       b();
       a(1);
       effect(() => b());
       assertEquals(b(), 1);
-    });
-    await step(
-      "propagate notification to other listeners after one listener is disposed",
-      () => {
-        const a = signal(0);
-        const b = signal(() => a());
-        const c = spy(() => b());
-        const d = spy(() => b());
-        const e = spy(() => b());
-        effect(c);
-        const f = effect(d);
-        effect(e);
-        assertSpyCalls(c, 1);
-        assertSpyCalls(d, 1);
-        assertSpyCalls(e, 1);
-        f();
-        a(1);
-        assertSpyCalls(c, 2);
-        assertSpyCalls(d, 1);
-        assertSpyCalls(e, 2);
-      },
-    );
-    await step("not recompute dependencies out of order", () => {
+    }
+    { // propagate notification to other listeners after one listener is disposed
+      const a = signal(0);
+      const b = signal(() => a());
+      const c = spy(() => b());
+      const d = spy(() => b());
+      const e = spy(() => b());
+      effect(c);
+      const f = effect(d);
+      effect(e);
+      assertSpyCalls(c, 1);
+      assertSpyCalls(d, 1);
+      assertSpyCalls(e, 1);
+      f();
+      a(1);
+      assertSpyCalls(c, 2);
+      assertSpyCalls(d, 1);
+      assertSpyCalls(e, 2);
+    }
+    { // not recompute dependencies out of order
       const a = signal(1);
       const b = signal(1);
       const c = signal(1);
@@ -1011,8 +987,8 @@ Deno.test("preact", async ({ step }) => {
       f();
       assertSpyCalls(d, 0);
       d.calls.length = 0;
-    });
-    await step("not recompute dependencies unnecessarily", () => {
+    }
+    { // not recompute dependencies unnecessarily
       const a = spy();
       const b = signal(0);
       const c = signal(0);
@@ -1023,9 +999,9 @@ Deno.test("preact", async ({ step }) => {
       batch(() => (c(1), b(1)));
       e();
       assertSpyCalls(a, 1);
-    });
-    await step("graph updates", async ({ step }) => {
-      await step("run computeds once for multiple dep changes", () => {
+    }
+    { // graph updates
+      { // run computeds once for multiple dep changes
         const a = signal("a");
         const b = signal("b");
         const c = spy(() => a() + b());
@@ -1037,8 +1013,8 @@ Deno.test("preact", async ({ step }) => {
         b("bb");
         d();
         assertSpyCalls(c, 1);
-      });
-      await step("drop A->B->A updates", () => {
+      }
+      { // drop A->B->A updates
         //     A
         //   / |
         //  B  | <- Looks like a flag doesn't it? :D
@@ -1058,8 +1034,8 @@ Deno.test("preact", async ({ step }) => {
         a(4);
         e();
         assertSpyCalls(d, 1);
-      });
-      await step("only update every signal once (diamond graph)", () => {
+      }
+      { // only update every signal once (diamond graph)
         // In this scenario "D" should only update once when "A" receives
         // an update. This is sometimes referred to as the "diamond" scenario.
         //     A
@@ -1077,8 +1053,8 @@ Deno.test("preact", async ({ step }) => {
         a("aa");
         assertEquals(e(), "aa aa");
         assertSpyCalls(d, 2);
-      });
-      await step("only update every signal once (diamond graph + tail)", () => {
+      }
+      { // only update every signal once (diamond graph + tail)
         // "E" will be likely updated twice if our mark+sweep logic is buggy.
         //     A
         //   /   \
@@ -1098,8 +1074,8 @@ Deno.test("preact", async ({ step }) => {
         a("aa");
         assertEquals(f(), "aa aa");
         assertSpyCalls(e, 2);
-      });
-      await step("bail out if result is the same", () => {
+      }
+      { // bail out if result is the same
         // Bail out if value of "B" never changes
         // A->B->C
         const a = signal("a");
@@ -1111,64 +1087,61 @@ Deno.test("preact", async ({ step }) => {
         a("aa");
         assertEquals(d(), "foo");
         assertSpyCalls(c, 1);
-      });
-      await step(
-        "only update every signal once (jagged diamond graph + tails)",
-        () => {
-          // "F" and "G" will be likely updated twice if our mark+sweep logic is buggy.
-          //     A
-          //   /   \
-          //  B     C
-          //  |     |
-          //  |     D
-          //   \   /
-          //     E
-          //   /   \
-          //  F     G
-          const a = signal("a");
-          const b = signal(() => a());
-          const c = signal(() => a());
-          const d = signal(() => c());
-          const e: Spy[] = [];
-          const f: Spy<any, [], string> = spy(
-            () => (e.push(f), b() + " " + d()),
-          );
-          const g = signal(f);
-          const h: Spy<any, [], string> = spy(() => (e.push(h), g()));
-          const i = signal(h);
-          const j: Spy<any, [], string> = spy(() => (e.push(j), g()));
-          const k = signal(j);
-          assertEquals(i(), "a a");
-          assertSpyCalls(h, 1);
-          assertEquals(k(), "a a");
-          assertSpyCalls(j, 1);
-          e.length = 0;
-          f.calls.length = 0;
-          h.calls.length = 0;
-          j.calls.length = 0, a("b");
-          assertEquals(g(), "b b");
-          assertSpyCalls(f, 1);
-          assertEquals(i(), "b b");
-          assertSpyCalls(h, 1);
-          assertEquals(k(), "b b");
-          assertSpyCalls(j, 1);
-          e.length = 0;
-          f.calls.length = 0;
-          h.calls.length = 0;
-          j.calls.length = 0, a("c");
-          assertEquals(g(), "c c");
-          assertSpyCalls(f, 1);
-          assertEquals(i(), "c c");
-          assertSpyCalls(h, 1);
-          assertEquals(k(), "c c");
-          assertSpyCalls(j, 1);
-          // top to bottom
-          assertLess(e.indexOf(f), e.indexOf(h));
-          // left to right
-          assertLess(e.indexOf(h), e.indexOf(j));
-        },
-      );
-      await step("only subscribe to signals listened to", () => {
+      }
+      { // only update every signal once (jagged diamond graph + tails)
+        // "F" and "G" will be likely updated twice if our mark+sweep logic is buggy.
+        //     A
+        //   /   \
+        //  B     C
+        //  |     |
+        //  |     D
+        //   \   /
+        //     E
+        //   /   \
+        //  F     G
+        const a = signal("a");
+        const b = signal(() => a());
+        const c = signal(() => a());
+        const d = signal(() => c());
+        const e: Spy[] = [];
+        const f: Spy<any, [], string> = spy(
+          () => (e.push(f), b() + " " + d()),
+        );
+        const g = signal(f);
+        const h: Spy<any, [], string> = spy(() => (e.push(h), g()));
+        const i = signal(h);
+        const j: Spy<any, [], string> = spy(() => (e.push(j), g()));
+        const k = signal(j);
+        assertEquals(i(), "a a");
+        assertSpyCalls(h, 1);
+        assertEquals(k(), "a a");
+        assertSpyCalls(j, 1);
+        e.length = 0;
+        f.calls.length = 0;
+        h.calls.length = 0;
+        j.calls.length = 0, a("b");
+        assertEquals(g(), "b b");
+        assertSpyCalls(f, 1);
+        assertEquals(i(), "b b");
+        assertSpyCalls(h, 1);
+        assertEquals(k(), "b b");
+        assertSpyCalls(j, 1);
+        e.length = 0;
+        f.calls.length = 0;
+        h.calls.length = 0;
+        j.calls.length = 0, a("c");
+        assertEquals(g(), "c c");
+        assertSpyCalls(f, 1);
+        assertEquals(i(), "c c");
+        assertSpyCalls(h, 1);
+        assertEquals(k(), "c c");
+        assertSpyCalls(j, 1);
+        // top to bottom
+        assertLess(e.indexOf(f), e.indexOf(h));
+        // left to right
+        assertLess(e.indexOf(h), e.indexOf(j));
+      }
+      { // only subscribe to signals listened to
         //    *A
         //   /   \
         // *B     C <- we don't listen to C
@@ -1181,8 +1154,8 @@ Deno.test("preact", async ({ step }) => {
         a("aa");
         assertEquals(b(), "aa");
         assertSpyCalls(c, 0);
-      });
-      await step("only subscribe to signals listened to", () => {
+      }
+      { // only subscribe to signals listened to
         // Here both "B" and "C" are active in the beginning, but
         // "B" becomes inactive later. At that point it should
         // not receive any updates anymore.
@@ -1208,8 +1181,8 @@ Deno.test("preact", async ({ step }) => {
         assertSpyCalls(b, 0);
         assertSpyCalls(d, 0);
         assertEquals(f(), "aa");
-      });
-      await step("ensure subs update even if one dep unmarks it", () => {
+      }
+      { // ensure subs update even if one dep unmarks it
         // In this scenario "C" always returns the same value. When "A"
         // changes, "B" will update, then "C" at which point its update
         // to "D" will be unmarked. But "D" must still update because
@@ -1229,8 +1202,8 @@ Deno.test("preact", async ({ step }) => {
         a("aa");
         e();
         assertSpyCall(d, 0, { returned: "aa c" });
-      });
-      await step("ensure subs update even if two deps unmark it", () => {
+      }
+      { // ensure subs update even if two deps unmark it
         // In this scenario both "C" and "D" always return the same
         // value. But "E" must still update because "A"  marked it.
         // If "E" isn't updated, then we have a bug.
@@ -1250,10 +1223,10 @@ Deno.test("preact", async ({ step }) => {
         a("aa");
         f();
         assertSpyCall(e, 0, { returned: "aa c d" });
-      });
-    });
-    await step("error handling", async ({ step }) => {
-      await step("keep graph consistent on errors during activation", () => {
+      }
+    }
+    { // error handling
+      { // keep graph consistent on errors during activation
         const a = signal(0);
         const b = signal(() => {
           throw 0;
@@ -1262,9 +1235,9 @@ Deno.test("preact", async ({ step }) => {
         assertThrows(b);
         a(1);
         assertEquals(c(), 1);
-      });
+      }
 
-      await step("keep graph consistent on errors in computeds", () => {
+      { // keep graph consistent on errors in computeds
         const a = signal(0);
         const b = signal(() => {
           if (a() === 1) throw 0;
@@ -1276,9 +1249,9 @@ Deno.test("preact", async ({ step }) => {
         assertThrows(b);
         a(2);
         assertEquals(c(), 2);
-      });
+      }
 
-      await step("support lazy branches", () => {
+      { // support lazy branches
         const a = signal(0);
         const b = signal(() => a());
         const c = signal(() => (a() > 0 ? a() : b()));
@@ -1287,8 +1260,8 @@ Deno.test("preact", async ({ step }) => {
         assertEquals(c(), 1);
         a(0);
         assertEquals(c(), 0);
-      });
-      await step("not update a sub if all deps unmark it", () => {
+      }
+      { // not update a sub if all deps unmark it
         // In this scenario "B" and "C" always return the same value. When "A"
         // changes, "D" should not update.
         //     A
@@ -1305,21 +1278,21 @@ Deno.test("preact", async ({ step }) => {
         d.calls.length = 0;
         a("aa");
         assertSpyCalls(d, 0);
-      });
-    });
+      }
+    }
   });
-  await step("batch/transaction", async ({ step }) => {
-    await step("return the value from the callback", () => {
+  await step("batch : preact batch tests", () => {
+    { // return the value from the callback
       assertEquals(batch(() => 1), 1);
-    });
-    await step("throw errors thrown from the callback", () => {
+    }
+    { // throw errors thrown from the callback
       assertThrows(() =>
         batch(() => {
           throw 0;
         })
       );
-    });
-    await step("throw non-errors thrown from the callback", () => {
+    }
+    { // throw non-errors thrown from the callback
       try {
         batch(() => {
           throw undefined;
@@ -1328,8 +1301,8 @@ Deno.test("preact", async ({ step }) => {
       } catch ($) {
         assertEquals($, undefined);
       }
-    });
-    await step("delay writes", () => {
+    }
+    { // delay writes
       const a = signal("a");
       const b = signal("b");
       const c = spy(() => a() + " " + b());
@@ -1337,8 +1310,8 @@ Deno.test("preact", async ({ step }) => {
       c.calls.length = 0;
       batch(() => (a("aa"), b("bb")));
       assertSpyCalls(c, 1);
-    });
-    await step("delay writes until outermost batch is complete", () => {
+    }
+    { // delay writes until outermost batch is complete
       const a = signal("a");
       const b = signal("b");
       const c = spy(() => a() + ", " + b());
@@ -1351,14 +1324,14 @@ Deno.test("preact", async ({ step }) => {
       // If the inner batch() would have flushed the update
       // this spyer would've been called twice.
       assertSpyCalls(c, 1);
-    });
-    await step("read signals written to", () => {
+    }
+    { // read signals written to
       const a = signal("a");
       let b = "";
       batch(() => (a("aa"), b = a()));
       assertEquals(b, "aa");
-    });
-    await step("read computed signals with updated source signals", () => {
+    }
+    { // read computed signals with updated source signals
       // A->B->C->D->E
       const a = signal("a");
       const b = signal(() => a());
@@ -1385,8 +1358,8 @@ Deno.test("preact", async ({ step }) => {
       assertSpyCalls(c, 1);
       assertSpyCalls(e, 1);
       assertSpyCalls(g, 1);
-    });
-    await step("not block writes after batching completed", () => {
+    }
+    { // not block writes after batching completed
       // If no further writes after batch() are possible, than we
       // didn't restore state properly. Most likely "pending" still
       // holds elements that are already processed.
@@ -1399,8 +1372,8 @@ Deno.test("preact", async ({ step }) => {
       batch(() => (a("aa"), b("bb")));
       c("cc");
       assertEquals(e, "aa bb cc");
-    });
-    await step("not lead to stale signals with () in batch", () => {
+    }
+    { // not lead to stale signals with () in batch
       const a: number[][] = [];
       const b = signal(0);
       const c = signal(() => b() * 2);
@@ -1409,8 +1382,8 @@ Deno.test("preact", async ({ step }) => {
       assertEquals(a, [[0, 0]]);
       batch(() => (b(1), assertEquals(c(), 2)));
       assertEquals(a[1], [2, 3]);
-    });
-    await step("run pending effects even if the callback throws", () => {
+    }
+    { // run pending effects even if the callback throws
       const a = signal(0);
       const b = signal(1);
       const c = spy(() => a());
@@ -1427,26 +1400,12 @@ Deno.test("preact", async ({ step }) => {
       );
       assertSpyCalls(c, 1);
       assertSpyCalls(d, 1);
-    });
-    await step("run effect's first run immediately even inside a batch", () => {
+    }
+    { // run effect's first run immediately even inside a batch
       let a = 0;
       const b = spy();
       batch(() => (effect(b), a = b.calls.length));
       assertEquals(a, 1);
-    });
-  });
-});
-Deno.test("mod", async ({ step }) => {
-  await step("bundle : pure", async () => {
-    assertEquals(await bundle(import.meta), "");
-  });
-  await step("effect : dispose when nested", () => {
-    const a = signal(0);
-    effect(() => {
-      effect(() => {
-        if (a() === 1) assert(0);
-      })();
-    });
-    a(1);
+    }
   });
 });
