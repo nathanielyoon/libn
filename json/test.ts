@@ -1,6 +1,7 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 import {
+  bundle,
   fc_check,
   fc_json,
   fc_number,
@@ -616,4 +617,9 @@ Deno.test("parse", async ({ step }) => {
       },
     ]),
   );
+});
+Deno.test("mod", async ({ step }) => {
+  await step("bundle : pure", async () => {
+    assertEquals(await bundle(import.meta), "");
+  });
 });
