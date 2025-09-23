@@ -3,7 +3,7 @@ import fc from "fast-check";
 import { bundle, fc_binary, fc_check, read } from "@libn/lib";
 import { chacha, xor } from "./src/chacha.ts";
 import { poly } from "./src/poly.ts";
-import { polyxchacha, xchachapoly } from "./src/aead.ts";
+import { polyxchacha, xchachapoly } from "./src/xchachapoly.ts";
 import { cipher, decrypt, encrypt } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
