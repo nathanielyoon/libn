@@ -27,8 +27,10 @@ import {
   fc_number,
   fc_string,
 } from "./src/fc.ts";
+import { bundle } from "./src/bundle.ts";
 
 export {
+  bundle,
   fc_binary,
   fc_check,
   fc_json,
