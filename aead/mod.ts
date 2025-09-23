@@ -31,9 +31,19 @@
  * @module aead
  */
 
-import { polyxchacha, xchachapoly } from "./src/aead.ts";
 import { hchacha, xor } from "./src/chacha.ts";
+import { polyxchacha, xchachapoly } from "./src/xchachapoly.ts";
 
+/** XORs the text in-place (without checking parameters). */
+export const cipher = (key: Uint8Array, iv: Uint8Array, $: Uint8Array): void =>
+  xor(
+    hchacha(key, iv),
+    0,
+    iv[16] | iv[17] << 8 | iv[18] << 16 | iv[19] << 24,
+    iv[20] | iv[21] << 8 | iv[22] << 16 | iv[23] << 24,
+    $,
+    0,
+  );
 /** Encrypts with XChaCha20-Poly1305. */
 export const encrypt = (
   key: Uint8Array,
@@ -65,13 +75,3 @@ export const decrypt = (
     ? plaintext
     : null;
 };
-/** XORs the text in-place (without checking parameters). */
-export const cipher = (key: Uint8Array, iv: Uint8Array, $: Uint8Array): void =>
-  xor(
-    hchacha(key, iv),
-    0,
-    iv[16] | iv[17] << 8 | iv[18] << 16 | iv[19] << 24,
-    iv[20] | iv[21] << 8 | iv[22] << 16 | iv[23] << 24,
-    $,
-    0,
-  );
