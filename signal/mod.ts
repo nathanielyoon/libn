@@ -20,8 +20,8 @@
 
 const enum Flag {
   CLEAR = 0,
-  BEGIN = 1 << 0, // is mutable
-  WATCH = 1 << 1,
+  BEGIN = 1 << 0, // is mutable from outside (i.e. can begin a chain of updates)
+  WATCH = 1 << 1, // only set for effects
   CHECK = 1 << 2, // for recursed
   RECUR = 1 << 3,
   GOING = Flag.CHECK | Flag.RECUR, // recursing
@@ -39,27 +39,27 @@ const enum Kind {
   SOURCE, // mutable data source
   DERIVE, // derived computation
   EFFECT, // side effect reactor
-  SCOPER, // effect group holder
+  SCOPER, // effects scope owner
 }
-type Node<A extends Kind> =
+type Noder<A extends Kind> =
   & { kind: A; flags: Flag }
   & { [_ in "head" | "dep" | "sub" | "tail"]: Link | null };
-type Source<A = any> = Node<Kind.SOURCE> & { was: A; is: A };
-type Derive<A = any> = Node<Kind.DERIVE> & { was?: A; is: ($?: A) => A };
-type Effect = Node<Kind.EFFECT> & { is: () => void };
-type Scoper = Node<Kind.SCOPER>;
-type Reactive = Source | Derive | Effect | Scoper;
+type Source<A = any> = Noder<Kind.SOURCE> & { was: A; is: A };
+type Derive<A = any> = Noder<Kind.DERIVE> & { was?: A; is: ($?: A) => A };
+type Effect = Noder<Kind.EFFECT> & { is: () => void };
+type Scoper = Noder<Kind.SCOPER>;
+type Node = Source | Derive | Effect | Scoper;
 type Link =
-  & { step: number; dep: Reactive; sub: Reactive }
+  & { step: number; dep: Node; sub: Node }
   & { [_ in `${"dep" | "sub"}_${"prev" | "next"}`]: Link | null };
 // This can only have `Effect`s and `Scoper`s, since those are always run (as
 // opposed to when something reads their "value" - they have none). Typing it
 // broadly is wrong, but elides wronger-feeling explicit casts when pushing.
-const queue: (Reactive | null)[] = [];
+const queue: (Node | null)[] = [];
 // Global (increasing) version counter and batch depth tracker.
 let step = 0, depth = 0;
 // Active subscribers (and helper to swap variables).
-let actor: Reactive | null = null, scope: Scoper | null = null, swapper;
+let actor: Node | null = null, scope: Scoper | null = null, swapper;
 const flush = () => {
   for (let a; a = queue.shift(); run(a, a.flags &= ~Flag.QUEUE));
 };
@@ -72,11 +72,11 @@ export const batch = <A>($: () => A): A => {
   }
 };
 /** Manually sets the current subscriber. */
-export const set_actor = ($: Reactive | null): Reactive | null => (
+export const set_actor = ($: Node | null): Node | null => (
   swapper = actor, actor = $, swapper
 );
 const set_scope = ($: Scoper | null) => (swapper = scope, scope = $, swapper);
-const link = (dep: Reactive, sub: Reactive | null) => {
+const link = (dep: Node, sub: Node | null) => {
   if (!sub) return;
   const a = sub.head;
   if (a?.dep === dep) return;
@@ -96,7 +96,7 @@ const link = (dep: Reactive, sub: Reactive | null) => {
   if (b) b.dep_prev = d;
   a ? a.dep_next = d : sub.dep = d, c ? c.sub_next = d : dep.sub = d;
 };
-const chop = (sub: Reactive, $: Link) => {
+const chop = (sub: Node, $: Link) => {
   const a = $.dep_prev, b = $.dep, c = $.dep_next, d = $.sub_prev;
   (c ? c.dep_prev = a : sub.head = a) ? a!.dep_next = c : sub.dep = c;
   let e = $.sub_next;
@@ -108,16 +108,16 @@ const chop = (sub: Reactive, $: Link) => {
   }
   return c;
 };
-const follow = ($: Reactive) => {
+const follow = ($: Node) => {
   ++step, $.head = null, $.flags = $.flags & Flag.FRESH | Flag.CHECK;
 };
-const ignore = ($: Reactive) => {
+const ignore = ($: Node) => {
   for (let a = $.head ? $.head.dep_next : $.dep; a; a = chop($, a));
   $.flags &= ~Flag.CHECK;
 };
-const reuse = ($: Reactive) =>
+const reuse = ($: Node) =>
   $.kind === Kind.SOURCE && ($.flags = Flag.BEGIN, $.was !== ($.was = $.is));
-const reget = ($: Reactive) => {
+const reget = ($: Node) => {
   if ($.kind !== Kind.DERIVE) return false;
   const a = set_actor($);
   try {
@@ -126,9 +126,9 @@ const reget = ($: Reactive) => {
     set_actor(a), ignore($);
   }
 };
-const rerun = ($: Reactive): number => ($.flags & Flag.QUEUE ||
+const rerun = ($: Node): number => ($.flags & Flag.QUEUE ||
   ($.flags |= Flag.QUEUE, $.sub ? rerun($.sub.sub) : queue.push($)));
-const valid = ($: Reactive, link: Link) => {
+const valid = ($: Node, link: Link) => {
   for (let a = $.head; a; a = a.dep_prev) if (a === link) return true;
 };
 const deep = ($: Link) => {
@@ -156,7 +156,7 @@ const flat = ($: Link) => {
     ($.sub.flags |= Flag.DIRTY) & Flag.WATCH && rerun($.sub);
   } while ($ = $.sub_next!);
 };
-const check = (sub: Reactive, $: Link) => {
+const check = (sub: Node, $: Link) => {
   for (let a: (Link | null)[] = [], b = 0, c = false, d, e;;) {
     if (d = $.dep, sub.flags & Flag.DIRTY) c = true;
     else if ((d.flags & Flag.RESET) === Flag.RESET) {
@@ -178,7 +178,7 @@ const check = (sub: Reactive, $: Link) => {
     $ = $.dep_next;
   }
 };
-const run = ($: Reactive, flags: Flag) => {
+const run = ($: Node, flags: Flag) => {
   if (flags & Flag.DIRTY || flags & Flag.READY && check($, $.dep!)) {
     const a = set_actor($);
     try {
