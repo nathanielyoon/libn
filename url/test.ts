@@ -1,6 +1,6 @@
 import { assertEquals, assertMatch } from "@std/assert";
 import fc from "fast-check";
-import { fc_check, fc_string } from "@libn/lib";
+import { bundle, fc_check, fc_string } from "@libn/lib";
 import { Presigner } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
@@ -42,5 +42,8 @@ Deno.test("mod", async ({ step }) => {
           ),
         ),
     ));
+  });
+  await step("bundle : pure", async () => {
+    assertEquals(await bundle(import.meta), "");
   });
 });
