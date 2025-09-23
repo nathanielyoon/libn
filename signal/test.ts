@@ -5,6 +5,7 @@ import {
   type Spy,
   spy,
 } from "@std/testing/mock";
+import { bundle } from "@libn/lib";
 import { batch, effect, scoper, set_actor, signal } from "./mod.ts";
 
 Deno.test("alien-signals", async ({ step }) => {
@@ -1433,5 +1434,10 @@ Deno.test("preact", async ({ step }) => {
       batch(() => (effect(b), a = b.calls.length));
       assertEquals(a, 1);
     });
+  });
+});
+Deno.test("mod", async ({ step }) => {
+  await step("bundle : pure", async () => {
+    assertEquals(await bundle(import.meta), "");
   });
 });
