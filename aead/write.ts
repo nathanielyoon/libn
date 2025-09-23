@@ -95,10 +95,13 @@ await Promise.all([
         result: $.result === "valid",
       }))
     ),
-    "xchacha A.3.1": xchacha.slice(30715, 31722),
+    "xchacha-03 A.3.1": into(
+      ["plaintext", "aad", "key", "iv", "", "ciphertext", "tag"],
+      xchacha.slice(30715, 31722).match(/(?:[\da-f]{24,}\s*)+/g)!.map(trim),
+    ),
   },
   mod: {
-    "xchacha A.3.2.1": into(
+    "xchacha-03 A.3.2.1": into(
       ["plaintext", "key", "iv", "keystream", "ciphertext"],
       xchacha.slice(31876, 34302).match(/(?:[\da-f]{32,}\s*)+/g)!.map(trim),
     ),

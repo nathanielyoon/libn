@@ -70,6 +70,14 @@ Deno.test("aead", async ({ step }) => {
       }
     }
   });
+  await step("xchachapoly/polyxchacha : xchacha-03 A.3.1", () => {
+    const [$] = read(vectors.aead["xchacha-03 A.3.1"]);
+    const text = new Uint8Array($.plaintext);
+    assertEquals(xchachapoly($.key, $.iv, text, $.aad), $.tag);
+    assertEquals(text, $.ciphertext);
+    assert(polyxchacha($.key, $.iv, $.tag, text, $.aad));
+    assertEquals(text, $.plaintext);
+  });
   await step("xchachapoly : wrong-size arguments", () => {
     fc_check(fc.property(
       fc_at_least_one_wrong(32, 24),
@@ -91,7 +99,7 @@ Deno.test("aead", async ({ step }) => {
 });
 Deno.test("mod", async ({ step }) => {
   await step("cipher : xchacha-03 A.3.2.1", () => {
-    for (const $ of read(vectors.mod["xchacha A.3.2.1"])) {
+    for (const $ of read(vectors.mod["xchacha-03 A.3.2.1"])) {
       const text = new Uint8Array($.plaintext.length);
       cipher($.key, $.iv, text);
       assertEquals(text, $.keystream);
