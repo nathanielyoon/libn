@@ -59,13 +59,13 @@ Deno.test("aead", async ({ step }) => {
     for (const $ of read(vectors.aead.wycheproof)) {
       if ($.result) {
         const text = new Uint8Array($.plaintext);
-        assertEquals(xchachapoly($.key, $.iv, text, $.associated_data), $.tag);
+        assertEquals(xchachapoly($.key, $.iv, text, $.ad), $.tag);
         assertEquals(text, $.ciphertext);
-        assert(polyxchacha($.key, $.iv, $.tag, text, $.associated_data));
+        assert(polyxchacha($.key, $.iv, $.tag, text, $.ad));
         assertEquals(text, $.plaintext);
       } else {
         assert(
-          !polyxchacha($.key, $.iv, $.tag, $.ciphertext, $.associated_data),
+          !polyxchacha($.key, $.iv, $.tag, $.ciphertext, $.ad),
         );
       }
     }
@@ -73,9 +73,9 @@ Deno.test("aead", async ({ step }) => {
   await step("xchachapoly/polyxchacha : xchacha-03 A.3.1", () => {
     const [$] = read(vectors.aead["xchacha-03 A.3.1"]);
     const text = new Uint8Array($.plaintext);
-    assertEquals(xchachapoly($.key, $.iv, text, $.associated_data), $.tag);
+    assertEquals(xchachapoly($.key, $.iv, text, $.ad), $.tag);
     assertEquals(text, $.ciphertext);
-    assert(polyxchacha($.key, $.iv, $.tag, text, $.associated_data));
+    assert(polyxchacha($.key, $.iv, $.tag, text, $.ad));
     assertEquals(text, $.plaintext);
   });
   await step("xchachapoly : wrong-size arguments", () => {
