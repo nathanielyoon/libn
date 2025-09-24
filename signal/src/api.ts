@@ -54,12 +54,12 @@ export const signal =
     typeof is !== "function"
       ? sourcer.bind(node(Kind.SOURCE, Flag.BEGIN, { was: is, is, equals: $ }))
       : deriver.bind(node(Kind.DERIVE, Flag.RESET, { was: $, is }))) as {
+      <A>(deriver: (was: A) => A, initial: A): () => A;
       // Omitting the initial value limits type inference for the deriver's
       // parameter (see <https://github.com/microsoft/TypeScript/issues/47599>).
       <A>(deriver: (was: A | undefined) => A): () => A;
-      <A>(deriver: (was: A) => A, initial: A): () => A;
-      <A>(_?: A, equals?: Equals<A | undefined> | false): Signal<A | undefined>;
       <A>(initial: A, equals?: Equals<A> | false): Signal<A>;
+      <A>(_?: A, equals?: Equals<A | undefined> | false): Signal<A | undefined>;
     };
 /** Creates a side effect and returns a disposer. */
 export const effect = (is: () => void): () => void => {
