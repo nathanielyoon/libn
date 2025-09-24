@@ -12,8 +12,11 @@ export const below = (): number => --depth;
 export const flush = (run: ($: Node, flags: Flag) => void): void => {
   for (let a; a = queue.shift(); run(a, a.flags &= ~Flag.QUEUE));
 };
-const rerun = ($: Node): number => ($.flags & Flag.QUEUE ||
-  ($.flags |= Flag.QUEUE, $.sub ? rerun($.sub.sub) : queue.push($)));
+const rerun = ($: Node) => {
+  do if ($.flags & Flag.QUEUE) break;
+  else if ($.flags |= Flag.QUEUE, $.sub) $ = $.sub.sub;
+  else return queue.push($); while ($);
+};
 const valid = ($: Node, link: Link) => {
   for (let a = $.head; a; a = a.dep_prev) if (a === link) return true;
 };
