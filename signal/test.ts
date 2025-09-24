@@ -7,15 +7,15 @@ import {
 } from "@std/testing/mock";
 import { bundle } from "@libn/lib";
 import { batch, set_actor } from "./src/state.ts";
-import { effect, scoper, signal } from "./src/api.ts";
+import { derive, effect, scoper, signal } from "./src/api.ts";
 
 Deno.test("mod", async ({ step }) => {
   await step("signal : alien-signals signal tests", () => {
     { // correctly propagate changes through signal signals
       const a = signal(0);
-      const b = signal(() => a() % 2);
-      const c = signal(() => b());
-      const d = signal(() => c());
+      const b = derive(() => a() % 2);
+      const c = derive(() => b());
+      const d = derive(() => c());
       d();
       a(1); // c1 -> dirty, c2 -> toCheckDirty, c3 -> toCheckDirty
       c(); // c1 -> none, c2 -> none
@@ -24,25 +24,25 @@ Deno.test("mod", async ({ step }) => {
     }
     { // propagate updated source through chained computations
       const a = signal(0);
-      const b = signal(() => a());
-      const c = signal(() => b() % 2);
-      const d = signal(() => a());
-      const e = signal(() => c() + d());
+      const b = derive(() => a());
+      const c = derive(() => b() % 2);
+      const d = derive(() => a());
+      const e = derive(() => c() + d());
       assertEquals(e(), 0);
       a(2), assertEquals(e(), 2);
     }
     { // handle flags are indirectly updated during checkDirty
       const a = signal(false);
-      const b = signal(() => a());
-      const c = signal(() => (b(), 0));
-      const d = signal(() => (c(), b()));
+      const b = derive(() => a());
+      const c = derive(() => (b(), 0));
+      const d = derive(() => (c(), b()));
       assertEquals(d(), false);
       a(true), assertEquals(d(), true);
     }
     { // not update if the signal value is reverted
       let a = 0;
       const b = signal(0);
-      const c = signal(() => (a++, b()));
+      const c = derive(() => (a++, b()));
       c(), assertEquals(a, 1);
       b(1), b(0), c(), assertEquals(a, 1);
     }
@@ -51,7 +51,7 @@ Deno.test("mod", async ({ step }) => {
     { // clear subscriptions when untracked by all subscribers
       let a = 0;
       const b = signal(1);
-      const c = signal(() => (a++, b() * 2));
+      const c = derive(() => (a++, b() * 2));
       const d = effect(() => c());
       assertEquals(a, 1);
       b(2), assertEquals(a, 2);
@@ -59,7 +59,7 @@ Deno.test("mod", async ({ step }) => {
     }
     { // not run untracked inner effect
       const a = signal(3);
-      const b = signal(() => a() > 0);
+      const b = derive(() => a() > 0);
       effect(() =>
         b() && effect(() => {
           if (!a()) assert(0);
@@ -79,7 +79,7 @@ Deno.test("mod", async ({ step }) => {
     }
     { // not trigger inner effect when resolve maybe dirty
       const a = signal(0);
-      const b = signal(() => a() % 2);
+      const b = derive(() => a() % 2);
       let c = 0;
       effect(() =>
         effect(() => {
@@ -90,7 +90,7 @@ Deno.test("mod", async ({ step }) => {
     { // trigger inner effects in sequence
       const a = signal(0);
       const b = signal(0);
-      const c = signal(() => a() - b());
+      const c = derive(() => a() - b());
       const d: string[] = [];
       effect(() => {
         c();
@@ -118,8 +118,8 @@ Deno.test("mod", async ({ step }) => {
       const a: string[] = [];
       const b = signal(0);
       const c = signal(0);
-      const d = signal(() => (a.push("aa-0"), b() || c(1), a.push("aa-1")));
-      const e = signal(() => (a.push("bb"), c()));
+      const d = derive(() => (a.push("aa-0"), b() || c(1), a.push("aa-1")));
+      const e = derive(() => (a.push("bb"), c()));
       batch_effect(() => e());
       batch_effect(() => d());
       assertEquals(a, ["bb", "aa-0", "aa-1", "bb"]);
@@ -150,9 +150,9 @@ Deno.test("mod", async ({ step }) => {
     }
     { // handle flags are indirectly updated during checkDirty
       const a = signal(false);
-      const b = signal(() => a());
-      const c = signal(() => (b(), 0));
-      const d = signal(() => (c(), b()));
+      const b = derive(() => a());
+      const c = derive(() => (b(), 0));
+      const d = derive(() => (c(), b()));
       let e = 0;
       effect(() => (d(), ++e));
       assertEquals(e, 1);
@@ -211,7 +211,7 @@ Deno.test("mod", async ({ step }) => {
         fireImmediately = false,
       } = options;
       let prevValue: A | undefined, version = 0;
-      const tracked = signal(() => {
+      const tracked = derive(() => {
         try {
           return dataFn();
         } catch (error) {
@@ -262,10 +262,10 @@ Deno.test("mod", async ({ step }) => {
       //     |
       //     D
       const a = signal(2);
-      const b = signal(() => a() - 1);
-      const c = signal(() => a() + b());
+      const b = derive(() => a() - 1);
+      const c = derive(() => a() + b());
       const d = spy(() => "d: " + c());
-      const e = signal(d);
+      const e = derive(d);
       // Trigger read
       assertEquals(e(), "d: 3"), assertSpyCalls(d, 1);
       d.calls.length = 0, a(4), e(), assertSpyCalls(d, 1);
@@ -279,10 +279,10 @@ Deno.test("mod", async ({ step }) => {
       //   \   /
       //     D
       const a = signal("a");
-      const b = signal(() => a());
-      const c = signal(() => a());
+      const b = derive(() => a());
+      const c = derive(() => a());
       const d = spy(() => b() + " " + c());
-      const e = signal(d);
+      const e = derive(d);
       assertEquals(e(), "a a"), assertSpyCalls(d, 1);
       a("aa"), assertEquals(e(), "aa aa"), assertSpyCalls(d, 2);
     }
@@ -296,11 +296,11 @@ Deno.test("mod", async ({ step }) => {
       //     |
       //     E
       const a = signal("a");
-      const b = signal(() => a());
-      const c = signal(() => a());
-      const d = signal(() => b() + " " + c());
+      const b = derive(() => a());
+      const c = derive(() => a());
+      const d = derive(() => b() + " " + c());
       const e = spy(() => d());
-      const f = signal(e);
+      const f = derive(e);
       assertEquals(f(), "a a"), assertSpyCalls(e, 1);
       a("aa"), assertEquals(f(), "aa aa"), assertSpyCalls(e, 2);
     }
@@ -308,9 +308,9 @@ Deno.test("mod", async ({ step }) => {
       // Bail out if value of "B" never changes
       // A->B->C
       const a = signal("a");
-      const b = signal(() => (a(), "foo"));
+      const b = derive(() => (a(), "foo"));
       const c = spy(() => b());
-      const d = signal(c);
+      const d = derive(c);
       assertEquals(d(), "foo"), assertSpyCalls(c, 1);
       a("aa"), assertEquals(d(), "foo"), assertSpyCalls(c, 1);
     }
@@ -326,16 +326,16 @@ Deno.test("mod", async ({ step }) => {
       //   /   \
       //  F     G
       const a = signal("a");
-      const b = signal(() => a());
-      const c = signal(() => a());
-      const d = signal(() => c());
+      const b = derive(() => a());
+      const c = derive(() => a());
+      const d = derive(() => c());
       const e: Spy[] = [];
       const f: Spy<any, [], string> = spy(() => (e.push(f), b() + " " + d()));
-      const g = signal(f);
+      const g = derive(f);
       const h: Spy<any, [], string> = spy(() => (e.push(h), g()));
-      const i = signal(h);
+      const i = derive(h);
       const j: Spy<any, [], string> = spy(() => (e.push(j), g()));
-      const k = signal(j);
+      const k = derive(j);
       assertEquals(i(), "a a"), assertSpyCalls(h, 1);
       assertEquals(k(), "a a"), assertSpyCalls(j, 1);
       e.length = 0;
@@ -358,7 +358,7 @@ Deno.test("mod", async ({ step }) => {
       //   /   \
       // *B     C <- we don't listen to C
       const a = signal("a");
-      const b = signal(() => a());
+      const b = derive(() => a());
       const c = spy(() => a());
       signal(c), assertEquals(b(), "a"), assertSpyCalls(c, 0);
       a("aa"), assertEquals(b(), "aa"), assertSpyCalls(c, 0);
@@ -374,10 +374,10 @@ Deno.test("mod", async ({ step }) => {
       // *C
       const a = signal("a");
       const b = spy(() => a());
-      const c = signal(b);
+      const c = derive(b);
       const d = spy(() => c());
-      const e = signal(d);
-      const f = signal(() => a());
+      const e = derive(d);
+      const f = derive(() => a());
       let g = "";
       const h = effect(() => g = e());
       assertEquals(g, "a"), assertEquals(f(), "a");
@@ -395,10 +395,10 @@ Deno.test("mod", async ({ step }) => {
       //   \   /
       //     D
       const a = signal("a");
-      const b = signal(() => a());
-      const c = signal(() => (a(), "c"));
+      const b = derive(() => a());
+      const c = derive(() => (a(), "c"));
       const d = spy(() => b() + " " + c());
-      const e = signal(d);
+      const e = derive(d);
       assertEquals(e(), "a c");
       d.calls.length = 0, a("aa"), e();
       assertSpyCall(d, 0, { returned: "aa c" });
@@ -413,19 +413,19 @@ Deno.test("mod", async ({ step }) => {
       //   \ | /
       //     E
       const a = signal("a");
-      const b = signal(() => a());
-      const c = signal(() => (a(), "c"));
-      const d = signal(() => (a(), "d"));
+      const b = derive(() => a());
+      const c = derive(() => (a(), "c"));
+      const d = derive(() => (a(), "d"));
       const e = spy(() => b() + " " + c() + " " + d());
-      const f = signal(e);
+      const f = derive(e);
       assertEquals(f(), "a c d");
       e.calls.length = 0, a("aa"), f();
       assertSpyCall(e, 0, { returned: "aa c d" });
     }
     { // support lazy branches
       const a = signal(0);
-      const b = signal(() => a());
-      const c = signal(() => (a() > 0 ? a() : b()));
+      const b = derive(() => a());
+      const c = derive(() => (a() > 0 ? a() : b()));
       assertEquals(c(), 0);
       a(1), assertEquals(c(), 1);
       a(0), assertEquals(c(), 0);
@@ -439,10 +439,10 @@ Deno.test("mod", async ({ step }) => {
       //   \   /
       //     D
       const a = signal("a");
-      const b = signal(() => (a(), "b"));
-      const c = signal(() => (a(), "c"));
+      const b = derive(() => (a(), "b"));
+      const c = derive(() => (a(), "c"));
       const d = spy(() => b() + " " + c());
-      const e = signal(d);
+      const e = derive(d);
       assertEquals(e(), "b c");
       d.calls.length = 0, a("aa"), assertSpyCalls(d, 0);
     }
@@ -450,20 +450,20 @@ Deno.test("mod", async ({ step }) => {
   await step("signal : alien-signals error handling tests", () => {
     { // keep graph consistent on errors during activation
       const a = signal(0);
-      const b = signal(() => {
+      const b = derive(() => {
         throw 0;
       });
-      const c = signal(() => a());
+      const c = derive(() => a());
       assertThrows(b);
       a(1), assertEquals(c(), 1);
     }
     { // keep graph consistent on errors in signals
       const a = signal(0);
-      const b = signal(() => {
+      const b = derive(() => {
         if (a() === 1) throw 0;
         return a();
       });
-      const c = signal(() => b());
+      const c = derive(() => b());
       assertEquals(c(), 0);
       a(1), assertThrows(b);
       a(2), assertEquals(c(), 2);
@@ -473,7 +473,7 @@ Deno.test("mod", async ({ step }) => {
     { // pause tracking in signal
       let a = 0;
       const b = signal(0);
-      const c = signal(() => {
+      const c = derive(() => {
         ++a;
         const d = set_actor(null), e = b();
         return set_actor(d), e;
@@ -518,7 +518,7 @@ Deno.test("mod", async ({ step }) => {
     { // two signals
       const a = signal(7), b = signal(1);
       let c = 0;
-      const d = signal(() => (++c, a() * b()));
+      const d = derive(() => (++c, a() * b()));
       a(2), assertEquals(d(), 2);
       b(3), assertEquals(d(), 6);
       assertEquals(c, 2), d(), assertEquals(c, 2);
@@ -526,24 +526,24 @@ Deno.test("mod", async ({ step }) => {
     { // dependent computed
       const a = signal(7), b = signal(1);
       let c = 0;
-      const d = signal(() => (++c, a() * b()));
+      const d = derive(() => (++c, a() * b()));
       let e = 0;
-      const f = signal(() => (++e, d() + 1));
+      const f = derive(() => (++e, d() + 1));
       assertEquals(f(), 8), assertEquals(c, 1), assertEquals(e, 1);
       a(3), assertEquals(f(), 4), assertEquals(c, 2), assertEquals(e, 2);
     }
     { // equality check
       let a = 0;
-      const b = signal(7), c = signal(() => (++a, b() + 10));
+      const b = signal(7), c = derive(() => (++a, b() + 10));
       c(), c(), assertEquals(a, 1);
       b(7), assertEquals(a, 1);
     }
     { // dynamic computed
       const a = signal(1), b = signal(2);
       let c = 0, d = 0, e = 0;
-      const f = signal(() => (++c, a()));
-      const g = signal(() => (++d, b()));
-      const h = signal(() => (++e, f() || g()));
+      const f = derive(() => (++c, a()));
+      const g = derive(() => (++d, b()));
+      const h = derive(() => (++e, f() || g()));
       assertEquals(h(), 1), a(2), b(3), assertEquals(h(), 2);
       assertEquals(c, 2), assertEquals(d, 0), assertEquals(e, 2);
       a(0), assertEquals(h(), 3);
@@ -552,24 +552,24 @@ Deno.test("mod", async ({ step }) => {
       assertEquals(c, 3), assertEquals(d, 2), assertEquals(e, 4);
     }
     { // boolean equality check
-      const a = signal(0), b = signal(() => a() > 0);
+      const a = signal(0), b = derive(() => a() > 0);
       let c = 0;
-      const d = signal(() => (++c, b() ? 1 : 0));
+      const d = derive(() => (++c, b() ? 1 : 0));
       assertEquals(d(), 0), assertEquals(c, 1);
       a(1), assertEquals(d(), 1), assertEquals(c, 2);
       a(2), assertEquals(d(), 1), assertEquals(c, 2);
     }
     { // diamond computeds
-      const a = signal(1), b = signal(() => a());
-      const c = signal(() => b() * 2), d = signal(() => b() * 3);
+      const a = signal(1), b = derive(() => a());
+      const c = derive(() => b() * 2), d = derive(() => b() * 3);
       let e = 0;
-      const f = signal(() => (++e, c() + d()));
+      const f = derive(() => (++e, c() + d()));
       assertEquals(f(), 5), assertEquals(e, 1);
       a(2), assertEquals(f(), 10), assertEquals(e, 2);
       a(3), assertEquals(f(), 15), assertEquals(e, 3);
     }
     { // set inside reaction
-      const a = signal(1), b = signal(() => a(2)), c = signal(() => a() + 100);
+      const a = signal(1), b = derive(() => a(2)), c = derive(() => a() + 100);
       b(), assertEquals(c(), 102);
     }
   });
@@ -577,18 +577,18 @@ Deno.test("mod", async ({ step }) => {
     const sleep = ($: number) =>
       new Promise((resolve) => setTimeout(resolve, $));
     { // async modify
-      const a = signal(1), b = signal(() => a() + 10);
+      const a = signal(1), b = derive(() => a() + 10);
       await sleep(10).then(() => a(2));
       assertEquals(b(), 12);
     }
     { // async modify in reaction before await
-      const a = signal(1), b = signal(() => (a(2), sleep(10)));
-      const c = signal(() => a() + 100);
+      const a = signal(1), b = derive(() => (a(2), sleep(10)));
+      const c = derive(() => a() + 100);
       await b(), assertEquals(c(), 102);
     }
     { // async modify in reaction after await
-      const a = signal(1), b = signal(async () => (await sleep(10), a(2)));
-      const c = signal(() => a() + 100);
+      const a = signal(1), b = derive(async () => (await sleep(10), a(2)));
+      const c = derive(() => a() + 100);
       await b(), assertEquals(c(), 102);
     }
   });
@@ -596,16 +596,16 @@ Deno.test("mod", async ({ step }) => {
     { // dynamic sources recalculate correctly
       const a = signal(false), b = signal(2);
       let c = 0;
-      const d = signal(() => (++c, a() || b()));
+      const d = derive(() => (++c, a() || b()));
       d(), assertEquals(c, 1);
       a(true), d(), assertEquals(c, 2);
       b(4), d(), assertEquals(c, 2);
     }
     { // dynamic sources don't re-execute parent unnecessarily
-      const a = signal(2), b = signal(() => a() + 1);
+      const a = signal(2), b = derive(() => a() + 1);
       let c = 0;
-      const d = signal(() => (++c, a() + 10));
-      const e = signal(() => {
+      const d = derive(() => (++c, a() + 10));
+      const e = derive(() => {
         let f = b();
         if (f & 1) f += d();
         return f;
@@ -616,7 +616,7 @@ Deno.test("mod", async ({ step }) => {
     { // dynamic source disappears entirely
       const a = signal(1);
       let b = false, c = 0;
-      const d = signal(() => {
+      const d = derive(() => {
         ++c;
         if (b) return 0;
         const e = a();
@@ -739,7 +739,7 @@ Deno.test("mod", async ({ step }) => {
     }
     { // not recompute if the effect has been notified about changes, but no direct dependency has actually changed
       const a = signal(0);
-      const b = signal(() => (a(), 0));
+      const b = derive(() => (a(), 0));
       const c = spy(() => b());
       effect(c);
       assertSpyCalls(c, 1);
@@ -751,7 +751,7 @@ Deno.test("mod", async ({ step }) => {
       const a = spy();
       const b = signal(0);
       const c = signal(0);
-      const d = signal(() => (c(), a()));
+      const d = derive(() => (c(), a()));
       effect(() => b() || d());
       assertSpyCalls(a, 1);
       batch(() => (c(1), b(1)));
@@ -762,7 +762,7 @@ Deno.test("mod", async ({ step }) => {
       const b = signal(1);
       const c = signal(1);
       const d = spy(() => c());
-      const e = signal(d);
+      const e = derive(d);
       effect(() => a() > 0 ? (b(), e()) : b());
       d.calls.length = 0;
       batch(() => (a(2), b(2), c(2)));
@@ -836,13 +836,13 @@ Deno.test("mod", async ({ step }) => {
     { // return value
       const a = signal("a");
       const b = signal("b");
-      const c = signal(() => a() + b());
+      const c = derive(() => a() + b());
       assertEquals(c(), "ab");
     }
     { // return updated value
       const a = signal("a");
       const b = signal("b");
-      const c = signal(() => a() + b());
+      const c = derive(() => a() + b());
       assertEquals(c(), "ab");
       a("aa");
       assertEquals(c(), "aab");
@@ -851,7 +851,7 @@ Deno.test("mod", async ({ step }) => {
       const a = signal("a");
       const b = signal("b");
       const c = spy(() => a() + b());
-      const d = signal(c);
+      const d = derive(c);
       assertSpyCalls(c, 0);
       d();
       assertSpyCalls(c, 1);
@@ -864,7 +864,7 @@ Deno.test("mod", async ({ step }) => {
     { // be computed only when a dependency has changed at some point
       const a = signal("a");
       const b = spy(() => a());
-      const c = signal(b);
+      const c = derive(b);
       c();
       assertSpyCalls(b, 1);
       a("a");
@@ -876,7 +876,7 @@ Deno.test("mod", async ({ step }) => {
       const b = signal("b");
       const c = signal(true);
       const d = spy(() => c() ? a() : b());
-      const e = signal(d);
+      const e = derive(d);
       assertEquals(e(), "a");
       assertSpyCalls(d, 1);
       b("bb");
@@ -893,7 +893,7 @@ Deno.test("mod", async ({ step }) => {
     { // consider undefined value separate from uninitialized value
       const a = signal(0);
       const b = spy(() => undefined);
-      const c = signal(b);
+      const c = derive(b);
       assertEquals(c(), undefined);
       a(1);
       assertEquals(c(), undefined);
@@ -901,11 +901,11 @@ Deno.test("mod", async ({ step }) => {
     }
     { // not leak errors raised by dependencies
       const a = signal(0);
-      const b = signal(() => {
+      const b = derive(() => {
         a();
         throw 0;
       });
-      const c = signal(() => {
+      const c = derive(() => {
         try {
           b();
         } catch {
@@ -918,8 +918,8 @@ Deno.test("mod", async ({ step }) => {
     }
     { // propagate notifications even right after first subscription
       const a = signal(0);
-      const b = signal(() => a());
-      const c = signal(() => b());
+      const b = derive(() => a());
+      const c = derive(() => b());
       c();
       const d = spy(() => c());
       effect(d);
@@ -930,7 +930,7 @@ Deno.test("mod", async ({ step }) => {
     }
     { // get marked as outdated right after first subscription
       const a = signal(0);
-      const b = signal(() => a());
+      const b = derive(() => a());
       b();
       a(1);
       effect(() => b());
@@ -938,7 +938,7 @@ Deno.test("mod", async ({ step }) => {
     }
     { // propagate notification to other listeners after one listener is disposed
       const a = signal(0);
-      const b = signal(() => a());
+      const b = derive(() => a());
       const c = spy(() => b());
       const d = spy(() => b());
       const e = spy(() => b());
@@ -959,8 +959,8 @@ Deno.test("mod", async ({ step }) => {
       const b = signal(1);
       const c = signal(1);
       const d = spy(() => c());
-      const e = signal(d);
-      const f = signal(() => a() > 0 ? (b(), e()) : b());
+      const e = derive(d);
+      const f = derive(() => a() > 0 ? (b(), e()) : b());
       f();
       d.calls.length = 0;
       a(2);
@@ -980,8 +980,8 @@ Deno.test("mod", async ({ step }) => {
       const a = spy();
       const b = signal(0);
       const c = signal(0);
-      const d = signal(() => (c(), a()));
-      const e = signal(() => b() || d());
+      const d = derive(() => (c(), a()));
+      const e = derive(() => b() || d());
       e();
       assertSpyCalls(a, 1);
       batch(() => (c(1), b(1)));
@@ -993,7 +993,7 @@ Deno.test("mod", async ({ step }) => {
         const a = signal("a");
         const b = signal("b");
         const c = spy(() => a() + b());
-        const d = signal(c);
+        const d = derive(c);
         assertEquals(d(), "ab");
         assertSpyCalls(c, 1);
         c.calls.length = 0;
@@ -1011,10 +1011,10 @@ Deno.test("mod", async ({ step }) => {
         //     |
         //     D
         const a = signal(2);
-        const b = signal(() => a() - 1);
-        const c = signal(() => a() + b());
+        const b = derive(() => a() - 1);
+        const c = derive(() => a() + b());
         const d = spy(() => "d: " + c());
-        const e = signal(d);
+        const e = derive(d);
         // Trigger read
         assertEquals(e(), "d: 3");
         assertSpyCalls(d, 1);
@@ -1032,10 +1032,10 @@ Deno.test("mod", async ({ step }) => {
         //   \   /
         //     D
         const a = signal("a");
-        const b = signal(() => a());
-        const c = signal(() => a());
+        const b = derive(() => a());
+        const c = derive(() => a());
         const d = spy(() => b() + " " + c());
-        const e = signal(d);
+        const e = derive(d);
         assertEquals(e(), "a a");
         assertSpyCalls(d, 1);
         a("aa");
@@ -1052,11 +1052,11 @@ Deno.test("mod", async ({ step }) => {
         //     |
         //     E
         const a = signal("a");
-        const b = signal(() => a());
-        const c = signal(() => a());
-        const d = signal(() => b() + " " + c());
+        const b = derive(() => a());
+        const c = derive(() => a());
+        const d = derive(() => b() + " " + c());
         const e = spy(() => d());
-        const f = signal(e);
+        const f = derive(e);
         assertEquals(f(), "a a");
         assertSpyCalls(e, 1);
         a("aa");
@@ -1067,9 +1067,9 @@ Deno.test("mod", async ({ step }) => {
         // Bail out if value of "B" never changes
         // A->B->C
         const a = signal("a");
-        const b = signal(() => (a(), "foo"));
+        const b = derive(() => (a(), "foo"));
         const c = spy(() => b());
-        const d = signal(c);
+        const d = derive(c);
         assertEquals(d(), "foo");
         assertSpyCalls(c, 1);
         a("aa");
@@ -1088,18 +1088,18 @@ Deno.test("mod", async ({ step }) => {
         //   /   \
         //  F     G
         const a = signal("a");
-        const b = signal(() => a());
-        const c = signal(() => a());
-        const d = signal(() => c());
+        const b = derive(() => a());
+        const c = derive(() => a());
+        const d = derive(() => c());
         const e: Spy[] = [];
         const f: Spy<any, [], string> = spy(
           () => (e.push(f), b() + " " + d()),
         );
-        const g = signal(f);
+        const g = derive(f);
         const h: Spy<any, [], string> = spy(() => (e.push(h), g()));
-        const i = signal(h);
+        const i = derive(h);
         const j: Spy<any, [], string> = spy(() => (e.push(j), g()));
-        const k = signal(j);
+        const k = derive(j);
         assertEquals(i(), "a a");
         assertSpyCalls(h, 1);
         assertEquals(k(), "a a");
@@ -1134,7 +1134,7 @@ Deno.test("mod", async ({ step }) => {
         //   /   \
         // *B     C <- we don't listen to C
         const a = signal("a");
-        const b = signal(() => a());
+        const b = derive(() => a());
         const c = spy(() => a());
         signal(c);
         assertEquals(b(), "a");
@@ -1154,10 +1154,10 @@ Deno.test("mod", async ({ step }) => {
         // *C
         const a = signal("a");
         const b = spy(() => a());
-        const c = signal(b);
+        const c = derive(b);
         const d = spy(() => c());
-        const e = signal(d);
-        const f = signal(() => a());
+        const e = derive(d);
+        const f = derive(() => a());
         let g = "";
         const h = effect(() => g = e());
         assertEquals(g, "a");
@@ -1181,10 +1181,10 @@ Deno.test("mod", async ({ step }) => {
         //   \   /
         //     D
         const a = signal("a");
-        const b = signal(() => a());
-        const c = signal(() => (a(), "c"));
+        const b = derive(() => a());
+        const c = derive(() => (a(), "c"));
         const d = spy(() => b() + " " + c());
-        const e = signal(d);
+        const e = derive(d);
         assertEquals(e(), "a c");
         d.calls.length = 0;
         a("aa");
@@ -1201,11 +1201,11 @@ Deno.test("mod", async ({ step }) => {
         //   \ | /
         //     E
         const a = signal("a");
-        const b = signal(() => a());
-        const c = signal(() => (a(), "c"));
-        const d = signal(() => (a(), "d"));
+        const b = derive(() => a());
+        const c = derive(() => (a(), "c"));
+        const d = derive(() => (a(), "d"));
         const e = spy(() => b() + " " + c() + " " + d());
-        const f = signal(e);
+        const f = derive(e);
         assertEquals(f(), "a c d");
         e.calls.length = 0;
         a("aa");
@@ -1216,10 +1216,10 @@ Deno.test("mod", async ({ step }) => {
     { // error handling
       { // keep graph consistent on errors during activation
         const a = signal(0);
-        const b = signal(() => {
+        const b = derive(() => {
           throw 0;
         });
-        const c = signal(() => a());
+        const c = derive(() => a());
         assertThrows(b);
         a(1);
         assertEquals(c(), 1);
@@ -1227,11 +1227,11 @@ Deno.test("mod", async ({ step }) => {
 
       { // keep graph consistent on errors in computeds
         const a = signal(0);
-        const b = signal(() => {
+        const b = derive(() => {
           if (a() === 1) throw 0;
           return a();
         });
-        const c = signal(() => b());
+        const c = derive(() => b());
         assertEquals(c(), 0);
         a(1);
         assertThrows(b);
@@ -1241,8 +1241,8 @@ Deno.test("mod", async ({ step }) => {
 
       { // support lazy branches
         const a = signal(0);
-        const b = signal(() => a());
-        const c = signal(() => (a() > 0 ? a() : b()));
+        const b = derive(() => a());
+        const c = derive(() => (a() > 0 ? a() : b()));
         assertEquals(c(), 0);
         a(1);
         assertEquals(c(), 1);
@@ -1258,10 +1258,10 @@ Deno.test("mod", async ({ step }) => {
         //   \   /
         //     D
         const a = signal("a");
-        const b = signal(() => (a(), "b"));
-        const c = signal(() => (a(), "c"));
+        const b = derive(() => (a(), "b"));
+        const c = derive(() => (a(), "c"));
         const d = spy(() => b() + " " + c());
-        const e = signal(d);
+        const e = derive(d);
         assertEquals(e(), "b c");
         d.calls.length = 0;
         a("aa");
@@ -1322,13 +1322,13 @@ Deno.test("mod", async ({ step }) => {
     { // read computed signals with updated source signals
       // A->B->C->D->E
       const a = signal("a");
-      const b = signal(() => a());
+      const b = derive(() => a());
       const c = spy(() => b());
-      const d = signal(c);
+      const d = derive(c);
       const e = spy(() => d());
-      const f = signal(e);
+      const f = derive(e);
       const g = spy(() => f());
-      const h = signal(g);
+      const h = derive(g);
       c.calls.length = 0;
       e.calls.length = 0;
       g.calls.length = 0;
@@ -1354,7 +1354,7 @@ Deno.test("mod", async ({ step }) => {
       const a = signal("a");
       const b = signal("b");
       const c = signal("c");
-      const d = signal(() => a() + " " + b() + " " + c());
+      const d = derive(() => a() + " " + b() + " " + c());
       let e;
       effect(() => e = d());
       batch(() => (a("aa"), b("bb")));
@@ -1364,8 +1364,8 @@ Deno.test("mod", async ({ step }) => {
     { // not lead to stale signals with () in batch
       const a: number[][] = [];
       const b = signal(0);
-      const c = signal(() => b() * 2);
-      const d = signal(() => b() * 3);
+      const c = derive(() => b() * 2);
+      const d = derive(() => b() * 3);
       effect(() => a.push([c(), d()]));
       assertEquals(a, [[0, 0]]);
       batch(() => (b(1), assertEquals(c(), 2)));

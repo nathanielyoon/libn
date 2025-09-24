@@ -5,7 +5,7 @@
  * ```ts
  * import { assertEquals } from "@std/assert";
  *
- * const count = signal(0), half = signal(() => count() >> 1);
+ * const count = signal(0), half = derive(() => count() >> 1);
  * let called = 0;
  * effect(() => half() && ++called);
  *
@@ -19,6 +19,13 @@
  */
 
 import { batch } from "./src/state.ts";
-import { effect, scoper, type Signal, signal } from "./src/api.ts";
+import {
+  derive,
+  effect,
+  type Get,
+  scoper,
+  type Set,
+  signal,
+} from "./src/api.ts";
 
-export { batch, effect, scoper, type Signal, signal };
+export { batch, derive, effect, type Get, scoper, type Set, signal };

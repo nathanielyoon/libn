@@ -1,12 +1,6 @@
-import {
-  type Derive,
-  dispose,
-  Equals,
-  Flag,
-  Kind,
-  link,
-  type Source,
-} from "./internal.ts";
+import { Flag, Kind } from "./flags.ts";
+import type { Derive, Equals, Signal } from "./nodes.ts";
+import { dispose, link } from "./link.ts";
 import {
   actor,
   check,
@@ -19,12 +13,12 @@ import {
   set_scope,
 } from "./state.ts";
 
-function sourcer(this: Source, ...$: [unknown]) {
+function sourcer(this: Signal, ...$: [unknown]) {
   if ($.length) {
     const is = typeof $[0] === "function" ? $[0](this.is) : $[0];
     switch (this.equals) {
       case undefined:
-        if (is === this.is) return is;
+        if (is === this.is) return is; // falls through
       case false:
         break;
       default:
@@ -46,20 +40,28 @@ function deriver(this: Derive) {
 const node = <A extends Kind, B>(kind: A, flags: Flag, rest: B) => (
   { kind, flags, head: null, dep: null, sub: null, tail: null, ...rest }
 );
-/** Combined getter/setter for a reactive value. */
-export type Signal<A> = { (): A; <const B extends A>($: B | (($: B) => B)): B };
+/** Reactive getter. */
+export type Get<A> = () => A;
+/** Reactive setter. */
+export type Set<A> = <const B extends A>($: B | (($: A) => B)) => B;
 /** Creates a reactive value. */
-export const signal =
+export const signal = ((is: any, $?: any) =>
+  sourcer.bind(
+    node(Kind.SIGNAL, Flag.BEGIN, { was: is, is, equals: $ }),
+  )) as {
+    <A>(initial: A, equals?: Equals<A> | false): Get<A> & Set<A>;
+    <A>(
+      _?: A,
+      equals?: Equals<A | undefined> | false,
+    ): Get<A | undefined> & Set<A | undefined>;
+  };
+export const derive =
   ((is: any, $?: any) =>
-    typeof is !== "function"
-      ? sourcer.bind(node(Kind.SOURCE, Flag.BEGIN, { was: is, is, equals: $ }))
-      : deriver.bind(node(Kind.DERIVE, Flag.RESET, { was: $, is }))) as {
+    deriver.bind(node(Kind.DERIVE, Flag.RESET, { was: $, is }))) as {
       <A>(deriver: (was: A) => A, initial: A): () => A;
       // Omitting the initial value limits type inference for the deriver's
       // parameter (see <https://github.com/microsoft/TypeScript/issues/47599>).
       <A>(deriver: (was: A | undefined) => A): () => A;
-      <A>(initial: A, equals?: Equals<A> | false): Signal<A>;
-      <A>(_?: A, equals?: Equals<A | undefined> | false): Signal<A | undefined>;
     };
 /** Creates a side effect and returns a disposer. */
 export const effect = (is: () => void): () => void => {

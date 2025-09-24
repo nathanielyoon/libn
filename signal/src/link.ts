@@ -1,0 +1,51 @@
+import { Flag, Kind } from "./flags.ts";
+import type { Effect, Link, Node, Scoper } from "./nodes.ts";
+
+let step = 0; // can only increase
+/** Connects two nodes. */
+export const link = (dep: Node, sub: Node | null): void => {
+  if (!sub) return;
+  const a = sub.head;
+  if (a?.dep === dep) return;
+  const b = a ? a.dep_next : sub.dep;
+  if (b?.dep === dep) return sub.head = b, b.step = step as any;
+  const c = dep.tail;
+  if (c?.step === step && c.sub === sub) return;
+  const d = sub.head = dep.tail = {
+    step,
+    dep_prev: a,
+    dep,
+    dep_next: b,
+    sub_prev: c,
+    sub,
+    sub_next: null,
+  };
+  if (b) b.dep_prev = d;
+  a ? a.dep_next = d : sub.dep = d, c ? c.sub_next = d : dep.sub = d;
+};
+const chop = (sub: Node, $: Link) => {
+  const a = $.dep_prev, b = $.dep, c = $.dep_next, d = $.sub_prev;
+  (c ? c.dep_prev = a : sub.head = a) ? a!.dep_next = c : sub.dep = c;
+  let e = $.sub_next;
+  if (e ? e.sub_prev = d : b.tail = d) d!.sub_next = e;
+  else if (!(b.sub = e)) {
+    if (b.kind === Kind.DERIVE) {
+      for (b.flags = Flag.RESET, e = b.dep; e; e = chop(b, e));
+    } else b.kind === Kind.SIGNAL || dispose.call(b);
+  }
+  return c;
+};
+/** Cleans up effects. */
+export function dispose(this: Effect | Scoper): void {
+  for (let a = this.dep; a; a = chop(this, a));
+  this.sub && chop(this.sub.sub, this.sub), this.flags = Flag.CLEAR;
+}
+/** Starts tracking a node. */
+export const follow = ($: Node): void => {
+  ++step, $.head = null, $.flags = $.flags & Flag.FRESH | Flag.CHECK;
+};
+/** Stops tracking a node. */
+export const ignore = ($: Node): void => {
+  for (let a = $.head ? $.head.dep_next : $.dep; a; a = chop($, a));
+  $.flags &= ~Flag.CHECK;
+};

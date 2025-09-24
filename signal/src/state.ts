@@ -1,13 +1,6 @@
-import {
-  type Effect,
-  Flag,
-  follow,
-  ignore,
-  Kind,
-  type Link,
-  type Node,
-  type Scoper,
-} from "./internal.ts";
+import { Flag, Kind } from "./flags.ts";
+import type { Effect, Link, Node, Scoper } from "./nodes.ts";
+import { follow, ignore } from "./link.ts";
 
 /** Current subscriber. */
 export let actor: Node | null = null;
@@ -22,6 +15,28 @@ export const set_actor = ($: Node | null): Node | null => (
 export const set_scope = ($: Scoper | null): Scoper | null => (
   swapper = scope, scope = $, swapper
 );
+/** Updates and checks a source signal. */
+export const reuse = ($: Node): boolean => {
+  if ($.kind !== Kind.SIGNAL) return false;
+  switch ($.flags = Flag.BEGIN, $.equals) {
+    case undefined:
+      return $.was !== ($.was = $.is);
+    case false:
+      return true;
+    default:
+      return !$.equals($.was, $.was = $.is);
+  }
+};
+/** Updates and checks a derive signal. */
+export const reget = ($: Node): boolean => {
+  if ($.kind !== Kind.DERIVE) return false;
+  const a = set_actor($);
+  try {
+    return follow($), $.was !== ($.was = $.is($.was));
+  } finally {
+    actor = a, ignore($);
+  }
+};
 /** Checks a node's dirtiness. */
 export const check = (sub: Node, $: Link): boolean => {
   for (let a: (Link | null)[] = [], b = 0, c = false, d, e;;) {
@@ -71,28 +86,6 @@ export const batch = <A>($: () => A): A => {
     return ++depth, $();
   } finally {
     --depth || flush();
-  }
-};
-/** Updates and checks a source signal. */
-export const reuse = ($: Node): boolean => {
-  if ($.kind !== Kind.SOURCE) return false;
-  switch ($.flags = Flag.BEGIN, $.equals) {
-    case undefined:
-      return $.was !== ($.was = $.is);
-    case false:
-      return true;
-    default:
-      return !$.equals($.was, $.was = $.is);
-  }
-};
-/** Updates and checks a derive signal. */
-export const reget = ($: Node): boolean => {
-  if ($.kind !== Kind.DERIVE) return false;
-  const a = set_actor($);
-  try {
-    return follow($), $.was !== ($.was = $.is($.was));
-  } finally {
-    actor = a, ignore($);
   }
 };
 const rerun = ($: Node): number => ($.flags & Flag.QUEUE ||
