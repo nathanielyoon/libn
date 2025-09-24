@@ -5,17 +5,21 @@ type Noder<A extends Kind> =
   & { kind: A; flags: Flag }
   & { [_ in "head" | "dep" | "sub" | "tail"]: Link | null };
 /** Equality check. */
-export type Equals<A> = (prev: A, next: A) => boolean;
+export type Equals<A, B extends A> = (prev: A, next: B) => boolean;
 /** Mutable data source. */
 export type Signal<A = any> = Noder<Kind.SIGNAL> & {
-  was: A;
-  is: A;
-  equals?: Equals<A> | false;
+  prev: A;
+  curr: A;
+  same: Equals<A, A> | false | undefined;
 };
 /** Derived computation. */
-export type Derive<A = any> = Noder<Kind.DERIVE> & { was: A; is: ($?: A) => A };
+export type Derive<A = any> = Noder<Kind.DERIVE> & {
+  prev: A;
+  next: ($?: A) => A;
+  same: Equals<A, A> | false | undefined;
+};
 /** Effectful reaction. */
-export type Effect = Noder<Kind.EFFECT> & { is: () => void };
+export type Effect = Noder<Kind.EFFECT> & { run: () => void };
 /** Effect scope owner. */
 export type Scoper = Noder<Kind.SCOPER>;
 /** Reactive node. */

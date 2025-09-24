@@ -13,29 +13,29 @@ import {
   set_scope,
 } from "./state.ts";
 
-function sourcer(this: Signal, ...$: [unknown]) {
+function Signal(this: Signal, ...$: [unknown]) {
   if ($.length) {
-    const is = typeof $[0] === "function" ? $[0](this.is) : $[0];
-    switch (this.equals) {
+    const next = typeof $[0] === "function" ? $[0](this.curr) : $[0];
+    switch (this.same) {
       case undefined:
-        if (is === this.is) return is; // falls through
+        if (next === this.curr) return next; // falls through
       case false:
         break;
       default:
-        if (this.equals(is, this.is)) return is;
+        if (this.same(next, this.curr)) return next;
     }
-    this.is = is, this.flags = Flag.RESET, this.sub && deep(this.sub);
+    this.curr = next, this.flags = Flag.RESET, this.sub && deep(this.sub);
   } else {
     if (this.flags & Flag.DIRTY && reuse(this) && this.sub) flat(this.sub);
     link(this, actor);
   }
-  return this.is;
+  return this.curr;
 }
-function deriver(this: Derive) {
+function Derive(this: Derive) {
   this.flags & Flag.DIRTY || this.flags & Flag.READY && check(this, this.dep!)
     ? reget(this) && this.sub && flat(this.sub)
     : (this.flags &= ~Flag.READY);
-  return link(this, scope ?? actor), this.was;
+  return link(this, scope ?? actor), this.prev;
 }
 const node = <A extends Kind, B>(kind: A, flags: Flag, rest: B) => (
   { kind, flags, head: null, dep: null, sub: null, tail: null, ...rest }
@@ -45,31 +45,43 @@ export type Get<A> = () => A;
 /** Reactive setter. */
 export type Set<A> = <const B extends A>($: B | (($: A) => B)) => B;
 /** Creates a reactive value. */
-export const signal = ((is: any, $?: any) =>
-  sourcer.bind(
-    node(Kind.SIGNAL, Flag.BEGIN, { was: is, is, equals: $ }),
-  )) as {
-    <A>(initial: A, equals?: Equals<A> | false): Get<A> & Set<A>;
-    <A>(
-      _?: A,
-      equals?: Equals<A | undefined> | false,
-    ): Get<A | undefined> & Set<A | undefined>;
-  };
+export const signal =
+  ((initial: any, equals?: Equals<any, any>) =>
+    Signal.bind(node(Kind.SIGNAL, Flag.BEGIN, {
+      prev: initial,
+      curr: initial,
+      same: equals,
+    }))) as {
+      <A>(initial: A, equals?: Equals<A, A> | false): Get<A> & Set<A>;
+      <A>(
+        _?: A,
+        equals?: Equals<A | undefined, A | undefined> | false,
+      ): Get<A | undefined> & Set<A | undefined>;
+    };
+/** Creates a derived computation. */
 export const derive =
-  ((is: any, $?: any) =>
-    deriver.bind(node(Kind.DERIVE, Flag.RESET, { was: $, is }))) as {
-      <A>(deriver: (was: A) => A, initial: A): () => A;
+  ((deriver: any, initial?: any, equals?: Equals<any, any>) =>
+    Derive.bind(node(Kind.DERIVE, Flag.RESET, {
+      prev: initial,
+      next: deriver,
+      same: equals,
+    }))) as {
+      <A>(deriver: (was: A) => A, initial: A, equals?: Equals<A, A>): () => A;
       // Omitting the initial value limits type inference for the deriver's
       // parameter (see <https://github.com/microsoft/TypeScript/issues/47599>).
-      <A>(deriver: (was: A | undefined) => A): () => A;
+      <A>(
+        deriver: (was: A | undefined) => A,
+        initial?: undefined,
+        equals?: Equals<A | undefined, A>,
+      ): () => A;
     };
 /** Creates a side effect and returns a disposer. */
-export const effect = (is: () => void): () => void => {
-  const a = node(Kind.EFFECT, Flag.WATCH, { is });
+export const effect = (run: () => void): () => void => {
+  const a = node(Kind.EFFECT, Flag.WATCH, { run });
   link(a, scope ?? actor);
   const b = set_actor(a);
   try {
-    a.is();
+    a.run();
   } finally {
     set_actor(b);
   }

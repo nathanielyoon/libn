@@ -1,5 +1,5 @@
 import { Flag, Kind } from "./flags.ts";
-import type { Effect, Link, Node, Scoper } from "./nodes.ts";
+import type { Derive, Effect, Link, Node, Scoper, Signal } from "./nodes.ts";
 import { follow, ignore } from "./link.ts";
 
 /** Current subscriber. */
@@ -15,34 +15,37 @@ export const set_actor = ($: Node | null): Node | null => (
 export const set_scope = ($: Scoper | null): Scoper | null => (
   swapper = scope, scope = $, swapper
 );
-/** Updates and checks a source signal. */
-export const reuse = ($: Node): boolean => {
-  if ($.kind !== Kind.SIGNAL) return false;
-  switch ($.flags = Flag.BEGIN, $.equals) {
+const update = ($: Signal | Derive, prev: any, next: any) => {
+  switch ($.same) {
     case undefined:
-      return $.was !== ($.was = $.is);
+      return prev !== next;
     case false:
       return true;
     default:
-      return !$.equals($.was, $.was = $.is);
+      return !$.same(prev, next);
   }
 };
-/** Updates and checks a derive signal. */
-export const reget = ($: Node): boolean => {
-  if ($.kind !== Kind.DERIVE) return false;
+/** Updates a source signal. */
+export const reuse = ($: Signal): boolean => (
+  $.flags = Flag.BEGIN, update($, $.prev, $.prev = $.curr)
+);
+/** Updates a computed signal. */
+export const reget = ($: Derive): boolean => {
   const a = set_actor($);
   try {
-    return follow($), $.was !== ($.was = $.is($.was));
+    return follow($), update($, $.prev, $.prev = $.next($.prev));
   } finally {
     actor = a, ignore($);
   }
 };
+const retry = ($: Node) =>
+  $.kind === Kind.SIGNAL && reuse($) || $.kind === Kind.DERIVE && reget($);
 /** Checks a node's dirtiness. */
 export const check = (sub: Node, $: Link): boolean => {
   for (let a: (Link | null)[] = [], b = 0, c = false, d, e;;) {
     if (d = $.dep, sub.flags & Flag.DIRTY) c = true;
     else if ((d.flags & Flag.RESET) === Flag.RESET) {
-      if (reuse(d) || reget(d)) c = true, d.sub!.sub_next && flat(d.sub!);
+      if (retry(d)) c = true, d.sub!.sub_next && flat(d.sub!);
     } else if ((d.flags & Flag.START) === Flag.START) {
       ($.sub_next || $.sub_prev) && a.push($), ++b, sub = d, $ = d.dep!;
       continue;
@@ -51,7 +54,7 @@ export const check = (sub: Node, $: Link): boolean => {
       while (b--) {
         e = sub.sub!, $ = e.sub_next ? a.pop()! : e;
         if (!c) sub.flags &= ~Flag.READY;
-        else if (reget(sub) || reuse(sub)) e.sub_next && flat(e), sub = $.sub;
+        else if (retry(sub)) e.sub_next && flat(e), sub = $.sub;
         else if (sub = $.sub, $.dep_next) break mid;
         else c = false;
       }
@@ -64,7 +67,7 @@ const run = ($: Node, flags: Flag) => {
   if (flags & Flag.DIRTY || flags & Flag.READY && check($, $.dep!)) {
     const a = set_actor($);
     try {
-      follow($), ($ as Effect).is();
+      follow($), ($ as Effect).run();
     } finally {
       set_actor(a), ignore($);
     }
