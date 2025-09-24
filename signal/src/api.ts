@@ -43,11 +43,11 @@ export type Get<A> = () => A;
 export type Set<A> = <const B extends A>($: B | (($: A) => B)) => B;
 /** Creates a reactive value. */
 export const signal =
-  ((initial: any, { equals }: { equals?: Equals<any, any> } = {}) =>
+  ((initial: any, options?: { equals?: Equals<any, any> }) =>
     sourcer.bind(construct(Kind.SIGNAL, Flag.BEGIN, {
       prev: initial,
       next: initial,
-      same: equals,
+      same: options?.equals,
     }))) as {
       <A>(initial: A, options?: { equals?: Equals<A, A> }): Get<A> & Set<A>;
       <A>(
