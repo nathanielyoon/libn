@@ -59,14 +59,14 @@ export const run = ($: Effect | Scoper): void => {
   $.flags &= ~Flag.QUEUE;
   if ($.flags & Flag.DIRTY || $.flags & Flag.READY && check($, $.dep!)) {
     const a = set_actor($);
-    try {
-      return follow($), ($ as Effect).run();
+    try { // only effects can be dirty
+      return follow($), ($ as Effect).run(); // calls inner effects too
     } finally {
       set_actor(a), ignore($);
     }
   }
   if ($.flags & Flag.READY) $.flags &= ~Flag.READY;
-  for (let a = $.dep; a; a = a.dep_next) {
+  for (let a = $.dep; a; a = a.dep_next) { // outer isn't dirty but inner may be
     a.dep.flags & Flag.QUEUE && run(a.dep as Effect | Scoper);
   }
 };
