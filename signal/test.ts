@@ -10,7 +10,7 @@ import { set_actor } from "./src/state.ts";
 import { batch, derive, effect, scoper, signal } from "./src/api.ts";
 
 Deno.test("mod", async ({ step }) => {
-  await step("signal : alien-signals signal tests", () => {
+  await step("derive : alien-signals signal tests", () => {
     { // correctly propagate changes through signal signals
       const a = signal(0);
       const b = derive(() => a() % 2);
@@ -252,7 +252,7 @@ Deno.test("mod", async ({ step }) => {
     );
     source(1), source(2), source(3);
   });
-  await step("signal : alien-signals graph tests", () => {
+  await step("derive : alien-signals graph tests", () => {
     { // drop A->B->A updates
       //     A
       //   / |
@@ -447,7 +447,7 @@ Deno.test("mod", async ({ step }) => {
       d.calls.length = 0, a("aa"), assertSpyCalls(d, 0);
     }
   });
-  await step("signal : alien-signals error handling tests", () => {
+  await step("signal/derive : alien-signals error handling tests", () => {
     { // keep graph consistent on errors during activation
       const a = signal(0);
       const b = derive(() => {
@@ -514,7 +514,7 @@ Deno.test("mod", async ({ step }) => {
       b(1), b(2), b(3), assertEquals(a, 1);
     }
   });
-  await step("signal : reactively core tests", () => {
+  await step("derive : reactively core tests", () => {
     { // two signals
       const a = signal(7), b = signal(1);
       let c = 0;
@@ -573,7 +573,7 @@ Deno.test("mod", async ({ step }) => {
       b(), assertEquals(c(), 102);
     }
   });
-  await step("signal : reactively async tests", async () => {
+  await step("derive : reactively async tests", async () => {
     const sleep = ($: number) =>
       new Promise((resolve) => setTimeout(resolve, $));
     { // async modify
@@ -592,7 +592,7 @@ Deno.test("mod", async ({ step }) => {
       await b(), assertEquals(c(), 102);
     }
   });
-  await step("signal : reactively dynamic tests", () => {
+  await step("derive : reactively dynamic tests", () => {
     { // dynamic sources recalculate correctly
       const a = signal(false), b = signal(2);
       let c = 0;
@@ -832,7 +832,7 @@ Deno.test("mod", async ({ step }) => {
       assertSpyCalls(d, 3);
     }
   });
-  await step("signal : preact computed tests", () => {
+  await step("derive : preact computed tests", () => {
     { // return value
       const a = signal("a");
       const b = signal("b");
@@ -1395,6 +1395,27 @@ Deno.test("mod", async ({ step }) => {
       batch(() => (effect(b), a = b.calls.length));
       assertEquals(a, 1);
     }
+  });
+  await step("signal/derive : custom equality", () => {
+    const a = signal([0], { equals: false });
+    const b = derive(() => [a()[0] + 1], {
+      equals: (prev, next) => prev?.[0] === next[0],
+    });
+    const c = derive(() => [b()[0] + 1], {
+      equals: (prev, next) => prev?.length === next.length,
+    });
+    const d = derive(() => c()[0]);
+    let e = 0, f = 0;
+    effect(() => (a(), ++e));
+    effect(() => (d(), ++f));
+    assertEquals(c(), [2]), assertEquals(d(), 2);
+    assertEquals(e, 1), assertEquals(f, 1);
+    a(a());
+    assertEquals(c(), [2]), assertEquals(d(), 2);
+    assertEquals(e, 2), assertEquals(f, 1);
+    a(([$]) => [$ + 1]);
+    assertEquals(c(), [3]), assertEquals(d(), 2);
+    assertEquals(e, 3), assertEquals(f, 1);
   });
   await step("effect : dispose when nested", () => {
     const a = signal(0);
