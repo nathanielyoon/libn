@@ -14,12 +14,6 @@ export const flush = (run: ($: Node, flags: Flag) => void) => {
 };
 const rerun = ($: Node): number => ($.flags & Flag.QUEUE ||
   ($.flags |= Flag.QUEUE, $.sub ? rerun($.sub.sub) : queue.push($)));
-/** Shallowly propagates changes. */
-export const flat = ($: Link): void => {
-  do if (($.sub.flags & Flag.SETUP) === Flag.READY) {
-    ($.sub.flags |= Flag.DIRTY) & Flag.WATCH && rerun($.sub);
-  } while ($ = $.sub_next!);
-};
 const valid = ($: Node, link: Link) => {
   for (let a = $.head; a; a = a.dep_prev) if (a === link) return true;
 };
@@ -44,4 +38,10 @@ export const deep = ($: Link, run: ($: Node, flags: Flag) => void): void => {
     } else b = ($ = b).sub_next;
   }
   depth || flush(run);
+};
+/** Shallowly propagates changes. */
+export const flat = ($: Link): void => {
+  do if (($.sub.flags & Flag.SETUP) === Flag.READY) {
+    ($.sub.flags |= Flag.DIRTY) & Flag.WATCH && rerun($.sub);
+  } while ($ = $.sub_next!);
 };
