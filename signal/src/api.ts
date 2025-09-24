@@ -80,7 +80,7 @@ export const derive =
     };
 /** Creates a side effect and returns a disposer. */
 export const effect = (run: () => void): () => void => {
-  const node = construct(Kind.EFFECT, Flag.WATCH, { run });
+  const node = construct(Kind.EFFECT, Flag.CLEAR, { run });
   link(node, scope ?? actor);
   const prev_actor = set_actor(node);
   try {
