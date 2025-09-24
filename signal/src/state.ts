@@ -36,7 +36,7 @@ export const check = (sub: Node, $: Link): boolean => {
       while (b--) {
         e = sub.sub!, $ = e.sub_next ? a.pop()! : e;
         if (!c) sub.flags &= ~Flag.READY;
-        else if (reuse(sub) || reget(sub)) e.sub_next && flat(e), sub = $.sub;
+        else if (reget(sub) || reuse(sub)) e.sub_next && flat(e), sub = $.sub;
         else if (sub = $.sub, $.dep_next) break mid;
         else c = false;
       }
@@ -62,18 +62,15 @@ const run = ($: Node, flags: Flag) => {
 };
 const queue: (Node | null)[] = []; // but it'll only have effects and scopers
 let depth = 0;
-/** If ready, updates and runs all queued effects. */
-export const flush = (): void => {
-  if (!depth) {
-    for (let a; a = queue.shift(); run(a, a.flags &= ~Flag.QUEUE));
-  }
+const flush = () => {
+  for (let a; a = queue.shift(); run(a, a.flags &= ~Flag.QUEUE));
 };
 /** Pauses updates, executes a function, then resumes. */
 export const batch = <A>($: () => A): A => {
   try {
     return ++depth, $();
   } finally {
-    --depth, flush();
+    --depth || flush();
   }
 };
 /** Updates and checks a source signal. */
@@ -120,4 +117,5 @@ export const deep = ($: Link): void => {
       break;
     } else b = ($ = b).sub_next;
   }
+  depth || flush();
 };
