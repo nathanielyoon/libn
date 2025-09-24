@@ -9,7 +9,10 @@ export const link = (dep: Node, sub: Node | null): void => {
   const a = sub.head;
   if (a?.dep === dep) return;
   const b = a ? a.dep_next : sub.dep;
-  if (b?.dep === dep) return sub.head = b, b.step = step as any;
+  if (b?.dep === dep) {
+    sub.head = b, b.step = step;
+    return;
+  }
   const c = dep.tail;
   if (c?.step === step && c.sub === sub) return;
   const d = sub.head = dep.tail = {
