@@ -74,8 +74,17 @@ export const batch = <A>($: () => A): A => {
   }
 };
 /** Updates and checks a source signal. */
-export const reuse = ($: Node): boolean =>
-  $.kind === Kind.SOURCE && ($.flags = Flag.BEGIN, $.was !== ($.was = $.is));
+export const reuse = ($: Node): boolean => {
+  if ($.kind !== Kind.SOURCE) return false;
+  switch ($.flags = Flag.BEGIN, $.equals) {
+    case undefined:
+      return $.was !== ($.was = $.is);
+    case false:
+      return true;
+    default:
+      return !$.equals($.was, $.was = $.is);
+  }
+};
 /** Updates and checks a derive signal. */
 export const reget = ($: Node): boolean => {
   if ($.kind !== Kind.DERIVE) return false;

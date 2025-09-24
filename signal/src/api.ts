@@ -20,20 +20,20 @@ import {
 } from "./state.ts";
 
 function sourcer(this: Source, ...$: [unknown]) {
-  if (!$.length) {
-    if (this.flags & Flag.DIRTY && reuse(this) && this.sub) flat(this.sub);
-    link(this, actor);
-  } else {
+  if ($.length) {
     const is = typeof $[0] === "function" ? $[0](this.is) : $[0];
     switch (this.equals) {
       case undefined:
-        if (this.is === is) return is;
+        if (is === this.is) return is;
       case false:
         break;
       default:
-        if (this.equals(this.is, is)) return is;
+        if (this.equals(is, this.is)) return is;
     }
     this.is = is, this.flags = Flag.RESET, this.sub && deep(this.sub);
+  } else {
+    if (this.flags & Flag.DIRTY && reuse(this) && this.sub) flat(this.sub);
+    link(this, actor);
   }
   return this.is;
 }
