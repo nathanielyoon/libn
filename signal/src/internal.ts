@@ -27,8 +27,14 @@ export const enum Kind {
 type Noder<A extends Kind> =
   & { kind: A; flags: Flag }
   & { [_ in "head" | "dep" | "sub" | "tail"]: Link | null };
+/** Equality check. */
+export type Equals<A> = (prev: A, next: A) => boolean;
 /** Mutable data source. */
-export type Source<A = any> = Noder<Kind.SOURCE> & { was: A; is: A };
+export type Source<A = any> = Noder<Kind.SOURCE> & {
+  was: A;
+  is: A;
+  equals?: Equals<A>;
+};
 /** Derived computation. */
 export type Derive<A = any> = Noder<Kind.DERIVE> & { was: A; is: ($?: A) => A };
 /** Effectful reaction. */

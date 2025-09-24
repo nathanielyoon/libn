@@ -1,6 +1,7 @@
 import {
   type Derive,
   dispose,
+  Equals,
   Flag,
   Kind,
   link,
@@ -23,10 +24,12 @@ function sourcer(this: Source, ...$: [unknown]) {
   if (!$.length) {
     if (this.flags & Flag.DIRTY && reuse(this) && this.sub) flat(this.sub);
     link(this, actor);
-  } else if (
-    this.is !== (this.is = typeof $[0] === "function" ? $[0](this.is) : $[0]) &&
-    (this.flags = Flag.RESET, this.sub)
-  ) deep(this.sub), flush();
+  } else {
+    const is = typeof $[0] === "function" ? $[0](this.is) : $[0];
+    if (this.equals?.(this.is, this.is = is) ?? (this.is !== (this.is = is))) {
+      if (this.flags = Flag.RESET, this.sub) deep(this.sub), flush();
+    }
+  }
   return this.is;
 }
 function deriver(this: Derive) {
@@ -42,17 +45,16 @@ const node = <A extends Kind, B>(kind: A, flags: Flag, rest: B) => (
 export type Signal<A> = { (): A; <const B extends A>($: B | (($: B) => B)): B };
 /** Creates a reactive value. */
 export const signal =
-  (($: any, and?: any) =>
-    typeof $ === "function"
-      ? deriver.bind(node(Kind.DERIVE, Flag.RESET, { was: and, is: $ }))
-      : sourcer.bind(node(Kind.SOURCE, Flag.BEGIN, { was: $, is: $ }))) as {
+  ((is: any, $?: any) =>
+    typeof is !== "function"
+      ? sourcer.bind(node(Kind.SOURCE, Flag.BEGIN, { was: is, is, equals: $ }))
+      : deriver.bind(node(Kind.DERIVE, Flag.RESET, { was: $, is }))) as {
       // Omitting the initial value limits type inference for the deriver's
       // parameter (see <https://github.com/microsoft/TypeScript/issues/47599>).
-      <A>(deriver: (was?: A) => A): () => A;
+      <A>(deriver: (was: A | undefined) => A): () => A;
       <A>(deriver: (was: A) => A, initial: A): () => A;
-      (): Signal<never>;
-      <A>(): Signal<A | undefined>;
-      <A>(initial: A): Signal<A>;
+      <A>(_?: undefined, equals?: Equals<A | undefined>): Signal<A | undefined>;
+      <A>(initial: A, equals?: Equals<A>): Signal<A>;
     };
 /** Creates a side effect and returns a disposer. */
 export const effect = (is: () => void): () => void => {
