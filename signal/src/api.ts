@@ -26,8 +26,10 @@ function sourcer(this: Source, ...$: [unknown]) {
     link(this, actor);
   } else {
     const is = typeof $[0] === "function" ? $[0](this.is) : $[0];
-    if (this.equals?.(this.is, this.is = is) ?? (this.is !== (this.is = is))) {
-      if (this.flags = Flag.RESET, this.sub) deep(this.sub), flush();
+    if (this.equals?.(this.is, is) ?? (this.is === is)) return is;
+    else {
+      this.is = is, this.flags = Flag.RESET;
+      if (this.sub) deep(this.sub), flush();
     }
   }
   return this.is;
