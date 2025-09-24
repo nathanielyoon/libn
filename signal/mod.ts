@@ -18,6 +18,7 @@
  * @module signal
  */
 
-import { batch, effect, scoper, type Signal, signal } from "./src/api.ts";
+import { batch } from "./src/state.ts";
+import { effect, scoper, type Signal, signal } from "./src/api.ts";
 
 export { batch, effect, scoper, type Signal, signal };
