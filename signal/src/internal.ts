@@ -33,7 +33,7 @@ export type Equals<A> = (prev: A, next: A) => boolean;
 export type Source<A = any> = Noder<Kind.SOURCE> & {
   was: A;
   is: A;
-  equals?: Equals<A>;
+  equals?: Equals<A> | false;
 };
 /** Derived computation. */
 export type Derive<A = any> = Noder<Kind.DERIVE> & { was: A; is: ($?: A) => A };

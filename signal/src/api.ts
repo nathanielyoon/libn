@@ -12,7 +12,6 @@ import {
   check,
   deep,
   flat,
-  flush,
   reget,
   reuse,
   scope,
@@ -26,11 +25,15 @@ function sourcer(this: Source, ...$: [unknown]) {
     link(this, actor);
   } else {
     const is = typeof $[0] === "function" ? $[0](this.is) : $[0];
-    if (this.equals?.(this.is, is) ?? (this.is === is)) return is;
-    else {
-      this.is = is, this.flags = Flag.RESET;
-      if (this.sub) deep(this.sub), flush();
+    switch (this.equals) {
+      case undefined:
+        if (this.is === is) return is;
+      case false:
+        break;
+      default:
+        if (this.equals(this.is, is)) return is;
     }
+    this.is = is, this.flags = Flag.RESET, this.sub && deep(this.sub);
   }
   return this.is;
 }
@@ -55,8 +58,8 @@ export const signal =
       // parameter (see <https://github.com/microsoft/TypeScript/issues/47599>).
       <A>(deriver: (was: A | undefined) => A): () => A;
       <A>(deriver: (was: A) => A, initial: A): () => A;
-      <A>(_?: undefined, equals?: Equals<A | undefined>): Signal<A | undefined>;
-      <A>(initial: A, equals?: Equals<A>): Signal<A>;
+      <A>(_?: A, equals?: Equals<A | undefined> | false): Signal<A | undefined>;
+      <A>(initial: A, equals?: Equals<A> | false): Signal<A>;
     };
 /** Creates a side effect and returns a disposer. */
 export const effect = (is: () => void): () => void => {
