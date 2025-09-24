@@ -7,7 +7,15 @@ import {
 } from "@std/testing/mock";
 import { bundle } from "@libn/lib";
 import { set_actor } from "./src/state.ts";
-import { batch, derive, effect, scoper, signal } from "./src/api.ts";
+import {
+  batch,
+  derive,
+  effect,
+  type Getter,
+  scoper,
+  type Setter,
+  signal,
+} from "./src/api.ts";
 
 Deno.test("mod", async ({ step }) => {
   await step("derive : alien-signals signal tests", () => {
@@ -1394,6 +1402,488 @@ Deno.test("mod", async ({ step }) => {
       const b = spy();
       batch(() => (effect(b), a = b.calls.length));
       assertEquals(a, 1);
+    }
+  });
+  await step("derive : solid-signals graph tests", () => {
+    { // should drop X->B->X updates
+      //     X
+      //   / |
+      //  A  | <- Looks like a flag doesn't it? :D
+      //   \ |
+      //     B
+      //     |
+      //     C
+      const a = signal(2);
+      const b = derive(() => a() - 1);
+      const c = derive(() => a() + b());
+      const d = spy(() => "c: " + c());
+      const e = derive(d);
+      assertEquals(e(), "c: 3");
+      assertSpyCalls(d, 1);
+      d.calls.length = 0;
+      a(4);
+      e();
+      assertSpyCalls(d, 1);
+    }
+    { // should only update every signal once (diamond graph)
+      // In this scenario "C" should only update once when "X" receive an update. This is sometimes
+      // referred to as the "diamond" scenario.
+      //     X
+      //   /   \
+      //  A     B
+      //   \   /
+      //     C
+      const a = signal("a");
+      const b = derive(() => a());
+      const c = derive(() => a());
+      const d = spy(() => b() + " " + c());
+      const e = derive(d);
+      assertEquals(e(), "a a");
+      assertSpyCalls(d, 1);
+      a("aa");
+      assertEquals(e(), "aa aa");
+      assertSpyCalls(d, 2);
+    }
+    { // should only update every signal once (diamond graph + tail)
+      // "D" will be likely updated twice if our mark+sweep logic is buggy.
+      //     X
+      //   /   \
+      //  A     B
+      //   \   /
+      //     C
+      //     |
+      //     D
+      const a = signal("a");
+      const b = derive(() => a());
+      const c = derive(() => a());
+      const d = derive(() => b() + " " + c());
+      const e = spy(() => d());
+      const f = derive(e);
+      assertEquals(f(), "a a");
+      assertSpyCalls(e, 1);
+      a("aa");
+      assertEquals(f(), "aa aa");
+      assertSpyCalls(e, 2);
+    }
+    { // should bail out if result is the same
+      // Bail out if value of "A" never changes
+      // X->A->B
+      const a = signal("a");
+      const b = derive(() => {
+        a();
+        return "foo";
+      });
+      const c = spy(() => b());
+      const d = derive(c);
+      assertEquals(d(), "foo");
+      assertSpyCalls(c, 1);
+      a("aa");
+      assertEquals(d(), "foo");
+      assertSpyCalls(c, 1);
+    }
+    { // should only update every signal once (jagged diamond graph + tails)
+      // "E" and "F" will be likely updated >3 if our mark+sweep logic is buggy.
+      //     X
+      //   /   \
+      //  A     B
+      //  |     |
+      //  |     C
+      //   \   /
+      //     D
+      //   /   \
+      //  E     F
+      const a = signal("a");
+      const b = derive(() => a());
+      const c = derive(() => a());
+      const d = derive(() => c());
+      const e = spy(() => b() + " " + d());
+      const f = derive(e);
+      const g = spy(() => f());
+      const h = derive(g);
+      const i = spy(() => f());
+      const j = derive(i);
+      assertEquals(h(), "a a");
+      assertSpyCalls(g, 1);
+      assertEquals(j(), "a a");
+      assertSpyCalls(i, 1);
+      a("b");
+      assertEquals(f(), "b b");
+      assertSpyCalls(e, 2);
+      assertEquals(h(), "b b");
+      assertSpyCalls(g, 2);
+      assertEquals(j(), "b b");
+      assertSpyCalls(i, 2);
+      a("c");
+      assertEquals(f(), "c c");
+      assertSpyCalls(e, 3);
+      assertEquals(h(), "c c");
+      assertSpyCalls(g, 3);
+      assertEquals(j(), "c c");
+      assertSpyCalls(i, 3);
+    }
+    { // should ensure subs update even if one dep is static
+      //     X
+      //   /   \
+      //  A     *B <- returns same value every time
+      //   \   /
+      //     C
+      const a = signal("a");
+      const b = derive(() => a());
+      const c = derive(() => {
+        a();
+        return "c";
+      });
+      const d = spy(() => b() + " " + c());
+      const e = derive(d);
+      assertEquals(e(), "a c");
+      a("aa");
+      assertEquals(e(), "aa c");
+      assertSpyCalls(d, 2);
+    }
+    { // should ensure subs update even if two deps mark it clean
+      // In this scenario both "B" and "C" always return the same value. But "D" must still update
+      // because "X" marked it. If "D" isn't updated, then we have a bug.
+      //     X
+      //   / | \
+      //  A *B *C
+      //   \ | /
+      //     D
+      const a = signal("a");
+      const b = derive(() => a());
+      const c = derive(() => {
+        a();
+        return "c";
+      });
+      const d = derive(() => {
+        a();
+        return "d";
+      });
+      const e = spy(() => b() + " " + c() + " " + d());
+      const f = derive(e);
+      assertEquals(f(), "a c d");
+      a("aa");
+      assertEquals(f(), "aa c d");
+      assertSpyCalls(e, 2);
+    }
+    { // propagates in topological order
+      //
+      //     c1
+      //    /  \
+      //   /    \
+      //  b1     b2
+      //   \    /
+      //    \  /
+      //     a1
+      //
+      let a = "";
+      const b = signal(false),
+        c = derive(() => {
+          b();
+          a += "b1";
+        }, { equals: false }),
+        d = derive(() => {
+          b();
+          a += "b2";
+        }, { equals: false }),
+        e = derive(() => {
+          c(), d();
+          a += "c1";
+        }, { equals: false });
+      e();
+      a = "";
+      b(true);
+      e();
+      assertEquals(a, "b1b2c1");
+    }
+    { // only propagates once with linear convergences
+      //         d
+      //         |
+      // +---+---+---+---+
+      // v   v   v   v   v
+      // f1  f2  f3  f4  f5
+      // |   |   |   |   |
+      // +---+---+---+---+
+      //         v
+      //         g
+      const a = signal(0),
+        b = derive(() => a()),
+        c = derive(() => a()),
+        d = derive(() => a()),
+        e = derive(() => a()),
+        f = derive(() => a());
+      let g = 0;
+      const h = derive(() => {
+        g++;
+        return b() + c() + d() + e() + f();
+      });
+      h();
+      g = 0;
+      a(1);
+      h();
+      assertEquals(g, 1);
+    }
+    { // only propagates once with exponential convergence
+      //     d
+      //     |
+      // +---+---+
+      // v   v   v
+      // f1  f2 f3
+      //   \ | /
+      //     O
+      //   / | \
+      // v   v   v
+      // g1  g2  g3
+      // +---+---+
+      //     v
+      //     h
+      const a = signal(0),
+        b = derive(() => {
+          return a();
+        }),
+        c = derive(() => {
+          return a();
+        }),
+        d = derive(() => {
+          return a();
+        }),
+        e = derive(() => {
+          return b() + c() + d();
+        }),
+        f = derive(() => {
+          return b() + c() + d();
+        }),
+        g = derive(() => {
+          return b() + c() + d();
+        });
+      let h = 0;
+      const i = derive(() => {
+        h++;
+        return e() + f() + g();
+      });
+      i();
+      h = 0;
+      a(1);
+      i();
+      assertEquals(h, 1);
+    }
+    { // does not trigger downstream computations unless changed
+      const a = signal(1, { equals: false });
+      let b = "";
+      const c = derive(() => {
+        b += "t1";
+        return a();
+      });
+      const t2 = derive(() => {
+        b += "c1";
+        c();
+      });
+      t2();
+      assertEquals(b, "c1t1");
+      b = "";
+      a(1);
+      t2();
+      assertEquals(b, "t1");
+      b = "";
+      a(2);
+      t2();
+      assertEquals(b, "t1c1");
+    }
+    { // applies updates to changed dependees in same order as derive
+      const a = signal(0);
+      let b = "";
+      const c = derive(() => {
+        b += "t1";
+        return a() === 0;
+      });
+      const d = derive(() => {
+        b += "c1";
+        return a();
+      });
+      const e = derive(() => {
+        b += "c2";
+        return c();
+      });
+      d();
+      e();
+      assertEquals(b, "c1c2t1");
+      b = "";
+      a(1);
+      d();
+      e();
+      assertEquals(b, "c1t1c2");
+    }
+    { // updates downstream pending computations
+      const a = signal(0);
+      const b = signal(0);
+      let c = "";
+      const d = derive(() => {
+        c += "t1";
+        return a() === 0;
+      });
+      const e = derive(() => {
+        c += "c1";
+        return a();
+      });
+      const f = derive(() => {
+        c += "c2";
+        d();
+        return derive(() => {
+          c += "c2_1";
+          return b();
+        });
+      });
+      c = "";
+      a(1);
+      e();
+      f()();
+      assertEquals(c, "c1c2t1c2_1");
+    }
+    { // with changing dependencies
+      let a: Getter<boolean> & Setter<boolean>;
+      let b: Getter<number> & Setter<number>;
+      let c: Getter<number> & Setter<number>;
+      let d: number;
+      let e: Getter<number>;
+      const init = () => {
+        a = signal<boolean>(true);
+        b = signal(1);
+        c = signal(2);
+        d = 0;
+        e = derive(() => {
+          d++;
+          return a() ? b() : c();
+        });
+        e();
+        d = 0;
+      };
+      { // updates on active dependencies
+        init();
+        b!(5);
+        assertEquals(e!(), 5);
+        assertEquals(d!, 1);
+      }
+      { // does not update on inactive dependencies
+        init();
+        c!(5);
+        assertEquals(e!(), 1);
+        assertEquals(d!, 0);
+      }
+      { // deactivates obsolete dependencies
+        init();
+        a!(false);
+        e!();
+        d = 0;
+        b!(5);
+        e!();
+        assertEquals(d, 0);
+      }
+      { // activates new dependencies
+        init();
+        a!(false);
+        d = 0;
+        c!(5);
+        e!();
+        assertEquals(d, 1);
+      }
+      { // ensures that new dependencies are updated before dependee
+        let a = "";
+        const b = signal(0),
+          c = derive(() => {
+            a += "b";
+            return b() + 1;
+          }),
+          d = derive(() => {
+            a += "c";
+            const check = c();
+            if (check) {
+              return check;
+            }
+            return f();
+          }),
+          e = derive(() => {
+            return b();
+          }),
+          f = derive(() => {
+            a += "d";
+            return e() + 10;
+          });
+        d();
+        f();
+        assertEquals(a, "cbd");
+        a = "";
+        b(-1);
+        d();
+        f();
+        assertEquals(a, "bcd");
+        assertEquals(d(), 9);
+        a = "";
+        b(0);
+        d();
+        f();
+        assertEquals(a, "bcd");
+        assertEquals(d(), 1);
+      }
+      { // does not update subsequent pending computations after stale invocations
+        const a = signal(1);
+        const b = signal(false);
+        let c = 0;
+        /*
+                  s1
+                  |
+              +---+---+
+             t1 t2 c1 t3
+              \       /
+                 c3
+           [PN,PN,STL,void]
+      */
+        const d = derive(() => a() > 0);
+        const e = derive(() => a() > 0);
+        const f = derive(() => a());
+        const g = derive(() => {
+          const h = a();
+          const i = b();
+          return h && i;
+        });
+        const h = derive(() => {
+          d();
+          e();
+          f();
+          g();
+          c++;
+        });
+        h();
+        b(true);
+        h();
+        assertEquals(c, 2);
+        a(2);
+        h();
+        assertEquals(c, 3);
+      }
+    }
+    { // correctly marks downstream computations as stale on change
+      const a = signal(1);
+      let b = "";
+      const c = derive(() => {
+        b += "t1";
+        return a();
+      });
+      const d = derive(() => {
+        b += "c1";
+        return c();
+      });
+      const e = derive(() => {
+        b += "c2";
+        return d();
+      });
+      const f = derive(() => {
+        b += "c3";
+        return e();
+      });
+      f();
+      b = "";
+      a(2);
+      f();
+      assertEquals(b, "t1c1c2c3");
     }
   });
   await step("signal/derive : custom equality", () => {
