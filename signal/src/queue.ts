@@ -5,11 +5,11 @@ import type { Link, Node } from "./nodes.ts";
 export const queue: (Node | null)[] = [];
 let depth = 0;
 /** Starts a batch. */
-export const above = () => ++depth;
+export const above = (): number => ++depth;
 /** Ends a batch. */
-export const below = () => --depth;
+export const below = (): number => --depth;
 /** Runs queued effects. */
-export const flush = (run: ($: Node, flags: Flag) => void) => {
+export const flush = (run: ($: Node, flags: Flag) => void): void => {
   for (let a; a = queue.shift(); run(a, a.flags &= ~Flag.QUEUE));
 };
 const rerun = ($: Node): number => ($.flags & Flag.QUEUE ||

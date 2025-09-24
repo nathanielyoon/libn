@@ -55,7 +55,7 @@ export const check = (sub: Node, $: Link): boolean => {
   }
 };
 /** Runs an effect. */
-export const run = ($: Node, flags: Flag) => {
+export const run = ($: Node, flags: Flag): void => {
   if (flags & Flag.DIRTY || flags & Flag.READY && check($, $.dep!)) {
     const a = set_actor($);
     try {
