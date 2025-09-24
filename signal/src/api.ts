@@ -38,9 +38,9 @@ const construct = <A extends Kind, B>(kind: A, flags: Flag, rest: B) => (
   { kind, flags, head: null, dep: null, sub: null, tail: null, ...rest }
 );
 /** Reactive getter. */
-export type Get<A> = () => A;
+export type Getter<A> = () => A;
 /** Reactive setter. */
-export type Set<A> = <const B extends A>($: B | (($: A) => B)) => B;
+export type Setter<A> = <const B extends A>($: B | (($: A) => B)) => B;
 /** Creates a reactive value. */
 export const signal =
   ((initial: any, options?: { equals?: Equals<any, any> }) =>
@@ -49,11 +49,14 @@ export const signal =
       next: initial,
       same: options?.equals,
     }))) as {
-      <A>(initial: A, options?: { equals?: Equals<A, A> }): Get<A> & Set<A>;
+      <A>(
+        initial: A,
+        options?: { equals?: Equals<A, A> },
+      ): Getter<A> & Setter<A>;
       <A>(
         _?: A,
         options?: { equals?: Equals<A | undefined, A | undefined> },
-      ): Get<A | undefined> & Set<A | undefined>;
+      ): Getter<A | undefined> & Setter<A | undefined>;
     };
 /** Creates a derived computation. */
 export const derive =
@@ -69,11 +72,11 @@ export const derive =
       <A>(
         compute: (prev: A | undefined) => A,
         options?: { initial?: undefined; equals?: Equals<A | undefined, A> },
-      ): Get<A>;
+      ): Getter<A>;
       <A>(
         compute: (prev: A) => A,
         options: { initial: A; equals?: Equals<A, A> },
-      ): Get<A>;
+      ): Getter<A>;
     };
 /** Creates a side effect and returns a disposer. */
 export const effect = (run: () => void): () => void => {

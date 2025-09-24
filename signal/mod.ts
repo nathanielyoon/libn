@@ -22,10 +22,10 @@ import {
   batch,
   derive,
   effect,
-  type Get,
+  type Getter,
   scoper,
-  type Set,
+  type Setter,
   signal,
 } from "./src/api.ts";
 
-export { batch, derive, effect, type Get, scoper, type Set, signal };
+export { batch, derive, effect, type Getter, scoper, type Setter, signal };
