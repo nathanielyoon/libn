@@ -55,18 +55,18 @@ export const check = (sub: Node, $: Link): boolean => {
   }
 };
 /** Runs an effect. */
-export const run = ($: Node, flags: Flag): void => {
-  if (flags & Flag.DIRTY || flags & Flag.READY && check($, $.dep!)) {
+export const run = ($: Effect | Scoper): void => {
+  $.flags &= ~Flag.QUEUE;
+  if ($.flags & Flag.DIRTY || $.flags & Flag.READY && check($, $.dep!)) {
     const a = set_actor($);
     try {
-      follow($), ($ as Effect).run();
+      return follow($), ($ as Effect).run();
     } finally {
       set_actor(a), ignore($);
     }
-  } else {
-    flags & Flag.READY && ($.flags = flags & ~Flag.READY);
-    for (let a = $.dep; a; a = a.dep_next) {
-      a.dep.flags & Flag.QUEUE && run(a.dep, a.dep.flags &= ~Flag.QUEUE);
-    }
+  }
+  if ($.flags & Flag.READY) $.flags &= ~Flag.READY;
+  for (let a = $.dep; a; a = a.dep_next) {
+    a.dep.flags & Flag.QUEUE && run(a.dep as Effect | Scoper);
   }
 };

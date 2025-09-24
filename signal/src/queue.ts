@@ -9,8 +9,8 @@ export const above = (): number => ++depth;
 /** Ends a batch. */
 export const below = (): number => --depth;
 /** Runs queued effects. */
-export const flush = (run: ($: Node) => void): void => {
-  for (let a; a = queue.shift(); a.flags &= ~Flag.QUEUE, run(a));
+export const flush = (run: ($: Effect | Scoper) => void): void => {
+  for (let a; a = queue.shift(); run(a));
 };
 const rerun = ($: Effect | Scoper) => {
   do if ($.flags & Flag.QUEUE) break;
@@ -21,7 +21,7 @@ const valid = ($: Node, link: Link) => {
   for (let a = $.head; a; a = a.dep_prev) if (a === link) return true;
 };
 /** Deeply propagates changes. */
-export const deep = ($: Link, run: ($: Node) => void): void => {
+export const deep = ($: Link, run: ($: Effect | Scoper) => void): void => {
   top: for (let a: (Link | null)[] = [], b = $.sub_next, c, d;;) {
     if (c = $.sub, d = c.flags, !(d & Flag.KNOWN)) c.flags |= Flag.READY;
     else if (!(d & Flag.GOING)) d = Flag.CLEAR;
