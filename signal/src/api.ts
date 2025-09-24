@@ -57,21 +57,26 @@ export const signal =
     };
 /** Creates a derived computation. */
 export const derive =
+  // Omitting the initial value limits type inference for the deriver's
+  // parameter (see <https://github.com/microsoft/TypeScript/issues/47599>),
+  // but it works fine if you add an explicit type.
   ((compute: any, initial?: any, equals?: Equals<any, any>) =>
     deriver.bind(construct(Kind.DERIVE, Flag.RESET, {
       prev: initial,
       next: compute,
       same: equals,
     }))) as {
-      <A>(compute: (was: A) => A, initial: A, equals?: Equals<A, A>): () => A;
-      // Omitting the initial value limits type inference for the deriver's
-      // parameter (see <https://github.com/microsoft/TypeScript/issues/47599>),
-      // but it works fine if you add an explicit type.
+      <A>(
+        compute: (prev: A | undefined) => A,
+        initial: undefined,
+        equals: Equals<A | undefined, A>,
+      ): Get<A | undefined>;
+      <A>(compute: (was: A) => A, initial: A, equals?: Equals<A, A>): Get<A>;
       <A>(
         compute: (prev: A | undefined) => A,
         initial?: undefined,
         equals?: Equals<A | undefined, A>,
-      ): () => A;
+      ): Get<A | undefined>;
     };
 /** Creates a side effect and returns a disposer. */
 export const effect = (run: () => void): () => void => {
