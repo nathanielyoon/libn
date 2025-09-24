@@ -6,7 +6,7 @@ import {
   spy,
 } from "@std/testing/mock";
 import { bundle } from "@libn/lib";
-import { batch, effect, scoper, set_actor, signal } from "./mod.ts";
+import { batch, effect, scoper, set_actor, signal } from "./src/api.ts";
 
 Deno.test("mod", async ({ step }) => {
   await step("signal : alien-signals signal tests", () => {
