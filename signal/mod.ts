@@ -228,6 +228,8 @@ export const signal =
       // parameter (see <https://github.com/microsoft/TypeScript/issues/47599>).
       <A>(deriver: (was?: A) => A): () => A;
       <A>(deriver: (was: A) => A, initial: A): () => A;
+      (): Signal<never>;
+      <A>(): Signal<A | undefined>;
       <A>(initial: A): Signal<A>;
     };
 /** Creates a side effect and returns a disposer. */
