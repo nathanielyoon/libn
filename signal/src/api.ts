@@ -69,7 +69,7 @@ export const derive =
       <A>(
         compute: (prev: A | undefined) => A,
         options?: { initial?: undefined; equals?: Equals<A | undefined, A> },
-      ): Get<A | undefined>;
+      ): Get<A>;
       <A>(
         compute: (prev: A) => A,
         options: { initial: A; equals?: Equals<A, A> },
