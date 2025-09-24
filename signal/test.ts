@@ -7,21 +7,16 @@ import {
 } from "@std/testing/mock";
 import fc from "fast-check";
 import { bundle, fc_check } from "@libn/lib";
-import { batch, effect, scoper, set_actor, signal } from "./mod.ts";
+import {
+  batch,
+  effect,
+  scoper,
+  set_actor,
+  type Signal,
+  signal,
+} from "./mod.ts";
 
 Deno.test("mod", async ({ step }) => {
-  await step("bundle : pure", async () => {
-    assertEquals(await bundle(import.meta), "");
-  });
-  await step("effect : dispose when nested", () => {
-    const a = signal(0);
-    effect(() => {
-      effect(() => {
-        if (a() === 1) assert(0);
-      })();
-    });
-    a(1);
-  });
   await step("signal : alien-signals signal tests", () => {
     { // correctly propagate changes through signal signals
       const a = signal(0);
@@ -74,7 +69,7 @@ Deno.test("mod", async ({ step }) => {
       const b = signal(() => a() > 0);
       effect(() =>
         b() && effect(() => {
-          if (!a()) throw 0;
+          if (!a()) assert(0);
         })
       );
       a(2), a(1), a(0);
@@ -84,7 +79,7 @@ Deno.test("mod", async ({ step }) => {
       const b = signal(1);
       effect(() =>
         a() && effect(() => {
-          if (b(), !a()) throw 0;
+          if (b(), !a()) assert(0);
         })
       );
       batch(() => (b(0), a(0)));
@@ -95,7 +90,7 @@ Deno.test("mod", async ({ step }) => {
       let c = 0;
       effect(() =>
         effect(() => {
-          if (b(), ++c >= 2) throw 0;
+          if (b(), ++c >= 2) assert(0);
         })
       ), a(2);
     }
@@ -791,7 +786,7 @@ Deno.test("mod", async ({ step }) => {
       assertSpyCalls(b, 2);
     }
     { // allow disposing the effect multiple times
-      const a = effect(() => undefined);
+      const a = effect(() => {});
       a();
       assertThrows(() => {
         try {
@@ -799,7 +794,7 @@ Deno.test("mod", async ({ step }) => {
         } catch {
           return;
         }
-        throw Error();
+        throw 0;
       });
     }
     { // allow disposing a running effect
@@ -1295,11 +1290,11 @@ Deno.test("mod", async ({ step }) => {
     { // throw non-errors thrown from the callback
       try {
         batch(() => {
-          throw undefined;
+          throw 1;
         });
         throw 0;
       } catch ($) {
-        assertEquals($, undefined);
+        assertEquals($, 1);
       }
     }
     { // delay writes
@@ -1395,7 +1390,7 @@ Deno.test("mod", async ({ step }) => {
       assertThrows(() =>
         batch(() => {
           a(($) => $ + 1), b(($) => $ + 1);
-          throw Error("hello");
+          throw 0;
         })
       );
       assertSpyCalls(c, 1);
@@ -1407,5 +1402,17 @@ Deno.test("mod", async ({ step }) => {
       batch(() => (effect(b), a = b.calls.length));
       assertEquals(a, 1);
     }
+  });
+  await step("effect : dispose when nested", () => {
+    const a = signal(0);
+    effect(() => {
+      effect(() => {
+        if (a() === 1) assert(0);
+      })();
+    });
+    a(1);
+  });
+  await step("bundle : pure", async () => {
+    assertEquals(await bundle(import.meta), "");
   });
 });
