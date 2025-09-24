@@ -43,16 +43,16 @@ export type Get<A> = () => A;
 export type Set<A> = <const B extends A>($: B | (($: A) => B)) => B;
 /** Creates a reactive value. */
 export const signal =
-  ((initial: any, equals?: Equals<any, any>) =>
+  ((initial: any, { equals }: { equals?: Equals<any, any> } = {}) =>
     sourcer.bind(construct(Kind.SIGNAL, Flag.BEGIN, {
       prev: initial,
       next: initial,
       same: equals,
     }))) as {
-      <A>(initial: A, equals?: Equals<A, A> | false): Get<A> & Set<A>;
+      <A>(initial: A, options?: { equals?: Equals<A, A> }): Get<A> & Set<A>;
       <A>(
         _?: A,
-        equals?: Equals<A | undefined, A | undefined> | false,
+        options?: { equals?: Equals<A | undefined, A | undefined> },
       ): Get<A | undefined> & Set<A | undefined>;
     };
 /** Creates a derived computation. */
@@ -60,23 +60,20 @@ export const derive =
   // Omitting the initial value limits type inference for the deriver's
   // parameter (see <https://github.com/microsoft/TypeScript/issues/47599>),
   // but it works fine if you add an explicit type.
-  ((compute: any, initial?: any, equals?: Equals<any, any>) =>
+  ((compute: any, options?: { initial?: any; equals?: Equals<any, any> }) =>
     deriver.bind(construct(Kind.DERIVE, Flag.RESET, {
-      prev: initial,
+      prev: options?.initial,
       next: compute,
-      same: equals,
+      same: options?.equals,
     }))) as {
       <A>(
         compute: (prev: A | undefined) => A,
-        initial: undefined,
-        equals: Equals<A | undefined, A>,
+        options?: { initial?: undefined; equals?: Equals<A | undefined, A> },
       ): Get<A | undefined>;
-      <A>(compute: (was: A) => A, initial: A, equals?: Equals<A, A>): Get<A>;
       <A>(
-        compute: (prev: A | undefined) => A,
-        initial?: undefined,
-        equals?: Equals<A | undefined, A>,
-      ): Get<A | undefined>;
+        compute: (prev: A) => A,
+        options: { initial: A; equals?: Equals<A, A> },
+      ): Get<A>;
     };
 /** Creates a side effect and returns a disposer. */
 export const effect = (run: () => void): () => void => {

@@ -5,7 +5,7 @@ type Noder<A extends Kind> =
   & { kind: A; flags: Flag }
   & { [_ in "head" | "dep" | "sub" | "tail"]: Link | null };
 /** Equality check. */
-export type Equals<A, B extends A> = (prev: A, next: B) => boolean;
+export type Equals<A, B extends A> = ((prev: A, next: B) => boolean) | false;
 /** Mutable data source. */
 export type Signal<A = any> = Noder<Kind.SIGNAL> & {
   prev: A;
