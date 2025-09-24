@@ -5,16 +5,8 @@ import {
   type Spy,
   spy,
 } from "@std/testing/mock";
-import fc from "fast-check";
-import { bundle, fc_check } from "@libn/lib";
-import {
-  batch,
-  effect,
-  scoper,
-  set_actor,
-  type Signal,
-  signal,
-} from "./mod.ts";
+import { bundle } from "@libn/lib";
+import { batch, effect, scoper, set_actor, signal } from "./mod.ts";
 
 Deno.test("mod", async ({ step }) => {
   await step("signal : alien-signals signal tests", () => {
