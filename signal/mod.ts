@@ -18,8 +18,8 @@
  * @module signal
  */
 
-import { batch } from "./src/state.ts";
 import {
+  batch,
   derive,
   effect,
   type Get,

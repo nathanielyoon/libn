@@ -1,6 +1,7 @@
 import { Flag, Kind } from "./flags.ts";
 import type { Derive, Effect, Link, Node, Scoper, Signal } from "./nodes.ts";
-import { follow, ignore } from "./link.ts";
+import { follow, ignore, update } from "./link.ts";
+import { flat } from "./queue.ts";
 
 /** Current subscriber. */
 export let actor: Node | null = null;
@@ -15,19 +16,9 @@ export const set_actor = ($: Node | null): Node | null => (
 export const set_scope = ($: Scoper | null): Scoper | null => (
   swapper = scope, scope = $, swapper
 );
-const update = ($: Signal | Derive, prev: any, next: any) => {
-  switch ($.same) {
-    case undefined:
-      return prev !== next;
-    case false:
-      return true;
-    default:
-      return !$.same(prev, next);
-  }
-};
 /** Updates a source signal. */
 export const reuse = ($: Signal): boolean => (
-  $.flags = Flag.BEGIN, update($, $.prev, $.prev = $.curr)
+  $.flags = Flag.BEGIN, update($, $.prev, $.prev = $.next)
 );
 /** Updates a computed signal. */
 export const reget = ($: Derive): boolean => {
@@ -63,7 +54,8 @@ export const check = (sub: Node, $: Link): boolean => {
     $ = $.dep_next;
   }
 };
-const run = ($: Node, flags: Flag) => {
+/** Runs an effect. */
+export const run = ($: Node, flags: Flag) => {
   if (flags & Flag.DIRTY || flags & Flag.READY && check($, $.dep!)) {
     const a = set_actor($);
     try {
@@ -77,50 +69,4 @@ const run = ($: Node, flags: Flag) => {
       a.dep.flags & Flag.QUEUE && run(a.dep, a.dep.flags &= ~Flag.QUEUE);
     }
   }
-};
-const queue: (Node | null)[] = []; // but it'll only have effects and scopers
-let depth = 0;
-const flush = () => {
-  for (let a; a = queue.shift(); run(a, a.flags &= ~Flag.QUEUE));
-};
-/** Pauses updates, executes a function, then resumes. */
-export const batch = <A>($: () => A): A => {
-  try {
-    return ++depth, $();
-  } finally {
-    --depth || flush();
-  }
-};
-const rerun = ($: Node): number => ($.flags & Flag.QUEUE ||
-  ($.flags |= Flag.QUEUE, $.sub ? rerun($.sub.sub) : queue.push($)));
-/** Shallowly propagates changes. */
-export const flat = ($: Link): void => {
-  do if (($.sub.flags & Flag.SETUP) === Flag.READY) {
-    ($.sub.flags |= Flag.DIRTY) & Flag.WATCH && rerun($.sub);
-  } while ($ = $.sub_next!);
-};
-const valid = ($: Node, link: Link) => {
-  for (let a = $.head; a; a = a.dep_prev) if (a === link) return true;
-};
-/** Deeply propagates changes. */
-export const deep = ($: Link): void => {
-  top: for (let a: (Link | null)[] = [], b = $.sub_next, c, d;;) {
-    if (c = $.sub, d = c.flags, !(d & Flag.KNOWN)) c.flags |= Flag.READY;
-    else if (!(d & Flag.GOING)) d = Flag.CLEAR;
-    else if (!(d & Flag.CHECK)) c.flags = d & ~Flag.RECUR | Flag.READY;
-    else if (d & Flag.SETUP || !valid(c, $)) d = Flag.CLEAR;
-    else c.flags |= Flag.EARLY, d &= Flag.BEGIN;
-    if (d & Flag.WATCH && rerun(c), d & Flag.BEGIN) {
-      if (c.sub && ($ = c.sub).sub_next) a.push(b), b = $.sub_next;
-    } else if (!b) {
-      while (a.length) {
-        if ($ = a.pop()!) {
-          b = $.sub_next;
-          continue top;
-        }
-      }
-      break;
-    } else b = ($ = b).sub_next;
-  }
-  depth || flush();
 };

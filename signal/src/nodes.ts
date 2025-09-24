@@ -9,7 +9,7 @@ export type Equals<A, B extends A> = (prev: A, next: B) => boolean;
 /** Mutable data source. */
 export type Signal<A = any> = Noder<Kind.SIGNAL> & {
   prev: A;
-  curr: A;
+  next: A;
   same: Equals<A, A> | false | undefined;
 };
 /** Derived computation. */

@@ -1,7 +1,8 @@
 import { Flag, Kind } from "./flags.ts";
-import type { Effect, Link, Node, Scoper } from "./nodes.ts";
+import type { Derive, Effect, Link, Node, Scoper, Signal } from "./nodes.ts";
 
-let step = 0; // can only increase
+// This can only increase, to track whether a node was visited in a given pass.
+let step = 0;
 /** Connects two nodes. */
 export const link = (dep: Node, sub: Node | null): void => {
   if (!sub) return;
@@ -48,4 +49,15 @@ export const follow = ($: Node): void => {
 export const ignore = ($: Node): void => {
   for (let a = $.head ? $.head.dep_next : $.dep; a; a = chop($, a));
   $.flags &= ~Flag.CHECK;
+};
+/** Checks whether a node's value has changed. */
+export const update = <A>($: Signal | Derive, prev: A, next: A): boolean => {
+  switch ($.same) {
+    case undefined:
+      return prev !== next;
+    case false:
+      return true;
+    default:
+      return !$.same(prev, next);
+  }
 };
