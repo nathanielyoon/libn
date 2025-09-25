@@ -7,23 +7,20 @@ import {
   type Scoper,
 } from "./node.ts";
 
-const queue: (Effect | Scoper | null)[] = [];
 let depth = 0;
 /** Starts a batch. */
 export const above = (): number => ++depth;
 /** Ends a batch. */
 export const below = (): number => --depth;
+const queue: (Effect | Scoper | null)[] = [];
 /** Runs queued effects. */
 export const flush = (run: ($: Effect | Scoper) => void): void => {
   for (let a; a = queue.shift(); run(a));
 };
 const rerun = ($: Effect | Scoper) => {
   do if ($.flags & Flag.QUEUE) return;
-  else {
-    $.flags |= Flag.QUEUE;
-    if ($.subs) $ = $.subs.sub as Effect | Scoper;
-    else return queue.push($);
-  } while ($);
+  else if ($.flags |= Flag.QUEUE, $.subs) $ = $.subs.sub as Effect | Scoper;
+  else return queue.push($); while ($);
 };
 const valid = ($: Node, link: Link) => {
   for (let a = $.head; a; a = a.dep_prev) if (a === link) return true;
@@ -43,9 +40,7 @@ export const deep = ($: Link, run: ($: Effect | Scoper) => void): void => {
         else c.flags |= Flag.RECUR | Flag.READY, d &= Flag.BEGIN;
     }
     mid: if (d & Flag.BEGIN) {
-      if (!c.subs) continue top;
-      $ = c.subs;
-      if (!$.sub_next) continue top;
+      if (!c.subs || !($ = c.subs).sub_next) continue top;
       a.push(b);
     } else if (!b) {
       while (a.length) if ($ = a.pop()!) break mid;

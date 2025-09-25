@@ -14,10 +14,7 @@ export const link = (dep: Node, sub: Node | null): void => {
   const a = sub.head;
   if (a?.dep === dep) return;
   const b = a ? a.dep_next : sub.deps;
-  if (b?.dep === dep) {
-    sub.head = b, b.step = step;
-    return;
-  }
+  if (b?.dep === dep) return sub.head = b, b.step = step as any; // void
   const c = dep.tail;
   if (c?.step === step && c.sub === sub) return;
   const d = sub.head = dep.tail = {
@@ -32,19 +29,19 @@ export const link = (dep: Node, sub: Node | null): void => {
   if (b) b.dep_prev = d;
   a ? a.dep_next = d : sub.deps = d, c ? c.sub_next = d : dep.subs = d;
 };
+const chop = (sub: Node, $: Link) => {
+  const a = $.dep_next, b = $.dep_prev;
+  a ? a.dep_prev = b : sub.head = b, b ? b.dep_next = a : sub.deps = a;
+  const c = $.sub_next, d = $.sub_prev, e = $.dep;
+  if (c ? c.sub_prev = d : e.tail = d) d!.sub_next = c;
+  else if (!(e.subs = c)) {
+    if (e.kind === Kind.DERIVE) e.flags = Flag.RESET, rest(e);
+    else e.kind === Kind.SIGNAL || dispose(e);
+  }
+  return a;
+};
 const rest = ($: Node) => {
   for (let a = $.deps; a; a = chop($, a));
-};
-const chop = (sub: Node, $: Link) => {
-  const a = $.dep_prev, b = $.dep, c = $.dep_next, d = $.sub_prev;
-  c ? c.dep_prev = a : sub.head = a, a ? a.dep_next = c : sub.deps = c;
-  const e = $.sub_next;
-  if (e ? e.sub_prev = d : b.tail = d) d!.sub_next = e;
-  else if (!(b.subs = e)) {
-    if (b.kind === Kind.DERIVE) b.flags = Flag.RESET, rest(b);
-    else b.kind === Kind.SIGNAL || dispose(b);
-  }
-  return c;
 };
 /** Cleans up effects. */
 export const dispose = ($: Effect | Scoper): void => {
