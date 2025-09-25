@@ -1,21 +1,21 @@
 import { Flag, Kind } from "./flags.ts";
-import type { Effect, Link, Node, Scoper } from "./interface.ts";
+import type { Link, Node, Target } from "./interface.ts";
 
-const queue: (Effect | Scoper | null)[] = [];
+const queue: (Target | null)[] = [];
 let depth = 0;
 /** Starts a batch. */
 export const above = (): number => ++depth;
 /** Ends a batch. */
 export const below = (): number => --depth;
 /** Runs queued effects. */
-export const flush = (run: ($: Effect | Scoper) => void): void => {
+export const flush = (run: ($: Target) => void): void => {
   for (let a; a = queue.shift(); run(a));
 };
-const rerun = ($: Effect | Scoper) => {
+const rerun = ($: Target) => {
   do if ($.flags & Flag.QUEUE) break;
   else {
     $.flags |= Flag.QUEUE;
-    if ($.subs) $ = $.subs.sub as Effect | Scoper;
+    if ($.subs) $ = $.subs.sub as Target;
     else return queue.push($);
   } while ($);
 };
@@ -23,7 +23,7 @@ const valid = ($: Node, link: Link) => {
   for (let a = $.head; a; a = a.dep_prev) if (a === link) return true;
 };
 /** Deeply propagates changes. */
-export const deep = ($: Link, run: ($: Effect | Scoper) => void): void => {
+export const deep = ($: Link, run: ($: Target) => void): void => {
   top: for (let a: (Link | null)[] = [], b = $.sub_next, c, d;;) {
     c = $.sub, d = c.flags;
     switch (d & Flag.KNOWN) {

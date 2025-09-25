@@ -1,5 +1,5 @@
 import { Flag, Kind } from "./flags.ts";
-import type { Effect, Link, Node, Scoper } from "./interface.ts";
+import type { Link, Node, Target } from "./interface.ts";
 
 let step = 0; // to track whether a node was visited in a given pass
 /** Connects two nodes. */
@@ -41,7 +41,7 @@ const chop = (sub: Node, $: Link) => {
   return c;
 };
 /** Cleans up effects. */
-export const dispose = ($: Effect | Scoper): void => {
+export const dispose = ($: Target): void => {
   rest($), $.subs && chop($.subs.sub, $.subs), $.flags = Flag.CLEAR;
 };
 /** Starts tracking a node. */

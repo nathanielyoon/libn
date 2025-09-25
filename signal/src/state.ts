@@ -1,19 +1,19 @@
 import { Flag, Kind } from "./flags.ts";
-import type { Derive, Node, Scoper, Signal } from "./interface.ts";
+import type { Derive, Node, Signal, Target } from "./interface.ts";
 import { follow, ignore } from "./link.ts";
 
-let actor: Node | null = null, scope: Scoper | null = null, swapper;
+let actor: Node | null = null, scope: Target<Kind.SCOPER> | null = null, swap;
 /** Manually gets the current subscriber. */
-export const get_actor = (): Node | null => actor;
+export const get_actor = (): typeof actor => actor;
 /** Manually sets the current subscriber. */
-export const set_actor = ($: Node | null): Node | null => (
-  swapper = actor, actor = $, swapper
+export const set_actor = ($: typeof actor): typeof actor => (
+  swap = actor, actor = $, swap
 );
 /** Manually gets the current context. */
-export const get_scope = (): Scoper | null => scope;
+export const get_scope = (): typeof scope => scope;
 /** Manually sets the current context. */
-export const set_scope = ($: Scoper | null): Scoper | null => (
-  swapper = scope, scope = $, swapper
+export const set_scope = ($: typeof scope): typeof scope => (
+  swap = scope, scope = $, swap
 );
 /** Checks whether a value differs. */
 export const reuse = <A>($: Signal | Derive, prev: A, next: A): boolean => {

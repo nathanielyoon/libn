@@ -1,6 +1,6 @@
 import { Flag, Kind } from "./flags.ts";
+import { Derive, type Equals, Signal, Target } from "./interface.ts";
 import { link } from "./link.ts";
-import type { Derive, Equals, Signal } from "./interface.ts";
 import { above, below, deep, flat, flush } from "./queue.ts";
 import { get_actor, get_scope, reget, reset, reuse } from "./state.ts";
 import { add, check, run } from "./try.ts";
@@ -13,9 +13,8 @@ function sourcer(this: Signal, ...$: [unknown]) {
     // Passing through fulfills the setter type's const generic, and matches
     // how the native assignment operator works.
     if (!reuse(this, next, this.next)) return next;
-    this.next = next,
-      this.flags = Flag.RESET,
-      this.subs && deep(this.subs, run);
+    this.next = next, this.flags = Flag.RESET;
+    this.subs && deep(this.subs, run);
   } else {
     if (this.flags & Flag.DIRTY && reset(this) && this.subs) flat(this.subs);
     link(this, get_actor());
@@ -28,9 +27,6 @@ function deriver(this: Derive) {
     : (this.flags &= ~Flag.READY);
   return link(this, get_scope() ?? get_actor()), this.prev;
 }
-const construct = <A extends Kind, B>(kind: A, flags: Flag, rest: B) => (
-  { kind, flags, head: null, deps: null, subs: null, tail: null, ...rest }
-);
 /** Reactive getter. */
 export type Getter<A> = () => A;
 /** Reactive setter. */
@@ -38,11 +34,7 @@ export type Setter<A> = <const B extends A>($: B | (($: A) => B)) => B;
 /** Creates a reactive value. */
 export const signal =
   ((initial: any, options?: { equals?: Equals<any, any> }) =>
-    sourcer.bind(construct(Kind.SIGNAL, Flag.BEGIN, {
-      prev: initial,
-      next: initial,
-      is: options?.equals,
-    }))) as {
+    sourcer.bind(new Signal(initial, options))) as {
       <A>(
         initial: A,
         options?: { equals?: Equals<A, A> },
@@ -54,15 +46,11 @@ export const signal =
     };
 /** Creates a derived computation. */
 export const derive =
-  // Omitting the initial value limits type inference for the deriver's
-  // parameter (see <https://github.com/microsoft/TypeScript/issues/47599>),
-  // but it works fine if you add an explicit type.
   ((compute: any, options?: { initial?: any; equals?: Equals<any, any> }) =>
-    deriver.bind(construct(Kind.DERIVE, Flag.RESET, {
-      prev: options?.initial,
-      next: compute,
-      is: options?.equals,
-    }))) as {
+    deriver.bind(new Derive(compute, options))) as {
+      // Omitting the initial value limits type inference for the deriver's
+      // parameter (see <https://github.com/microsoft/TypeScript/issues/47599>),
+      // but it works fine if you add an explicit type.
       <A>(
         compute: (prev: A | undefined) => A,
         options?: { initial?: undefined; equals?: Equals<A | undefined, A> },
@@ -74,10 +62,10 @@ export const derive =
     };
 /** Creates a disposable side effect. */
 export const effect = (run: () => void): () => void =>
-  add(construct(Kind.EFFECT, Flag.CLEAR, { run }));
+  add(new Target(Kind.EFFECT, run));
 /** Creates a disposable group of effects. */
 export const scoper = (run: () => void): () => void =>
-  add(construct(Kind.SCOPER, Flag.CLEAR, { run }));
+  add(new Target(Kind.SCOPER, run));
 /** Pauses updates, executes a function, then resumes. */
 export const batch = <A>($: () => A): A => {
   try {

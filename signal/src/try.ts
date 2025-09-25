@@ -1,5 +1,5 @@
 import { Flag, Kind } from "./flags.ts";
-import type { Effect, Link, Node, Scoper } from "./interface.ts";
+import type { Link, Node, Target } from "./interface.ts";
 import { dispose, follow, ignore, link } from "./link.ts";
 import { flat } from "./queue.ts";
 import { get_scope, retry, set_actor, set_scope } from "./state.ts";
@@ -28,7 +28,7 @@ export const check = (sub: Node, $: Link): boolean => {
   }
 };
 /** Runs effects. */
-export const run = ($: Effect | Scoper): void => {
+export const run = ($: Target): void => {
   $.flags &= ~Flag.QUEUE;
   if ($.flags & Flag.DIRTY || $.flags & Flag.READY && check($, $.deps!)) {
     const a = set_actor($);
@@ -40,14 +40,15 @@ export const run = ($: Effect | Scoper): void => {
   }
   if ($.flags & Flag.READY) $.flags &= ~Flag.READY;
   for (let a = $.deps; a; a = a.dep_next) { // outer isn't dirty but inner may be
-    a.dep.flags & Flag.QUEUE && run(a.dep as Effect | Scoper);
+    a.dep.flags & Flag.QUEUE && run(a.dep as Target);
   }
 };
 /** Links and runs effects. */
-export const add = ($: Effect | Scoper): () => void => {
+export const add = ($: Target): () => void => {
   let a, b;
-  if ($.kind === Kind.SCOPER) a = set_actor(null), link($, b = set_scope($));
-  else a = set_actor($), link($, get_scope() ?? a);
+  if ($.kind === Kind.SCOPER) {
+    a = set_actor(null), link($, b = set_scope($ as Target<Kind.SCOPER>));
+  } else a = set_actor($), link($, get_scope() ?? a);
   try {
     $.run();
   } finally {
