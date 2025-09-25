@@ -1,5 +1,11 @@
-import { Flag, Kind } from "./flags.ts";
-import type { Effect, Link, Node, Scoper } from "./interface.ts";
+import {
+  type Effect,
+  Flag,
+  Kind,
+  type Link,
+  type Node,
+  type Scoper,
+} from "./node.ts";
 
 let step = 0; // to track whether a node was visited in a given pass
 /** Connects two nodes. */

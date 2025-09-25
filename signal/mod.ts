@@ -26,6 +26,6 @@ import {
   scoper,
   type Setter,
   signal,
-} from "./src/use.ts";
+} from "./src/system.ts";
 
 export { batch, derive, effect, type Getter, scoper, type Setter, signal };

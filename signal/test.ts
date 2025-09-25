@@ -6,16 +6,16 @@ import {
   spy,
 } from "@std/testing/mock";
 import { bundle } from "@libn/lib";
-import { set_actor } from "./src/state.ts";
 import {
   batch,
   derive,
   effect,
   type Getter,
   scoper,
+  set_actor,
   type Setter,
   signal,
-} from "./src/use.ts";
+} from "./src/system.ts";
 
 Deno.test("mod", async ({ step }) => {
   await step("derive : alien-signals signal tests", () => {

@@ -1,18 +1,106 @@
-import { Flag, Kind } from "./flags.ts";
-import type { Derive, Equals, Signal } from "./interface.ts";
-import { dispose, link } from "./link.ts";
-import { above, below, deep, flat, flush } from "./queue.ts";
 import {
-  get_actor,
-  get_scope,
-  reget,
-  reset,
-  reuse,
-  set_actor,
-  set_scope,
-} from "./state.ts";
-import { check, run } from "./try.ts";
+  type Derive,
+  type Effect,
+  type Equals,
+  Flag,
+  Kind,
+  type Link,
+  type Node,
+  type Scoper,
+  type Signal,
+} from "./node.ts";
+import { dispose, follow, ignore, link } from "./link.ts";
+import { above, below, deep, flat, flush } from "./queue.ts";
 
+let actor: Node | null = null, scope: Scoper | null = null, swap;
+/** Manually gets the current subscriber. */
+export const get_actor = (): Node | null => actor;
+/** Manually sets the current subscriber. */
+export const set_actor = ($: Node | null): Node | null => (
+  swap = actor, actor = $, swap
+);
+/** Manually gets the current context. */
+export const get_scope = (): Scoper | null => scope;
+/** Manually sets the current context. */
+export const set_scope = ($: Scoper | null): Scoper | null => (
+  swap = scope, scope = $, swap
+);
+/** Checks whether a value differs. */
+export const reuse = <A>($: Signal | Derive, prev: A, next: A): boolean => {
+  switch ($.is) {
+    case undefined:
+      return prev !== next;
+    case false:
+      return true;
+    default:
+      return !$.is(prev, next);
+  }
+};
+/** Updates a value. */
+export const reset = ($: Signal): boolean => (
+  $.flags = Flag.BEGIN, reuse($, $.prev, $.prev = $.next)
+);
+/** Updates a computation. */
+export const reget = ($: Derive): boolean => {
+  const a = set_actor($);
+  try {
+    return follow($), reuse($, $.prev, $.prev = $.next($.prev));
+  } finally {
+    actor = a, ignore($);
+  }
+};
+/** If applicable, updates a source. */
+export const retry = ($: Node): boolean =>
+  $.kind === Kind.SIGNAL && reset($) || $.kind === Kind.DERIVE && reget($);
+/** Determines whether a node is dirty. */
+export const check = (sub: Node, $: Link): boolean => {
+  const stack: (Link | null)[] = [];
+  let b = 0, c = false, d, e;
+  do {
+    d = $.dep;
+    if (sub.flags & Flag.DIRTY) c = true;
+    else if ((d.flags & Flag.RESET) === Flag.RESET) {
+      if (retry(d)) c = true, d.subs!.sub_next && flat(d.subs!);
+    } else if ((d.flags & Flag.CAUSE) === Flag.CAUSE) {
+      ($.sub_next || $.sub_prev) && stack.push($), ++b, sub = d, $ = d.deps!;
+      continue;
+    }
+    mid: if (c || !$.dep_next) {
+      while (b--) {
+        e = sub.subs!, $ = e.sub_next ? stack.pop()! : e;
+        if (!c) sub.flags &= ~Flag.READY;
+        else if (retry(sub)) e.sub_next && flat(e), sub = $.sub;
+        else if (sub = $.sub, $.dep_next) break mid;
+        else c = false;
+      }
+      return c;
+    }
+    $ = $.dep_next;
+  } while (true);
+};
+/** Runs effects. */
+export const run = ($: Effect | Scoper): void => {
+  $.flags &= ~Flag.QUEUE;
+  switch ($.flags & Flag.SETUP) {
+    case Flag.SETUP:
+    case Flag.DIRTY:
+      break;
+    case Flag.READY:
+      if (check($, $.deps!)) break;
+      $.flags &= ~Flag.READY; // falls through
+    default:
+      for (let a = $.deps; a; a = a.dep_next) { // recur into inner effects
+        a.dep.flags & Flag.QUEUE && run(a.dep as Effect | Scoper);
+      }
+      return;
+  }
+  const a = set_actor($);
+  try {
+    return follow($), $.run(); // calls inner effects too
+  } finally {
+    set_actor(a), ignore($);
+  }
+};
 function sourcer(this: Signal, ...$: [unknown]) {
   // Checking the rest parameter's length distinguishes between setting an
   // explicit undefined or getting by calling without arguments.
