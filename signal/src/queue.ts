@@ -1,5 +1,5 @@
 import { Flag, Kind } from "./flags.ts";
-import type { Effect, Link, Node, Scoper } from "./nodes.ts";
+import type { Effect, Link, Node, Scoper } from "./interface.ts";
 
 const queue: (Effect | Scoper | null)[] = [];
 let depth = 0;
@@ -15,7 +15,7 @@ const rerun = ($: Effect | Scoper) => {
   do if ($.flags & Flag.QUEUE) break;
   else {
     $.flags |= Flag.QUEUE;
-    if ($.sub) $ = $.sub.sub as Effect | Scoper;
+    if ($.subs) $ = $.subs.sub as Effect | Scoper;
     else return queue.push($);
   } while ($);
 };
@@ -37,8 +37,8 @@ export const deep = ($: Link, run: ($: Effect | Scoper) => void): void => {
         else c.flags |= Flag.EARLY, d &= Flag.BEGIN;
     }
     mid: if (d & Flag.BEGIN) {
-      if (!c.sub) continue top;
-      $ = c.sub;
+      if (!c.subs) continue top;
+      $ = c.subs;
       if (!$.sub_next) continue top;
       a.push(b);
     } else if (!b) {

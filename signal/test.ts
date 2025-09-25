@@ -15,7 +15,7 @@ import {
   scoper,
   type Setter,
   signal,
-} from "./src/api.ts";
+} from "./src/use.ts";
 
 Deno.test("mod", async ({ step }) => {
   await step("derive : alien-signals signal tests", () => {
