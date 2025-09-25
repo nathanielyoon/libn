@@ -10,18 +10,18 @@ export type Equals<A, B extends A> = ((prev: A, next: B) => boolean) | false;
 export type Signal<A = any> = Noder<Kind.SIGNAL> & {
   prev: A;
   next: A;
-  same: Equals<A, A> | false | undefined;
+  is: Equals<A, A> | false | undefined;
 };
 /** Derived computation. */
 export type Derive<A = any> = Noder<Kind.DERIVE> & {
   prev: A;
   next: ($?: A) => A;
-  same: Equals<A, A> | false | undefined;
+  is: Equals<A, A> | false | undefined;
 };
 /** Effectful reaction. */
 export type Effect = Noder<Kind.EFFECT> & { run: () => void };
 /** Effect scope owner. */
-export type Scoper = Noder<Kind.SCOPER>;
+export type Scoper = Noder<Kind.SCOPER> & { run: () => void };
 /** Reactive node. */
 export type Node = Signal | Derive | Effect | Scoper;
 /** Connection between two reactive nodes. */
