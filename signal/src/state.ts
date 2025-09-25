@@ -1,18 +1,18 @@
 import { Flag, Kind } from "./flags.ts";
-import type { Derive, Node, Signal, Target } from "./interface.ts";
+import type { Derive, Node, Scoper, Signal } from "./interface.ts";
 import { follow, ignore } from "./link.ts";
 
-let actor: Node | null = null, scope: Target<Kind.SCOPER> | null = null, swap;
+let actor: Node | null = null, scope: Scoper | null = null, swap;
 /** Manually gets the current subscriber. */
-export const get_actor = (): typeof actor => actor;
+export const get_actor = (): Node | null => actor;
 /** Manually sets the current subscriber. */
-export const set_actor = ($: typeof actor): typeof actor => (
+export const set_actor = ($: Node | null): Node | null => (
   swap = actor, actor = $, swap
 );
 /** Manually gets the current context. */
-export const get_scope = (): typeof scope => scope;
+export const get_scope = (): Scoper | null => scope;
 /** Manually sets the current context. */
-export const set_scope = ($: typeof scope): typeof scope => (
+export const set_scope = ($: Scoper | null): Scoper | null => (
   swap = scope, scope = $, swap
 );
 /** Checks whether a value differs. */
