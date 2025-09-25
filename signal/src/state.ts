@@ -1,4 +1,4 @@
-import { Flag } from "./flags.ts";
+import { Flag, Kind } from "./flags.ts";
 import type { Derive, Node, Scoper, Signal } from "./interface.ts";
 import { follow, ignore } from "./link.ts";
 
@@ -26,7 +26,7 @@ export const reuse = <A>($: Signal | Derive, prev: A, next: A): boolean => {
       return !$.is(prev, next);
   }
 };
-/** Updates a source. */
+/** Updates a value. */
 export const reset = ($: Signal): boolean => (
   $.flags = Flag.BEGIN, reuse($, $.prev, $.prev = $.next)
 );
@@ -39,3 +39,6 @@ export const reget = ($: Derive): boolean => {
     actor = a, ignore($);
   }
 };
+/** If applicable, updates a source. */
+export const retry = ($: Node): boolean =>
+  $.kind === Kind.SIGNAL && reset($) || $.kind === Kind.DERIVE && reget($);

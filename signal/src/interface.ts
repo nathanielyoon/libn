@@ -16,24 +16,19 @@ interface Linked<A extends Kind> {
   tail: Link | null;
 }
 /** @internal */
-interface Source<A extends Kind, B> extends Linked<A> {
-  prev: B;
-  is: Equals<B, B> | false | undefined;
+interface Source<A extends Kind, B, C> extends Linked<A> {
+  next: B;
+  prev: C;
+  is: Equals<C, C> | false | undefined;
 }
 /** @internal */
 interface Target<A extends Kind> extends Linked<A> {
   run: () => void;
 }
 /** Mutable data source. */
-export interface Signal<A = any> extends Source<Kind.SIGNAL, A> {
-  /** Most-recently-set value. */
-  next: A;
-}
+export interface Signal<A = any> extends Source<Kind.SIGNAL, A, A> {}
 /** Computed derivation. */
-export interface Derive<A = any> extends Source<Kind.DERIVE, A> {
-  /** Value-deriving function. */
-  next: ($?: A) => A;
-}
+export interface Derive<A = any> extends Source<Kind.DERIVE, ($?: A) => A, A> {}
 /** Side-effectual reaction. */
 export interface Effect extends Target<Kind.EFFECT> {}
 /** Grouped effect owner. */

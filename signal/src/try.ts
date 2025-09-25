@@ -2,24 +2,15 @@ import { Flag, Kind } from "./flags.ts";
 import type { Effect, Link, Node, Scoper } from "./interface.ts";
 import { dispose, follow, ignore, link } from "./link.ts";
 import { flat } from "./queue.ts";
-import {
-  get_actor,
-  get_scope,
-  reget,
-  reset,
-  set_actor,
-  set_scope,
-} from "./state.ts";
+import { get_scope, retry, set_actor, set_scope } from "./state.ts";
 
-const retry = ($: Node) =>
-  $.kind === Kind.SIGNAL && reset($) || $.kind === Kind.DERIVE && reget($);
 /** Determines whether a node is dirty. */
 export const check = (sub: Node, $: Link): boolean => {
   for (let a: (Link | null)[] = [], b = 0, c = false, d, e;;) {
     if (d = $.dep, sub.flags & Flag.DIRTY) c = true;
     else if ((d.flags & Flag.RESET) === Flag.RESET) {
       if (retry(d)) c = true, d.subs!.sub_next && flat(d.subs!);
-    } else if ((d.flags & Flag.START) === Flag.START) {
+    } else if ((d.flags & Flag.CAUSE) === Flag.CAUSE) {
       ($.sub_next || $.sub_prev) && a.push($), ++b, sub = d, $ = d.deps!;
       continue;
     }
@@ -56,7 +47,7 @@ export const run = ($: Effect | Scoper): void => {
 export const add = ($: Effect | Scoper): () => void => {
   let a, b;
   if ($.kind === Kind.SCOPER) a = set_actor(null), link($, b = set_scope($));
-  else link($, get_scope() ?? get_actor()), a = set_actor($);
+  else a = set_actor($), link($, get_scope() ?? a);
   try {
     $.run();
   } finally {
