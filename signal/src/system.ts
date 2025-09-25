@@ -82,11 +82,12 @@ const run = ($: Effect | Scoper) => {
       }
       return;
   }
-  const a = set_actor($);
+  const a = actor;
+  follow(actor = $);
   try {
-    return follow($), $.run(); // calls inner effects too
+    return $.run(); // calls inner effects too
   } finally {
-    set_actor(a), ignore($);
+    actor = a, ignore($);
   }
 };
 function sourcer(this: Signal, ...$: [unknown]) {
@@ -161,12 +162,12 @@ export const derive =
     };
 /** Creates a disposable side effect. */
 export const effect = ($: () => void): () => void => {
-  const node = make(Kind.EFFECT, Flag.CLEAR, { run: $ }), a = set_actor(node);
-  link(node, scope ?? a);
+  const node = make(Kind.EFFECT, Flag.CLEAR, { run: $ }), a = actor;
+  link(actor = node, scope ?? a);
   try {
     $();
   } finally {
-    set_actor(a);
+    actor = a;
   }
   return dispose.bind(null, node);
 };
