@@ -1,8 +1,7 @@
 import { Flag, Kind } from "./flags.ts";
 import type { Effect, Link, Node, Scoper } from "./nodes.ts";
 
-/** Effects to run. */
-export const queue: (Effect | Scoper | null)[] = [];
+const queue: (Effect | Scoper | null)[] = [];
 let depth = 0;
 /** Starts a batch. */
 export const above = (): number => ++depth;
@@ -37,20 +36,16 @@ export const deep = ($: Link, run: ($: Effect | Scoper) => void): void => {
         if (d & Flag.SETUP || !valid(c, $)) d = Flag.CLEAR;
         else c.flags |= Flag.EARLY, d &= Flag.BEGIN;
     }
-    if (!(d & Flag.BEGIN)) {
-      if (!b) {
-        while (a.length) {
-          if ($ = a.pop()!) {
-            b = $.sub_next;
-            continue top;
-          }
-        }
-        break;
-      } else $ = b, b = b.sub_next;
-    } else if (c.sub) {
+    mid: if (d & Flag.BEGIN) {
+      if (!c.sub) continue top;
       $ = c.sub;
-      if ($.sub_next) a.push(b), b = $.sub_next;
-    }
+      if (!$.sub_next) continue top;
+      a.push(b);
+    } else if (!b) {
+      while (a.length) if ($ = a.pop()!) break mid;
+      break;
+    } else $ = b;
+    b = $.sub_next;
   }
   depth || flush(run);
 };
