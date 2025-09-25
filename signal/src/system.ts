@@ -88,7 +88,7 @@ const run = ($: Effect | Scoper) => {
     actor = a, ignore($);
   }
 };
-function sourcer(this: Signal, ...$: [unknown]) {
+function Signal(this: Signal, ...$: [unknown]) {
   // Checking the rest parameter's length distinguishes between setting an
   // explicit undefined or getting by calling without arguments.
   if ($.length) {
@@ -104,7 +104,7 @@ function sourcer(this: Signal, ...$: [unknown]) {
   }
   return this.next;
 }
-function deriver(this: Derive) {
+function Derive(this: Derive) {
   switch (this.flags & Flag.SETUP) { // `case Flag.BEGIN` is no-op
     case Flag.READY:
       if (!check(this, this.deps!)) {
@@ -127,7 +127,7 @@ export type Setter<A> = <const B extends A>($: B | (($: A) => B)) => B;
 /** Creates a reactive value. */
 export const signal =
   (($: any, options?: { equals?: Equals<any, any> }) =>
-    sourcer.bind(make(
+    Signal.bind(make(
       Kind.SIGNAL,
       Flag.BEGIN,
       { next: $, prev: $, is: options?.equals },
@@ -141,7 +141,7 @@ export const signal =
 /** Creates a derived computation. */
 export const derive =
   (($: any, options?: { initial?: any; equals?: Equals<any, any> }) =>
-    deriver.bind(make(
+    Derive.bind(make(
       Kind.DERIVE,
       Flag.RESET,
       { next: $, prev: options?.initial, is: options?.equals },
