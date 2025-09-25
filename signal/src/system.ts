@@ -12,10 +12,10 @@ import {
 import { dispose, follow, ignore, link } from "./link.ts";
 import { above, below, deep, flat, flush } from "./queue.ts";
 
-let actor: Node | null = null, scope: Scoper | null = null, swap;
+let actor: Node | null = null, scope: Scoper | null = null, swapper;
 /** Manually sets the current subscriber. */
 export const set_actor = ($: Node | null): Node | null => (
-  swap = actor, actor = $, swap
+  swapper = actor, actor = $, swapper
 );
 const reuse = <A>($: Signal | Derive, prev: A, next: A) => {
   switch ($.is) {
@@ -32,8 +32,9 @@ const reset = ($: Signal) => (
 );
 const reget = ($: Derive) => {
   const a = actor;
+  follow(actor = $);
   try {
-    return follow(actor = $), reuse($, $.prev, $.prev = $.next($.prev));
+    return reuse($, $.prev, $.prev = $.next($.prev));
   } finally {
     actor = a, ignore($);
   }
@@ -41,9 +42,7 @@ const reget = ($: Derive) => {
 const retry = ($: Node) =>
   $.kind === Kind.SIGNAL && reset($) || $.kind === Kind.DERIVE && reget($);
 const check = (sub: Node, $: Link): boolean => {
-  const stack: (Link | null)[] = [];
-  let dirty = false, size = 0;
-  do {
+  for (let stack: (Link | null)[] = [], dirty = false, size = 0;;) {
     const dep = $.dep;
     if (sub.flags & Flag.DIRTY) dirty = true;
     else if ((dep.flags & Flag.RESET) === Flag.RESET) {
@@ -65,11 +64,10 @@ const check = (sub: Node, $: Link): boolean => {
       return dirty;
     }
     $ = $.dep_next;
-  } while (true);
+  }
 };
 const run = ($: Effect | Scoper) => {
-  $.flags &= ~Flag.QUEUE;
-  switch ($.flags & Flag.SETUP) {
+  switch ($.flags &= ~Flag.QUEUE, $.flags & Flag.SETUP) {
     case Flag.SETUP:
     case Flag.DIRTY:
       break;
@@ -137,7 +135,7 @@ export const signal =
       <A>($: A, options?: { equals?: Equals<A, A> }): Getter<A> & Setter<A>;
       <A>(
         _?: A,
-        options?: { equals?: Equals<A | undefined, A | undefined> },
+        options?: { equals?: Equals<A | undefined, A | undefined> | false },
       ): Getter<A | undefined> & Setter<A | undefined>;
     };
 /** Creates a derived computation. */

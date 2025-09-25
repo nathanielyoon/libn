@@ -15,7 +15,7 @@ export const below = (): number => --depth;
 const queue: (Effect | Scoper | null)[] = [];
 /** Runs queued effects. */
 export const flush = (run: ($: Effect | Scoper) => void): void => {
-  for (let a; a = queue.shift(); run(a));
+  for (let head; head = queue.shift(); run(head));
 };
 const rerun = ($: Effect | Scoper) => {
   do if ($.flags & Flag.QUEUE) return;
@@ -23,30 +23,30 @@ const rerun = ($: Effect | Scoper) => {
   else return queue.push($); while ($);
 };
 const valid = ($: Node, link: Link) => {
-  for (let a = $.head; a; a = a.dep_prev) if (a === link) return true;
+  for (let dep = $.head; dep; dep = dep.dep_prev) if (dep === link) return true;
 };
 /** Deeply propagates changes. */
 export const deep = ($: Link, run: ($: Effect | Scoper) => void): void => {
-  top: for (let a: (Link | null)[] = [], b = $.sub_next, c, d;;) {
-    c = $.sub, d = c.flags;
-    switch (d & Flag.KNOWN) {
+  top: for (let stack: (Link | null)[] = [], next = $.sub_next, sub, flags;;) {
+    sub = $.sub, flags = sub.flags;
+    switch (flags & Flag.KNOWN) {
       case Flag.RECUR:
-        c.flags = d & ~Flag.RECUR; // falls through
+        sub.flags = flags & ~Flag.RECUR; // falls through
       case Flag.CLEAR:
-        c.flags |= Flag.READY, c.kind === Kind.EFFECT && rerun(c);
+        sub.flags |= Flag.READY, sub.kind === Kind.EFFECT && rerun(sub);
         break;
       default:
-        if (d & Flag.SETUP || !valid(c, $)) d = Flag.CLEAR;
-        else c.flags |= Flag.RECUR | Flag.READY, d &= Flag.BEGIN;
+        if (flags & Flag.SETUP || !valid(sub, $)) flags = Flag.CLEAR;
+        else sub.flags |= Flag.RECUR | Flag.READY, flags &= Flag.BEGIN;
     }
-    mid: if (d & Flag.BEGIN) {
-      if (!c.subs || !($ = c.subs).sub_next) continue top;
-      a.push(b);
-    } else if (!b) {
-      while (a.length) if ($ = a.pop()!) break mid;
+    mid: if (flags & Flag.BEGIN) {
+      if (!sub.subs || !($ = sub.subs).sub_next) continue top;
+      stack.push(next);
+    } else if (!next) {
+      while (stack.length) if ($ = stack.pop()!) break mid;
       break;
-    } else $ = b;
-    b = $.sub_next;
+    } else $ = next;
+    next = $.sub_next;
   }
   depth || flush(run);
 };
