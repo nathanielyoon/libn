@@ -12,7 +12,7 @@ export const flush = (run: ($: Effect | Scoper) => void): void => {
   for (let a; a = queue.shift(); run(a));
 };
 const rerun = ($: Effect | Scoper) => {
-  do if ($.flags & Flag.QUEUE) break;
+  do if ($.flags & Flag.QUEUE) return;
   else {
     $.flags |= Flag.QUEUE;
     if ($.subs) $ = $.subs.sub as Effect | Scoper;

@@ -8,10 +8,10 @@ export const enum Flag {
   RECUR = 1 << 4, // guard against re-marking nodes
   QUEUE = 1 << 5, // in the to-run queue
   RESET = Flag.BEGIN | Flag.DIRTY, // was mutated
-  GOING = Flag.CHECK | Flag.RECUR, // recursing
   CAUSE = Flag.BEGIN | Flag.READY, // origin of change
-  EARLY = Flag.RECUR | Flag.READY, // just getting going
   SETUP = Flag.DIRTY | Flag.READY, // "checked and cleared"
+  EARLY = Flag.RECUR | Flag.READY, // just getting going
+  GOING = Flag.CHECK | Flag.RECUR, // recursing
   KNOWN = Flag.GOING | Flag.SETUP, // seen before
   FRESH = ~(Flag.RECUR | Flag.SETUP), // when starting to follow
 }
