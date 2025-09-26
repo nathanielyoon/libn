@@ -34,7 +34,7 @@ export const deep = ($: Link, run: ($: Effect | Scoper) => void): void => {
     let flags = sub.flags;
     switch (flags & Flag.KNOWN) {
       case Flag.RECUR:
-        sub.flags = flags & ~Flag.RECUR; // falls through
+        sub.flags &= ~Flag.RECUR; // falls through
       case Flag.CLEAR:
         sub.flags |= Flag.READY, sub.kind === Kind.EFFECT && rerun(sub);
         break;

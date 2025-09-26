@@ -41,7 +41,7 @@ const reget = ($: Derive) => {
 };
 const retry = ($: Node) =>
   $.kind === Kind.SIGNAL && reset($) || $.kind === Kind.DERIVE && reget($);
-const check = (sub: Node, $: Link): boolean => {
+const check = (sub: Node, $: Link) => {
   const stack: (Link | null)[] = [];
   let dirty = false, size = 0;
   do {
@@ -126,7 +126,7 @@ const make = <A extends Kind, B>(kind: A, flags: Flag, rest: B) => (
 /** Reactive getter. */
 export type Getter<A> = () => A;
 /** Reactive setter. */
-export type Setter<A> = <const B extends A>($: B | (($: A) => B)) => B;
+export type Setter<A> = <const B extends A>(next: B | ((prev: A) => B)) => B;
 /** Creates a reactive value. */
 export const signal =
   (($: any, options?: { equals?: Equals<any, any> }) =>
@@ -138,7 +138,7 @@ export const signal =
       <A>($: A, options?: { equals?: Equals<A, A> }): Getter<A> & Setter<A>;
       <A>(
         _?: A,
-        options?: { equals?: Equals<A | undefined, A | undefined> | false },
+        options?: { equals?: Equals<A | undefined, A | undefined> },
       ): Getter<A | undefined> & Setter<A | undefined>;
     };
 /** Creates a derived computation. */
