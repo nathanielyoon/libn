@@ -4,7 +4,7 @@ export const enum Flag {
   BEGIN = 1 << 0, // can begin a chain of updates
   DIRTY = 1 << 1, // gotta re-run
   READY = 1 << 2, // maybe re-run
-  CHECK = 1 << 3, // for recursed
+  CHECK = 1 << 3, // may recur
   RECUR = 1 << 4, // guard against re-marking nodes
   QUEUE = 1 << 5, // in the to-run queue
   START = Flag.BEGIN | Flag.DIRTY, // was mutated
