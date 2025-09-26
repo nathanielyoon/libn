@@ -30,12 +30,9 @@ export const link = (dep: Node, sub: Node | null): void => {
   a ? a.dep_next = d : sub.deps = d, c ? c.sub_next = d : dep.subs = d;
 };
 const chop = (sub: Node, $: Link) => {
-  const a = $.dep_next;
-  const b = $.dep_prev;
+  const a = $.dep_next, b = $.dep_prev;
   a ? a.dep_prev = b : sub.head = b, b ? b.dep_next = a : sub.deps = a;
-  const c = $.sub_next;
-  const d = $.sub_prev;
-  const e = $.dep;
+  const c = $.sub_next, d = $.sub_prev, e = $.dep;
   if (c ? c.sub_prev = d : e.tail = d) d!.sub_next = c;
   else if (!(e.subs = c)) {
     if (e.kind === Kind.DERIVE) e.flags = Flag.START, rest(e);
