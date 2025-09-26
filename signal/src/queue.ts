@@ -27,8 +27,11 @@ const valid = ($: Node, link: Link) => {
 };
 /** Deeply propagates changes. */
 export const deep = ($: Link, run: ($: Effect | Scoper) => void): void => {
-  top: for (let stack: (Link | null)[] = [], next = $.sub_next, sub, flags;;) {
-    sub = $.sub, flags = sub.flags;
+  const stack: (Link | null)[] = [];
+  let next = $.sub_next;
+  top: do {
+    const sub = $.sub;
+    let flags = sub.flags;
     switch (flags & Flag.KNOWN) {
       case Flag.RECUR:
         sub.flags = flags & ~Flag.RECUR; // falls through
@@ -47,7 +50,7 @@ export const deep = ($: Link, run: ($: Effect | Scoper) => void): void => {
       break;
     } else $ = next;
     next = $.sub_next;
-  }
+  } while (true);
   depth || flush(run);
 };
 /** Shallowly propagates changes. */

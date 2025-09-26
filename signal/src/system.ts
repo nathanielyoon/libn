@@ -42,7 +42,9 @@ const reget = ($: Derive) => {
 const retry = ($: Node) =>
   $.kind === Kind.SIGNAL && reset($) || $.kind === Kind.DERIVE && reget($);
 const check = (sub: Node, $: Link): boolean => {
-  for (let stack: (Link | null)[] = [], dirty = false, size = 0;;) {
+  const stack: (Link | null)[] = [];
+  let dirty = false, size = 0;
+  do {
     const dep = $.dep;
     if (sub.flags & Flag.DIRTY) dirty = true;
     else if ((dep.flags & Flag.START) === Flag.START) {
@@ -64,7 +66,7 @@ const check = (sub: Node, $: Link): boolean => {
       return dirty;
     }
     $ = $.dep_next;
-  }
+  } while (true);
 };
 const run = ($: Effect | Scoper) => {
   switch ($.flags &= ~Flag.QUEUE, $.flags & Flag.SETUP) {
@@ -85,7 +87,7 @@ const run = ($: Effect | Scoper) => {
       }
     }
   }
-  for (let a = $.deps; a; a = a.dep_next) { // recur into inner effects
+  for (let a = $.deps; a; a = a.dep_next) { // recurse into inner effects
     a.dep.flags & Flag.QUEUE && run(a.dep as Effect | Scoper);
   }
 };
