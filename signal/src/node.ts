@@ -7,11 +7,10 @@ export const enum Flag {
   CHECK = 1 << 3, // for recursed
   RECUR = 1 << 4, // guard against re-marking nodes
   QUEUE = 1 << 5, // in the to-run queue
-  RESET = Flag.BEGIN | Flag.DIRTY, // was mutated
+  START = Flag.BEGIN | Flag.DIRTY, // was mutated
   CAUSE = Flag.BEGIN | Flag.READY, // origin of change
   SETUP = Flag.DIRTY | Flag.READY, // "checked and cleared"
-  GOING = Flag.CHECK | Flag.RECUR, // recursing
-  KNOWN = Flag.GOING | Flag.SETUP, // seen before
+  KNOWN = Flag.CHECK | Flag.RECUR | Flag.SETUP, // seen before
   FRESH = ~(Flag.RECUR | Flag.SETUP), // when starting to follow
 }
 /** Reactive node types. */

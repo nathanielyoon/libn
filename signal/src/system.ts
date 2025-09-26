@@ -45,7 +45,7 @@ const check = (sub: Node, $: Link): boolean => {
   for (let stack: (Link | null)[] = [], dirty = false, size = 0;;) {
     const dep = $.dep;
     if (sub.flags & Flag.DIRTY) dirty = true;
-    else if ((dep.flags & Flag.RESET) === Flag.RESET) {
+    else if ((dep.flags & Flag.START) === Flag.START) {
       if (retry(dep)) dirty = true, dep.subs!.sub_next && flat(dep.subs!);
     } else if ((dep.flags & Flag.CAUSE) === Flag.CAUSE) {
       if ($.sub_next || $.sub_prev) stack.push($);
@@ -96,7 +96,7 @@ function Signal(this: Signal, ...$: [unknown]) {
     // Passing through fulfills the setter type's const generic, and matches how
     // the native assignment operator works.
     if (!reuse(this, next, this.next)) return next;
-    this.next = next, this.flags = Flag.RESET;
+    this.next = next, this.flags = Flag.START;
     this.subs && deep(this.subs, run);
   } else {
     if (this.flags & Flag.DIRTY && reset(this) && this.subs) flat(this.subs);
@@ -143,7 +143,7 @@ export const derive =
   (($: any, options?: { initial?: any; equals?: Equals<any, any> }) =>
     Derive.bind(make(
       Kind.DERIVE,
-      Flag.RESET,
+      Flag.START,
       { next: $, prev: options?.initial, is: options?.equals },
     ))) as {
       // Omitting the initial value limits inference for the deriver's parameter
