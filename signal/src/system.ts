@@ -72,9 +72,9 @@ const run = ($: Effect | Scoper) => {
       break;
     case Flag.READY:
       if (!check($, $.deps!)) {
-        $.flags &= ~Flag.READY; // falls through
+        $.flags &= ~Flag.READY;
         break;
-      }
+      } // falls through
     default: {
       const a = actor;
       follow(actor = $);
