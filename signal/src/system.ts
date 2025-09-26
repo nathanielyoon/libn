@@ -68,24 +68,25 @@ const check = (sub: Node, $: Link): boolean => {
 };
 const run = ($: Effect | Scoper) => {
   switch ($.flags &= ~Flag.QUEUE, $.flags & Flag.SETUP) {
-    case Flag.SETUP:
-    case Flag.DIRTY:
+    case Flag.CLEAR:
       break;
     case Flag.READY:
-      if (check($, $.deps!)) break;
-      $.flags &= ~Flag.READY; // falls through
-    default:
-      for (let a = $.deps; a; a = a.dep_next) { // recur into inner effects
-        a.dep.flags & Flag.QUEUE && run(a.dep as Effect | Scoper);
+      if (!check($, $.deps!)) {
+        $.flags &= ~Flag.READY; // falls through
+        break;
       }
-      return;
+    default: {
+      const a = actor;
+      follow(actor = $);
+      try {
+        return $.run(); // calls inner effects too
+      } finally {
+        actor = a, ignore($);
+      }
+    }
   }
-  const a = actor;
-  follow(actor = $);
-  try {
-    return $.run(); // calls inner effects too
-  } finally {
-    actor = a, ignore($);
+  for (let a = $.deps; a; a = a.dep_next) { // recur into inner effects
+    a.dep.flags & Flag.QUEUE && run(a.dep as Effect | Scoper);
   }
 };
 function Signal(this: Signal, ...$: [unknown]) {
