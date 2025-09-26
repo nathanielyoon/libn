@@ -30,22 +30,29 @@ export const link = (dep: Node, sub: Node | null): void => {
   a ? a.dep_next = d : sub.deps = d, c ? c.sub_next = d : dep.subs = d;
 };
 const chop = (sub: Node, $: Link) => {
-  const a = $.dep_next, b = $.dep_prev;
-  a ? a.dep_prev = b : sub.head = b, b ? b.dep_next = a : sub.deps = a;
-  const c = $.sub_next, d = $.sub_prev, e = $.dep;
-  if (c ? c.sub_prev = d : e.tail = d) d!.sub_next = c;
-  else if (!(e.subs = c)) {
-    if (e.kind === Kind.DERIVE) e.flags = Flag.START, rest(e);
-    else e.kind === Kind.SIGNAL || dispose(e);
+  const a = $.dep, b = $.dep_next, c = $.dep_prev, d = $.sub_next;
+  b ? b.dep_prev = c : sub.head = c, c ? c.dep_next = b : sub.deps = b;
+  let e = $.sub_prev;
+  if (d ? d.sub_prev = e : a.tail = e) e!.sub_next = d;
+  else if (!(a.subs = d)) {
+    switch (a.kind) {
+      case Kind.DERIVE:
+        if (e = a.deps) {
+          a.flags = Flag.START;
+          do e = chop(a, e); while (e);
+        } // falls through
+      case Kind.SIGNAL:
+        break;
+      default:
+        dispose(a);
+    }
   }
-  return a;
-};
-const rest = ($: Node) => {
-  for (let a = $.deps; a; a = chop($, a));
+  return b;
 };
 /** Cleans up effects. */
 export const dispose = ($: Effect | Scoper): void => {
-  rest($), $.subs && chop($.subs.sub, $.subs), $.flags = Flag.CLEAR;
+  for (let a = $.deps; a; a = chop($, a));
+  $.subs && chop($.subs.sub, $.subs), $.flags = Flag.CLEAR;
 };
 /** Starts tracking a node. */
 export const follow = ($: Node): void => {
