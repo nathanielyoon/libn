@@ -1916,6 +1916,34 @@ Deno.test("mod", async ({ step }) => {
     });
     a(1);
   });
+  await step("derive : catch inner recursion", () => {
+    const a = signal(0);
+    const b = derive(() => a(a() + 1));
+    assertEquals(b(), 1);
+    a(1);
+    assertEquals(b(), 2);
+  });
+  await step("derive : catch outer recursion", () => {
+    let a = 0;
+    const b = signal(0);
+    const c = signal(0);
+    const d = derive(() => (c(), b(++a)));
+    const e = derive(() => (b(), b(++a)));
+    effect(() => (d(), e()));
+    const f = derive(() => (d(), c(++a)));
+    const g = derive(() => (f(), c(++a)));
+    effect(() => (f(), g()));
+    assertEquals(g(), 9);
+    b(100);
+    assertEquals(g(), 9);
+  });
+  await step("derive : break invalid links", () => {
+    const a = signal(0);
+    const b = derive(() => (a(0), a()));
+    assertEquals(b(), 0);
+    a(1);
+    assertEquals(b(), 0);
+  });
   await step("bundle : pure", async () => {
     assertEquals(await bundle(import.meta), "");
   });
