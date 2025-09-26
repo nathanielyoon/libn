@@ -17,7 +17,7 @@ import {
   signal,
 } from "./src/system.ts";
 
-Deno.test("mod", async ({ step }) => {
+Deno.test("system", async ({ step }) => {
   await step("derive : alien-signals signal tests", () => {
     { // correctly propagate changes through signal signals
       const a = signal(0);
@@ -1944,6 +1944,8 @@ Deno.test("mod", async ({ step }) => {
     a(1);
     assertEquals(b(), 0);
   });
+});
+Deno.test("mod", async ({ step }) => {
   await step("bundle : pure", async () => {
     assertEquals(await bundle(import.meta), "");
   });
