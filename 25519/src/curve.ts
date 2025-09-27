@@ -1,13 +1,11 @@
 import { de_big, en_big } from "./bigint.ts";
 
 /** Curve25519 prime. */
-export const P = /* @__PURE__ */ BigInt(
-  "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed",
-);
+export const P =
+  0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffedn;
 /** Curve25519 order. */
-export const N = /* @__PURE__ */ BigInt(
-  "0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed",
-);
+export const N =
+  0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3edn;
 /** Reduces modulo P. */
 export const p = ($: bigint): bigint => ($ %= P) < 0n ? $ + P : $;
 /** Raises to a power modulo P. */
