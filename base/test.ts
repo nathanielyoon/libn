@@ -1,4 +1,4 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertMatch } from "@std/assert";
 import fc from "fast-check";
 import { bundle, fc_binary, fc_check, fc_number, fc_string } from "@libn/lib";
 import type { Decode, Encode } from "./src/common.ts";
@@ -65,16 +65,23 @@ Deno.test("64", async ({ step }) => {
   await step("en_u64/de_u64 : arbitrary round-trip", round(en_u64, de_u64));
 });
 Deno.test("85", async ({ step }) => {
+  const fc_multiple = fc_number({ min: 0, max: 1e3 }).map(($) => $ >> 2 << 2);
   await step("en_a85/de_a85 : arbitrary round-trip", () => {
     fc_check(fc.property(
-      fc_number({ min: 0, max: 1e3 }).chain(($) => fc_binary($ >> 2 << 2)),
+      fc_multiple.chain(fc_binary),
       ($) => assertEquals(de_a85(en_a85($)), $),
     ));
   });
   await step("en_z85/de_z85 : arbitrary round-trip", () => {
     fc_check(fc.property(
-      fc_number({ min: 0, max: 1e3 }).chain(($) => fc_binary($ >> 2 << 2)),
+      fc_multiple.chain(fc_binary),
       ($) => assertEquals(de_z85(en_z85($)), $),
+    ));
+  });
+  await step("en_a85 : compress", () => {
+    fc_check(fc.property(
+      fc_multiple.map(($) => new Uint8Array($)),
+      ($) => assertMatch(en_a85($), RegExp(`^z{${$.length >> 2}}$`)),
     ));
   });
   await step("en_z85/de_z85 : z85 spec_32", () => {
