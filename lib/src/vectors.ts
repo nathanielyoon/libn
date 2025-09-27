@@ -34,7 +34,9 @@ export const read = <A extends { [key: string]: Json }>(vectors: A[]): {
     source = vectors[z], target = out[z] = {} as { [key: string]: unknown };
     for (y = 0; y < keys.length; ++y) {
       temp = source[keys[y]];
-      target[keys[y]] = typeof temp === "string" ? de_b16(temp) : temp;
+      target[keys[y]] = typeof temp === "string"
+        ? de_b16(temp.toLowerCase())
+        : temp;
     }
   }
   return out;
