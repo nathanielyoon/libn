@@ -1944,6 +1944,25 @@ Deno.test("system", async ({ step }) => {
     a(1);
     assertEquals(b(), 0);
   });
+  await step("derive : circular", () => {
+    assertThrows(() => {
+      let z = 0;
+      const a = signal(++z);
+      const b = signal(++z);
+      const c = derive(() => (a(), b(++z)));
+      const d = derive(() => (b(), a(++z)));
+      effect(() => c());
+      effect(() => d());
+      effect(() => (c(), d()));
+    });
+    assertThrows(() => {
+      const a = signal(0);
+      const b = signal(0);
+      const c = derive(() => a(a() + b()));
+      effect(() => (a(), b(), c()));
+      b(1);
+    });
+  });
 });
 Deno.test("mod", async ({ step }) => {
   await step("bundle : pure", async () => {
