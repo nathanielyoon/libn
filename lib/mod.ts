@@ -27,10 +27,9 @@ import {
   fc_number,
   fc_string,
 } from "./src/fc.ts";
-import { bundle } from "./src/bundle.ts";
+import { pure } from "./src/pure.ts";
 
 export {
-  bundle,
   fc_binary,
   fc_check,
   fc_json,
@@ -39,6 +38,7 @@ export {
   type Intersect,
   into,
   type Json,
+  pure,
   read,
   save,
   trim,
