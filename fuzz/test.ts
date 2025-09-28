@@ -22,11 +22,14 @@ const levenshtein = (one: string, two: string) => {
 };
 Deno.test("distance", async ({ step }) => {
   await step("distance :: levenshtein", () => {
-    fc_check(fc.property(
-      fc_string({ size: "large" }),
-      fc_string({ size: "large" }),
-      (one, two) => distance(one, two) === levenshtein(one, two),
-    ));
+    fc_check(
+      fc.property(
+        fc_string({ size: "large" }),
+        fc_string({ size: "large" }),
+        (one, two) => distance(one, two) === levenshtein(one, two),
+      ),
+      { examples: [["", ""]] },
+    );
   });
 });
 Deno.test("includes", async ({ step }) => {
@@ -68,9 +71,9 @@ Deno.test("match", async ({ step }) => {
       fc.integer({ min: 2, max: 6 }),
       fc.array(fc_string()),
       (width, terms) => {
-        const matcher = new Matcher(width);
+        const matcher = new Matcher(width, []);
         for (const $ of terms) {
-          const [match] = new Matcher(width).add($).get($);
+          const [match] = new Matcher(width, [$]).get($);
           assert(match);
           assertEquals(match.term, $);
           assertAlmostEquals(match.ratio, 1);
@@ -90,7 +93,7 @@ Deno.test("match", async ({ step }) => {
       fc.integer({ min: 2, max: 6 }),
       fc_string(),
       (width, term) => {
-        const matcher = new Matcher(width).add(term);
+        const matcher = new Matcher(width, [term]);
         assertEquals(matcher.terms, matcher.add(term).terms);
       },
     ));

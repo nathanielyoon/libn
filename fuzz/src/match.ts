@@ -14,7 +14,9 @@ export class Matcher<A extends number> {
   /** N-gram frequency in (bits 0-11) and index of (bits 12-31) its vectors. */
   private map = new Map<string, number[]>();
   /** Creates an empty set for a specific n-gram size. */
-  constructor(private width: A) {}
+  constructor(private width: A, terms: string[]) {
+    for (let z = 0; z < terms.length; ++z) this.add(terms[z]);
+  }
   /** Creates a map of n-grams to their frequency (up to 4095). */
   private split($: string): Map<string, number> {
     const map = new Map(), pad = $.replace(/^|$/g, "\0".repeat(this.width));
