@@ -12,11 +12,14 @@ export const fc_string = ($?: fc.StringConstraints): fc.Arbitrary<string> =>
 export const fc_binary = (
   $?: fc.IntArrayConstraints | number,
 ): fc.Arbitrary<Uint8Array<ArrayBuffer>> =>
-  fc.uint8Array(
-    typeof $ === "number"
-      ? { minLength: $, maxLength: $ }
-      : { size: "large", ...$ },
-  );
+  typeof $ !== "number"
+    ? fc.uint8Array({ size: "large", ...$ })
+    : $ < 0
+    ? fc.oneof(
+      fc.uint8Array({ minLength: -$ - 1 }),
+      fc.uint8Array({ maxLength: -$ + 1 }),
+    )
+    : fc.uint8Array({ minLength: $, maxLength: $ });
 /** Creates a correctly-typed JSON value arbitrary. */
 export const fc_json = ($?: fc.JsonSharedConstraints): fc.Arbitrary<Json> =>
   fc.jsonValue($) as fc.Arbitrary<Json>;
