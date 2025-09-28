@@ -48,9 +48,9 @@
     "check": "deno check --doc --unstable-bundle",
     "lint": "deno lint --permit-no-files --compact && deno doc --lint **/*.ts",
     "write": "deno run --allow-net --allow-write ./write.ts",
-    "test": "deno test --permit-no-files --allow-all --unstable-bundle --no-check --doc --parallel",
-    "coverage": "deno test --allow-all --unstable-bundle --no-check --reporter=dot --coverage --coverage-raw-data-only --clean && deno coverage --detailed --include=\"^file://$(pwd)\"; rm -r coverage",
+    "test": "deno test --permit-no-files --allow-env --allow-read --allow-write --allow-ffi --unstable-bundle --no-check --doc --parallel",
+    "coverage": "deno test --allow-env --allow-read --allow-write --allow-ffi --unstable-bundle --no-check --reporter=dot --coverage --coverage-raw-data-only --clean && deno coverage --detailed --include=\"^file://$(pwd)\"; rm -r coverage",
     "all": "deno task --cwd=. check && deno task --cwd=. lint && deno task --cwd=. coverage && deno publish --dry-run --allow-dirty",
-    "npm": "deno run --allow-all ../lib/src/npm.ts"
+    "npm": "deno run --allow-read --allow-write ../lib/src/npm.ts"
   }
 }
