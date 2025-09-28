@@ -18,6 +18,7 @@
     "./weight"
   ],
   "imports": {
+    "@deno/dnt": "jsr:@deno/dnt@^0.42.3",
     "@std/assert": "jsr:@std/assert@^1.0.14",
     "fast-check": "npm:fast-check@^4.3.0"
   },
@@ -51,6 +52,6 @@
     "test": "deno test --permit-no-files --allow-env --allow-read --allow-write --allow-ffi --unstable-bundle --no-check --doc --parallel",
     "coverage": "deno test --allow-env --allow-read --allow-write --allow-ffi --unstable-bundle --no-check --reporter=dot --coverage --coverage-raw-data-only --clean && deno coverage --detailed --include=\"^file://$(pwd)\"; rm -r coverage",
     "all": "deno task --cwd=. check && deno task --cwd=. lint && deno task --cwd=. coverage && deno publish --dry-run --allow-dirty",
-    "npm": "deno run --allow-read --allow-write ../lib/src/npm.ts"
+    "npm": "deno eval 'import{build,emptyDir}from\"@deno/dnt\";const{name,version}=JSON.parse(await Deno.readTextFile(\"./deno.json\"));await Deno.mkdir(\"./npm\",{recursive:true});await emptyDir(\"./npm\");await build({entryPoints:[\"./mod.ts\"],outDir:\"./npm\",package:{name,version,license:\"GPL-3.0-or-later\",repository:{type:\"git\",url:\"git+https://github.com/nathanielyoon/libn.git\",},},shims:{},typeCheck:false,test:false,scriptModule:false,skipNpmInstall:true})'"
   }
 }
