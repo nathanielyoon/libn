@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { fc_check, fc_string, pure } from "@libn/lib";
+import { fc_check, fc_str, pure } from "@libn/lib";
 import { de_csv } from "./src/parse.ts";
 import { en_csv } from "./src/stringify.ts";
 import vectors from "./vectors.json" with { type: "json" };
@@ -94,7 +94,7 @@ const fc_rows = (size?: number) =>
   fc.array(
     fc.array(
       fc.oneof(
-        { weight: 7, arbitrary: fc_string() },
+        { weight: 7, arbitrary: fc_str() },
         { weight: 1, arbitrary: fc.constant(null) },
       ),
       { minLength: size ?? 1, maxLength: size ?? 64 },

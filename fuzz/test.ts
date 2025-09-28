@@ -1,6 +1,6 @@
 import { assert, assertAlmostEquals, assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { fc_check, fc_string, pure } from "@libn/lib";
+import { fc_check, fc_str, pure } from "@libn/lib";
 import { distance } from "./src/distance.ts";
 import { includes } from "./src/includes.ts";
 import { Matcher } from "./src/match.ts";
@@ -24,8 +24,8 @@ Deno.test("distance", async ({ step }) => {
   await step("distance :: levenshtein", () => {
     fc_check(
       fc.property(
-        fc_string({ size: "large" }),
-        fc_string({ size: "large" }),
+        fc_str({ size: "large" }),
+        fc_str({ size: "large" }),
         (one, two) => distance(one, two) === levenshtein(one, two),
       ),
       { examples: [["", ""]] },
@@ -35,7 +35,7 @@ Deno.test("distance", async ({ step }) => {
 Deno.test("includes", async ({ step }) => {
   await step("includes : substring", () => {
     fc_check(fc.property(
-      fc_string().chain(($) =>
+      fc_str().chain(($) =>
         fc.tuple(
           fc.constant($),
           fc.subarray($.split("")).map(($) => $.join("")),
@@ -46,8 +46,8 @@ Deno.test("includes", async ({ step }) => {
   });
   await step("includes :: String.prototype.includes", () => {
     fc_check(fc.property(
-      fc_string(),
-      fc_string(),
+      fc_str(),
+      fc_str(),
       (source, target) => {
         if (source.includes(target)) assert(includes(source, target));
       },
@@ -55,9 +55,9 @@ Deno.test("includes", async ({ step }) => {
   });
   await step("includes : shorter target", () => {
     fc_check(fc.property(
-      fc_string({ minLength: 1 }).chain(($) =>
+      fc_str({ minLength: 1 }).chain(($) =>
         fc.tuple(
-          fc_string({ maxLength: $.length - 1 }),
+          fc_str({ maxLength: $.length - 1 }),
           fc.constant($),
         )
       ),
@@ -69,7 +69,7 @@ Deno.test("match", async ({ step }) => {
   await step("Matcher : self-match", () => {
     fc_check(fc.property(
       fc.integer({ min: 2, max: 6 }),
-      fc.array(fc_string()),
+      fc.array(fc_str()),
       (width, terms) => {
         const matcher = new Matcher(width, []);
         for (const $ of terms) {
@@ -91,7 +91,7 @@ Deno.test("match", async ({ step }) => {
   await step("Matcher : ignore repeats", () => {
     fc_check(fc.property(
       fc.integer({ min: 2, max: 6 }),
-      fc_string(),
+      fc_str(),
       (width, term) => {
         const matcher = new Matcher(width, [term]);
         assertEquals(matcher.terms, matcher.add(term).terms);

@@ -1,6 +1,6 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { fc_binary, fc_check, read } from "@libn/lib";
+import { fc_bin, fc_check, read } from "@libn/lib";
 import { generate, sign, verify } from "../src/ed25519.ts";
 import { export_pair, generate_pair } from "./pair.ts";
 import vectors from "./vectors.json" with { type: "json" };
@@ -27,8 +27,8 @@ Deno.test("verify : bad points", () => {
 });
 Deno.test("sign/verify : arbitrary signatures", () => {
   fc_check(fc.property(
-    fc_binary(32),
-    fc_binary(),
+    fc_bin(32),
+    fc_bin(),
     (key, message) => verify(generate(key), message, sign(key, message)),
   ));
 });
@@ -39,7 +39,7 @@ Deno.test("generate :: webcrypto", async () => {
   assertEquals(generate(pair.secret_key), pair.public_key);
 });
 Deno.test("sign/verify :: webcrypto", async () => {
-  await fc_check(fc.asyncProperty(fc_binary(), async (message) => {
+  await fc_check(fc.asyncProperty(fc_bin(), async (message) => {
     const pair = await generate_pair("Ed25519", ["sign", "verify"]);
     const { secret_key, public_key } = await export_pair(pair);
     const signature = sign(secret_key, message);

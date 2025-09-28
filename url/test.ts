@@ -1,6 +1,6 @@
 import { assertEquals, assertMatch } from "@std/assert";
 import fc from "fast-check";
-import { fc_check, fc_string, pure } from "@libn/lib";
+import { fc_check, fc_str, pure } from "@libn/lib";
 import { Presigner } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
@@ -23,7 +23,7 @@ Deno.test("mod", async ({ step }) => {
   });
   await step("Presigner.presign : additional headers", () => {
     fc_check(fc.property(
-      fc.dictionary(fc_string(), fc_string()),
+      fc.dictionary(fc_str(), fc_str()),
       (headers) =>
         assertMatch(
           new Presigner({

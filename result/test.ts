@@ -1,6 +1,6 @@
 import { assertEquals, assertRejects, assertThrows } from "@std/assert";
 import fc from "fast-check";
-import { fc_check, fc_string } from "@libn/lib";
+import { fc_check, fc_str } from "@libn/lib";
 import { Err } from "./src/error.ts";
 import { no, ok, Or, or } from "./src/or.ts";
 import {
@@ -17,7 +17,7 @@ import {
 Deno.test("error", async ({ step }) => {
   await step("Error.toJSON : arbitrary round-trip", () => {
     fc_check(fc.property(
-      fc_string(),
+      fc_str(),
       fc.anything(),
       (message, cause) => {
         const err = new Err(message, cause);
@@ -27,7 +27,7 @@ Deno.test("error", async ({ step }) => {
   });
   await step("Error.toJSON : json parsing", () => {
     fc_check(fc.property(
-      fc_string(),
+      fc_str(),
       fc.jsonValue(),
       (message, cause) => {
         const err = new Err(message, cause);
@@ -40,7 +40,7 @@ Deno.test("error", async ({ step }) => {
   });
   await step("Error.toString : non-stack", () => {
     fc_check(fc.property(
-      fc_string(),
+      fc_str(),
       fc.jsonValue(),
       (message, cause) =>
         assertEquals(
@@ -53,13 +53,13 @@ Error${message && `: ${message}`}`,
   });
   await step("throw : arbitrary error", () => {
     fc_check(fc.property(
-      fc_string(),
+      fc_str(),
       (message) => void assertThrows(() => Err.throw(message)),
     ));
   });
   await step("catch : arbitrary wrapper", () => {
     fc_check(fc.property(
-      fc_string(),
+      fc_str(),
       fc.anything(),
       (message, cause) =>
         assertEquals(

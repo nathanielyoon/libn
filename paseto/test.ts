@@ -1,6 +1,6 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { fc_binary, fc_check, pure, read } from "@libn/lib";
+import { fc_bin, fc_check, pure, read } from "@libn/lib";
 import { de_bin, en_bin } from "@libn/base";
 import {
   is_local,
@@ -25,12 +25,12 @@ Deno.test("key", async ({ step }) => {
   ) {
     await step(`is_${use} : validate`, () => {
       const set = set_use.bind(null, use);
-      fc_check(fc.property(fc_binary(32).map(set), is));
+      fc_check(fc.property(fc_bin(32).map(set), is));
       fc_check(fc.property(
         fc.oneof(
-          fc_binary({ maxLength: 31 }).map(set),
-          fc_binary({ minLength: 33 }).map(set),
-          fc_binary(32),
+          fc_bin({ maxLength: 31 }).map(set),
+          fc_bin({ minLength: 33 }).map(set),
+          fc_bin(32),
         ),
         ($) => !is($),
       ));
@@ -45,7 +45,7 @@ Deno.test("common", async ({ step }) => {
   });
 });
 const fc_wrong_use = (wrong: Use[]) =>
-  fc.tuple(fc.option(fc.constantFrom(...wrong)), fc_binary(32)).map((
+  fc.tuple(fc.option(fc.constantFrom(...wrong)), fc_bin(32)).map((
     [use, key],
   ) => use ? set_use(use, key) : key);
 const unique: fc.UniqueArrayConstraintsCustomCompare<Uint8Array> = {
@@ -81,7 +81,7 @@ Deno.test("local", async ({ step }) => {
   await step("en_local/de_local : wrong-use keys", () => {
     fc_check(fc.property(
       fc_wrong_use(["secret", "public"]),
-      fc_binary(),
+      fc_bin(),
       fc.stringMatching(regex("v4.local.")),
       (key, body, token) =>
         !en_local(key as any, body) && !de_local(key as any, token),
@@ -89,10 +89,10 @@ Deno.test("local", async ({ step }) => {
   });
   await step("en_local/de_local : arbitrary round-trip", () => {
     fc_check(fc.property(
-      fc.uniqueArray(fc_binary(32).map(($) => set_use("local", $)), unique),
-      fc_binary(),
-      fc.option(fc_binary(), { nil: undefined }),
-      fc.option(fc_binary(), { nil: undefined }),
+      fc.uniqueArray(fc_bin(32).map(($) => set_use("local", $)), unique),
+      fc_bin(),
+      fc.option(fc_bin(), { nil: undefined }),
+      fc.option(fc_bin(), { nil: undefined }),
       ([key, wrong_key], body, foot, assertion) => {
         const token = en_local(key, body, foot, assertion);
         assert(token);
@@ -132,7 +132,7 @@ Deno.test("public", async ({ step }) => {
     fc_check(fc.property(
       fc_wrong_use(["local", "public"]),
       fc_wrong_use(["local", "secret"]),
-      fc_binary(),
+      fc_bin(),
       fc.stringMatching(regex("v4.public.")),
       (secret_key, public_key, body, token) =>
         !en_public(secret_key as any, body) &&
@@ -140,10 +140,10 @@ Deno.test("public", async ({ step }) => {
     ));
   });
   fc_check(fc.property(
-    fc.uniqueArray(fc_binary(32).map(($) => set_use("secret", $)), unique),
-    fc_binary(),
-    fc.option(fc_binary(), { nil: undefined }),
-    fc.option(fc_binary(), { nil: undefined }),
+    fc.uniqueArray(fc_bin(32).map(($) => set_use("secret", $)), unique),
+    fc_bin(),
+    fc.option(fc_bin(), { nil: undefined }),
+    fc.option(fc_bin(), { nil: undefined }),
     ([key, wrong_key], body, foot, assertion) => {
       const token = en_public(key, body, foot, assertion);
       assert(token);

@@ -3,13 +3,13 @@ import fc from "fast-check";
 import type { Json } from "./types.ts";
 
 /** Creates a number arbitrary. */
-export const fc_number = ($?: fc.DoubleConstraints): fc.Arbitrary<number> =>
+export const fc_num = ($?: fc.DoubleConstraints): fc.Arbitrary<number> =>
   fc.double({ noDefaultInfinity: true, noNaN: true, ...$ });
 /** Creates a string arbitrary. */
-export const fc_string = ($?: fc.StringConstraints): fc.Arbitrary<string> =>
+export const fc_str = ($?: fc.StringConstraints): fc.Arbitrary<string> =>
   fc.string({ unit: "grapheme", size: "medium", ...$ });
 /** Creates a binary arbitrary. */
-export const fc_binary = (
+export const fc_bin = (
   $?: fc.IntArrayConstraints | number,
 ): fc.Arbitrary<Uint8Array<ArrayBuffer>> =>
   typeof $ !== "number"

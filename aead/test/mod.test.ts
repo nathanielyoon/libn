@@ -1,7 +1,7 @@
 import { assert } from "@std/assert";
 import { assertEquals } from "@std/assert/equals";
 import fc from "fast-check";
-import { fc_binary, fc_check, pure, read } from "@libn/lib";
+import { fc_bin, fc_check, pure, read } from "@libn/lib";
 import { cipher, decrypt, encrypt } from "../mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
@@ -18,9 +18,9 @@ Deno.test("mod", async ({ step }) => {
   });
   await step("encrypt/decrypt : arbitrary round-trip", () => {
     fc_check(fc.property(
-      fc_binary(32),
-      fc_binary(),
-      fc_binary(),
+      fc_bin(32),
+      fc_bin(),
+      fc_bin(),
       (key, plaintext, data) => {
         const text_1 = encrypt(key, plaintext, data);
         assert(text_1);
@@ -33,9 +33,9 @@ Deno.test("mod", async ({ step }) => {
   });
   await step("encrypt/decrypt : wrong-size arguments", () => {
     fc_check(fc.property(
-      fc_binary(-32),
-      fc_binary(),
-      fc_binary(),
+      fc_bin(-32),
+      fc_bin(),
+      fc_bin(),
       (key, $, data) => {
         assertEquals(encrypt(key, $, data), null);
         assertEquals(decrypt(key, $, data), null);

@@ -20,21 +20,15 @@
 
 import type { Intersect, Json, Tuple } from "./src/types.ts";
 import { into, read, save, trim } from "./src/vectors.ts";
-import {
-  fc_binary,
-  fc_check,
-  fc_json,
-  fc_number,
-  fc_string,
-} from "./src/fc.ts";
+import { fc_bin, fc_check, fc_json, fc_num, fc_str } from "./src/fc.ts";
 import { pure } from "./src/pure.ts";
 
 export {
-  fc_binary,
+  fc_bin,
   fc_check,
   fc_json,
-  fc_number,
-  fc_string,
+  fc_num,
+  fc_str,
   type Intersect,
   into,
   type Json,

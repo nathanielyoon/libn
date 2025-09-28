@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { fc_binary, fc_check, read } from "@libn/lib";
+import { fc_bin, fc_check, read } from "@libn/lib";
 import {
   convert_public,
   convert_secret,
@@ -31,8 +31,8 @@ Deno.test("x25519", async ({ step }) => {
   });
   await step("derive/exchange : arbitrary exchange", () => {
     fc_check(fc.property(
-      fc_binary(32),
-      fc_binary(32),
+      fc_bin(32),
+      fc_bin(32),
       (key_1, key_2) =>
         assertEquals(
           exchange(key_1, derive(key_2)),
@@ -42,8 +42,8 @@ Deno.test("x25519", async ({ step }) => {
   });
   await step("convert_secret/convert_public : arbitrary exchange", () => {
     fc_check(fc.property(
-      fc_binary(32),
-      fc_binary(32),
+      fc_bin(32),
+      fc_bin(32),
       (key_1, key_2) =>
         assertEquals(
           exchange(convert_secret(key_1), convert_public(generate(key_2))),

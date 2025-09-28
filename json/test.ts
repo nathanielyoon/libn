@@ -3,8 +3,8 @@ import fc from "fast-check";
 import {
   fc_check,
   fc_json,
-  fc_number,
-  fc_string,
+  fc_num,
+  fc_str,
   type Json,
   pure,
   type Tuple,
@@ -17,11 +17,11 @@ import { BASES, FORMATS, parser } from "./src/parse.ts";
 const TYPES = ["boolean", "number", "string", "array", "object"] as const;
 const TYPERS = { boolean, number, string, array, object };
 const fc_object = <A>(value: fc.Arbitrary<A>, $?: fc.DictionaryConstraints) =>
-  fc.dictionary(fc_string(), value, { noNullPrototype: true, ...$ });
+  fc.dictionary(fc_str(), value, { noNullPrototype: true, ...$ });
 const fc_types = {
   boolean: fc.boolean,
-  number: fc_number,
-  string: ($?: fc.StringConstraints) => fc_string($).map(($) => $.normalize()),
+  number: fc_num,
+  string: ($?: fc.StringConstraints) => fc_str($).map(($) => $.normalize()),
   array: ($?: fc.ArrayConstraints) => fc.array(fc_json(), $),
   object: ($?: fc.DictionaryConstraints) => fc_object(fc_json(), $),
 };
@@ -59,7 +59,7 @@ const fc_enum = <A>($: fc.Arbitrary<A>) =>
     comparator: "SameValueZero",
   }) as fc.Arbitrary<[A, A, ...A[]]>;
 const fc_ordered = (count: number, arbitrary?: fc.Arbitrary<number>) =>
-  fc.uniqueArray(arbitrary ?? fc_number(), {
+  fc.uniqueArray(arbitrary ?? fc_num(), {
     minLength: count,
     maxLength: count,
     comparator: "SameValueZero",
@@ -79,41 +79,41 @@ Deno.test("build", async ({ step }) => {
     ),
     boolean: fc.record({
       type: fc.constant("boolean"),
-      title: fc_string(),
-      description: fc_string(),
+      title: fc_str(),
+      description: fc_str(),
       enum: fc.constantFrom([true], [false]),
     }, { noNullPrototype: true, requiredKeys: ["type"] }),
     number: fc_ordered(4).chain(([min_lo, min_hi, max_lo, max_hi]) =>
       fc.record({
         type: fc.constant("number"),
-        title: fc_string(),
-        description: fc_string(),
+        title: fc_str(),
+        description: fc_str(),
         enum: fc_enum(fc_types.number()),
         exclusiveMinimum: fc.constant(min_lo),
         minimum: fc.constant(min_hi),
         maximum: fc.constant(max_lo),
         exclusiveMaximum: fc.constant(max_hi),
-        multipleOf: fc_number(),
+        multipleOf: fc_num(),
       }, { noNullPrototype: true, requiredKeys: ["type"] })
     ),
     string: fc_ordered(2, fc_max).chain(([min, max]) =>
       fc.record({
         type: fc.constant("string"),
-        title: fc_string(),
-        description: fc_string(),
+        title: fc_str(),
+        description: fc_str(),
         enum: fc_enum(fc_types.string()),
         minLength: fc.constant(min),
         maxLength: fc.constant(max),
         contentEncoding: fc_base,
         format: fc_format,
-        pattern: fc_string().map(($) => $.replace(/[$(-+./?[-^{|}]/g, "\\$&")),
+        pattern: fc_str().map(($) => $.replace(/[$(-+./?[-^{|}]/g, "\\$&")),
       }, { noNullPrototype: true, requiredKeys: ["type"] })
     ),
     array: fc_ordered(2, fc_max).chain(([min, max]) =>
       fc.record({
         type: fc.constant("array"),
-        title: fc_string(),
-        description: fc_string(),
+        title: fc_str(),
+        description: fc_str(),
         items: tie("any"),
         minItems: fc.constant(min),
         maxItems: fc.constant(max),
@@ -123,8 +123,8 @@ Deno.test("build", async ({ step }) => {
     object: fc.tuple(fc_object(tie("any")), fc_ordered(2, fc_max)).chain(($) =>
       fc.record({
         type: fc.constant("object"),
-        title: fc_string(),
-        description: fc_string(),
+        title: fc_str(),
+        description: fc_str(),
         properties: fc.constant($[0]),
         required: Object.keys($[0]).length
           ? fc.uniqueArray(fc.constantFrom(...Object.keys($[0])))
@@ -536,7 +536,7 @@ Deno.test("parse", async ({ step }) => {
   await test(
     "object",
     "properties",
-    fc_enum(fc_string()).chain((keys) =>
+    fc_enum(fc_str()).chain((keys) =>
       fc.tuple(
         ...keys.map(($) => fc.tuple(fc.constant($), fc.constantFrom(...TYPES))),
       )

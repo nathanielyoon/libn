@@ -1,7 +1,7 @@
 import { assertEquals, assertNotEquals } from "@std/assert";
 import { crypto } from "@std/crypto";
 import fc from "fast-check";
-import { fc_binary, fc_check, pure, read } from "@libn/lib";
+import { fc_bin, fc_check, pure, read } from "@libn/lib";
 import { de_b16 } from "@libn/base";
 import { sha224, sha256, sha384, sha512 } from "./src/sha2.ts";
 import { hkdf_sha256, hmac_sha256 } from "./src/hmac.ts";
@@ -41,7 +41,7 @@ Deno.test("sha2", async ({ step }) => {
   });
   await step("sha224 :: webcrypto", async () => {
     await fc_check(fc.asyncProperty(
-      fc_binary(),
+      fc_bin(),
       async ($) =>
         assertEquals(
           sha224($),
@@ -51,7 +51,7 @@ Deno.test("sha2", async ({ step }) => {
   });
   await step("sha256 :: webcrypto", async () => {
     await fc_check(fc.asyncProperty(
-      fc_binary(),
+      fc_bin(),
       async ($) =>
         assertEquals(
           sha256($),
@@ -61,7 +61,7 @@ Deno.test("sha2", async ({ step }) => {
   });
   await step("sha384 :: webcrypto", async () => {
     await fc_check(fc.asyncProperty(
-      fc_binary(),
+      fc_bin(),
       async ($) =>
         assertEquals(
           sha384($),
@@ -71,7 +71,7 @@ Deno.test("sha2", async ({ step }) => {
   });
   await step("sha512 :: webcrypto", async () => {
     await fc_check(fc.asyncProperty(
-      fc_binary(),
+      fc_bin(),
       async ($) =>
         assertEquals(
           sha512($),
@@ -95,8 +95,8 @@ Deno.test("hmac", async ({ step }) => {
   });
   await step("hmac_sha256 :: webcrypto", async () => {
     await fc_check(fc.asyncProperty(
-      fc_binary({ minLength: 1 }),
-      fc_binary(),
+      fc_bin({ minLength: 1 }),
+      fc_bin(),
       async (key, data) =>
         assertEquals(
           hmac_sha256(key, data),
@@ -118,9 +118,9 @@ Deno.test("hmac", async ({ step }) => {
   });
   await step("hkdf_sha256 :: webcrypto", async () => {
     await fc_check(fc.asyncProperty(
-      fc_binary(),
-      fc_binary(),
-      fc_binary({ maxLength: 32 }),
+      fc_bin(),
+      fc_bin(),
+      fc_bin({ maxLength: 32 }),
       fc.integer({ min: 1, max: 8160 }),
       async (key, info, salt, out) =>
         assertEquals(
@@ -151,7 +151,7 @@ Deno.test("blake2", async ({ step }) => {
   });
   await step("b2s :: webcrypto", async () => {
     await fc_check(fc.asyncProperty(
-      fc_binary(),
+      fc_bin(),
       async ($) =>
         assertEquals(
           b2s($),
@@ -161,7 +161,7 @@ Deno.test("blake2", async ({ step }) => {
   });
   await step("b2b :: webcrypto", async () => {
     await fc_check(fc.asyncProperty(
-      fc_binary(),
+      fc_bin(),
       async ($) =>
         assertEquals(
           b2b($),
@@ -186,8 +186,8 @@ Deno.test("blake2", async ({ step }) => {
   await step("blake2s/blake2b clamp key/output lengths", () => {
     for (const [size, hash] of [[32, b2s], [64, b2b]] as const) {
       fc_check(fc.property(
-        fc_binary(),
-        fc_binary({ minLength: size }),
+        fc_bin(),
+        fc_bin({ minLength: size }),
         fc.nat({ max: size }),
         (input, key, length) => {
           assertEquals(hash(input, key), hash(input, key.subarray(0, size)));
@@ -214,7 +214,7 @@ Deno.test("blake3", async ({ step }) => {
   });
   await step("b3 :: webcrypto", async () => {
     await fc_check(fc.asyncProperty(
-      fc_binary(),
+      fc_bin(),
       async ($) =>
         assertEquals(
           b3($),
@@ -224,8 +224,8 @@ Deno.test("blake3", async ({ step }) => {
   });
   await step("b3 : clamp key to 256 bits", () => {
     fc_check(fc.property(
-      fc_binary({ minLength: 32 }),
-      fc_binary(),
+      fc_bin({ minLength: 32 }),
+      fc_bin(),
       (key, input) =>
         assertEquals(
           b3_keyed(key, input),

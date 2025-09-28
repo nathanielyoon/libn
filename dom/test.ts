@@ -1,7 +1,7 @@
 import { assertEquals, assertThrows } from "@std/assert";
 import fc from "fast-check";
 import { DOMParser, Element } from "@b-fuze/deno-dom/native";
-import { fc_check, fc_string } from "@libn/lib";
+import { fc_check, fc_str } from "@libn/lib";
 import { html } from "./src/create.ts";
 import { qa, qs } from "./src/query.ts";
 
@@ -69,7 +69,7 @@ Deno.test("query", async ({ step }) => {
       fc_letter,
       fc.array(fc.oneof(
         fc.constantFrom(undefined, () => null),
-        fc_string(),
+        fc_str(),
         tie("fc_html"),
       )),
     ).map(([tag, name, children]) => html(`${tag}.${name}`, {}, ...children)),
