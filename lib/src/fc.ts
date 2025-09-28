@@ -16,8 +16,8 @@ export const fc_binary = (
     ? fc.uint8Array({ size: "large", ...$ })
     : $ < 0
     ? fc.oneof(
-      fc.uint8Array({ minLength: -$ - 1 }),
-      fc.uint8Array({ maxLength: -$ + 1 }),
+      fc.uint8Array({ minLength: -$ + 1 }),
+      fc.uint8Array({ maxLength: -$ - 1 }),
     )
     : fc.uint8Array({ minLength: $, maxLength: $ });
 /** Creates a correctly-typed JSON value arbitrary. */
