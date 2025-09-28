@@ -1,6 +1,6 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { bundle, fc_binary, fc_check, read } from "@libn/lib";
+import { fc_binary, fc_check, pure, read } from "@libn/lib";
 import { de_bin, en_bin } from "@libn/base";
 import {
   is_local,
@@ -160,7 +160,5 @@ Deno.test("public", async ({ step }) => {
   ));
 });
 Deno.test("mod", async ({ step }) => {
-  await step("bundle : pure", async () => {
-    assertEquals(await bundle(import.meta), "");
-  });
+  await step("bundle : pure", pure);
 });

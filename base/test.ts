@@ -1,6 +1,6 @@
 import { assertEquals, assertMatch } from "@std/assert";
 import fc from "fast-check";
-import { bundle, fc_binary, fc_check, fc_number, fc_string } from "@libn/lib";
+import { fc_binary, fc_check, fc_number, fc_string, pure } from "@libn/lib";
 import type { Decode, Encode } from "./src/common.ts";
 import { de_b16, en_b16 } from "./src/16.ts";
 import {
@@ -106,7 +106,5 @@ Deno.test("mod", async ({ step }) => {
       ($) => assertEquals(de_bin($), new TextDecoder().decode($)),
     ));
   });
-  await step("bundle : pure", async () => {
-    assertEquals(await bundle(import.meta), "");
-  });
+  await step("bundle : pure", pure);
 });

@@ -5,7 +5,7 @@ import {
   type Spy,
   spy,
 } from "@std/testing/mock";
-import { bundle } from "@libn/lib";
+import { pure } from "@libn/lib";
 import {
   batch,
   derive,
@@ -1965,7 +1965,5 @@ Deno.test("system", async ({ step }) => {
   });
 });
 Deno.test("mod", async ({ step }) => {
-  await step("bundle : pure", async () => {
-    assertEquals(await bundle(import.meta), "");
-  });
+  await step("bundle : pure", pure);
 });

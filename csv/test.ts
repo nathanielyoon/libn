@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { bundle, fc_check, fc_string } from "@libn/lib";
+import { fc_check, fc_string, pure } from "@libn/lib";
 import { de_csv } from "./src/parse.ts";
 import { en_csv } from "./src/stringify.ts";
 import vectors from "./vectors.json" with { type: "json" };
@@ -114,7 +114,5 @@ Deno.test("mod", async ({ step }) => {
       ({ json, csv }) => assertEquals(de_csv(csv), json),
     ));
   });
-  await step("bundle : pure", async () => {
-    assertEquals(await bundle(import.meta), "");
-  });
+  await step("bundle : pure", pure);
 });

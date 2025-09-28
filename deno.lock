@@ -388,6 +388,7 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@deno/dnt@~0.42.3",
       "jsr:@std/assert@^1.0.14",
       "npm:fast-check@^4.3.0"
     ],

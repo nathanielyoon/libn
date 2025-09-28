@@ -1,6 +1,6 @@
 import { assert, assertAlmostEquals, assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { bundle, fc_check, fc_string } from "@libn/lib";
+import { fc_check, fc_string, pure } from "@libn/lib";
 import { distance } from "./src/distance.ts";
 import { includes } from "./src/includes.ts";
 import { Matcher } from "./src/match.ts";
@@ -100,7 +100,5 @@ Deno.test("match", async ({ step }) => {
   });
 });
 Deno.test("mod", async ({ step }) => {
-  await step("bundle : pure", async () => {
-    assertEquals(await bundle(import.meta), "");
-  });
+  await step("bundle : pure", pure);
 });

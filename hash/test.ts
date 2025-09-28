@@ -1,7 +1,7 @@
 import { assertEquals, assertNotEquals } from "@std/assert";
 import { crypto } from "@std/crypto";
 import fc from "fast-check";
-import { bundle, fc_binary, fc_check, read } from "@libn/lib";
+import { fc_binary, fc_check, pure, read } from "@libn/lib";
 import { de_b16 } from "@libn/base";
 import { sha224, sha256, sha384, sha512 } from "./src/sha2.ts";
 import { hkdf_sha256, hmac_sha256 } from "./src/hmac.ts";
@@ -235,7 +235,5 @@ Deno.test("blake3", async ({ step }) => {
   });
 });
 Deno.test("mod", async ({ step }) => {
-  await step("bundle : pure", async () => {
-    assertEquals(await bundle(import.meta), "");
-  });
+  await step("bundle : pure", pure);
 });

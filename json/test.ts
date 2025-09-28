@@ -1,12 +1,12 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 import {
-  bundle,
   fc_check,
   fc_json,
   fc_number,
   fc_string,
   type Json,
+  pure,
   type Tuple,
 } from "@libn/lib";
 import type { Data, Fail, Type } from "./src/types.ts";
@@ -619,7 +619,5 @@ Deno.test("parse", async ({ step }) => {
   );
 });
 Deno.test("mod", async ({ step }) => {
-  await step("bundle : pure", async () => {
-    assertEquals(await bundle(import.meta), "");
-  });
+  await step("bundle : pure", pure);
 });
