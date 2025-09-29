@@ -1,5 +1,4 @@
-import { assert } from "@std/assert";
-import { assertEquals } from "@std/assert/equals";
+import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { fc_bin, fc_check, pure, read } from "@libn/lib";
 import { cipher, decrypt, encrypt } from "../mod.ts";

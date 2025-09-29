@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
-import { read } from "@libn/lib";
 import { en_bin } from "@libn/base";
+import { read } from "@libn/lib";
 import { pae } from "../src/common.ts";
 import vectors from "./vectors.json" with { type: "json" };
 

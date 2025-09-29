@@ -1,8 +1,8 @@
 import fc from "fast-check";
 import { fc_json, fc_num, fc_str, type Tuple } from "@libn/lib";
+import type { Base, Format } from "../src/types.ts";
 import { array, boolean, number, object, string } from "../src/build.ts";
 import { BASES, FORMATS } from "../src/parse.ts";
-import type { Base, Format } from "../src/types.ts";
 
 /** Type values. */
 export const TYPES = [
