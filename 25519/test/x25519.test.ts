@@ -7,7 +7,7 @@ import {
   exchange,
 } from "../src/x25519.ts";
 import { generate } from "../src/ed25519.ts";
-import { get_pair, set_pair } from "./pair.ts";
+import { get_pair, set_pair } from "./common.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("exchange : rfc7748 5.2", () =>

@@ -1,7 +1,7 @@
 import { assert, assertEquals } from "@std/assert";
 import { fc_assert, fc_bin, read } from "@libn/lib";
 import { generate, sign, verify } from "../src/ed25519.ts";
-import { get_pair, set_pair } from "./pair.ts";
+import { get_pair, set_pair } from "./common.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("generate/sign/verify : rfc8032 7.1", () =>
