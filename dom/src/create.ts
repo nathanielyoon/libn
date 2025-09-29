@@ -1,5 +1,3 @@
-import { Err } from "@libn/result";
-
 /** @internal */
 type Html = HTMLElementTagNameMap;
 /** @internal */
@@ -9,7 +7,7 @@ const CSS_IDENTIFIER =
 const ATTRIBUTES = /\[[^\s\0-\x1f\x7f"'/=>]+="(?:\\"|[^"])*"\]/g;
 /** Creates an element. */
 export const html = <A extends keyof Html>(
-  element: `${A}${`#${string}` | ""}${`.${string}` | ""}${`[${string}` | ""}`,
+  selector: `${A}${`#${string}` | ""}${`.${string}` | ""}${`[${string}` | ""}`,
   ...children: (
     | Child
     | Child[]
@@ -24,8 +22,8 @@ export const html = <A extends keyof Html>(
 ): Html[A] => {
   const exec = RegExp(
     `^(${CSS_IDENTIFIER.source})(?:#(${CSS_IDENTIFIER.source}))?((?:\\.${CSS_IDENTIFIER.source})*)((?:${ATTRIBUTES.source})*)$`,
-  ).exec(element);
-  if (!exec) throw new Err("invalid selector", element);
+  ).exec(selector);
+  if (!exec) throw Error(selector);
   const parent = document.createElement(exec[1]) as Html[A];
   if (exec[2]) parent.id = exec[2];
   parent.classList.add.apply(
