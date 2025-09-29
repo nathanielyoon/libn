@@ -41,37 +41,22 @@ export const fc_check = (<A>($: fc.IRawProperty<A>, arg?: fc.Parameters<A>) => {
   <A>($: fc.IProperty<A>, parameters?: fc.Parameters<A>): void;
   <A>($: fc.IAsyncProperty<A>, parameters?: fc.Parameters<A>): Promise<void>;
 };
+type Arbitraries<A extends unknown[]> = { [B in keyof A]: fc.Arbitrary<A[B]> };
 /** Asserts a property, throwing thrown failures. */
-export const fc_assert = (<A extends [unknown, ...unknown[]]>(
-  ...$: [
-    ...arbitraries: { [B in keyof A]: fc.Arbitrary<A[B]> },
-    predicate: (...$: A) => boolean | void | Promise<boolean | void>,
-    options: fc.Parameters<A> & { async?: boolean },
-  ]
-) => {
-  const options = $.pop() as fc.Parameters<A> & { async?: boolean };
-  if (options.async) {
-    const predicate = $.pop() as (...$: A) => Promise<boolean | void>;
-    // @ts-expect-error: popped off
-    return fc.check(fc.asyncProperty(...$, predicate), options).then(fc_report);
-  } else {
-    const predicate = $.pop() as (...$: A) => boolean | void;
-    // @ts-expect-error: popped off
-    return fc_report(fc.check(fc.property(...$, predicate), options));
-  }
-}) as {
-  <A extends [unknown, ...unknown[]]>(
-    ...$: [
-      ...arbitraries: { [B in keyof A]: fc.Arbitrary<A[B]> },
-      predicate: (...$: A) => boolean | void,
-      options: fc.Parameters<A> & { async?: false },
-    ]
-  ): void;
-  <A extends [unknown, ...unknown[]]>(
-    ...$: [
-      ...arbitraries: { [B in keyof A]: fc.Arbitrary<A[B]> },
-      predicate: (...$: A) => Promise<boolean | void>,
-      options: fc.Parameters<A> & { async: true },
-    ]
-  ): Promise<void>;
-};
+export const fc_assert =
+  (<A extends [unknown, ...unknown[]]>(...$: Arbitraries<A>) =>
+  (check: (...$: A) => any, options?: fc.Parameters<A> & { async?: boolean }) =>
+    options?.async
+      ? fc.check(fc.asyncProperty(...$, check), options).then(fc_report)
+      : fc_report(
+        fc.check(fc.property(...$, check), options),
+      )) as {
+      <A extends [unknown, ...unknown[]]>(...$: Arbitraries<A>): (
+        check: (...$: A) => boolean | void,
+        options?: fc.Parameters<A> & { async?: false },
+      ) => void;
+      <A extends [unknown, ...unknown[]]>(...$: Arbitraries<A>): (
+        check: (...$: A) => Promise<boolean | void>,
+        options: fc.Parameters<A> & { async: true },
+      ) => Promise<void>;
+    };
