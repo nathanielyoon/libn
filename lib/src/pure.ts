@@ -11,5 +11,6 @@ export const pure = async (t: Deno.TestContext): Promise<void> => {
     write: false,
   });
   await Deno.remove(entry);
+  // @ts-ignore: `deno check` for workspace doesn't respect --unstable-bundle
   assertEquals(result.outputFiles?.map(($) => $.text()), [""]);
 };
