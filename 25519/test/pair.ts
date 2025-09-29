@@ -1,11 +1,11 @@
 /** Generates a Curve25519 key pair. */
-export const generate_pair = (
+export const get_pair = (
   algorithm: `${"Ed" | "X"}25519`,
   use: KeyUsage[],
 ): Promise<CryptoKeyPair> =>
   crypto.subtle.generateKey(algorithm, true, use) as Promise<CryptoKeyPair>;
 /** Exports raw Curve25519 keys. */
-export const export_pair = (
+export const set_pair = (
   pair: CryptoKeyPair,
 ): Promise<{ [_ in `${"secret" | "public"}_key`]: Uint8Array<ArrayBuffer> }> =>
   Promise.all([
