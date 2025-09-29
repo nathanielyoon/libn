@@ -41,22 +41,25 @@ export const fc_check = (<A>($: fc.IRawProperty<A>, arg?: fc.Parameters<A>) => {
   <A>($: fc.IProperty<A>, parameters?: fc.Parameters<A>): void;
   <A>($: fc.IAsyncProperty<A>, parameters?: fc.Parameters<A>): Promise<void>;
 };
-type Arbitraries<A extends unknown[]> = { [B in keyof A]: fc.Arbitrary<A[B]> };
+/** @internal */
+type FcAssert<A extends [unknown, ...unknown[]]> = {
+  (
+    check: (...$: A) => boolean | void,
+    options?: fc.Parameters<A> & { async?: false },
+  ): void;
+  (
+    check: (...$: A) => Promise<boolean | void>,
+    options: fc.Parameters<A> & { async: true },
+  ): Promise<void>;
+};
 /** Asserts a property, throwing thrown failures. */
-export const fc_assert =
-  (<A extends [unknown, ...unknown[]]>(...$: Arbitraries<A>) =>
-  (check: (...$: A) => any, options?: fc.Parameters<A> & { async?: boolean }) =>
+export const fc_assert = <A extends [unknown, ...unknown[]]>(
+  ...$: { [B in keyof A]: fc.Arbitrary<A[B]> }
+): FcAssert<A> =>
+  ((
+    check: (...$: A) => any,
+    options?: fc.Parameters<A> & { async?: boolean },
+  ) =>
     options?.async
       ? fc.check(fc.asyncProperty(...$, check), options).then(fc_report)
-      : fc_report(
-        fc.check(fc.property(...$, check), options),
-      )) as {
-      <A extends [unknown, ...unknown[]]>(...$: Arbitraries<A>): (
-        check: (...$: A) => boolean | void,
-        options?: fc.Parameters<A> & { async?: false },
-      ) => void;
-      <A extends [unknown, ...unknown[]]>(...$: Arbitraries<A>): (
-        check: (...$: A) => Promise<boolean | void>,
-        options: fc.Parameters<A> & { async: true },
-      ) => Promise<void>;
-    };
+      : fc_report(fc.check(fc.property(...$, check), options))) as FcAssert<A>;
