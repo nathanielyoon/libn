@@ -1,65 +1,61 @@
-import {
-  type Effect,
-  Flag,
-  Kind,
-  type Link,
-  type Node,
-  type Scoper,
-} from "./node.ts";
+import { Flag, Kind } from "./flags.ts";
+import type { Effect, Link, Node, Scoper } from "./node.ts";
 
-let step = 0; // to track whether a node was visited in a given pass
 /** Connects two nodes. */
-export const link = (dep: Node, sub: Node | null): void => {
+export const enlink = (dep: Node, sub: Node | null, step: number): void => {
   if (!sub) return;
-  const a = sub.head;
-  if (a?.dep === dep) return;
-  const b = a ? a.dep_next : sub.deps;
-  if (b?.dep === dep) return sub.head = b, b.step = step as any; // void
-  const c = dep.tail;
-  if (c?.step === step && c.sub === sub) return;
-  const d = sub.head = dep.tail = {
+  const head = sub.head;
+  if (head?.dep === dep) return;
+  const next = head ? head.dep_next : sub.deps;
+  if (next?.dep === dep) return sub.head = next, next.step = step as never;
+  const tail = dep.tail;
+  if (tail?.step === step && tail.sub === sub) return;
+  const link = sub.head = dep.tail = {
     step,
-    dep_prev: a,
+    dep_prev: head,
     dep,
-    dep_next: b,
-    sub_prev: c,
+    dep_next: next,
+    sub_prev: tail,
     sub,
     sub_next: null,
   };
-  if (b) b.dep_prev = d;
-  a ? a.dep_next = d : sub.deps = d, c ? c.sub_next = d : dep.subs = d;
+  if (next) next.dep_prev = link;
+  head ? head.dep_next = link : sub.deps = link;
+  tail ? tail.sub_next = link : dep.subs = link;
 };
-const chop = (sub: Node, $: Link) => {
-  const a = $.dep, b = $.dep_next, c = $.dep_prev, d = $.sub_next;
-  b ? b.dep_prev = c : sub.head = c, c ? c.dep_next = b : sub.deps = b;
-  let e = $.sub_prev;
-  if (d ? d.sub_prev = e : a.tail = e) e!.sub_next = d;
-  else if (!(a.subs = d)) {
-    switch (a.kind) {
+const delink = ($: Link, to: Node) => {
+  const head = $.dep_prev, next = $.dep_next;
+  next ? next.dep_prev = head : to.head = head;
+  head ? head.dep_next = next : to.deps = next;
+  const prev = $.sub_prev, tail = $.sub_next, dep = $.dep;
+  tail ? tail.sub_prev = prev : dep.tail = prev;
+  if (prev) prev.sub_next = tail;
+  else if (!(dep.subs = tail)) {
+    switch (dep.kind) {
       case Kind.DERIVE:
-        if (e = a.deps) {
-          a.flags = Flag.START;
-          do e = chop(a, e); while (e);
+        if ($ = dep.deps!) {
+          dep.flags = Flag.START;
+          do $ = delink($, dep)!; while ($);
         } // falls through
       case Kind.SIGNAL:
         break;
       default:
-        dispose(a);
+        dispose(dep);
     }
   }
-  return b;
+  return next;
 };
 /** Cleans up effects. */
 export const dispose = ($: Effect | Scoper): void => {
-  for (let a = $.deps; a; a = chop($, a));
-  $.subs && chop($.subs.sub, $.subs), $.flags = Flag.CLEAR;
+  for (let a = $.deps; a; a = delink(a, $));
+  $.subs && delink($.subs, $.subs.sub), $.flags = Flag.CLEAR;
 };
-/** Starts tracking a node. */
-export const follow = ($: Node): void => {
-  ++step, $.head = null, $.flags = $.flags & Flag.FRESH | Flag.CHECK;
-};
-/** Stops tracking a node. */
-export const ignore = ($: Node): void => {
-  for (let a = $.head ? $.head.dep_next : $.deps; a; a = chop($, a));
+/** Clears a node from its dependencies. */
+export const drop = ($: Node): void => {
   $.flags &= ~Flag.CHECK;
+  for (let a = $.head ? $.head.dep_next : $.deps; a; a = delink(a, $));
+};
+/** Checks a link. */
+export const validate = (sub: Node, $: Link): boolean | void => {
+  for (let dep = sub.head; dep; dep = dep.dep_prev) if (dep === $) return true;
 };

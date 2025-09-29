@@ -1,54 +1,53 @@
-import {
-  type Derive,
-  type Effect,
-  type Equals,
-  Flag,
-  Kind,
-  type Link,
-  type Node,
-  type Scoper,
-  type Signal,
-} from "./node.ts";
-import { dispose, follow, ignore, link } from "./link.ts";
-import { above, below, deep, flat, flush } from "./queue.ts";
+import { Flag, Kind } from "./flags.ts";
+import type { Derive, Effect, Is, Link, Node, Scoper, Signal } from "./node.ts";
+import { dispose, drop, enlink, validate } from "./link.ts";
 
-let actor: Node | null = null, scope: Scoper | null = null, swapper;
+const queue: (Effect | Scoper)[] = [];
+let depth = 0, step = 0, active: Node | null = null, swap;
+/** Pauses updates, runs a function, then resumes. */
+export const batch = <A>($: () => A): A => {
+  try {
+    return ++depth, $();
+  } finally {
+    --depth || pull();
+  }
+};
 /** Manually sets the current subscriber. */
-export const set_actor = ($: Node | null): Node | null => (
-  swapper = actor, actor = $, swapper
+export const set_active = ($: Node | null): Node | null => (
+  swap = active, active = $, swap
 );
-const reuse = <A>($: Signal | Derive, prev: A, next: A) => {
+const reuse = <A>($: Signal<A> | Derive<A>, prev: A, next: A) => {
   switch ($.is) {
     case undefined:
-      return prev !== next;
+      return prev === next;
     case false:
-      return true;
+      return false;
     default:
-      return !$.is(prev, next);
+      return $.is(prev, next);
   }
 };
 const reset = ($: Signal) => (
-  $.flags = Flag.BEGIN, reuse($, $.prev, $.prev = $.next)
+  $.flags = Flag.BEGIN, !reuse($, $.prev, $.prev = $.next)
 );
 const reget = ($: Derive) => {
-  const a = actor;
-  follow(actor = $);
+  const prev = active;
+  active = $, ++step, $.head = null, $.flags = Flag.INNER;
   try {
-    return reuse($, $.prev, $.prev = $.next($.prev));
+    return !reuse($, $.prev, $.prev = $.next($.prev));
   } finally {
-    actor = a, ignore($);
+    active = prev, drop($);
   }
 };
 const retry = ($: Node) =>
   $.kind === Kind.SIGNAL && reset($) || $.kind === Kind.DERIVE && reget($);
 const check = (sub: Node, $: Link) => {
   const stack: (Link | null)[] = [];
-  let dirty = false, size = 0;
+  let size = 0, dirty = false, dep, link;
   do {
-    const dep = $.dep;
+    dep = $.dep;
     if (sub.flags & Flag.DIRTY) dirty = true;
     else if ((dep.flags & Flag.START) === Flag.START) {
-      if (retry(dep)) dirty = true, dep.subs!.sub_next && flat(dep.subs!);
+      if (retry(dep)) dep.subs!.sub_next && flat(dep.subs!), dirty = true;
     } else if ((dep.flags & Flag.CAUSE) === Flag.CAUSE) {
       if ($.sub_next || $.sub_prev) stack.push($);
       ++size, sub = dep, $ = dep.deps!;
@@ -56,8 +55,7 @@ const check = (sub: Node, $: Link) => {
     }
     mid: if (dirty || !$.dep_next) {
       while (size--) {
-        const link = sub.subs!;
-        $ = link.sub_next ? stack.pop()! : link;
+        link = sub.subs!, $ = link.sub_next ? stack.pop()! : link;
         if (!dirty) sub.flags &= ~Flag.READY;
         else if (retry(sub)) link.sub_next && flat(link), sub = $.sub;
         else if (sub = $.sub, $.dep_next) break mid;
@@ -69,7 +67,7 @@ const check = (sub: Node, $: Link) => {
   } while (true);
 };
 const run = ($: Effect | Scoper) => {
-  switch ($.flags &= ~Flag.QUEUE, $.flags & Flag.SETUP) {
+  switch (($.flags &= ~Flag.QUEUE) & Flag.SETUP) {
     case Flag.CLEAR:
       break;
     case Flag.READY:
@@ -78,48 +76,57 @@ const run = ($: Effect | Scoper) => {
         break;
       } // falls through
     default: {
-      const a = actor;
-      follow(actor = $);
+      const prev = active;
+      active = $, ++step, $.head = null, $.flags = Flag.OUTER;
       try {
-        return $.run(); // calls inner effects too
+        return $.run();
       } finally {
-        actor = a, ignore($);
+        active = prev, drop($);
       }
     }
   }
-  for (let a = $.deps; a; a = a.dep_next) { // recurse into inner effects
-    a.dep.flags & Flag.QUEUE && run(a.dep as Effect | Scoper);
+  for (let next = $.deps; next; next = next.dep_next) {
+    next.dep.flags & Flag.QUEUE && run(next.dep as Effect | Scoper);
   }
 };
-function Signal(this: Signal, ...$: [unknown]) {
-  // Checking the rest parameter's length distinguishes between setting an
-  // explicit undefined or getting by calling without arguments.
-  if ($.length) {
-    const next = typeof $[0] === "function" ? $[0](this.next) : $[0];
-    // Passing through fulfills the setter type's const generic, and matches how
-    // the native assignment operator works.
-    if (!reuse(this, next, this.next)) return next;
-    this.next = next, this.flags = Flag.START;
-    this.subs && deep(this.subs, run);
-  } else {
-    if (this.flags & Flag.DIRTY && reset(this) && this.subs) flat(this.subs);
-    link(this, actor);
-  }
-  return this.next;
-}
-function Derive(this: Derive) {
-  switch (this.flags & Flag.SETUP) { // `case Flag.BEGIN` is no-op
-    case Flag.READY:
-      if (!check(this, this.deps!)) {
-        this.flags &= ~Flag.READY;
+const pull = () => {
+  for (let first; first = queue.shift(); run(first));
+};
+const push = ($: Effect | Scoper) => {
+  do if ($.flags & Flag.QUEUE) return;
+  else if ($.flags |= Flag.QUEUE, $.subs) $ = $.subs.sub as Effect | Scoper;
+  else return queue.push($); while ($);
+};
+const flat = ($: Link) => {
+  do ($.sub.flags & Flag.SETUP) === Flag.READY &&
+    ($.sub.flags |= Flag.DIRTY) & Flag.WATCH &&
+    push($.sub as Effect | Scoper); while ($ = $.sub_next!);
+};
+const deep = ($: Link) => {
+  const stack: (Link | null)[] = [];
+  let next = $.sub_next, sub, flags;
+  top: do {
+    switch (sub = $.sub, flags = sub.flags, flags & Flag.KNOWN) {
+      case Flag.RECUR:
+        sub.flags &= ~Flag.RECUR; // falls through
+      case Flag.CLEAR:
+        sub.flags |= Flag.READY;
+        flags & Flag.WATCH && push(sub as Effect | Scoper);
         break;
-      } // falls through
-    case Flag.DIRTY:
-    case Flag.SETUP:
-      reget(this) && this.subs && flat(this.subs);
-  }
-  return link(this, scope ?? actor), this.prev;
-}
+      default:
+        if (flags & Flag.SETUP || !validate(sub, $)) flags = Flag.CLEAR;
+        else sub.flags |= Flag.RECUR | Flag.READY, flags &= Flag.BEGIN;
+    }
+    mid: if (flags & Flag.BEGIN) {
+      if (sub.subs && ($ = sub.subs).sub_next) stack.push(next);
+      else continue top;
+    } else if (!next) {
+      while (stack.length) if ($ = stack.pop()!) break mid;
+      break;
+    } else $ = next;
+    next = $.sub_next;
+  } while (true);
+};
 const make = <A extends Kind, B>(kind: A, flags: Flag, rest: B) => (
   { kind, flags, head: null, deps: null, subs: null, tail: null, ...rest }
 );
@@ -127,68 +134,103 @@ const make = <A extends Kind, B>(kind: A, flags: Flag, rest: B) => (
 export type Getter<A> = () => A;
 /** Reactive setter. */
 export type Setter<A> = <const B extends A>(next: B | ((prev: A) => B)) => B;
-/** Creates a reactive value. */
+function Signal<A>(this: Signal<A>, ...$: [A]) {
+  // Checking the rest parameter's length distinguishes between setting an
+  // explicit undefined or getting by calling without arguments.
+  if ($.length) {
+    const next = typeof $[0] === "function" ? $[0](this.next) : $[0];
+    // Passing through fulfills the setter type's const generic, and matches how
+    // the native assignment operator works.
+    if (reuse(this, next, this.next)) return next;
+    this.next = next, this.flags = Flag.START;
+    if (this.subs) deep(this.subs), depth || pull();
+  } else {
+    this.flags & Flag.DIRTY && reset(this) && this.subs && flat(this.subs);
+    for (let sub = active; sub; sub = sub.subs?.sub!) {
+      if (sub.flags & Flag.TRIED) {
+        enlink(this, sub, step);
+        break;
+      }
+    }
+  }
+  return this.next;
+}
+/** Creates a mutable data source. */
 export const signal =
-  (($: any, options?: { equals?: Equals<any, any> }) =>
+  (($: any, options?: { is?: Is<any, any> }) =>
     Signal.bind(make(
       Kind.SIGNAL,
       Flag.BEGIN,
-      { next: $, prev: $, is: options?.equals },
+      { next: $, prev: $, is: options?.is },
     ))) as {
-      <A>($: A, options?: { equals?: Equals<A, A> }): Getter<A> & Setter<A>;
+      <A>($: A, options?: { is?: Is<A, A> }): Getter<A> & Setter<A>;
       <A>(
         _?: A,
-        options?: { equals?: Equals<A | undefined, A | undefined> },
+        options?: { is?: Is<A | undefined, A | undefined> },
       ): Getter<A | undefined> & Setter<A | undefined>;
     };
-/** Creates a derived computation. */
+function Derive<A>(this: Derive<A>) {
+  switch (this.flags & Flag.SETUP) {
+    case Flag.CLEAR:
+      if (!this.flags) {
+        const prev = active;
+        active = this, this.flags = Flag.BEGIN;
+        try {
+          this.prev = this.next();
+        } finally {
+          active = prev;
+        }
+      }
+      break;
+    case Flag.READY:
+      if (!check(this, this.deps!)) {
+        this.flags &= ~Flag.READY;
+        break;
+      } // falls through
+    default:
+      reget(this) && this.subs && flat(this.subs);
+  }
+  return enlink(this, active, step), this.prev;
+}
+/** Creates a computed derivation. */
 export const derive =
-  (($: any, options?: { initial?: any; equals?: Equals<any, any> }) =>
+  (($: any, options?: { initial?: any; is?: Is<any, any> }) =>
     Derive.bind(make(
       Kind.DERIVE,
-      Flag.START,
-      { next: $, prev: options?.initial, is: options?.equals },
+      Flag.CLEAR,
+      { next: $, prev: options?.initial, is: options?.is },
     ))) as {
       // Omitting the initial value limits inference for the deriver's parameter
       // (see <https://github.com/microsoft/TypeScript/issues/47599>), so it'll
       // need an explicit type.
       <A>(
         $: (prev: A | undefined) => A,
-        options?: { initial?: undefined; equals?: Equals<A | undefined, A> },
+        options?: { initial?: undefined; is?: Is<A | undefined, A> },
       ): Getter<A>;
       <A>(
         $: (prev: A) => A,
-        options: { initial: A; equals?: Equals<A, A> },
+        options: { initial: A; is?: Is<A, A> },
       ): Getter<A>;
     };
-/** Creates a disposable side effect. */
+/** Creates a disposable side-effectual sink. */
 export const effect = ($: () => void): () => void => {
-  const node = make(Kind.EFFECT, Flag.CLEAR, { run: $ }), a = actor;
-  link(actor = node, scope ?? a);
+  const node = make(Kind.EFFECT, Flag.WATCH, { run: $ }), prev = active;
+  enlink(active = node, prev, 0);
   try {
     $();
   } finally {
-    actor = a;
+    active = prev;
   }
   return dispose.bind(null, node);
 };
-/** Creates a disposable group of effects. */
+/** Creates a disposable effects group owner. */
 export const scoper = ($: () => void): () => void => {
-  // Nothing calls this `run` property, but it makes the types more consistent.
-  const node = make(Kind.SCOPER, Flag.CLEAR, { run: $ }), a = actor, b = scope;
-  actor = null, link(scope = node, b);
+  const node = make(Kind.SCOPER, Flag.CLEAR, { run: $ }), prev = active;
+  enlink(active = node, prev, 0);
   try {
     $();
   } finally {
-    actor = a, scope = b;
+    active = prev;
   }
   return dispose.bind(null, node);
-};
-/** Pauses updates, executes a function, then resumes. */
-export const batch = <A>($: () => A): A => {
-  try {
-    return above(), $();
-  } finally {
-    below() || flush(run);
-  }
 };
