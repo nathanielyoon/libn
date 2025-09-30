@@ -21,7 +21,7 @@
  *       const base64 = yield* some(/^Bearer (.+)$/.exec(header)?.[1], "no token");
  *       const token = yield* save(($: string) => atob($), ($) => {
  *         if ($ instanceof DOMException) return "invalid base64" as const;
- *         Err.throw("unknown error", $);
+ *         throw $;
  *       })(base64);
  *       yield* or({ state: tokens.has(token), value: "wrong token" });
  *       const text = await $.text();
@@ -47,7 +47,6 @@
  * @module result
  */
 
-import { Err } from "./src/error.ts";
 import { no, ok, Or, or, type Result } from "./src/or.ts";
 import {
   drop,
@@ -64,7 +63,6 @@ export {
   drop,
   each,
   each_async,
-  Err,
   exec,
   exec_async,
   no,
