@@ -8,7 +8,7 @@ const regex = (
   file: string,
 ) => RegExp($.join(`(?:[^"]*?/)?${file.replace(/[$(-+./?[-^{|}]/g, "\\$&")}`));
 /** Options to pass to Vite's build configuration. */
-export interface Options {
+export interface InlineOptions {
   /**
    * Whether to uselessly split CSS (before recombining into the single file).
    *
@@ -49,7 +49,7 @@ export interface Options {
   };
 }
 /** Updates config (unless passed `false`) and inlines assets. */
-export const inline = (build: Options | false = {}): PluginOption => ({
+export const inline = (build: InlineOptions | false = {}): PluginOption => ({
   name: "vite-plugin-inline",
   config: (config) => {
     if (build) {

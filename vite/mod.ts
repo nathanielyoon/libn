@@ -13,6 +13,6 @@
  * @module vite
  */
 
-import { inline, type Options } from "./src/inline.ts";
+import { inline, type InlineOptions } from "./src/inline.ts";
 
-export { inline, type Options };
+export { inline, type InlineOptions };
