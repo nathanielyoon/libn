@@ -13,8 +13,8 @@
  * @module csv
  */
 
-import type { Row } from "./src/common.ts";
+import type { CsvOptions, Row } from "./src/common.ts";
 import { en_csv } from "./src/stringify.ts";
 import { de_csv } from "./src/parse.ts";
 
-export { de_csv, en_csv, type Row };
+export { type CsvOptions, de_csv, en_csv, type Row };

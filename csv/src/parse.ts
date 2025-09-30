@@ -1,4 +1,4 @@
-import type { Options, Row } from "./common.ts";
+import type { CsvOptions, Row } from "./common.ts";
 
 const enum Code {
   LF = 10,
@@ -28,7 +28,7 @@ const enum Case {
 /** Decodes CSV string -> array of rows. */
 export const de_csv = <A extends {} | null = null>(
   $: string,
-  options?: Options<A>,
+  options?: CsvOptions<A>,
 ): Row<A>[] | null => {
   $.charCodeAt(0) === 0xfeff && ($ = $.slice(1));
   if (!$.length) return [];

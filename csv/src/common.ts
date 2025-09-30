@@ -1,5 +1,5 @@
 /** Type-determining options. */
-export interface Options<A extends {} | null> {
+export interface CsvOptions<A extends {} | null> {
   /**
    * Whether to assume all rows are the same length.
    *

@@ -1,7 +1,7 @@
-import type { Options, Row } from "./common.ts";
+import type { CsvOptions, Row } from "./common.ts";
 
 /** Encodes array of rows -> CSV string. */
-export const en_csv = (($: Row<any>[], options?: Options<any>) => {
+export const en_csv = (($: Row<any>[], options?: CsvOptions<any>) => {
   const is_empty = options?.empty?.check ?? (($) => $ === null);
   let csv = "", row, line, field;
   for (let z = 0, y; z < $.length; csv += line.replace(/,?$/, "\n"), ++z) {
@@ -13,9 +13,9 @@ export const en_csv = (($: Row<any>[], options?: Options<any>) => {
   }
   return csv;
 }) as {
-  ($: Row<null>[], options?: Options<null>): string;
+  ($: Row<null>[], options?: CsvOptions<null>): string;
   <A extends {}>(
     $: Row<A>[],
-    options: Options<A> & { empty: { check: {} } },
+    options: CsvOptions<A> & { empty: { check: {} } },
   ): string;
 };
