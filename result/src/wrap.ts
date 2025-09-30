@@ -1,4 +1,3 @@
-import { Err } from "./error.ts";
 import { no, ok, type Or, type Result } from "./or.ts";
 
 /** Converts a value to a non-nullable success or nullish failure. */
@@ -14,7 +13,7 @@ export const drop =
     return maybe_error ? no(maybe_error) : ok($);
   };
 /** Wraps a possibly-throwing function. */
-export const save = <A, B, C = Err<"unknown", unknown>>(
+export const save = <A, B, C = Error>(
   unsafe: ($: A) => B,
   if_thrown?: ($: unknown) => C,
 ): ($: A) => Or<C, B> =>
@@ -22,11 +21,13 @@ export const save = <A, B, C = Err<"unknown", unknown>>(
   try {
     return ok(unsafe($));
   } catch ($) {
-    return no(if_thrown ? if_thrown($) : new Err("unknown", $) as C);
+    return no(
+      if_thrown ? if_thrown($) : new Error("", { cause: $ }) as C,
+    );
   }
 };
 /** Wraps a possibly-rejecting function. */
-export const save_async = <A, B, C = Err<"unknown", unknown>>(
+export const save_async = <A, B, C = Error>(
   unsafe: ($: A) => B | Promise<B>,
   if_thrown?: ($: unknown) => C | Promise<C>,
 ): ($: A) => Promise<Or<C, B>> =>
@@ -34,7 +35,9 @@ async ($) => {
   try {
     return ok(await unsafe($));
   } catch ($) {
-    return no(if_thrown ? await if_thrown($) : new Err("unknown", $) as C);
+    return no(
+      if_thrown ? await if_thrown($) : new Error("", { cause: $ }) as C,
+    );
   }
 };
 /** Wraps an imperative block. */
