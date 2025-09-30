@@ -48,7 +48,7 @@ import { de_a85, de_z85, en_a85, en_z85 } from "./src/85.ts";
 import { de_b91, en_b91 } from "./src/91.ts";
 
 /** Encodes string -> binary. */
-export const en_bin: ($: string) => Uint8Array = /* @__PURE__ */
+export const en_bin: ($: string) => Uint8Array<ArrayBuffer> = /* @__PURE__ */
   TextEncoder.prototype.encode.bind(/* @__PURE__ */ new TextEncoder());
 /** Decodes binary -> string. */
 export const de_bin: ($: Uint8Array) => string = /* @__PURE__ */
