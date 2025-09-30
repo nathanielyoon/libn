@@ -12,7 +12,7 @@
  * ```ts
  * import fc from "fast-check";
  *
- * fc_check(fc.property(fc_number(), ($) => !Number.isNaN($)));
+ * fc_check(fc.property(fc_num(), ($) => !Number.isNaN($)));
  * ```
  *
  * @module lib
