@@ -3,7 +3,7 @@ import { pure } from "@libn/lib";
 import { derive, effect, signal } from "../mod.ts";
 
 Deno.test("signal/derive : custom equality", () => {
-  const never = signal([0], { is: false });
+  const never = signal([0], { is: () => false });
   const index = derive(() => [never()[0] + 1], {
     is: (prev, next) => prev?.[0] === next[0],
   });

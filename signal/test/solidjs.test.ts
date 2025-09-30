@@ -17,15 +17,15 @@ Deno.test("derive : solidjs graph.test.ts", () => {
     const b1 = derive(() => {
       a1();
       seq += "b1";
-    }, { is: false });
+    }, { is: () => false });
     const b2 = derive(() => {
       a1();
       seq += "b2";
-    }, { is: false });
+    }, { is: () => false });
     const c1 = derive(() => {
       b1(), b2();
       seq += "c1";
-    }, { is: false });
+    }, { is: () => false });
     c1();
     seq = "";
     a1(true);
@@ -104,7 +104,7 @@ Deno.test("derive : solidjs graph.test.ts", () => {
     assertEquals(hcount, 1);
   }
   { // does not trigger downstream computations unless changed
-    const s1 = signal(1, { is: false });
+    const s1 = signal(1, { is: () => false });
     let order = "";
     const t1 = derive(() => {
       order += "t1";

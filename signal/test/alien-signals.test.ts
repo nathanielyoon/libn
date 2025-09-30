@@ -1,10 +1,10 @@
 import { assertEquals } from "@std/assert";
 import {
+  activate,
   batch,
   derive,
   effect,
   scoper,
-  set_active,
   signal,
 } from "../src/system.ts";
 
@@ -195,9 +195,9 @@ Deno.test("effect :: alien-signals effect", () => {
     const order: string[] = [];
     effect(() => {
       order.push("a");
-      const currentSub = set_active(null);
+      const currentSub = activate(null);
       const isOne = src2() === 1;
-      set_active(currentSub);
+      activate(currentSub);
       if (isOne) src1();
       src2();
       src1();
@@ -379,11 +379,11 @@ Deno.test("derive : alien-signals issue_48.spec.ts", () => {
     return dispose;
   }
   function untracked<T>(callback: () => T): T {
-    const currentSub = set_active(null);
+    const currentSub = activate(null);
     try {
       return callback();
     } finally {
-      set_active(currentSub);
+      activate(currentSub);
     }
   }
 });
@@ -393,9 +393,9 @@ Deno.test("derive/effect/scoper : alien-signals untrack.spec.ts", () => {
     let deriveTriggerTimes = 0;
     const c = derive(() => {
       deriveTriggerTimes++;
-      const currentSub = set_active(null);
+      const currentSub = activate(null);
       const value = src();
-      set_active(currentSub);
+      activate(currentSub);
       return value;
     });
     assertEquals(c(), 0);
@@ -411,9 +411,9 @@ Deno.test("derive/effect/scoper : alien-signals untrack.spec.ts", () => {
     effect(() => {
       effectTriggerTimes++;
       if (is()) {
-        const currentSub = set_active(null);
+        const currentSub = activate(null);
         src();
-        set_active(currentSub);
+        activate(currentSub);
       }
     });
     assertEquals(effectTriggerTimes, 1);
@@ -436,9 +436,9 @@ Deno.test("derive/effect/scoper : alien-signals untrack.spec.ts", () => {
     scoper(() => {
       effect(() => {
         effectTriggerTimes++;
-        const currentSub = set_active(null);
+        const currentSub = activate(null);
         src();
-        set_active(currentSub);
+        activate(currentSub);
       });
     });
     assertEquals(effectTriggerTimes, 1);

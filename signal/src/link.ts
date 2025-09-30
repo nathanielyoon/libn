@@ -1,7 +1,7 @@
 import { Flag, Kind } from "./flags.ts";
 import type { Effect, Link, Node, Scoper } from "./node.ts";
 
-/** Connects two nodes. */
+/** Creates a link between two nodes. */
 export const enlink = (dep: Node, sub: Node | null, step: number): void => {
   if (!sub) return;
   const head = sub.head;

@@ -1,7 +1,7 @@
 import type { Flag, Kind } from "./flags.ts";
 
-/** Equality check (or directive to assume every value is different). */
-export type Is<A, B extends A> = ((prev: A, next: B) => boolean) | false;
+/** Equality check. */
+export type Is<A, B extends A> = (prev: A, next: B) => boolean;
 /** Connection between two reactive nodes. */
 export type Link =
   & { step: number; dep: Node; sub: Node }
@@ -19,7 +19,7 @@ interface Linked<A extends Kind> {
 interface Source<A extends Kind, B, C> extends Linked<A> {
   next: B;
   prev: C;
-  is: Is<C, C> | undefined;
+  is: Is<C, C>;
 }
 /** @internal */
 interface Target<A extends Kind> extends Linked<A> {
