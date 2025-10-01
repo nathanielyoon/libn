@@ -52,3 +52,20 @@ export const fc_assert = <A extends Some>(...$: Arbitraries<A>): FcAssert<A> =>
     options?.async
       ? fc.check(fc.asyncProperty(...$, check), options).then(fc_report)
       : fc_report(fc.check(fc.property(...$, check), options))) as FcAssert<A>;
+/** Runs a benchmark. */
+export const fc_bench = <A extends unknown[]>(
+  group: string,
+  arbitrary: fc.Arbitrary<A>,
+  cases: { [_: string]: (...$: A) => any },
+  runs = 1,
+) => {
+  const seed = Date.now() | 0;
+  for (const key of Object.keys(cases)) {
+    Deno.bench(key, { group }, (b) => {
+      const source = fc.sample(arbitrary, { seed, numRuns: runs });
+      const target = cases[key];
+      b.start();
+      for (let z = 0; z < source.length; ++z) target(...source[z]);
+    });
+  }
+};
