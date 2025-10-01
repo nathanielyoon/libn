@@ -1,34 +1,45 @@
 const TEMP = /* @__PURE__ */ new Uint32Array(0x10000);
+let swap;
 /** Calculates the distance between two strings. */
 export const distance = (one: string, two: string): number => {
-  if (one.length > two.length) {
-    const temp = one;
-    one = two, two = temp;
-  }
-  const min = one.length;
-  let a = two.length;
-  if (!min) return a;
-  let is_final_iteration = false, b = min + 31 >> 5, c, d, e, f, g, h, z = 0, y;
-  const i = new Int32Array(b), j = new Int32Array(b).fill(-1), max = a - 1 >> 5;
-  do {
-    y = z << 5, c = a - y - 32, c = 32 + (c & c >> 31) + y;
-    do TEMP[two.charCodeAt(y)] |= 1 << y; while (++y < c);
-    // For the final iteration, `b` becomes the output score, set initially to
-    // the maximum distance. `a` (post-)decrements because it's only used for
-    // shifts (which need 1 less).
-    z === max && (b = a--, is_final_iteration = true), c = -1, d = y = 0;
-    do e = TEMP[one.charCodeAt(y)],
-      f = i[y >> 5] >> y & 1,
+  if (one.length < two.length) swap = two, two = one, one = swap;
+  const min = two.length;
+  if (!min) return one.length;
+  let max = one.length, out = max;
+  let a, b, c, d, e, f, g, h, z = min + 31 >> 5, y, x;
+  const hi = Array<number>(z), lo = Array<number>(z);
+  do hi[--z] = -1, lo[z] = 0; while (z);
+  for (const end = (max + 31 >> 5) - 1; z < end; ++z) {
+    a = y = z << 5, b = Math.min(32, max) + a, c = -1, d = x = 0;
+    while (y < b) TEMP[one.charCodeAt(y)] |= 1 << y++;
+    do e = TEMP[two.charCodeAt(x)],
+      f = lo[x >> 5] >>> x & 1,
       g = (c & (e | f)) + c ^ c | e | f,
-      h = c & g,
-      f ^ h >>> 31 && (i[y >> 5] ^= 1 << y),
-      g = d | ~(c | g),
-      c = j[y >> 5] >> y & 1,
-      g >>> 31 ^ c && (j[y >> 5] ^= 1 << y),
-      is_final_iteration && (b += (g >> a & 1) - (h >> a & 1)),
-      g = g << 1 | c,
-      c = h << 1 | f | ~(d | e | g),
-      d = g & (e | d); while (++y < min);
-  } while (TEMP.fill(0), z++ < max); // clear buffer after each use
-  return b;
+      h = d | ~(c | g),
+      c &= g,
+      g = hi[x >> 5] >>> x & 1,
+      h >>> 31 ^ g && (hi[x >> 5] ^= 1 << x),
+      c >>> 31 ^ f && (lo[x >> 5] ^= 1 << x),
+      h = h << 1 | g,
+      c = c << 1 | f | ~(d | e | h),
+      d = h & (d | e); while (++x < min);
+    while (y-- > a) TEMP[one.charCodeAt(y)] = 0;
+  }
+  a = z <<= 5, b = Math.min(32, max-- - a) + a, c = -1, d = y = 0;
+  while (z < b) TEMP[one.charCodeAt(z)] |= 1 << z++;
+  do e = TEMP[two.charCodeAt(y)],
+    f = lo[y >> 5] >>> y & 1,
+    g = (c & (e | f)) + c ^ c | e | f,
+    h = d | ~(c | g),
+    c &= g,
+    g = hi[y >> 5] >>> y & 1,
+    h >>> 31 ^ g && (hi[y >> 5] ^= 1 << y),
+    c >>> 31 ^ f && (lo[y >> 5] ^= 1 << y),
+    out += h >>> max & 1,
+    out -= c >>> max & 1,
+    h = h << 1 | g,
+    c = c << 1 | f | ~(d | e | h),
+    d = h & (d | e); while (++y < min);
+  while (z-- > a) TEMP[one.charCodeAt(z)] = 0;
+  return out;
 };
