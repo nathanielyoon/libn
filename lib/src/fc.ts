@@ -56,7 +56,7 @@ export const fc_assert = <A extends Some>(...$: Arbitraries<A>): FcAssert<A> =>
 export const fc_bench = <A extends unknown[]>(
   group: string,
   arbitrary: fc.Arbitrary<A>,
-  cases: { [_: string]: (...$: A) => any },
+  cases: NoInfer<{ [_: string]: (...$: A) => any }>,
   runs = 1,
 ) => {
   const seed = Date.now() | 0;
