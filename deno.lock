@@ -5,8 +5,10 @@
     "jsr:@david/code-block-writer@^13.0.3": "13.0.3",
     "jsr:@deno/dnt@~0.42.3": "0.42.3",
     "jsr:@denosaurs/plug@1.1.0": "1.1.0",
+    "jsr:@noble/ciphers@^2.0.1": "2.0.1",
     "jsr:@noble/curves@^2.0.1": "2.0.1",
-    "jsr:@noble/hashes@2": "2.0.0",
+    "jsr:@noble/hashes@2": "2.0.1",
+    "jsr:@noble/hashes@^2.0.1": "2.0.1",
     "jsr:@std/assert@^1.0.13": "1.0.14",
     "jsr:@std/assert@^1.0.14": "1.0.14",
     "jsr:@std/crypto@^1.0.5": "1.0.5",
@@ -22,8 +24,17 @@
     "jsr:@std/testing@^1.0.15": "1.0.15",
     "jsr:@ts-morph/bootstrap@0.27": "0.27.0",
     "jsr:@ts-morph/common@0.27": "0.27.0",
+    "npm:@stablelib/blake2b@^2.0.1": "2.0.1",
+    "npm:@stablelib/blake2s@^2.0.1": "2.0.1",
     "npm:@stablelib/ed25519@^2.0.2": "2.0.2",
+    "npm:@stablelib/hkdf@^2.0.1": "2.0.1",
+    "npm:@stablelib/hmac@^2.0.1": "2.0.1",
+    "npm:@stablelib/sha224@^2.0.1": "2.0.1",
+    "npm:@stablelib/sha256@^2.0.1": "2.0.1",
+    "npm:@stablelib/sha384@^2.0.1": "2.0.1",
+    "npm:@stablelib/sha512@^2.0.1": "2.0.1",
     "npm:@stablelib/x25519@^2.0.1": "2.0.1",
+    "npm:@stablelib/xchacha20poly1305@^2.0.1": "2.0.1",
     "npm:ed2curve@0.3": "0.3.0",
     "npm:fast-check@^4.3.0": "4.3.0",
     "npm:rolldown-vite@^7.1.5": "7.1.11_picomatch@4.0.3",
@@ -58,14 +69,20 @@
         "jsr:@std/path@1"
       ]
     },
+    "@noble/ciphers@2.0.1": {
+      "integrity": "1d28df773a29684c85844d27eefbb7cad3e4ce62849b63dae3024baf66cf769f"
+    },
     "@noble/curves@2.0.1": {
       "integrity": "21ef41d207a203f60ba37a4fdcbc4f4a545b10c5dab7f293889f18292f81ab23",
       "dependencies": [
-        "jsr:@noble/hashes"
+        "jsr:@noble/hashes@2"
       ]
     },
     "@noble/hashes@2.0.0": {
       "integrity": "203b1a1d3a3de1e964e482fbe8196963e12d5dc63f280b42eae2fb74131001c8"
+    },
+    "@noble/hashes@2.0.1": {
+      "integrity": "e0e908292a0bf91099cf8ba0720a1647cef82ab38b588815b5e9535b4ff4d7bb"
     },
     "@std/assert@1.0.14": {
       "integrity": "68d0d4a43b365abc927f45a9b85c639ea18a9fab96ad92281e493e4ed84abaa4",
@@ -234,14 +251,54 @@
     "@rolldown/pluginutils@1.0.0-beta.38": {
       "integrity": "sha512-N/ICGKleNhA5nc9XXQG/kkKHJ7S55u0x0XUJbbkmdCnFuoRkM1Il12q9q0eX19+M7KKUEPw/daUPIRnxhcxAIw=="
     },
+    "@stablelib/aead@2.0.0": {
+      "integrity": "sha512-U/RMANRxbT/ahIpYsPSiFwDFNjADHdnCFfmo09MO1ai2XmerPAOPtMl0qmX7XVvygnACC6ijKDyHBoT2rGyElg=="
+    },
     "@stablelib/binary@2.0.1": {
       "integrity": "sha512-U9iAO8lXgEDONsA0zPPSgcf3HUBNAqHiJmSHgZz62OvC3Hi2Bhc5kTnQ3S1/L+sthDTHtCMhcEiklmIly6uQ3w==",
       "dependencies": [
         "@stablelib/int"
       ]
     },
+    "@stablelib/blake2b@2.0.1": {
+      "integrity": "sha512-kBN4i9FHpkTEVrHwKtb1ZjI6QwyoK8emY9TaLcHHFSZkw2FN9Td8Js9mU2U10q+EZ3Mp6z78QgdPDwJXbc3Dtw==",
+      "dependencies": [
+        "@stablelib/binary",
+        "@stablelib/hash",
+        "@stablelib/wipe"
+      ]
+    },
+    "@stablelib/blake2s@2.0.1": {
+      "integrity": "sha512-tEIp6yEq/3Ue7D21xy8+zhv/6G3gruZOCctgtVeVYCuqRDFWFRIDZH+8Pb0f4Wk/VwfkDlG1V4yaB6WjkzrdRw==",
+      "dependencies": [
+        "@stablelib/binary",
+        "@stablelib/hash",
+        "@stablelib/wipe"
+      ]
+    },
     "@stablelib/bytes@2.0.1": {
       "integrity": "sha512-QIzI6V7nkJA5CjOZ7GoceBd4CIKrJoC471VaI6jh1xPQ2cMhkhQK4HddyzCXOR2y+fBF3/5B2HO3FXXI9C+Xzg=="
+    },
+    "@stablelib/chacha20poly1305@2.0.1": {
+      "integrity": "sha512-kOoBsXbDPVRlelzXl+5WViycgM19lD7lF3Bc3KWI+DzId0Stc2HlxAfSc+Xpn3RgqSCl1ZNTXr33LegqBhBBaw==",
+      "dependencies": [
+        "@stablelib/aead",
+        "@stablelib/binary",
+        "@stablelib/chacha",
+        "@stablelib/constant-time",
+        "@stablelib/poly1305",
+        "@stablelib/wipe"
+      ]
+    },
+    "@stablelib/chacha@2.0.1": {
+      "integrity": "sha512-lS1FqtNqofxe2vLkRsLli2m3x/XanUyAYRphLhdHumKeIsLbjbCXdCq3Pf/eWiO7G3QlSG5ViqnoVjktzfLWMg==",
+      "dependencies": [
+        "@stablelib/binary",
+        "@stablelib/wipe"
+      ]
+    },
+    "@stablelib/constant-time@2.0.1": {
+      "integrity": "sha512-0NWPogffRm+UWBH0+iM5otZmNrVe5OHFIvyoNIVankMAYOQzMwcdVALOVPrB5Ho0dST+Oc3H8/hPh65Z8R/uew=="
     },
     "@stablelib/ed25519@2.0.2": {
       "integrity": "sha512-d/lJ5sgzhtmpMIbKFWfev+i6WebBdIzzBpMzXtZdvUijoksjXosYFNqytoMj7cRshNj+/XTLYnnVMdZfd+penw==",
@@ -254,6 +311,22 @@
     "@stablelib/hash@2.0.0": {
       "integrity": "sha512-u3WPSqGido8lwJuMcrBgM5K54LrPGhkWAdtsyccf7dGsLixAZUds77zOAbu7bvKPwQlmoByH0txBi5rTmEKuHg=="
     },
+    "@stablelib/hkdf@2.0.1": {
+      "integrity": "sha512-R8w5r43QpM92FhyGPsQAhd4KOKwhmMFgvihoRJjiEi/YNwwXlluQoYruNQxyBA1fEMmJ8QHtQvEZEX/Uyr6MwQ==",
+      "dependencies": [
+        "@stablelib/hash",
+        "@stablelib/hmac",
+        "@stablelib/wipe"
+      ]
+    },
+    "@stablelib/hmac@2.0.1": {
+      "integrity": "sha512-YDMEmogYNDWESU8ggMiTi4VDMfHt2XG+pgVskJCHuKVlmWwXxYKZ6bn5dq24/jU3vzZSajwKzRCU6iafT2OKUA==",
+      "dependencies": [
+        "@stablelib/constant-time",
+        "@stablelib/hash",
+        "@stablelib/wipe"
+      ]
+    },
     "@stablelib/int@2.0.1": {
       "integrity": "sha512-Ht63fQp3wz/F8U4AlXEPb7hfJOIILs8Lq55jgtD7KueWtyjhVuzcsGLSTAWtZs3XJDZYdF1WcSKn+kBtbzupww=="
     },
@@ -263,11 +336,38 @@
         "@stablelib/bytes"
       ]
     },
+    "@stablelib/poly1305@2.0.1": {
+      "integrity": "sha512-D8xfZcL/5zeVARJ9I2fZOUCnZvsJx8G4JDQvD+ecsnaCildPtqZDwqqjtOc4cfHAdScrMjOzUVsssjXUTBw3YQ==",
+      "dependencies": [
+        "@stablelib/constant-time",
+        "@stablelib/wipe"
+      ]
+    },
     "@stablelib/random@2.0.1": {
       "integrity": "sha512-W6GAtXEEs7r+dSbuBsvoFmlyL3gLxle41tQkjKu17dDWtDdjhVUbtRfRCQcCUeczwkgjQxMPopgwYEvxXtHXGw==",
       "dependencies": [
         "@stablelib/binary",
         "@stablelib/wipe"
+      ]
+    },
+    "@stablelib/sha224@2.0.1": {
+      "integrity": "sha512-obw8Lk6JC83fsp3WKZVNc1+R8Y8vDgVMOLqt8bjM3BB0MJ/Q5bqjfLD+xgpKEjzweTqwEURdlL+OVwI4W4fu4Q==",
+      "dependencies": [
+        "@stablelib/sha256"
+      ]
+    },
+    "@stablelib/sha256@2.0.1": {
+      "integrity": "sha512-LA1PaLDc6Lv72ppA4PEZ7abDE741KfG7k7QhBiUyIfViMqrwWv8HqQQFPeuPfS4k2OxFv++IAgc8HlvdBatD+w==",
+      "dependencies": [
+        "@stablelib/binary",
+        "@stablelib/hash",
+        "@stablelib/wipe"
+      ]
+    },
+    "@stablelib/sha384@2.0.1": {
+      "integrity": "sha512-B5jMyM8KmCQlrXDjPzCXoNRgxR1zMkZmlKeSTDkunaQWbQRiYo7QYS3zE0iVAPUaAVBTuPV9hqsFGpH5lIMHkA==",
+      "dependencies": [
+        "@stablelib/sha512"
       ]
     },
     "@stablelib/sha512@2.0.1": {
@@ -287,6 +387,24 @@
         "@stablelib/keyagreement",
         "@stablelib/random",
         "@stablelib/wipe"
+      ]
+    },
+    "@stablelib/xchacha20@2.0.1": {
+      "integrity": "sha512-k55pNv7gIM4mUPU00+nJYTxKiUVNwAtsgrridC0aIU5cVbw9u6qP99x8ENu5eiwOEhZUNg+p3tTOLooCeAOJQA==",
+      "dependencies": [
+        "@stablelib/binary",
+        "@stablelib/chacha",
+        "@stablelib/wipe"
+      ]
+    },
+    "@stablelib/xchacha20poly1305@2.0.1": {
+      "integrity": "sha512-OUZnnPsd4y5ConoMtADkxiz308vcYrpFT7hzTgXLo5UMyu7aPAP0FaOM+aJAnV+GHBoWp+2ncDOhvtho3VDp7g==",
+      "dependencies": [
+        "@stablelib/aead",
+        "@stablelib/chacha20poly1305",
+        "@stablelib/constant-time",
+        "@stablelib/wipe",
+        "@stablelib/xchacha20"
       ]
     },
     "@tybys/wasm-util@0.10.1": {
@@ -490,6 +608,12 @@
           "npm:tweetnacl@^1.0.3"
         ]
       },
+      "aead": {
+        "dependencies": [
+          "jsr:@noble/ciphers@^2.0.1",
+          "npm:@stablelib/xchacha20poly1305@^2.0.1"
+        ]
+      },
       "dom": {
         "dependencies": [
           "jsr:@b-fuze/deno-dom@~0.1.56"
@@ -497,7 +621,17 @@
       },
       "hash": {
         "dependencies": [
-          "jsr:@std/crypto@^1.0.5"
+          "jsr:@noble/hashes@^2.0.1",
+          "jsr:@std/crypto@^1.0.5",
+          "npm:@stablelib/blake2b@^2.0.1",
+          "npm:@stablelib/blake2s@^2.0.1",
+          "npm:@stablelib/hkdf@^2.0.1",
+          "npm:@stablelib/hmac@^2.0.1",
+          "npm:@stablelib/sha224@^2.0.1",
+          "npm:@stablelib/sha256@^2.0.1",
+          "npm:@stablelib/sha384@^2.0.1",
+          "npm:@stablelib/sha512@^2.0.1",
+          "npm:tweetnacl@^1.0.3"
         ]
       },
       "lib": {
