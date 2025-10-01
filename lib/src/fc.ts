@@ -1,6 +1,6 @@
 // deno-coverage-ignore-file
 import fc from "fast-check";
-import type { Json } from "./types.ts";
+import type { Json, Some } from "./types.ts";
 
 /** Creates a number arbitrary. */
 export const fc_num = ($?: fc.DoubleConstraints): fc.Arbitrary<number> =>
@@ -34,7 +34,9 @@ const fc_report = <A>($: fc.RunDetails<A>) => {
   }
 };
 /** @internal */
-type FcAssert<A extends [unknown, ...unknown[]]> = {
+type Arbitraries<A extends Some> = { [B in keyof A]: fc.Arbitrary<A[B]> };
+/** @internal */
+type FcAssert<A extends Some> = {
   (
     check: (...$: A) => boolean | void,
     options?: fc.Parameters<A> & { async?: false },
@@ -45,13 +47,8 @@ type FcAssert<A extends [unknown, ...unknown[]]> = {
   ): Promise<void>;
 };
 /** Asserts a property, throwing thrown failures. */
-export const fc_assert = <A extends [unknown, ...unknown[]]>(
-  ...$: { [B in keyof A]: fc.Arbitrary<A[B]> }
-): FcAssert<A> =>
-  ((
-    check: (...$: A) => any,
-    options?: fc.Parameters<A> & { async?: boolean },
-  ) =>
+export const fc_assert = <A extends Some>(...$: Arbitraries<A>): FcAssert<A> =>
+  ((check: (...$: A) => any, options?: fc.Parameters<A> & { async?: true }) =>
     options?.async
       ? fc.check(fc.asyncProperty(...$, check), options).then(fc_report)
       : fc_report(fc.check(fc.property(...$, check), options))) as FcAssert<A>;

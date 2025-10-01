@@ -10,3 +10,5 @@ export type Tuple<A extends string> = string extends A ? string[]
 export type Json =
   | (null | boolean | number | string)
   | (Json[] | readonly Json[] | { [_: string]: Json });
+/** Non-empty array. */
+export type Some<A = unknown> = [A, ...A[]];
