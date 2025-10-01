@@ -61,11 +61,11 @@ export const fc_bench = <A extends unknown[]>(
 ) => {
   const seed = Date.now() | 0;
   for (const key of Object.keys(cases)) {
-    Deno.bench(key, { group }, (b) => {
+    Deno.bench(key, { group }, async (b) => {
       const source = fc.sample(arbitrary, { seed, numRuns: runs });
       const target = cases[key];
       b.start();
-      for (let z = 0; z < source.length; ++z) target(...source[z]);
+      for (let z = 0; z < source.length; ++z) await target(...source[z]);
     });
   }
 };
