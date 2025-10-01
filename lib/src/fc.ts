@@ -60,7 +60,7 @@ export const fc_bench = <A extends unknown[]>(
 ): void => {
   const seed = Date.now() | 0;
   const all = new Set<string>();
-  const numRuns = runs ?? 64;
+  const numRuns = runs ?? 10;
   for (const key of Object.keys(cases)) {
     Deno.bench(key, { group }, async (b) => {
       const source = fc.sample(arbitrary, { seed, numRuns });
