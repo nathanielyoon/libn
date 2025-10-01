@@ -5,7 +5,7 @@ export const includes = (source: string, target: string): boolean => {
   if (min === max) return source === target;
   top: for (let z = 0, y = 0; z < min; ++z) {
     const next = target.charCodeAt(z);
-    while (y < max) if (source.charCodeAt(y++) === next) continue top;
+    do if (source.charCodeAt(y) === next) continue top; while (++y < max);
     return false;
   }
   return true;
