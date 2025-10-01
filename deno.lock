@@ -5,12 +5,16 @@
     "jsr:@david/code-block-writer@^13.0.3": "13.0.3",
     "jsr:@deno/dnt@~0.42.3": "0.42.3",
     "jsr:@denosaurs/plug@1.1.0": "1.1.0",
+    "jsr:@noble/curves@^2.0.1": "2.0.1",
+    "jsr:@noble/hashes@2": "2.0.0",
     "jsr:@std/assert@^1.0.13": "1.0.14",
     "jsr:@std/assert@^1.0.14": "1.0.14",
     "jsr:@std/crypto@^1.0.5": "1.0.5",
+    "jsr:@std/data-structures@^1.0.9": "1.0.9",
     "jsr:@std/encoding@1": "1.0.10",
     "jsr:@std/fmt@1": "1.0.8",
     "jsr:@std/fs@1": "1.0.19",
+    "jsr:@std/fs@^1.0.19": "1.0.19",
     "jsr:@std/internal@^1.0.10": "1.0.10",
     "jsr:@std/internal@^1.0.9": "1.0.10",
     "jsr:@std/path@1": "1.1.2",
@@ -18,8 +22,12 @@
     "jsr:@std/testing@^1.0.15": "1.0.15",
     "jsr:@ts-morph/bootstrap@0.27": "0.27.0",
     "jsr:@ts-morph/common@0.27": "0.27.0",
+    "npm:@stablelib/ed25519@^2.0.2": "2.0.2",
+    "npm:@stablelib/x25519@^2.0.1": "2.0.1",
+    "npm:ed2curve@0.3": "0.3.0",
     "npm:fast-check@^4.3.0": "4.3.0",
-    "npm:rolldown-vite@^7.1.5": "7.1.11_picomatch@4.0.3"
+    "npm:rolldown-vite@^7.1.5": "7.1.11_picomatch@4.0.3",
+    "npm:tweetnacl@^1.0.3": "1.0.3"
   },
   "jsr": {
     "@b-fuze/deno-dom@0.1.56": {
@@ -36,7 +44,7 @@
       "dependencies": [
         "jsr:@david/code-block-writer",
         "jsr:@std/fmt",
-        "jsr:@std/fs",
+        "jsr:@std/fs@1",
         "jsr:@std/path@1",
         "jsr:@ts-morph/bootstrap"
       ]
@@ -46,9 +54,18 @@
       "dependencies": [
         "jsr:@std/encoding",
         "jsr:@std/fmt",
-        "jsr:@std/fs",
+        "jsr:@std/fs@1",
         "jsr:@std/path@1"
       ]
+    },
+    "@noble/curves@2.0.1": {
+      "integrity": "21ef41d207a203f60ba37a4fdcbc4f4a545b10c5dab7f293889f18292f81ab23",
+      "dependencies": [
+        "jsr:@noble/hashes"
+      ]
+    },
+    "@noble/hashes@2.0.0": {
+      "integrity": "203b1a1d3a3de1e964e482fbe8196963e12d5dc63f280b42eae2fb74131001c8"
     },
     "@std/assert@1.0.14": {
       "integrity": "68d0d4a43b365abc927f45a9b85c639ea18a9fab96ad92281e493e4ed84abaa4",
@@ -58,6 +75,9 @@
     },
     "@std/crypto@1.0.5": {
       "integrity": "0dcfbb319fe0bba1bd3af904ceb4f948cde1b92979ec1614528380ed308a3b40"
+    },
+    "@std/data-structures@1.0.9": {
+      "integrity": "033d6e17e64bf1f84a614e647c1b015fa2576ae3312305821e1a4cb20674bb4d"
     },
     "@std/encoding@1.0.10": {
       "integrity": "8783c6384a2d13abd5e9e87a7ae0520a30e9f56aeeaa3bdf910a3eaaf5c811a1"
@@ -84,7 +104,11 @@
     "@std/testing@1.0.15": {
       "integrity": "a490169f5ccb0f3ae9c94fbc69d2cd43603f2cffb41713a85f99bbb0e3087cbc",
       "dependencies": [
-        "jsr:@std/assert@^1.0.13"
+        "jsr:@std/assert@^1.0.13",
+        "jsr:@std/data-structures",
+        "jsr:@std/fs@^1.0.19",
+        "jsr:@std/internal@^1.0.10",
+        "jsr:@std/path@^1.1.1"
       ]
     },
     "@ts-morph/bootstrap@0.27.0": {
@@ -96,7 +120,7 @@
     "@ts-morph/common@0.27.0": {
       "integrity": "c7b73592d78ce8479b356fd4f3d6ec3c460d77753a8680ff196effea7a939052",
       "dependencies": [
-        "jsr:@std/fs",
+        "jsr:@std/fs@1",
         "jsr:@std/path@1"
       ]
     }
@@ -210,6 +234,61 @@
     "@rolldown/pluginutils@1.0.0-beta.38": {
       "integrity": "sha512-N/ICGKleNhA5nc9XXQG/kkKHJ7S55u0x0XUJbbkmdCnFuoRkM1Il12q9q0eX19+M7KKUEPw/daUPIRnxhcxAIw=="
     },
+    "@stablelib/binary@2.0.1": {
+      "integrity": "sha512-U9iAO8lXgEDONsA0zPPSgcf3HUBNAqHiJmSHgZz62OvC3Hi2Bhc5kTnQ3S1/L+sthDTHtCMhcEiklmIly6uQ3w==",
+      "dependencies": [
+        "@stablelib/int"
+      ]
+    },
+    "@stablelib/bytes@2.0.1": {
+      "integrity": "sha512-QIzI6V7nkJA5CjOZ7GoceBd4CIKrJoC471VaI6jh1xPQ2cMhkhQK4HddyzCXOR2y+fBF3/5B2HO3FXXI9C+Xzg=="
+    },
+    "@stablelib/ed25519@2.0.2": {
+      "integrity": "sha512-d/lJ5sgzhtmpMIbKFWfev+i6WebBdIzzBpMzXtZdvUijoksjXosYFNqytoMj7cRshNj+/XTLYnnVMdZfd+penw==",
+      "dependencies": [
+        "@stablelib/random",
+        "@stablelib/sha512",
+        "@stablelib/wipe"
+      ]
+    },
+    "@stablelib/hash@2.0.0": {
+      "integrity": "sha512-u3WPSqGido8lwJuMcrBgM5K54LrPGhkWAdtsyccf7dGsLixAZUds77zOAbu7bvKPwQlmoByH0txBi5rTmEKuHg=="
+    },
+    "@stablelib/int@2.0.1": {
+      "integrity": "sha512-Ht63fQp3wz/F8U4AlXEPb7hfJOIILs8Lq55jgtD7KueWtyjhVuzcsGLSTAWtZs3XJDZYdF1WcSKn+kBtbzupww=="
+    },
+    "@stablelib/keyagreement@2.0.1": {
+      "integrity": "sha512-2+tWBLCMtWlHQ7GqjD5L+lQRyWtun4Lou0IOdTML8zuTuAS0EgihnHFx+4uMZwYU1In40J/WlpyKSLidHfStRQ==",
+      "dependencies": [
+        "@stablelib/bytes"
+      ]
+    },
+    "@stablelib/random@2.0.1": {
+      "integrity": "sha512-W6GAtXEEs7r+dSbuBsvoFmlyL3gLxle41tQkjKu17dDWtDdjhVUbtRfRCQcCUeczwkgjQxMPopgwYEvxXtHXGw==",
+      "dependencies": [
+        "@stablelib/binary",
+        "@stablelib/wipe"
+      ]
+    },
+    "@stablelib/sha512@2.0.1": {
+      "integrity": "sha512-DUNe5cbnoH3sSIN+MG04RvTCLXtkbyy/SnQxiNO+GgF/KSXkkUSlF6mUVvCUdZBZ2X3NgogR+tAvaRSn8wxnLw==",
+      "dependencies": [
+        "@stablelib/binary",
+        "@stablelib/hash",
+        "@stablelib/wipe"
+      ]
+    },
+    "@stablelib/wipe@2.0.1": {
+      "integrity": "sha512-1eU2K9EgOcV4qc9jcP6G72xxZxEm5PfeI5H55l08W95b4oRJaqhmlWRc4xZAm6IVSKhVNxMi66V67hCzzuMTAg=="
+    },
+    "@stablelib/x25519@2.0.1": {
+      "integrity": "sha512-qi04HS2puHaBf50kM/kes5QcZFGsx8yF0YmCjLCOa/LPmnBaKEKX9ZR82OnnCwMn72YH13R/bBZgr/UP0aPFfA==",
+      "dependencies": [
+        "@stablelib/keyagreement",
+        "@stablelib/random",
+        "@stablelib/wipe"
+      ]
+    },
     "@tybys/wasm-util@0.10.1": {
       "integrity": "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==",
       "dependencies": [
@@ -221,6 +300,12 @@
     },
     "detect-libc@2.1.0": {
       "integrity": "sha512-vEtk+OcP7VBRtQZ1EJ3bdgzSfBjgnEalLTp5zjJrS+2Z1w2KZly4SBdac/WDU3hhsNAZ9E8SC96ME4Ey8MZ7cg=="
+    },
+    "ed2curve@0.3.0": {
+      "integrity": "sha512-8w2fmmq3hv9rCrcI7g9hms2pMunQr1JINfcjwR9tAyZqhtyaMN991lF/ZfHfr5tzZQ8c7y7aBgZbjfbd0fjFwQ==",
+      "dependencies": [
+        "tweetnacl"
+      ]
     },
     "fast-check@4.3.0": {
       "integrity": "sha512-JVw/DJSxVKl8uhCb7GrwanT9VWsCIdBkK3WpP37B/Au4pyaspriSjtrY2ApbSFwTg3ViPfniT13n75PhzE7VEQ==",
@@ -384,6 +469,9 @@
     },
     "tslib@2.8.1": {
       "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="
+    },
+    "tweetnacl@1.0.3": {
+      "integrity": "sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw=="
     }
   },
   "workspace": {
@@ -393,6 +481,15 @@
       "npm:fast-check@^4.3.0"
     ],
     "members": {
+      "25519": {
+        "dependencies": [
+          "jsr:@noble/curves@^2.0.1",
+          "npm:@stablelib/ed25519@^2.0.2",
+          "npm:@stablelib/x25519@^2.0.1",
+          "npm:ed2curve@0.3",
+          "npm:tweetnacl@^1.0.3"
+        ]
+      },
       "dom": {
         "dependencies": [
           "jsr:@b-fuze/deno-dom@~0.1.56"
