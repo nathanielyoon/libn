@@ -52,18 +52,18 @@ export const fc_assert = <A extends Some>(...$: Arbitraries<A>): FcAssert<A> =>
     options?.async
       ? fc.check(fc.asyncProperty(...$, check), options).then(fc_report)
       : fc_report(fc.check(fc.property(...$, check), options))) as FcAssert<A>;
-/** Runs a benchmark. */
+/** Runs benchmarks. */
 export const fc_bench = <A extends unknown[]>(
-  group: string,
+  { group, runs, assert }: { group: string; runs?: number; assert?: boolean },
   arbitrary: fc.Arbitrary<A>,
   cases: NoInfer<{ [_: string]: (...$: A) => any }>,
-  runs = 1,
-) => {
+): void => {
   const seed = Date.now() | 0;
   const all = new Set<string>();
+  const numRuns = runs ?? 64;
   for (const key of Object.keys(cases)) {
     Deno.bench(key, { group }, async (b) => {
-      const source = fc.sample(arbitrary, { seed, numRuns: runs });
+      const source = fc.sample(arbitrary, { seed, numRuns });
       const target = cases[key];
       const output = Array(runs);
       b.start();
@@ -71,9 +71,11 @@ export const fc_bench = <A extends unknown[]>(
         output[z] = await target(...source[z]);
       }
       b.end();
-      const string = JSON.stringify(output);
-      if (all.size) console.assert(all.has(string));
-      else all.add(string);
+      if (assert) {
+        const string = JSON.stringify(output);
+        if (all.size) console.assert(all.has(string));
+        else all.add(string);
+      }
     });
   }
 };
