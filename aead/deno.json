@@ -2,5 +2,9 @@
   "name": "@libn/aead",
   "version": "0.2.8",
   "license": "GPL-3.0-or-later",
-  "exports": "./mod.ts"
+  "exports": "./mod.ts",
+  "imports": {
+    "@noble/ciphers": "jsr:@noble/ciphers@^2.0.1",
+    "@stablelib/xchacha20poly1305": "npm:@stablelib/xchacha20poly1305@^2.0.1"
+  }
 }
