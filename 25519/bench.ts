@@ -18,7 +18,7 @@ import * as stablelib_x25519 from "@stablelib/x25519";
 import tweetnacl from "tweetnacl";
 import ed2curve from "ed2curve";
 
-fc_bench("generate", fc.tuple(fc_bin(32)), {
+fc_bench({ group: "generate" }, fc.tuple(fc_bin(32)), {
   libn: (secret_key) => generate(secret_key),
   noble: (secret_key) => noble_ed25519.getPublicKey(secret_key),
   stablelib: (secret_key) =>
@@ -27,7 +27,7 @@ fc_bench("generate", fc.tuple(fc_bin(32)), {
     tweetnacl.sign.keyPair.fromSeed(secret_key).publicKey,
 });
 fc_bench(
-  "sign",
+  { group: "sign" },
   fc.tuple(fc_bin(32), fc_bin(100)).map(([key, message]) => [
     key,
     message,
@@ -44,7 +44,7 @@ fc_bench(
   },
 );
 fc_bench(
-  "verify",
+  { group: "verify" },
   fc.tuple(fc_bin(32), fc_bin(100)).map(([key, message]) =>
     [generate(key), message, sign(key, message)] as const
   ),
@@ -59,25 +59,25 @@ fc_bench(
       tweetnacl.sign.detached.verify(message, signature, public_key),
   },
 );
-fc_bench("derive", fc.tuple(fc_bin(32)), {
+fc_bench({ group: "derive" }, fc.tuple(fc_bin(32)), {
   libn: derive,
   noble: noble_x25519.getPublicKey,
   stablelib: stablelib_x25519.scalarMultBase,
   tweetnacl: tweetnacl.scalarMult.base,
 });
-fc_bench("exchange", fc.tuple(fc_bin(32), fc_bin(32).map(derive)), {
+fc_bench({ group: "exchange" }, fc.tuple(fc_bin(32), fc_bin(32).map(derive)), {
   libn: exchange,
   noble: noble_x25519.getSharedSecret,
   stablelib: stablelib_x25519.sharedKey,
   tweetnacl: tweetnacl.scalarMult,
 });
-fc_bench("convert_secret", fc.tuple(fc_bin(32)), {
+fc_bench({ group: "convert_secret" }, fc.tuple(fc_bin(32)), {
   libn: convert_secret,
   noble: noble_ed25519.utils.toMontgomerySecret,
   stablelib: stablelib_ed25519.convertSecretKeyToX25519,
   tweetnacl: ed2curve.convertSecretKey,
-}, 10);
-fc_bench("convert_public", fc.tuple(fc_bin(32).map(generate)), {
+});
+fc_bench({ group: "convert_public" }, fc.tuple(fc_bin(32).map(generate)), {
   libn: convert_public,
   noble: noble_ed25519.utils.toMontgomery,
   stablelib: stablelib_ed25519.convertPublicKeyToX25519,
