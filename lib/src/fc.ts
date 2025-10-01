@@ -58,6 +58,7 @@ export const fc_bench = <A extends unknown[]>(
   arbitrary: fc.Arbitrary<A>,
   cases: NoInfer<{ [_: string]: (...$: A) => any }>,
 ): void => {
+  if (Deno.args.length && !Deno.args.includes(group)) return;
   const seed = Date.now() | 0;
   const all = new Set<string>();
   const numRuns = runs ?? 10;
