@@ -323,35 +323,26 @@ const b2_digest = (
   for (let z = 0; z < out.length; ++z) out[z] = $[z + start >> 2] >> (z << 3);
   return out;
 };
-const b2 = (
-  create: (key?: Uint8Array, length?: number) => B2State,
-  update: ($: B2State, input: Uint8Array) => B2State,
-  digest: ($: B2State) => Uint8Array<ArrayBuffer>,
-  $: Uint8Array,
-  key?: Uint8Array,
-  length?: number,
-) => digest(update(create(key, length), $));
-/** Processes a chunk of data and updates the BLAKE2s state. */
-export const b2s_update: ($: B2State, input: Uint8Array) => B2State =
-  /* @__PURE__ */ b2_update.bind(null, 64, b2s_add, b2s_mix);
-/** Initializes the BLAKE2s state. */
-export const b2s_create: (key?: Uint8Array, length?: number) => B2State =
-  /* @__PURE__ */ b2_create.bind(null, 32, SHA256, b2s_update);
-/** Finalizes the BLAKE2s state into a fixed-length hash. */
-export const b2s_digest: ($: B2State) => Uint8Array<ArrayBuffer> =
-  /* @__PURE__ */ b2_digest.bind(null, 68, b2s_add, b2s_mix);
+const b2s_update = /* @__PURE__ */ b2_update.bind(null, 64, b2s_add, b2s_mix);
+const b2s_create = /* @__PURE__ */ b2_create.bind(null, 32, SHA256, b2s_update);
+const b2s_digest = /* @__PURE__ */ b2_digest.bind(null, 68, b2s_add, b2s_mix);
+const b2b_update = /* @__PURE__ */ b2_update.bind(null, 128, b2b_add, b2b_mix);
+const b2b_create = /* @__PURE__ */ b2_create.bind(null, 64, B2B, b2b_update);
+const b2b_digest = /* @__PURE__ */ b2_digest.bind(null, 132, b2b_add, b2b_mix);
+type B2 = Hash<[data: Uint8Array, key?: Uint8Array, length?: number]> & {
+  create: (key?: Uint8Array, length?: number) => B2State;
+  update: ($: B2State, input: Uint8Array) => B2State;
+  digest: ($: B2State) => Uint8Array<ArrayBuffer>;
+};
 /** Hashes with BLAKE2s. */
-export const b2s: Hash<[data: Uint8Array, key?: Uint8Array, length?: number]> =
-  /* @__PURE__ */ b2.bind(null, b2s_create, b2s_update, b2s_digest);
-/** Processes a chunk of data and updates the BLAKE2b state. */
-export const b2b_update: ($: B2State, input: Uint8Array) => B2State =
-  /* @__PURE__ */ b2_update.bind(null, 128, b2b_add, b2b_mix);
-/** Initializes the BLAKE2b state. */
-export const b2b_create: (key?: Uint8Array, length?: number) => B2State =
-  /* @__PURE__ */ b2_create.bind(null, 64, B2B, b2b_update);
-/** Finalizes the BLAKE2b state into a fixed-length hash. */
-export const b2b_digest: ($: B2State) => Uint8Array<ArrayBuffer> =
-  /* @__PURE__ */ b2_digest.bind(null, 132, b2b_add, b2b_mix);
+export const b2s: B2 = /* @__PURE__ */ Object.assign(
+  ($: Uint8Array, key?: Uint8Array, length?: number) =>
+    b2s_digest(b2s_update(b2s_create(key, length), $)),
+  { update: b2s_update, create: b2s_create, digest: b2s_digest },
+);
 /** Hashes with BLAKE2b. */
-export const b2b: Hash<[data: Uint8Array, key?: Uint8Array, length?: number]> =
-  /* @__PURE__ */ b2.bind(null, b2b_create, b2b_update, b2b_digest);
+export const b2b: B2 = /* @__PURE__ */ Object.assign(
+  ($: Uint8Array, key?: Uint8Array, length?: number) =>
+    b2b_digest(b2b_update(b2b_create(key, length), $)),
+  { update: b2b_update, create: b2b_create, digest: b2b_digest },
+);

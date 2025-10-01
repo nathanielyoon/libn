@@ -2,16 +2,7 @@ import { assertEquals, assertNotEquals } from "@std/assert";
 import { crypto } from "@std/crypto";
 import fc from "fast-check";
 import { fc_assert, fc_bin, read } from "@libn/lib";
-import {
-  b2b,
-  b2b_create,
-  b2b_digest,
-  b2b_update,
-  b2s,
-  b2s_create,
-  b2s_digest,
-  b2s_update,
-} from "../src/blake2.ts";
+import { b2b, b2s } from "../src/blake2.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("b2s : reference", () =>
@@ -36,8 +27,8 @@ Deno.test("b2b :: webcrypto", () =>
     ), { async: true }));
 Deno.test("blake2s/blake2b track long inputs", () =>
   ([
-    [25, b2s_create, b2s_update, b2s_digest],
-    [49, b2b_create, b2b_update, b2b_digest],
+    [25, b2s.create, b2s.update, b2s.digest],
+    [49, b2b.create, b2b.update, b2b.digest],
   ] as const).forEach(([offset, create, update, digest]) => {
     const one = create().fill(-1, offset, -2);
     assertNotEquals(
