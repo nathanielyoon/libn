@@ -28,7 +28,7 @@ fc_bench({ group: "generate" }, fc.tuple(fc_bin(32)), {
 });
 fc_bench(
   { group: "sign" },
-  fc.tuple(fc_bin(32), fc_bin(100)).map(([key, message]) => [
+  fc.tuple(fc_bin(32), fc_bin()).map(([key, message]) => [
     key,
     message,
     stablelib_ed25519.generateKeyPairFromSeed(key).secretKey,
@@ -45,7 +45,7 @@ fc_bench(
 );
 fc_bench(
   { group: "verify" },
-  fc.tuple(fc_bin(32), fc_bin(100)).map(([key, message]) =>
+  fc.tuple(fc_bin(32), fc_bin()).map(([key, message]) =>
     [generate(key), message, sign(key, message)] as const
   ),
   {
