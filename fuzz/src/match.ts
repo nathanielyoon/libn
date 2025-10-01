@@ -19,7 +19,7 @@ export class Matcher<A extends number> {
   }
   /** Creates a map of n-grams to their frequency (up to 4095). */
   private split($: string): Map<string, number> {
-    const map = new Map(), pad = $.replace(/^|$/g, "\0".repeat(this.width));
+    const map = new Map(), pad = $.replace(/^|$/g, "\0".repeat(this.width - 1));
     for (let z = this.width; z <= pad.length; ++z) {
       const gram = pad.slice(z - this.width, z);
       map.set(gram, Math.min((map.get(gram) ?? 0) + 1, 0xfff));
