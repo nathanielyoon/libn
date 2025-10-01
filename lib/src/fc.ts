@@ -71,7 +71,7 @@ export const fc_bench = <A extends unknown[]>(
         output[z] = await target(...source[z]);
       }
       b.end();
-      if (assert) {
+      if (assert !== false) {
         const string = JSON.stringify(output);
         if (all.size) console.assert(all.has(string));
         else all.add(string);
