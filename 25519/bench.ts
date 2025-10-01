@@ -28,17 +28,12 @@ fc_bench("generate", fc.tuple(fc_bin(32)), {
 });
 fc_bench(
   "sign",
-  fc.tuple(
-    fc_bin(32),
-    fc_bin(),
-  ).map(([key, message]) =>
-    [
-      key,
-      message,
-      stablelib_ed25519.generateKeyPairFromSeed(key).secretKey,
-      tweetnacl.sign.keyPair.fromSeed(key).secretKey,
-    ] as const
-  ),
+  fc.tuple(fc_bin(32), fc_bin(100)).map(([key, message]) => [
+    key,
+    message,
+    stablelib_ed25519.generateKeyPairFromSeed(key).secretKey,
+    tweetnacl.sign.keyPair.fromSeed(key).secretKey,
+  ]),
   {
     libn: (secret_key, message) => sign(secret_key, message),
     noble: (secret_key, message) => noble_ed25519.sign(message, secret_key),
@@ -50,7 +45,7 @@ fc_bench(
 );
 fc_bench(
   "verify",
-  fc.tuple(fc_bin(32), fc_bin()).map(([key, message]) =>
+  fc.tuple(fc_bin(32), fc_bin(100)).map(([key, message]) =>
     [generate(key), message, sign(key, message)] as const
   ),
   {
