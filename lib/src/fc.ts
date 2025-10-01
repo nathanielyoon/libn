@@ -60,12 +60,20 @@ export const fc_bench = <A extends unknown[]>(
   runs = 1,
 ) => {
   const seed = Date.now() | 0;
+  const all = new Set<string>();
   for (const key of Object.keys(cases)) {
     Deno.bench(key, { group }, async (b) => {
       const source = fc.sample(arbitrary, { seed, numRuns: runs });
       const target = cases[key];
+      const output = Array(runs);
       b.start();
-      for (let z = 0; z < source.length; ++z) await target(...source[z]);
+      for (let z = 0; z < source.length; ++z) {
+        output[z] = await target(...source[z]);
+      }
+      b.end();
+      const string = JSON.stringify(output);
+      if (all.size) console.assert(all.has(string));
+      else all.add(string);
     });
   }
 };
