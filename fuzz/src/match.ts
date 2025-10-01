@@ -13,13 +13,16 @@ export class Matcher<A extends number> {
   private sizes: number[] = [];
   /** N-gram frequency in (bits 0-11) and index of (bits 12-31) its vectors. */
   private map = new Map<string, number[]>();
+  /** Null byte prefix/suffix to favor a term's start/end. */
+  private pad;
   /** Creates an empty set for a specific n-gram size. */
   constructor(private width: A, terms: string[]) {
+    this.pad = "\0".repeat(width - 1);
     for (let z = 0; z < terms.length; ++z) this.add(terms[z]);
   }
   /** Creates a map of n-grams to their frequency (up to 4095). */
   private split($: string): Map<string, number> {
-    const map = new Map(), pad = $.replace(/^|$/g, "\0".repeat(this.width - 1));
+    const map = new Map(), pad = `${this.pad}${$}${this.pad}`;
     for (let z = this.width; z <= pad.length; ++z) {
       const gram = pad.slice(z - this.width, z);
       map.set(gram, Math.min((map.get(gram) ?? 0) + 1, 0xfff));
