@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { fc_bench, fc_str } from "@libn/lib";
-import { distance, includes, Match, Matcher } from "./mod.ts";
+import { distance, includes, Matcher } from "./mod.ts";
 import fastest from "fastest-levenshtein";
 import leven from "leven";
 import js from "js-levenshtein";
