@@ -1,3 +1,4 @@
+import fc from "fast-check";
 import { fc_bench, fc_bin } from "@libn/lib";
 import {
   convert_public,
@@ -16,7 +17,6 @@ import * as stablelib_ed25519 from "@stablelib/ed25519";
 import * as stablelib_x25519 from "@stablelib/x25519";
 import tweetnacl from "tweetnacl";
 import ed2curve from "ed2curve";
-import fc from "fast-check";
 
 fc_bench("generate", fc.tuple(fc_bin(32)), {
   libn: (secret_key) => generate(secret_key),
