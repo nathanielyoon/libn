@@ -33,14 +33,6 @@ const fc_report = <A>($: fc.RunDetails<A>) => {
     throw $.errorInstance;
   }
 };
-/** Checks a property and reports failures. */
-export const fc_check = (<A>($: fc.IRawProperty<A>, arg?: fc.Parameters<A>) => {
-  const a = fc.check($, arg);
-  return a instanceof Promise ? a.then(fc_report) : fc_report(a);
-}) as {
-  <A>($: fc.IProperty<A>, parameters?: fc.Parameters<A>): void;
-  <A>($: fc.IAsyncProperty<A>, parameters?: fc.Parameters<A>): Promise<void>;
-};
 /** @internal */
 type FcAssert<A extends [unknown, ...unknown[]]> = {
   (
