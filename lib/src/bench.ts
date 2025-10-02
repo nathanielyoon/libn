@@ -24,7 +24,7 @@ export const bench = <
       } catch (thrown) {
         if (!(thrown instanceof TypeError)) throw thrown;
       }
-      if (group.assert === false || first) result = actual;
+      if (group.assert === false || first) result = actual, first = false;
       else assertEquals(actual, result);
     });
   }
