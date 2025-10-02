@@ -11,12 +11,15 @@ export const bench = <
     | ((b: Deno.BenchContext) => any)
     | Omit<Deno.BenchDefinition, "name" | keyof A> & {
       fn: (b: Deno.BenchContext) => any;
+      assert?: boolean;
     };
 }): void => {
   if (Deno.args.length && !Deno.args.includes(group.group)) return;
   let first = true, result: any;
   for (const [key, value] of Object.entries($)) {
-    const { fn, ...rest } = typeof value === "function" ? { fn: value } : value;
+    const { fn, ...rest } = typeof value === "function"
+      ? { fn: value, assert: true }
+      : value;
     Deno.bench({ name: key, ...group, ...rest }, async (b) => {
       const actual = await fn(b);
       try {
@@ -24,8 +27,10 @@ export const bench = <
       } catch (thrown) {
         if (!(thrown instanceof TypeError)) throw thrown;
       }
-      if (group.assert === false || first) result = actual, first = false;
-      else assertEquals(actual, result);
+      if (rest.assert !== false) {
+        if (group.assert === false || first) result = actual, first = false;
+        else assertEquals(actual, result);
+      }
     });
   }
 };
