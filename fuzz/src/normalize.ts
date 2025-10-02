@@ -10,8 +10,7 @@ export const uncode = ($: string): string =>
 export const unline = ($: string): string =>
   $.replace(/\r\n|\u2028|\u2029/g, "\n");
 /** Removes leading/trailing whitespace and collapses whitespace sequences. */
-export const unwide = ($: string): string =>
-  $.trim().replace(/([\s\x85])[\s\x85]+/g, "$1");
+export const unwide = ($: string): string => $.trim().replace(/(\s)\s+/g, "$1");
 /** Compatibilizes and removes diacritics. */
 export const unmark = ($: string): string =>
   $.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
