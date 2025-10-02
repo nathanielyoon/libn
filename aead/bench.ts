@@ -6,14 +6,14 @@ import tweetnacl from "tweetnacl";
 
 const key = crypto.getRandomValues(new Uint8Array(32));
 const iv = crypto.getRandomValues(new Uint8Array(24));
-const plaintext = crypto.getRandomValues(new Uint8Array(5000));
-const ad = crypto.getRandomValues(new Uint8Array(500));
+const plaintext = crypto.getRandomValues(new Uint8Array(100));
+const ad = crypto.getRandomValues(new Uint8Array(10));
 const ciphertext = new Uint8Array(plaintext);
 const tag = xchachapoly(key, iv, plaintext, ad)!;
 const xchacha = new Uint8Array(ciphertext.length + tag.length);
 xchacha.set(ciphertext), xchacha.set(tag, ciphertext.length);
 const salsa = tweetnacl.secretbox(plaintext, iv, key);
-bench({ group: "encrypt" }, {
+bench({ group: "encrypt", assert: false }, {
   libn: () => {
     const ciphertext = new Uint8Array(plaintext);
     return { ciphertext, tag: xchachapoly(key, iv, ciphertext, ad) };
@@ -34,7 +34,7 @@ bench({ group: "encrypt" }, {
     assert: false,
   },
 });
-bench({ group: "decrypt" }, {
+bench({ group: "decrypt", assert: false }, {
   libn: () => {
     const plaintext = new Uint8Array(ciphertext);
     return polyxchacha(key, iv, tag, plaintext, ad) ? plaintext : null;

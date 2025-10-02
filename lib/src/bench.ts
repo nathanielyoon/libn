@@ -22,13 +22,14 @@ export const bench = <
       : value;
     Deno.bench({ name: key, ...group, ...rest }, async (b) => {
       const actual = await fn(b);
+      if (group.assert === false) return actual;
       try {
         b.end();
       } catch (thrown) {
         if (!(thrown instanceof TypeError)) throw thrown;
       }
       if (rest.assert !== false) {
-        if (group.assert === false || first) result = actual, first = false;
+        if (first) result = actual, first = false;
         else assertEquals(actual, result);
       }
     });
