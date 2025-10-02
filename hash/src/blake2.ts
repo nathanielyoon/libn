@@ -329,7 +329,8 @@ const b2s_digest = /* @__PURE__ */ b2_digest.bind(null, 68, b2s_add, b2s_mix);
 const b2b_update = /* @__PURE__ */ b2_update.bind(null, 128, b2b_add, b2b_mix);
 const b2b_create = /* @__PURE__ */ b2_create.bind(null, 64, B2B, b2b_update);
 const b2b_digest = /* @__PURE__ */ b2_digest.bind(null, 132, b2b_add, b2b_mix);
-type B2 = Hash<[data: Uint8Array, key?: Uint8Array, length?: number]> & {
+/** BLAKE2 hash. */
+export type B2 = Hash<[data: Uint8Array, key?: Uint8Array, length?: number]> & {
   create: (key?: Uint8Array, length?: number) => B2State;
   update: ($: B2State, input: Uint8Array) => B2State;
   digest: ($: B2State) => Uint8Array<ArrayBuffer>;

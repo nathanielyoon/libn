@@ -96,10 +96,11 @@
 
 import { sha224, sha256, sha384, sha512 } from "./src/sha2.ts";
 import { hkdf_sha256, hmac_sha256 } from "./src/hmac.ts";
-import { b2b, b2s } from "./src/blake2.ts";
+import { type B2, b2b, b2s } from "./src/blake2.ts";
 import { b3, b3_derive, b3_keyed } from "./src/blake3.ts";
 
 export {
+  type B2,
   b2b,
   b2s,
   b3,
