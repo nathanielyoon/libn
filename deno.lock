@@ -660,7 +660,8 @@
       "aead": {
         "dependencies": [
           "jsr:@noble/ciphers@^2.0.1",
-          "npm:@stablelib/xchacha20poly1305@^2.0.1"
+          "npm:@stablelib/xchacha20poly1305@^2.0.1",
+          "npm:tweetnacl@^1.0.3"
         ]
       },
       "csv": {
