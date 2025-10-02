@@ -1,5 +1,4 @@
-import fc from "fast-check";
-import { fc_bench, fc_bin } from "@libn/lib";
+import { bench } from "@libn/lib";
 import {
   b2b,
   b2s,
@@ -11,67 +10,72 @@ import {
   sha384,
   sha512,
 } from "./mod.ts";
-import * as noble_sha2 from "@noble/hashes/sha2.js";
+import {
+  sha224 as noble_sha224,
+  sha256 as noble_sha256,
+  sha384 as noble_sha384,
+  sha512 as noble_sha512,
+} from "@noble/hashes/sha2.js";
 import { hmac as noble_hmac } from "@noble/hashes/hmac.js";
 import { hkdf as noble_hkdf } from "@noble/hashes/hkdf.js";
-import * as noble_b2 from "@noble/hashes/blake2.js";
+import {
+  blake2b as noble_b2b,
+  blake2s as noble_b2s,
+} from "@noble/hashes/blake2.js";
 import { blake3 as noble_b3 } from "@noble/hashes/blake3.js";
 import { hash as stablelib_sha224 } from "@stablelib/sha224";
 import { hash as stablelib_sha256, SHA256 } from "@stablelib/sha256";
 import { hash as stablelib_sha384 } from "@stablelib/sha384";
 import { hash as stablelib_sha512 } from "@stablelib/sha512";
 import { hmac as stablelib_hmac } from "@stablelib/hmac";
-import { HKDF as stablelib_hkdf } from "@stablelib/hkdf";
+import { HKDF } from "@stablelib/hkdf";
 import { hash as stablelib_b2s } from "@stablelib/blake2s";
 import { hash as stablelib_b2b } from "@stablelib/blake2b";
 
-fc_bench({ group: "sha224" }, fc.tuple(fc_bin()), {
-  libn: sha224,
-  noble: noble_sha2.sha224,
-  stablelib: stablelib_sha224,
+const data = crypto.getRandomValues(new Uint8Array(100));
+bench({ group: "sha224", assert: false }, {
+  libn: () => sha224(data),
+  noble: () => noble_sha224(data),
+  stablelib: () => stablelib_sha224(data),
 });
-fc_bench({ group: "sha256" }, fc.tuple(fc_bin()), {
-  libn: sha256,
-  noble: noble_sha2.sha256,
-  stablelib: stablelib_sha256,
+bench({ group: "sha256", assert: false }, {
+  libn: () => sha256(data),
+  noble: () => noble_sha256(data),
+  stablelib: () => stablelib_sha256(data),
 });
-fc_bench({ group: "sha384" }, fc.tuple(fc_bin()), {
-  libn: sha384,
-  noble: noble_sha2.sha384,
-  stablelib: stablelib_sha384,
+bench({ group: "sha384", assert: false }, {
+  libn: () => sha384(data),
+  noble: () => noble_sha384(data),
+  stablelib: () => stablelib_sha384(data),
 });
-fc_bench({ group: "sha512" }, fc.tuple(fc_bin()), {
-  libn: sha512,
-  noble: noble_sha2.sha512,
-  stablelib: stablelib_sha512,
+bench({ group: "sha512", assert: false }, {
+  libn: () => sha512(data),
+  noble: () => noble_sha512(data),
+  stablelib: () => stablelib_sha512(data),
 });
-fc_bench({ group: "hmac" }, fc.tuple(fc_bin(32), fc_bin()), {
-  libn: hmac_sha256,
-  noble: noble_hmac.bind(null, noble_sha2.sha256),
-  stablelib: stablelib_hmac.bind(null, SHA256),
+const key = crypto.getRandomValues(new Uint8Array(32));
+bench({ group: "hmac", assert: false }, {
+  libn: () => hmac_sha256(key, data),
+  noble: () => noble_hmac(noble_sha256, key, data),
+  stablelib: () => stablelib_hmac(SHA256, key, data),
 });
-fc_bench(
-  { group: "hkdf" },
-  fc.tuple(fc_bin(32), fc_bin(), fc_bin(32), fc.integer({ min: 1, max: 8160 })),
-  {
-    libn: hkdf_sha256,
-    noble: (key, info, salt, size) =>
-      noble_hkdf(noble_sha2.sha256, key, salt, info, size),
-    stablelib: (key, info, salt, size) =>
-      new stablelib_hkdf(SHA256, key, salt, info).expand(size),
-  },
-);
-fc_bench({ group: "blake2s" }, fc.tuple(fc_bin()), {
-  libn: b2s,
-  noble: noble_b2.blake2s,
-  stablelib: stablelib_b2s,
+const salt = crypto.getRandomValues(new Uint8Array(32));
+bench({ group: "hkdf", assert: false }, {
+  libn: () => hkdf_sha256(key, data, salt, 32),
+  noble: () => noble_hkdf(noble_sha256, key, salt, data, 32),
+  stablelib: () => new HKDF(SHA256, key, salt, data).expand(32),
 });
-fc_bench({ group: "blake2b" }, fc.tuple(fc_bin()), {
-  libn: b2b,
-  noble: noble_b2.blake2b,
-  stablelib: stablelib_b2b,
+bench({ group: "blake2s", assert: false }, {
+  libn: () => b2s(data, key, 32),
+  noble: () => noble_b2s(data, { key, dkLen: 32 }),
+  stablelib: () => stablelib_b2s(data, 32, { key }),
 });
-fc_bench({ group: "blake3" }, fc.tuple(fc_bin()), {
-  libn: b3,
-  noble: noble_b3,
+bench({ group: "blake2b", assert: false }, {
+  libn: () => b2b(data, key, 64),
+  noble: () => noble_b2b(data, { key, dkLen: 64 }),
+  stablelib: () => stablelib_b2b(data, 64, { key }),
+});
+bench({ group: "blake3", assert: false }, {
+  libn: () => b3(data),
+  noble: () => noble_b3(data),
 });
