@@ -1,6 +1,5 @@
-import { bench, fc_bench, fc_str } from "@libn/lib";
-import fc from "fast-check";
-import { de_csv, en_csv } from "./mod.ts";
+import { bench } from "@libn/lib";
+import { de_csv } from "./mod.ts";
 import { inferSchema, initParser } from "udsv";
 import parse from "csv-simple-parser";
 import Papa from "papaparse";
