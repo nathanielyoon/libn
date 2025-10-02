@@ -29,8 +29,10 @@ import {
   fc_str,
 } from "./src/fc.ts";
 import { pure } from "./src/pure.ts";
+import { bench } from "./src/bench.ts";
 
 export {
+  bench,
   fc_assert,
   fc_bench,
   fc_bin,
