@@ -24,6 +24,7 @@
     "jsr:@std/testing@^1.0.15": "1.0.15",
     "jsr:@ts-morph/bootstrap@0.27": "0.27.0",
     "jsr:@ts-morph/common@0.27": "0.27.0",
+    "npm:@reactively/core@^0.0.8": "0.0.8",
     "npm:@stablelib/blake2b@^2.0.1": "2.0.1",
     "npm:@stablelib/blake2s@^2.0.1": "2.0.1",
     "npm:@stablelib/ed25519@^2.0.2": "2.0.2",
@@ -35,6 +36,7 @@
     "npm:@stablelib/sha512@^2.0.1": "2.0.1",
     "npm:@stablelib/x25519@^2.0.1": "2.0.1",
     "npm:@stablelib/xchacha20poly1305@^2.0.1": "2.0.1",
+    "npm:alien-signals@3": "3.0.0",
     "npm:ed2curve@0.3": "0.3.0",
     "npm:fast-check@^4.3.0": "4.3.0",
     "npm:fastest-levenshtein@^1.0.16": "1.0.16",
@@ -177,6 +179,9 @@
     },
     "@oxc-project/types@0.93.0": {
       "integrity": "sha512-yNtwmWZIBtJsMr5TEfoZFDxIWV6OdScOpza/f5YxbqUMJk+j6QX3Cf3jgZShGEFYWQJ5j9mJ6jM0tZHu2J9Yrg=="
+    },
+    "@reactively/core@0.0.8": {
+      "integrity": "sha512-5uAnNf2gQSm3gM7z6Lx079H1/MuDQQI+5aYfwyDFGR9nHZj8yblLY/6aOJVWp+NcBwXVBKuWQ28qWHD9F1qN1w=="
     },
     "@rolldown/binding-android-arm64@1.0.0-beta.41": {
       "integrity": "sha512-Edflndd9lU7JVhVIvJlZhdCj5DkhYDJPIRn4Dx0RUdfc8asP9xHOI5gMd8MesDDx+BJpdIT/uAmVTearteU/mQ==",
@@ -414,6 +419,9 @@
       "dependencies": [
         "tslib"
       ]
+    },
+    "alien-signals@3.0.0": {
+      "integrity": "sha512-JHoRJf18Y6HN4/KZALr3iU+0vW9LKG+8FMThQlbn4+gv8utsLIkwpomjElGPccGeNwh0FI2HN6BLnyFLo6OyLQ=="
     },
     "ansis@4.2.0": {
       "integrity": "sha512-HqZ5rWlFjGiV0tDm3UxxgNRqsOTniqoKZu0pIAfh7TZQMGuZK+hH0drySty0si0QXj1ieop4+SkSfPZBPPkHig=="
@@ -673,7 +681,9 @@
       },
       "signal": {
         "dependencies": [
-          "jsr:@std/testing@^1.0.15"
+          "jsr:@std/testing@^1.0.15",
+          "npm:@reactively/core@^0.0.8",
+          "npm:alien-signals@3"
         ]
       },
       "vite": {
