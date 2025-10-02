@@ -27,13 +27,13 @@ Deno.test("sign/verify : arbitrary signatures", () =>
     verify(generate(key), message, sign(key, message))
   ));
 Deno.test("generate :: webcrypto", () =>
-  get_pair("Ed25519", ["sign", "verify"]).then(set_pair).then(($) =>
-    assertEquals(generate($.secret_key), $.public_key)
+  get_pair("Ed").then(set_pair).then(([secret_key, public_key]) =>
+    assertEquals(generate(secret_key), public_key)
   ));
 Deno.test("sign/verify :: webcrypto", () =>
   fc_assert(fc_bin())(async ($) => {
-    const pair = await get_pair("Ed25519", ["sign", "verify"]);
-    const { secret_key, public_key } = await set_pair(pair);
+    const pair = await get_pair("Ed");
+    const [secret_key, public_key] = await set_pair(pair);
     const signature = sign(secret_key, $);
     assertEquals(
       signature,

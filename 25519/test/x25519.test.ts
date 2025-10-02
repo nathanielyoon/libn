@@ -37,14 +37,14 @@ Deno.test("convert_secret/convert_public : arbitrary exchange", () =>
     )
   ));
 Deno.test("derive/exchange :: webcrypto", async () => {
-  const pair_1 = await get_pair("X25519", ["deriveBits"]);
-  const pair_2 = await get_pair("X25519", ["deriveBits"]);
-  const keys_1 = await set_pair(pair_1);
-  const keys_2 = await set_pair(pair_2);
-  assertEquals(derive(keys_1.secret_key), keys_1.public_key);
-  assertEquals(derive(keys_2.secret_key), keys_2.public_key);
+  const pair_1 = await get_pair("X");
+  const pair_2 = await get_pair("X");
+  const [secret_1, public_1] = await set_pair(pair_1);
+  const [secret_2, public_2] = await set_pair(pair_2);
+  assertEquals(derive(secret_1), public_1);
+  assertEquals(derive(secret_2), public_2);
   assertEquals(
-    exchange(keys_1.secret_key, keys_2.public_key),
+    exchange(secret_1, public_2),
     new Uint8Array(
       await crypto.subtle.deriveBits(
         { name: "X25519", public: pair_2.publicKey },
@@ -54,7 +54,7 @@ Deno.test("derive/exchange :: webcrypto", async () => {
     ),
   );
   assertEquals(
-    exchange(keys_2.secret_key, keys_1.public_key),
+    exchange(secret_2, public_1),
     new Uint8Array(
       await crypto.subtle.deriveBits(
         { name: "X25519", public: pair_1.publicKey },
