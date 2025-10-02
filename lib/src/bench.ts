@@ -9,7 +9,7 @@ export const bench = <
 >(group: A & { assert?: boolean }, $: {
   [name: string]:
     | ((b: Deno.BenchContext) => any)
-    | Omit<Deno.BenchDefinition, "name" | keyof A> & {
+    | Omit<Deno.BenchDefinition, "name" | "fn" | keyof A> & {
       fn: (b: Deno.BenchContext) => any;
       assert?: boolean;
     };
