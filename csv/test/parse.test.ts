@@ -3,9 +3,9 @@ import { de_csv } from "../src/parse.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("de_csv : rfc4180 2", () =>
-  vectors.rfc4180.forEach(($) => assertEquals(de_csv($.csv), $.json)));
+  vectors.parse.rfc4180.forEach(($) => assertEquals(de_csv($.csv), $.json)));
 Deno.test("de_csv : csv-test-data", () =>
-  vectors.csv_test_data.forEach(($) =>
+  vectors.parse.csv_test_data.forEach(($) =>
     assertEquals(de_csv($.csv)?.map(($) => $.map(($) => $ ?? "")), $.json)
   ));
 Deno.test("de_csv :: csv-simple-parser", () => {

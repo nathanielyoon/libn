@@ -1,6 +1,9 @@
 import { save } from "@libn/lib";
 
 await Promise.all([
+  fetch(
+    "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.csv",
+  ).then(($) => $.text()),
   fetch("https://www.rfc-editor.org/rfc/rfc4180.txt").then(async ($) =>
     (await $.text()).slice(2630, 4734)
   ),
@@ -28,25 +31,30 @@ await Promise.all([
       )
     )).then(async ($) => ({ csv: await $[0].text(), json: await $[1].json() }))
   ),
-]).then(([rfc4180, ...csv_test_data]) => ({
-  rfc4180: [
-    [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
-    [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
-    [
-      ["field_name", "field_name", "field_name"],
-      ["aaa", "bbb", "ccc"],
-      ["zzz", "yyy", "xxx"],
-    ],
-    [["aaa", "bbb", "ccc"]],
-    [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
-    [["aaa", "b\r\nbb", "ccc"], ["zzz", "yyy", "xxx"]],
-    [["aaa", 'b"bb', "ccc"]],
-  ].reduce<[RegExp, { csv: string; json: string[][] }[]]>(
-    ([regex, to], json) => [regex, [...to, {
-      csv: regex.exec(rfc4180)![1].replace(/ CRLF\s*/g, "\r\n"),
-      json,
-    }]],
-    [/For example:\s+(.+?)\n\n/gs, []],
-  )[1],
-  csv_test_data,
+]).then(([earthquakes, rfc4180, ...csv_test_data]) => ({
+  mod: {
+    earthquakes: earthquakes.trim(),
+  },
+  parse: {
+    rfc4180: [
+      [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
+      [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
+      [
+        ["field_name", "field_name", "field_name"],
+        ["aaa", "bbb", "ccc"],
+        ["zzz", "yyy", "xxx"],
+      ],
+      [["aaa", "bbb", "ccc"]],
+      [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
+      [["aaa", "b\r\nbb", "ccc"], ["zzz", "yyy", "xxx"]],
+      [["aaa", 'b"bb', "ccc"]],
+    ].reduce<[RegExp, { csv: string; json: string[][] }[]]>(
+      ([regex, to], json) => [regex, [...to, {
+        csv: regex.exec(rfc4180)![1].replace(/ CRLF\s*/g, "\r\n"),
+        json,
+      }]],
+      [/For example:\s+(.+?)\n\n/gs, []],
+    )[1],
+    csv_test_data,
+  },
 })).then(save(import.meta));
