@@ -2,12 +2,5 @@
   "name": "@libn/fuzz",
   "version": "0.2.5",
   "license": "GPL-3.0-or-later",
-  "exports": "./mod.ts",
-  "imports": {
-    "fastest-levenshtein": "npm:fastest-levenshtein@^1.0.16",
-    "fuzzysearch": "npm:fuzzysearch@^1.0.3",
-    "fuzzyset": "npm:fuzzyset@^1.0.7",
-    "js-levenshtein": "npm:js-levenshtein@^1.1.6",
-    "leven": "npm:leven@^4.1.0"
-  }
+  "exports": "./mod.ts"
 }

@@ -4,8 +4,6 @@
   "license": "GPL-3.0-or-later",
   "exports": "./mod.ts",
   "imports": {
-    "@reactively/core": "npm:@reactively/core@^0.0.8",
-    "@std/testing": "jsr:@std/testing@^1.0.15",
-    "alien-signals": "npm:alien-signals@^3.0.0"
+    "@std/testing": "jsr:@std/testing@^1.0.15"
   }
 }
