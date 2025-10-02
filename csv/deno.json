@@ -2,5 +2,10 @@
   "name": "@libn/csv",
   "version": "0.2.4",
   "license": "GPL-3.0-or-later",
-  "exports": "./mod.ts"
+  "exports": "./mod.ts",
+  "imports": {
+    "csv-simple-parser": "npm:csv-simple-parser@^2.0.2",
+    "papaparse": "npm:papaparse@^5.5.3",
+    "udsv": "npm:udsv@^0.7.3"
+  }
 }
