@@ -22,5 +22,24 @@
 import { distance } from "./src/distance.ts";
 import { includes } from "./src/includes.ts";
 import { type Match, Matcher } from "./src/match.ts";
+import {
+  uncase,
+  uncode,
+  unline,
+  unlone,
+  unmark,
+  unwide,
+} from "./src/normalize.ts";
 
-export { distance, includes, type Match, Matcher };
+export {
+  distance,
+  includes,
+  type Match,
+  Matcher,
+  uncase,
+  uncode,
+  unline,
+  unlone,
+  unmark,
+  unwide,
+};
