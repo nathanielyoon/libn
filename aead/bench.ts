@@ -1,51 +1,54 @@
-import fc from "fast-check";
-import { fc_bench, fc_bin } from "@libn/lib";
+import { bench } from "@libn/lib";
 import { polyxchacha, xchachapoly } from "./src/aead.ts";
-import { xchacha20poly1305 as noble } from "@noble/ciphers/chacha.js";
-import * as stablelib from "@stablelib/xchacha20poly1305";
+import { xchacha20poly1305 } from "@noble/ciphers/chacha.js";
+import { XChaCha20Poly1305 } from "@stablelib/xchacha20poly1305";
+import tweetnacl from "tweetnacl";
 
-fc_bench(
-  { group: "encrypt" },
-  fc.tuple(fc_bin(32), fc_bin(24), fc_bin(), fc_bin()),
-  {
-    libn: (key, iv, plaintext, ad) => ({
-      ciphertext: plaintext,
-      tag: xchachapoly(key, iv, plaintext, ad),
-    }),
-    noble: (key, iv, plaintext, ad) => {
-      const output = noble(key, iv, ad).encrypt(plaintext);
-      return { ciphertext: output.subarray(0, -16), tag: output.subarray(-16) };
-    },
-    stablelib: (key, iv, plaintext, ad) => {
-      const output = new stablelib.XChaCha20Poly1305(key).seal(
-        iv,
-        plaintext,
-        ad,
-      );
-      return { ciphertext: output.subarray(0, -16), tag: output.subarray(-16) };
-    },
+const key = crypto.getRandomValues(new Uint8Array(32));
+const iv = crypto.getRandomValues(new Uint8Array(24));
+const plaintext = crypto.getRandomValues(new Uint8Array(5000));
+const ad = crypto.getRandomValues(new Uint8Array(500));
+const ciphertext = new Uint8Array(plaintext);
+const tag = xchachapoly(key, iv, plaintext, ad)!;
+const xchacha = new Uint8Array(ciphertext.length + tag.length);
+xchacha.set(ciphertext), xchacha.set(tag, ciphertext.length);
+const salsa = tweetnacl.secretbox(plaintext, iv, key);
+bench({ group: "encrypt" }, {
+  libn: () => {
+    const ciphertext = new Uint8Array(plaintext);
+    return { ciphertext, tag: xchachapoly(key, iv, ciphertext, ad) };
   },
-);
-fc_bench(
-  { group: "decrypt" },
-  fc.tuple(fc_bin(32), fc_bin(24), fc_bin(), fc_bin()).map(
-    ([key, iv, plaintext, ad]) =>
-      [key, iv, xchachapoly(key, iv, plaintext, ad)!, plaintext, ad] as const,
-  ),
-  {
-    libn: (key, iv, tag, ciphertext, ad) => {
-      polyxchacha(key, iv, tag, ciphertext, ad);
-      return ciphertext;
-    },
-    noble: (key, iv, tag, ciphertext, ad) => {
-      const buffer = new Uint8Array(ciphertext.length + 16);
-      buffer.set(ciphertext), buffer.set(tag, ciphertext.length);
-      return noble(key, iv, ad).decrypt(buffer);
-    },
-    stablelib: (key, iv, tag, ciphertext, ad) => {
-      const buffer = new Uint8Array(ciphertext.length + 16);
-      buffer.set(ciphertext), buffer.set(tag, ciphertext.length);
-      return new stablelib.XChaCha20Poly1305(key).open(iv, buffer, ad);
-    },
+  noble: () => {
+    const output = xchacha20poly1305(key, iv, ad).encrypt(plaintext);
+    return { ciphertext: output.subarray(0, -16), tag: output.subarray(-16) };
   },
-);
+  stablelib: () => {
+    const output = new XChaCha20Poly1305(key).seal(iv, plaintext, ad);
+    return { ciphertext: output.subarray(0, -16), tag: output.subarray(-16) };
+  },
+  tweetnacl: {
+    fn: () => {
+      const output = tweetnacl.secretbox(plaintext, iv, key);
+      return { ciphertext: output.subarray(16), tag: output.subarray(0, 16) };
+    },
+    assert: false,
+  },
+});
+bench({ group: "decrypt" }, {
+  libn: () => {
+    const plaintext = new Uint8Array(ciphertext);
+    return polyxchacha(key, iv, tag, plaintext, ad) ? plaintext : null;
+  },
+  noble: () => {
+    try {
+      return xchacha20poly1305(key, iv, ad).decrypt(xchacha);
+    } catch {
+      return null;
+    }
+  },
+  stablelib: () => new XChaCha20Poly1305(key).open(iv, xchacha, ad),
+  tweetnacl: {
+    fn: () => tweetnacl.secretbox.open(salsa, iv, key),
+    assert: false,
+  },
+});
