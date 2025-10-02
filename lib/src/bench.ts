@@ -1,3 +1,4 @@
+// deno-coverage-ignore-file
 import { assertEquals } from "@std/assert";
 
 type Bench = (b: Deno.BenchContext) => any;
