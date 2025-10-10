@@ -29,7 +29,12 @@ const B32_BIN = /* @__PURE__ */ map(B32_STR, 32);
 const H32_STR = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
 const H32_BIN = /* @__PURE__ */ map(H32_STR, 32);
 const C32_STR = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-const C32_BIN = /* @__PURE__ */ map(C32_STR, 32);
+const C32_BIN = /* @__PURE__ */ (() => {
+  const bin = map(C32_STR, 32);
+  for (const $ of "Oo") bin[$.charCodeAt(0)] = 0;
+  for (const $ of "IiLl") bin[$.charCodeAt(0)] = 1;
+  return bin;
+})();
 /** Base32 pattern. */
 export const B32 = /^[2-7A-Za-z]*$/;
 /** Converts binary to base32. */
@@ -43,8 +48,8 @@ export const enH32: Encode = /* @__PURE__ */ encode.bind(null, H32_STR);
 /** Converts base32hex to binary (case-insensitively). */
 export const deH32: Decode = /* @__PURE__ */ decode.bind(null, H32_BIN);
 /** Crockford base32 pattern. */
-export const C32 = /^[\dA-HJKMNP-Za-hjkmnp-z]*$/;
+export const C32 = /^[-^\dA-TV-Za-tv-z]*$/;
 /** Converts binary to Crockford base 32. */
 export const enC32: Encode = /* @__PURE__ */ encode.bind(null, C32_STR);
 /** Converts Crockford base 32 to binary (case-insensitively). */
-export const deC32: Decode = /* @__PURE__ */ decode.bind(null, C32_BIN);
+export const deC32: Decode = ($) => decode(C32_BIN, $.replace(/-+/g, ""));
