@@ -1,9 +1,5 @@
 /**
- * SHA-2 ([RFC 6234](https://www.rfc-editor.org/rfc/rfc6234)),
- * BLAKE2 ([RFC 7693](https://www.rfc-editor.org/rfc/rfc7693)) and BLAKE3
- * ([specification](https://github.com/BLAKE3-team/BLAKE3-specs/)),
- * HMAC-SHA256 ([RFC 2104](https://www.rfc-editor.org/rfc/rfc2104)), and
- * HKDF-SHA256 ([RFC 5869](https://www.rfc-editor.org/rfc/rfc5869)).
+ * Cryptographic hash functions.
  *
  * @example SHA-2 hashing
  * ```ts
@@ -36,15 +32,15 @@
  *
  * const data = crypto.getRandomValues(new Uint8Array(100));
  * assertEquals(
- *   b2s(data),
+ *   blake2s(data),
  *   new Uint8Array(await crypto.subtle.digest("BLAKE2S", data)),
  * );
  * assertEquals(
- *   b2b(data),
+ *   blake2b(data),
  *   new Uint8Array(await crypto.subtle.digest("BLAKE2B", data)),
  * );
  * assertEquals(
- *   b3(data),
+ *   blake3(data),
  *   new Uint8Array(await crypto.subtle.digest("BLAKE3", data)),
  * );
  * ```
@@ -56,7 +52,7 @@
  * const key = crypto.getRandomValues(new Uint8Array(32));
  * const data = crypto.getRandomValues(new Uint8Array(100));
  * assertEquals(
- *   hmac_sha256(key, data),
+ *   hmac(key, data),
  *   await crypto.subtle.sign(
  *     "HMAC",
  *     await crypto.subtle.importKey(
@@ -77,7 +73,7 @@
  *
  * const key = crypto.getRandomValues(new Uint8Array(32));
  * assertEquals(
- *   hkdf_sha256(key),
+ *   hkdf(key),
  *   await crypto.subtle.deriveBits(
  *     {
  *       name: "HKDF",
@@ -94,22 +90,9 @@
  * @module hash
  */
 
-import { sha224, sha256, sha384, sha512 } from "./src/sha2.ts";
-import { hkdf_sha256, hmac_sha256 } from "./src/hmac.ts";
-import { type B2, b2b, b2s } from "./src/blake2.ts";
-import { b3, b3_derive, b3_keyed } from "./src/blake3.ts";
+import { sha224, sha256, sha384, sha512 } from "./sha2.ts";
+import { hkdf, hmac } from "./hmac.ts";
+import { blake2b, blake2s } from "./blake2.ts";
+import { blake3 } from "./blake3.ts";
 
-export {
-  type B2,
-  b2b,
-  b2s,
-  b3,
-  b3_derive,
-  b3_keyed,
-  hkdf_sha256,
-  hmac_sha256,
-  sha224,
-  sha256,
-  sha384,
-  sha512,
-};
+export { blake2b, blake2s, blake3, hkdf, hmac, sha224, sha256, sha384, sha512 };

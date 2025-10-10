@@ -1,8 +1,14 @@
 {
   "name": "@libn/hash",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "license": "GPL-3.0-or-later",
-  "exports": "./mod.ts",
+  "exports": {
+    ".": "./mod.ts",
+    "./sha2": "./sha2.ts",
+    "./hmac": "./hmac.ts",
+    "./blake2": "./blake2.ts",
+    "./blake3": "./blake3.ts"
+  },
   "imports": {
     "@noble/hashes": "jsr:@noble/hashes@^2.0.1",
     "@stablelib/blake2b": "npm:@stablelib/blake2b@^2.0.1",
@@ -14,6 +20,7 @@
     "@stablelib/sha384": "npm:@stablelib/sha384@^2.0.1",
     "@stablelib/sha512": "npm:@stablelib/sha512@^2.0.1",
     "@std/crypto": "jsr:@std/crypto@^1.0.5",
-    "tweetnacl": "npm:tweetnacl@^1.0.3"
+    "blakejs": "npm:blakejs@^1.2.1",
+    "hash-wasm": "npm:hash-wasm@^4.12.0"
   }
 }
