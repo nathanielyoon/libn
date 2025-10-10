@@ -250,51 +250,56 @@ import.meta.main && await Promise.all([
   fetch(
     "https://en.wikipedia.org/w/index.php?title=Ascii85&oldid=1305034107",
   ).then(($) => $.text()),
-]).then(([rfc4648, crockford, spec32, wikipedia]) => {
-  const matchRfc = (base: string, map: (string: string) => string) =>
-    Array.from(
-      rfc4648.matchAll(RegExp(`BASE${base}\\("(.*)"\\) = "(.*)"`, "g")),
-      ([_, binary, string]) => ({
-        binary,
-        string: map(string),
-      }),
-    );
-  return {
-    B16: matchRfc("16", ($) => $.toLowerCase()),
-    B32: matchRfc("32", ($) => $.replace(/=+$/, "")),
-    H32: matchRfc("32-HEX", ($) => $.replace(/=+$/, "")),
-    C32: Array.from(
-      crockford.matchAll(
-        /<tr>.*?<td>(\d+)<\/td>.*?<td><code>[\s\dA-Za-z]+<\/code><\/td>.*?<td><code>([\dA-Z])<\/code><\/td>.*?<\/tr>/gs,
-      ),
-      ([_, value, encode]) => {
-        let total = 0;
-        for (let base = +value, z = 0; z < 8; ++z) total = total * 32 + base;
-        const binary = new Uint8Array(8);
-        new DataView(binary.buffer).setBigUint64(0, BigInt(total));
-        return { binary: binary.subarray(3).toHex(), string: encode.repeat(8) };
-      },
+]).then(([rfc4648, crockford, spec32, wikipedia]) => ({
+  B16: Array.from(
+    rfc4648.matchAll(/BASE16\("(.*)"\) = "(.*)"/g),
+    ($) => ({ binary: $[1], string: $[2].toLowerCase() }),
+  ),
+  B32: Array.from(
+    rfc4648.matchAll(/BASE32\("(.*)"\) = "(.*)"/g),
+    ($) => ({ binary: $[1], string: $[2].replace(/=+$/, "") }),
+  ),
+  H32: Array.from(
+    rfc4648.matchAll(/BASE32-HEX\("(.*)"\) = "(.*)"/g),
+    ($) => ({ binary: $[1], string: $[2].replace(/=+$/, "") }),
+  ),
+  C32: Array.from(
+    crockford.matchAll(
+      /<tr>.*?<td>(\d+)<\/td>.*?<td><code>[\s\dA-Za-z]+<\/code><\/td>.*?<td><code>([\dA-Z])<\/code><\/td>.*?<\/tr>/gs,
     ),
-    B64: matchRfc("64", ($) => $),
-    U64: matchRfc("64", ($) => $.replace(/=+$/, "")),
-    Z85: Array.from([1, 2], ($) => {
-      const [_, bytes, string] = RegExp(
-        `byte test_data_${$} \\[\\d+\\] = \\{(.+?)\\};.*?encoded = Z85_encode \\(test_data_${$}.*?assert \\(streq \\(encoded, "(.+?)"\\)\\)`,
-        "s",
-      ).exec(spec32)!;
-      return {
-        binary: bytes.match(/(?<=0x)[\dA-F]{2}\b/g)!.join("").toLowerCase(),
-        string,
-      };
-    }),
-    A85: [{
-      binary: /(?<=<code>).{269}(?=<\/code>)/s.exec(wikipedia)![0],
-      string: /(?<=<pre>)(.{395})(?=<\/pre>)/s.exec(wikipedia)![0]
-        .replaceAll("&lt;", "<").replaceAll("&gt;", ">")
-        .replaceAll("&amp;", "&").replaceAll("\n", ""),
-    }],
-  };
-}).then(($) =>
+    ([_, value, encode]) => {
+      let total = 0;
+      for (let base = +value, z = 0; z < 8; ++z) total = total * 32 + base;
+      const binary = new Uint8Array(8);
+      new DataView(binary.buffer).setBigUint64(0, BigInt(total));
+      return { binary: binary.subarray(3).toHex(), string: encode.repeat(8) };
+    },
+  ),
+  B64: Array.from(
+    rfc4648.matchAll(/BASE64\("(.*)"\) = "(.*)"/g),
+    ($) => ({ binary: $[1], string: $[2] }),
+  ),
+  U64: Array.from(
+    rfc4648.matchAll(/BASE64\("(.*)"\) = "(.*)"/g),
+    ($) => ({ binary: $[1], string: $[2].replace(/=+$/, "") }),
+  ),
+  Z85: Array.from([1, 2], ($) => {
+    const [_, bytes, string] = RegExp(
+      `byte test_data_${$} \\[\\d+\\] = \\{(.+?)\\};.*?encoded = Z85_encode \\(test_data_${$}.*?assert \\(streq \\(encoded, "(.+?)"\\)\\)`,
+      "s",
+    ).exec(spec32)!;
+    return {
+      binary: bytes.match(/(?<=0x)[\dA-F]{2}\b/g)!.join("").toLowerCase(),
+      string,
+    };
+  }),
+  A85: [{
+    binary: /(?<=<code>).{269}(?=<\/code>)/s.exec(wikipedia)![0],
+    string: /(?<=<pre>)(.{395})(?=<\/pre>)/s.exec(wikipedia)![0]
+      .replaceAll("&lt;", "<").replaceAll("&gt;", ">")
+      .replaceAll("&amp;", "&").replaceAll("\n", ""),
+  }],
+})).then(($) =>
   Deno.writeTextFile(
     new URL(import.meta.resolve("./vectors.json")).pathname,
     JSON.stringify($),

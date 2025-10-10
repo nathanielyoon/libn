@@ -309,25 +309,23 @@ import.meta.main && await Promise.all([
   fetch(
     "https://www.unicode.org/Public/UNIDATA/CaseFolding.txt",
   ).then(($) => $.text()).then(($) => $.slice(2990, 87528)),
-]).then(([rfc9839, fold]) => {
-  return {
-    uncode: rfc9839.match(/(?<=%x)\w+(?:-\w+)?/g)!.map((hex) =>
-      hex.length === 1
-        ? parseInt(hex, 16)
-        : hex.split("-").map(($) => parseInt($, 16))
-    ),
-    uncase: fold.match(/^[\dA-F]{4,5}; [CF];(?: [\dA-F]{4,5})+/gm)!.map(($) => {
-      const [code, _, mapping] = $.split("; ");
-      return {
-        source: String.fromCodePoint(parseInt(code, 16)),
-        target: mapping.split(" ").reduce(
-          (to, point) => to + String.fromCodePoint(parseInt(point, 16)),
-          "",
-        ),
-      };
-    }),
-  };
-}).then(($) =>
+]).then(([rfc9839, fold]) => ({
+  uncode: rfc9839.match(/(?<=%x)\w+(?:-\w+)?/g)!.map((hex) =>
+    hex.length === 1
+      ? parseInt(hex, 16)
+      : hex.split("-").map(($) => parseInt($, 16))
+  ),
+  uncase: fold.match(/^[\dA-F]{4,5}; [CF];(?: [\dA-F]{4,5})+/gm)!.map(($) => {
+    const [code, _, mapping] = $.split("; ");
+    return {
+      source: String.fromCodePoint(parseInt(code, 16)),
+      target: mapping.split(" ").reduce(
+        (to, point) => to + String.fromCodePoint(parseInt(point, 16)),
+        "",
+      ),
+    };
+  }),
+})).then(($) =>
   Deno.writeTextFile(
     new URL(import.meta.resolve("./vectors.json")).pathname,
     JSON.stringify($),

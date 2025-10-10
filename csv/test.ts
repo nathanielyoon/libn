@@ -151,33 +151,31 @@ import.meta.main && await Promise.all([
       ).then(($) => $.json()),
     ])
   ),
-]).then(([rfc4180, earthquakes, ...csvTestData]) => {
-  return {
-    deCsv: [
-      ...[
-        [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
-        [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
-        [
-          ["field_name", "field_name", "field_name"],
-          ["aaa", "bbb", "ccc"],
-          ["zzz", "yyy", "xxx"],
-        ],
-        [["aaa", "bbb", "ccc"]],
-        [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
-        [["aaa", "b\r\nbb", "ccc"], ["zzz", "yyy", "xxx"]],
-        [["aaa", 'b"bb', "ccc"]],
-      ].reduce<[RegExp, { csv: string; json: string[][] }[]]>(
-        ([regex, to], json) => [regex, [...to, {
-          csv: regex.exec(rfc4180)![1].replace(/ CRLF\s*/g, "\r\n"),
-          json,
-        }]],
-        [/For example:\s+(.+?)\n\n/gs, []],
-      )[1],
-      { csv: earthquakes, json: parse(earthquakes) },
-      ...csvTestData.map(([csv, json]) => ({ csv, json })),
-    ],
-  };
-}).then(($) =>
+]).then(([rfc4180, earthquakes, ...csvTestData]) => ({
+  deCsv: [
+    ...[
+      [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
+      [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
+      [
+        ["field_name", "field_name", "field_name"],
+        ["aaa", "bbb", "ccc"],
+        ["zzz", "yyy", "xxx"],
+      ],
+      [["aaa", "bbb", "ccc"]],
+      [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
+      [["aaa", "b\r\nbb", "ccc"], ["zzz", "yyy", "xxx"]],
+      [["aaa", 'b"bb', "ccc"]],
+    ].reduce<[RegExp, { csv: string; json: string[][] }[]]>(
+      ([regex, to], json) => [regex, [...to, {
+        csv: regex.exec(rfc4180)![1].replace(/ CRLF\s*/g, "\r\n"),
+        json,
+      }]],
+      [/For example:\s+(.+?)\n\n/gs, []],
+    )[1],
+    { csv: earthquakes, json: parse(earthquakes) },
+    ...csvTestData.map(([csv, json]) => ({ csv, json })),
+  ],
+})).then(($) =>
   Deno.writeTextFile(
     new URL(import.meta.resolve("./vectors.json")).pathname,
     JSON.stringify($),
