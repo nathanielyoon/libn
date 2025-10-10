@@ -27,10 +27,10 @@ const decode = (bin: Uint8Array, $: string) => {
 };
 const Z85_STR =
   "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#";
-const Z85_BIN = /* @__PURE__ */ map(Z85_STR, 0);
+const Z85_BIN = /* @__PURE__ */ map(Z85_STR);
 const A85_STR =
   "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstu";
-const A85_BIN = /* @__PURE__ */ map(A85_STR, 0);
+const A85_BIN = /* @__PURE__ */ map(A85_STR);
 /** Z85 pattern. */
 export const Z85 = /^[!#-&(-+--:<-[\]^a-~]*$/;
 /** Converts binary to z85. */

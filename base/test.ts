@@ -38,7 +38,7 @@ Deno.test("vectors", async (t) => {
     }));
   await t.step("C32", () =>
     vectors.default.C32.forEach(($) => {
-      const binary = deB16($.binary);
+      const binary = Uint8Array.fromHex($.binary);
       expect(enC32(binary)).toStrictEqual($.string);
       expect(deC32($.string)).toStrictEqual(binary);
     }));
@@ -56,7 +56,7 @@ Deno.test("vectors", async (t) => {
     }));
   await t.step("Z85", () =>
     vectors.default.Z85.forEach(($) => {
-      const binary = deB16($.binary);
+      const binary = Uint8Array.fromHex($.binary);
       expect(enZ85(binary)).toStrictEqual($.string);
       expect(deZ85($.string)).toStrictEqual(binary);
     }));
@@ -272,7 +272,7 @@ import.meta.main && await Promise.all([
         for (let base = +value, z = 0; z < 8; ++z) total = total * 32 + base;
         const binary = new Uint8Array(8);
         new DataView(binary.buffer).setBigUint64(0, BigInt(total));
-        return { binary: enB16(binary.subarray(3)), string: encode.repeat(8) };
+        return { binary: binary.subarray(3).toHex(), string: encode.repeat(8) };
       },
     ),
     B64: matchRfc("64", ($) => $),

@@ -2,7 +2,6 @@ import { de, type Decode, en, type Encode, map } from "./lib.ts";
 
 const B64_BIN = /* @__PURE__ */ map(
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
-  0,
 );
 const aToB = ($: string) => {
   try {
@@ -35,7 +34,7 @@ export const deB64: Decode = ($) => {
 };
 const U64_STR =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-const U64_BIN = /* @__PURE__ */ map(U64_STR, 0);
+const U64_BIN = /* @__PURE__ */ map(U64_STR);
 /** Base64url pattern (without padding). */
 export const U64 = /^(?:[-\w]{4})*(?:[-\w]{2,3})?$/;
 /** Converts binary to unpadded base64url. */
