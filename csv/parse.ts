@@ -26,7 +26,7 @@ const enum Case {
   CM_FINISH = Code.CM | Part.FINISH,
 }
 /** Decodes CSV to an array of rows. */
-export const decodeCsv = <A extends {} | null = null>(
+export const deCsv = <A extends {} | null = null>(
   $: string,
   options?: CsvOptions<A>,
 ): Row<A>[] | null => {

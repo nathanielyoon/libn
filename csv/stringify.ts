@@ -1,7 +1,7 @@
 import type { CsvOptions, Row } from "./lib.ts";
 
 /** Encodes an array of rows to CSV. */
-export const encodeCsv = (($: Row<any>[], options?: CsvOptions<any>) => {
+export const enCsv = (($: Row<any>[], options?: CsvOptions<any>) => {
   const isEmpty = options?.empty?.check ?? (($) => $ === null);
   let csv = "", row, line, field;
   for (let z = 0, y; z < $.length; csv += line.replace(/,?$/, "\n"), ++z) {

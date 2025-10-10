@@ -7,14 +7,14 @@
  *
  * const data = [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]];
  *
- * assertEquals(decodeCsv(encodeCsv(data)), data);
+ * assertEquals(deCsv(enCsv(data)), data);
  * ```
  *
  * @module csv
  */
 
 import type { CsvOptions, Row } from "./lib.ts";
-import { encodeCsv } from "./stringify.ts";
-import { decodeCsv } from "./parse.ts";
+import { enCsv } from "./stringify.ts";
+import { deCsv } from "./parse.ts";
 
-export { type CsvOptions, decodeCsv, encodeCsv, type Row };
+export { type CsvOptions, deCsv, enCsv, type Row };
