@@ -1,6 +1,5 @@
 import { expect } from "@std/expect/expect";
 import fc from "fast-check";
-import { deUtf8, enUtf8 } from "@libn/base";
 import { B16, deB16, enB16 } from "@libn/base/16";
 import {
   B32,
@@ -15,6 +14,7 @@ import {
 } from "@libn/base/32";
 import { B64, deB64, deU64, enB64, enU64, U64 } from "@libn/base/64";
 import { A85, deA85, deZ85, enA85, enZ85, Z85 } from "@libn/base/85";
+import { deUtf8, enUtf8 } from "@libn/base";
 
 Deno.test("vectors", async (t) => {
   const vectors = await import("./vectors.json", { with: { type: "json" } });
