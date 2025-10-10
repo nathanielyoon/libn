@@ -14,4 +14,4 @@ export interface CsvOptions<A extends {} | null> {
   empty?: { value?: A; check?: ($: string | A) => $ is A };
 }
 /** CSV row, with empty fields replaced by a generic value. */
-export type Row<A extends {} | null> = (string | A)[];
+export type Row<A extends {} | null> = readonly (string | A)[];

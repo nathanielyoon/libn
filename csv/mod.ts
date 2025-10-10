@@ -1,5 +1,5 @@
 /**
- * Comma-separated values ([RFC 4180](https://www.rfc-editor.org/rfc/rfc4180)).
+ * Comma-separated values.
  *
  * @example Stringifying, parsing
  * ```ts
@@ -7,14 +7,14 @@
  *
  * const data = [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]];
  *
- * assertEquals(de_csv(en_csv(data)), data);
+ * assertEquals(decodeCsv(encodeCsv(data)), data);
  * ```
  *
  * @module csv
  */
 
-import type { CsvOptions, Row } from "./src/common.ts";
-import { en_csv } from "./src/stringify.ts";
-import { de_csv } from "./src/parse.ts";
+import type { CsvOptions, Row } from "./lib.ts";
+import { encodeCsv } from "./stringify.ts";
+import { decodeCsv } from "./parse.ts";
 
-export { type CsvOptions, de_csv, en_csv, type Row };
+export { type CsvOptions, decodeCsv, encodeCsv, type Row };

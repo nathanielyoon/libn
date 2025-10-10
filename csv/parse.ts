@@ -1,12 +1,12 @@
-import type { CsvOptions, Row } from "./common.ts";
+import type { CsvOptions, Row } from "./lib.ts";
 
 const enum Code {
-  LF = 10,
-  CR = 13,
-  QT = 34,
-  CM = 44,
+  LF = 10, // \n
+  CR = 13, // \r
+  QT = 34, // "
+  CM = 44, // ,
 }
-const enum Part {
+const enum Part { // outside UTF-16 range
   BEFORE = 1 << 16,
   INSIDE = 1 << 17,
   FINISH = 1 << 18,
@@ -25,12 +25,12 @@ const enum Case {
   CM_INSIDE = Code.CM | Part.INSIDE,
   CM_FINISH = Code.CM | Part.FINISH,
 }
-/** Decodes CSV string -> array of rows. */
-export const de_csv = <A extends {} | null = null>(
+/** Decodes CSV to an array of rows. */
+export const decodeCsv = <A extends {} | null = null>(
   $: string,
   options?: CsvOptions<A>,
 ): Row<A>[] | null => {
-  $.charCodeAt(0) === 0xfeff && ($ = $.slice(1));
+  if ($.charCodeAt(0) === 0xfeff) $ = $.slice(1);
   if (!$.length) return [];
   const at = $.charCodeAt.bind($), eol = ~$.indexOf("\r") ? "\r\n" : "\n";
   const eager = options?.eager ?? true, nil = options?.empty?.value ?? null;
