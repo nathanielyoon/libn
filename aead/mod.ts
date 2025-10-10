@@ -1,20 +1,7 @@
 /**
- * XChaCha20-Poly1305 ([RFC 8439](https://www.rfc-editor.org/rfc/rfc8439) and
- * [draft-irtf-cfrg-xchacha-03](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-xchacha-03)).
+ * Authenticated encryption (RFC 8439 and draft-irtf-cfrg-xchacha-03).
  *
- * @example Authenticated encryption
- * ```ts
- * import { assert, assertEquals } from "@std/assert";
- *
- * const key = crypto.getRandomValues(new Uint8Array(32));
- * const message = crypto.getRandomValues(new Uint8Array(100));
- *
- * const secret = encrypt(key, message);
- * assert(secret);
- * assertEquals(decrypt(key, secret), message);
- * ```
- *
- * @example Authenticated encryption with associated data
+ * @example Associated data
  * ```ts
  * import { assert, assertEquals } from "@std/assert";
  *
@@ -31,19 +18,9 @@
  * @module aead
  */
 
-import { hchacha, xor } from "./src/chacha.ts";
-import { polyxchacha, xchachapoly } from "./src/aead.ts";
+import { hchacha, xor } from "./chacha.ts";
+import { polyxchacha, xchachapoly } from "./aead.ts";
 
-/** XORs the text in-place (without checking parameters). */
-export const cipher = (key: Uint8Array, iv: Uint8Array, $: Uint8Array): void =>
-  xor(
-    hchacha(key, iv),
-    0,
-    iv[16] | iv[17] << 8 | iv[18] << 16 | iv[19] << 24,
-    iv[20] | iv[21] << 8 | iv[22] << 16 | iv[23] << 24,
-    $,
-    0,
-  );
 /** Encrypts with XChaCha20-Poly1305. */
 export const encrypt = (
   key: Uint8Array,
@@ -64,6 +41,7 @@ export const decrypt = (
   message: Uint8Array,
   associated_data: Uint8Array = new Uint8Array(),
 ): null | Uint8Array<ArrayBuffer> => {
+  if (message.length < 40) return null;
   const plaintext = new Uint8Array(message.subarray(40));
   return polyxchacha(
       key,
@@ -75,3 +53,13 @@ export const decrypt = (
     ? plaintext
     : null;
 };
+/** XORs the text in-place (without checking parameters). */
+export const cipher = (key: Uint8Array, iv: Uint8Array, $: Uint8Array): void =>
+  xor(
+    hchacha(key, iv),
+    0,
+    iv[16] | iv[17] << 8 | iv[18] << 16 | iv[19] << 24,
+    iv[20] | iv[21] << 8 | iv[22] << 16 | iv[23] << 24,
+    $,
+    0,
+  );

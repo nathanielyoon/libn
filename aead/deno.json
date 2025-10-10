@@ -1,11 +1,11 @@
 {
   "name": "@libn/aead",
-  "version": "0.2.8",
+  "version": "0.3.0",
   "license": "GPL-3.0-or-later",
-  "exports": "./mod.ts",
-  "imports": {
-    "@noble/ciphers": "jsr:@noble/ciphers@^2.0.1",
-    "@stablelib/xchacha20poly1305": "npm:@stablelib/xchacha20poly1305@^2.0.1",
-    "tweetnacl": "npm:tweetnacl@^1.0.3"
+  "exports": {
+    ".": "./mod.ts",
+    "./chacha": "./chacha.ts",
+    "./poly": "./poly.ts",
+    "./aead": "./aead.ts"
   }
 }

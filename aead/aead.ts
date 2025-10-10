@@ -30,8 +30,8 @@ export const polyxchacha = (
   tag: Uint8Array,
   ciphertext: Uint8Array,
   ad: Uint8Array,
-): boolean => {
-  if (key.length !== 32 || iv.length !== 24 || tag.length !== 16) return false;
+): null | boolean => {
+  if (key.length !== 32 || iv.length !== 24 || tag.length !== 16) return null;
   const xorer = hchacha(key, iv);
   const iv0 = iv[16] | iv[17] << 8 | iv[18] << 16 | iv[19] << 24;
   const iv1 = iv[20] | iv[21] << 8 | iv[22] << 16 | iv[23] << 24;

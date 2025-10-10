@@ -1,3 +1,4 @@
+const SWAP = /* @__PURE__ */ new Uint8Array(16);
 /** Computes a Poly1305 MAC. */
 export const poly = (key: Uint32Array, $: Uint8Array): Uint8Array => {
   let a = 2048, b = key[0] & 8191, c = key[0] >> 13 & 8191;
@@ -8,8 +9,7 @@ export const poly = (key: Uint32Array, $: Uint8Array): Uint8Array => {
   let x, y, z = 0, d0 = 0, d1 = 0, d2 = 0, d3 = 0, d4 = 0, d5 = 0, d6 = 0;
   while (a && z < $.length) {
     if ($.length - z < 16) {
-      const swap = new Uint8Array(16);
-      swap.set($.subarray(z)), a = z = swap[$.length - z]++, $ = swap;
+      SWAP.fill(0).set($.subarray(z)), a = z = SWAP[$.length - z]++, $ = SWAP;
     }
     v = $[z++] | $[z++] << 8, o = (v & 8191) + l, w = $[z++] | $[z++] << 8;
     p = ((v >> 13 | w << 3) & 8191) + m, x = $[z++] | $[z++] << 8;
@@ -52,7 +52,7 @@ export const poly = (key: Uint32Array, $: Uint8Array): Uint8Array => {
   v = -(k >> 13 ^ 1), w = ~v & 8191, k = (k & 8191) - (1 << 13);
   l = l & v | b & w, m = m & v | c & w, o = o & v | d & w, p = p & v | e & w;
   q = q & v | f & w, r = r & v | h & w, s = s & v | g & w, t = t & v | i & w;
-  u = u & v | j & w, n = n & v | k & w, $ = new Uint8Array(16); // output now
+  u = u & v | j & w, n = n & v | k & w, $ = new Uint8Array(16); // is output now
   $[0] = l = ((l | m << 13) & 65535) + (key[4] & 65535);
   $[2] = m = (l >> 16) + (m >> 3 | o << 10 & 65535) + (key[4] >>> 16);
   $[4] = o = (m >> 16) + (o >> 6 | p << 7 & 65535) + (key[5] & 65535);
