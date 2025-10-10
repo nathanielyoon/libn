@@ -10,17 +10,6 @@
     "./blake3": "./blake3.ts"
   },
   "imports": {
-    "@noble/hashes": "jsr:@noble/hashes@^2.0.1",
-    "@stablelib/blake2b": "npm:@stablelib/blake2b@^2.0.1",
-    "@stablelib/blake2s": "npm:@stablelib/blake2s@^2.0.1",
-    "@stablelib/hkdf": "npm:@stablelib/hkdf@^2.0.1",
-    "@stablelib/hmac": "npm:@stablelib/hmac@^2.0.1",
-    "@stablelib/sha224": "npm:@stablelib/sha224@^2.0.1",
-    "@stablelib/sha256": "npm:@stablelib/sha256@^2.0.1",
-    "@stablelib/sha384": "npm:@stablelib/sha384@^2.0.1",
-    "@stablelib/sha512": "npm:@stablelib/sha512@^2.0.1",
-    "@std/crypto": "jsr:@std/crypto@^1.0.5",
-    "blakejs": "npm:blakejs@^1.2.1",
-    "hash-wasm": "npm:hash-wasm@^4.12.0"
+    "@std/crypto": "jsr:@std/crypto@^1.0.5"
   }
 }
