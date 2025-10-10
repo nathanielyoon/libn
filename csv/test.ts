@@ -5,7 +5,7 @@ import { enCsv } from "@libn/csv/stringify";
 
 Deno.test("vectors", async (t) => {
   const vectors = await import("./vectors.json", { with: { type: "json" } });
-  await t.step("decodeCsv", () =>
+  await t.step("deCsv", () =>
     vectors.default.deCsv.forEach(($) => {
       expect(deCsv($.csv, { empty: { value: "" } })).toStrictEqual($.json);
     }));
@@ -39,33 +39,33 @@ const fcRows = <A extends {} | null>(
     ),
     { minLength: 1 },
   );
-Deno.test("decodeCsv() strips byte-order marker", () => {
+Deno.test("deCsv() strips byte-order marker", () => {
   expect(deCsv("\ufeff")).toStrictEqual([]);
   expect(deCsv("\ufeffa")).toStrictEqual([["a"]]);
 });
-Deno.test("decodeCsv() rejects unclosed quoted fields", () => {
+Deno.test("deCsv() rejects unclosed quoted fields", () => {
   expect(deCsv('"')).toBeNull();
   expect(deCsv('"a')).toBeNull();
   expect(deCsv('a\n"')).toBeNull();
 });
-Deno.test("decodeCsv() rejects quotes inside unqouted fields", () => {
+Deno.test("deCsv() rejects quotes inside unqouted fields", () => {
   expect(deCsv('a"')).toBeNull();
 });
-Deno.test("decodeCsv() rejects quotes after quoted fields", () => {
+Deno.test("deCsv() rejects quotes after quoted fields", () => {
   expect(deCsv('""a"')).toBeNull();
   expect(deCsv('"a"\n"a""')).toBeNull();
 });
-Deno.test("decodeCsv() differentiates quoted and unquoted empty fields", () => {
+Deno.test("deCsv() differentiates quoted and unquoted empty fields", () => {
   expect(deCsv('""')).toStrictEqual([[""]]);
   expect(deCsv(",a")).toStrictEqual([[null, "a"]]);
 });
-Deno.test("decodeCsv() strips trailing newlines", () => {
+Deno.test("deCsv() strips trailing newlines", () => {
   expect(deCsv("a\r\n")).toStrictEqual([["a"]]);
 });
-Deno.test("decodeCsv() parses leading newlines", () => {
+Deno.test("deCsv() parses leading newlines", () => {
   expect(deCsv("\r\na")).toStrictEqual([[null], ["a"]]);
 });
-Deno.test("decodeCsv() eagerly parses same-length rows", () =>
+Deno.test("deCsv() eagerly parses same-length rows", () =>
   fc.assert(fc.property(
     fc.integer({ min: 1, max: 64 }).chain(($) =>
       fcRows(fc.constant(null), { minLength: $, maxLength: $ })
@@ -76,7 +76,7 @@ Deno.test("decodeCsv() eagerly parses same-length rows", () =>
       expect(deCsv(csv, { empty: { value: "" } })).toStrictEqual(parse(csv));
     },
   )));
-Deno.test("decodeCsv() parses different-length rows if not eager", () =>
+Deno.test("deCsv() parses different-length rows if not eager", () =>
   fc.assert(fc.property(fcRows(fc.constant(null)), ($) => {
     const csv = enCsv($);
     expect(deCsv(csv, { eager: false })).toStrictEqual($);
@@ -84,24 +84,24 @@ Deno.test("decodeCsv() parses different-length rows if not eager", () =>
       parse(csv),
     );
   })));
-Deno.test("encodeCsv() appends newline", () => {
+Deno.test("enCsv() appends newline", () => {
   expect(enCsv([["ok"]])).toStrictEqual("ok\n");
 });
-Deno.test("encodeCsv() differentiates quoted and unquoted empty fields", () => {
+Deno.test("enCsv() differentiates quoted and unquoted empty fields", () => {
   expect(enCsv([[null]])).toStrictEqual("\n");
   expect(enCsv([[""]])).toStrictEqual('""\n');
 });
-Deno.test("encodeCsv() quotes special characters", () => {
+Deno.test("enCsv() quotes special characters", () => {
   expect(enCsv([["\n"]])).toStrictEqual('"\n"\n');
   expect(enCsv([['"']])).toStrictEqual('""""\n');
   expect(enCsv([[","]])).toStrictEqual('","\n');
 });
-Deno.test("encodeCsv() recognizes different newlines as special", () => {
+Deno.test("enCsv() recognizes different newlines as special", () => {
   expect(enCsv([["\n"]])).toStrictEqual('"\n"\n');
   expect(enCsv([["\r"]])).toStrictEqual('"\r"\n');
   expect(enCsv([["\r\n"]])).toStrictEqual('"\r\n"\n');
 });
-Deno.test("encodeCsv() takes custom empty predicate", () =>
+Deno.test("enCsv() takes custom empty predicate", () =>
   fc.assert(fc.property(
     fc.string().chain(($) =>
       fc.record({ nil: fc.constant($), rows: fcRows(fc.constant($)) })
