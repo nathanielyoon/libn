@@ -8,7 +8,8 @@
     "./query": "./query.ts"
   },
   "imports": {
-    "@b-fuze/deno-dom": "jsr:@b-fuze/deno-dom@^0.1.56"
+    "@b-fuze/deno-dom": "jsr:@b-fuze/deno-dom@^0.1.56",
+    "@std/testing": "jsr:@std/testing@^1.0.16"
   },
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "deno.ns"]
