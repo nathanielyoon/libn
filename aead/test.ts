@@ -5,6 +5,59 @@ import { poly } from "@libn/aead/poly";
 import { polyxchacha, xchachapoly } from "@libn/aead/aead";
 import { cipher, decrypt, encrypt } from "@libn/aead";
 
+Deno.test("vectors", async (t) => {
+  const vectors = await import("./vectors.json", { with: { type: "json" } });
+  await t.step("chacha", () =>
+    vectors.default.chacha.forEach(($) => {
+      const state = new Uint32Array(16);
+      chacha(key($.key), $.count, ...iv($.iv), state);
+      expect(
+        new Uint8Array(state.buffer).subarray(0, $.state.length >> 1),
+      ).toStrictEqual(Uint8Array.fromHex($.state));
+    }));
+  await t.step("xor", () =>
+    vectors.default.xor.forEach(($) => {
+      const plaintext = Uint8Array.fromHex($.plaintext);
+      xor(key($.key), ...iv($.iv), plaintext, $.count);
+      expect(plaintext).toStrictEqual(Uint8Array.fromHex($.ciphertext));
+    }));
+  await t.step("poly", () =>
+    vectors.default.poly.forEach(($) => {
+      expect(poly(key($.key), Uint8Array.fromHex($.message))).toStrictEqual(
+        Uint8Array.fromHex($.tag),
+      );
+    }));
+  await t.step("aead", () =>
+    vectors.default.aead.forEach(($) => {
+      const key = Uint8Array.fromHex($.key);
+      const iv = Uint8Array.fromHex($.iv);
+      const plaintext = Uint8Array.fromHex($.plaintext);
+      const ciphertext = Uint8Array.fromHex($.ciphertext);
+      const ad = Uint8Array.fromHex($.ad);
+      const tag = Uint8Array.fromHex($.tag);
+      if ($.result !== false) {
+        const text = new Uint8Array(plaintext);
+        expect(xchachapoly(key, iv, text, ad)).toStrictEqual(tag);
+        expect(text).toStrictEqual(ciphertext);
+        expect(polyxchacha(key, iv, tag, text, ad)).toStrictEqual(true);
+        expect(text).toStrictEqual(plaintext);
+      } else {
+        expect(polyxchacha(key, iv, tag, ciphertext, ad)).toStrictEqual(false);
+      }
+    }));
+  await t.step("cipher", () =>
+    vectors.default.cipher.forEach(($) => {
+      const key = Uint8Array.fromHex($.key);
+      const iv = Uint8Array.fromHex($.iv);
+      const plaintext = Uint8Array.fromHex($.plaintext);
+      const text = new Uint8Array(plaintext.length);
+      cipher(key, iv, text);
+      expect(text).toStrictEqual(Uint8Array.fromHex($.keystream));
+      text.set(plaintext);
+      cipher(key, iv, text);
+      expect(text).toStrictEqual(Uint8Array.fromHex($.ciphertext));
+    }));
+});
 const fcRight = ($: number) => fc.uint8Array({ minLength: $, maxLength: $ });
 const fcWrong = ($: number) =>
   fc.oneof(
@@ -61,59 +114,6 @@ const iv = ($: string) =>
     number,
     number,
   ];
-Deno.test("vectors", async (t) => {
-  const vectors = await import("./vectors.json", { with: { type: "json" } });
-  await t.step("chacha", () =>
-    vectors.default.chacha.forEach(($) => {
-      const state = new Uint32Array(16);
-      chacha(key($.key), $.count, ...iv($.iv), state);
-      expect(
-        new Uint8Array(state.buffer).subarray(0, $.state.length >> 1),
-      ).toStrictEqual(Uint8Array.fromHex($.state));
-    }));
-  await t.step("xor", () =>
-    vectors.default.xor.forEach(($) => {
-      const plaintext = Uint8Array.fromHex($.plaintext);
-      xor(key($.key), ...iv($.iv), plaintext, $.count);
-      expect(plaintext).toStrictEqual(Uint8Array.fromHex($.ciphertext));
-    }));
-  await t.step("poly", () =>
-    vectors.default.poly.forEach(($) => {
-      expect(poly(key($.key), Uint8Array.fromHex($.message))).toStrictEqual(
-        Uint8Array.fromHex($.tag),
-      );
-    }));
-  await t.step("aead", () =>
-    vectors.default.aead.forEach(($) => {
-      const key = Uint8Array.fromHex($.key);
-      const iv = Uint8Array.fromHex($.iv);
-      const plaintext = Uint8Array.fromHex($.plaintext);
-      const ciphertext = Uint8Array.fromHex($.ciphertext);
-      const ad = Uint8Array.fromHex($.ad);
-      const tag = Uint8Array.fromHex($.tag);
-      if ($.result !== false) {
-        const text = new Uint8Array(plaintext);
-        expect(xchachapoly(key, iv, text, ad)).toStrictEqual(tag);
-        expect(text).toStrictEqual(ciphertext);
-        expect(polyxchacha(key, iv, tag, text, ad)).toStrictEqual(true);
-        expect(text).toStrictEqual(plaintext);
-      } else {
-        expect(polyxchacha(key, iv, tag, ciphertext, ad)).toStrictEqual(false);
-      }
-    }));
-  await t.step("cipher", () =>
-    vectors.default.cipher.forEach(($) => {
-      const key = Uint8Array.fromHex($.key);
-      const iv = Uint8Array.fromHex($.iv);
-      const plaintext = Uint8Array.fromHex($.plaintext);
-      const text = new Uint8Array(plaintext.length);
-      cipher(key, iv, text);
-      expect(text).toStrictEqual(Uint8Array.fromHex($.keystream));
-      text.set(plaintext);
-      cipher(key, iv, text);
-      expect(text).toStrictEqual(Uint8Array.fromHex($.ciphertext));
-    }));
-});
 const trim = ($: string) =>
   $.match(
     /(?<=(?:^|\b0x|\W)(?:[\da-f]{2})*)[\da-f]{2}(?=(?:[\da-f]{2})*(?:\W|$))/g,
