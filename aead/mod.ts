@@ -3,6 +3,7 @@
  *
  * @example Associated data
  * ```ts
+ * import { decrypt, encrypt } from "@libn/aead";
  * import { assert, assertEquals } from "@std/assert";
  *
  * const key = crypto.getRandomValues(new Uint8Array(32));
