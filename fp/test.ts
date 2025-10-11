@@ -33,7 +33,7 @@ Deno.test("or() wraps falsy values", () =>
 Deno.test("or() wraps truthy values", () =>
   fc.assert(fc.property(fc.anything().filter(Boolean), (truthy) => {
     const union = or(truthy);
-    assertType<IsExact<typeof union, Or<never, unknown>>>(true);
+    assertType<IsExact<typeof union, Or<Falsy, unknown>>>(true);
     assertType<IsExact<typeof union.value, Ok<typeof union>>>(true);
     expect(union).toStrictEqual({ state: true, value: truthy });
   })));
