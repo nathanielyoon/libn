@@ -1,15 +1,33 @@
 import { expect } from "@std/expect/expect";
 import fc from "fast-check";
+import { deBig, enBig, mod } from "./lib.ts";
 import {
   convertPublic,
   convertSecret,
   derive,
   exchange,
+  ladder,
 } from "@libn/ecc/x25519";
 import { generate, sign, verify } from "@libn/ecc/ed25519";
 
 Deno.test("vectors", async (t) => {
   const vectors = await import("./vectors.json", { with: { type: "json" } });
+  await t.step("ladder", () => {
+    let k = enBig(Uint8Array.fromHex(vectors.default.ladder.k));
+    let u = enBig(Uint8Array.fromHex(vectors.default.ladder.u));
+    // Remove the `- 1` from the loop condition to run the third step (1 million
+    // iterations), which takes a while.
+    //
+    // ./test.ts => vectors ... ladder ... ok (7m54s)
+    for (let z = 0, y = 0; z < vectors.default.ladder.after.length - 1; ++z) {
+      const step = vectors.default.ladder.after[z];
+      do {
+        const next = ladder(k, u);
+        u = k, k = next;
+      } while (++y < step.iterations);
+      expect(deBig(k)).toStrictEqual(Uint8Array.fromHex(step.k));
+    }
+  });
   await t.step("derive", () =>
     vectors.default.derive.forEach(($) => {
       expect(derive(Uint8Array.fromHex($.secret))).toStrictEqual(
@@ -121,6 +139,12 @@ Deno.test("exchange() rejects all-zero shared secrets", () =>
   fc.assert(fc.property(fcKey, ($) => {
     expect(exchange($, new Uint8Array(32))).toBeNull();
   })));
+Deno.test("exchange() accepts non-canonical values", () => {
+  const key = new Uint8Array(32);
+  for (let z = (1n << 255n) - 19n; z < 1n << 255n; ++z) {
+    expect(exchange(key, deBig(z))).toStrictEqual(exchange(key, deBig(mod(z))));
+  }
+});
 Deno.test("generate() follows built-in generateKey", async () => {
   const { keys } = await generateExport("Ed");
   expect(generate(keys.secret)).toStrictEqual(keys.public);
@@ -174,14 +198,15 @@ Deno.test("verify() accepts valid signatures", () =>
 import.meta.main && await Promise.all([
   fetch(
     "https://www.rfc-editor.org/rfc/rfc7748.txt",
-  ).then(($) => $.text()).then(($) => ({
-    "5.2": Array.from(
-      $.slice(18300, 19695).matchAll(
+  ).then(($) => $.text()).then((rfc7748) => ({
+    "5.2.1": Array.from(
+      rfc7748.slice(18300, 19695).matchAll(
         /scalar:\s*(?<secret>[\da-f]{64}).*?coordinate:\s*(?<public>[\da-f]{64}).*?coordinate:\s*(?<shared>[\da-f]{64})/gs,
       ),
       ($) => $.groups!,
     ),
-    "6.1": $.slice(23217, 25093).match(/(?<=^ {5})[\da-f]{64}$/gm)!,
+    "5.2.2": rfc7748.slice(21688, 22554).match(/\b[\da-f]{64}\b/g)!,
+    "6.1": rfc7748.slice(23217, 25093).match(/\b[\da-f]{64}\b/g)!,
   })),
   fetch(
     "https://www.rfc-editor.org/rfc/rfc8032.txt",
@@ -211,12 +236,21 @@ import.meta.main && await Promise.all([
     }[];
   }>(($) => $.json()),
 ]).then(([rfc7748, rfc8032, x25519, ed25519]) => ({
+  ladder: {
+    k: rfc7748["5.2.2"][0],
+    u: rfc7748["5.2.2"][0],
+    after: [
+      { iterations: 1e0, k: rfc7748["5.2.2"][1] },
+      { iterations: 1e3, k: rfc7748["5.2.2"][2] },
+      { iterations: 1e6, k: rfc7748["5.2.2"][3] },
+    ],
+  },
   derive: [
     { secret: rfc7748["6.1"][0], public: rfc7748["6.1"][1] },
     { secret: rfc7748["6.1"][2], public: rfc7748["6.1"][3] },
   ],
   exchange: [
-    ...rfc7748["5.2"],
+    ...rfc7748["5.2.1"],
     {
       secret: rfc7748["6.1"][0],
       public: rfc7748["6.1"][3],
