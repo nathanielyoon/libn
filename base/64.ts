@@ -18,8 +18,7 @@ const aToB = ($: string) => {
   }
 };
 /** Base64 patttern. */
-export const B64 =
-  /^(?:[+/\dA-Za-z]{4})*(?:[+/\dA-Za-z]{3}=|[+/\dA-Za-z]{2}==)?$/;
+export const B64 = /^(?:[+/\dA-Za-z]{4})*(?:[+/\dA-Za-z]{2}[+/\d=A-Za-z]=)?$/;
 /** Converts binary to base64. */
 export const enB64: Encode = ($) => {
   let string = "";
