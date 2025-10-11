@@ -1,6 +1,8 @@
 import { type Falsy, no, ok, type Or } from "./or.ts";
 import { type Both, Result, type Sync } from "./result.ts";
 
+/** Does nothing. */
+export const pass = <const A>($: A) => $;
 /** Lifts a value into a non-nullable success or nullish failure. */
 export const some = <const A, const B = undefined>(
   $: Sync<A>,

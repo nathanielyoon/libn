@@ -329,6 +329,10 @@ Deno.test("result.unwrap() gets a value", () =>
       }
     }
   })));
+Deno.test("pass() passes through", () =>
+  fc.assert(fc.property(fc.anything(), ($) => {
+    expect($).toBe($);
+  })));
 Deno.test("some() wraps nullable values", () =>
   fc.assert(fc.property(fc.constantFrom(_2, null, undefined), ($) => {
     const one = some($);
