@@ -2,7 +2,7 @@ import { expect } from "@std/expect/expect";
 import fc from "fast-check";
 import { chacha, xor } from "@libn/aead/chacha";
 import { poly } from "@libn/aead/poly";
-import { polyxchacha, xchachapoly } from "@libn/aead/aead";
+import { polyXchacha, xchachaPoly } from "@libn/aead/aead";
 import { cipher, decrypt, encrypt } from "@libn/aead";
 
 Deno.test("vectors", async (t) => {
@@ -37,12 +37,12 @@ Deno.test("vectors", async (t) => {
       const tag = Uint8Array.fromHex($.tag);
       if ($.result !== false) {
         const text = new Uint8Array(plaintext);
-        expect(xchachapoly(key, iv, text, ad)).toStrictEqual(tag);
+        expect(xchachaPoly(key, iv, text, ad)).toStrictEqual(tag);
         expect(text).toStrictEqual(ciphertext);
-        expect(polyxchacha(key, iv, tag, text, ad)).toStrictEqual(true);
+        expect(polyXchacha(key, iv, tag, text, ad)).toStrictEqual(true);
         expect(text).toStrictEqual(plaintext);
       } else {
-        expect(polyxchacha(key, iv, tag, ciphertext, ad)).toStrictEqual(false);
+        expect(polyXchacha(key, iv, tag, ciphertext, ad)).toStrictEqual(false);
       }
     }));
   await t.step("cipher", () =>
@@ -69,13 +69,13 @@ const fcWrongLength = <const A extends number[]>(...lengths: A) =>
     fc.tuple(
       ...lengths.map(($, z) => z !== index ? fcRight($) : fcWrong($)),
     ) as fc.Arbitrary<{ [_ in keyof A]: Uint8Array<ArrayBuffer> }>));
-Deno.test("xchachapoly() rejects wrong-size arguments", () =>
+Deno.test("xchachaPoly() rejects wrong-size arguments", () =>
   fc.assert(fc.property(fcWrongLength(32, 24), ($) => {
-    expect(xchachapoly(...$, new Uint8Array(), new Uint8Array())).toBeNull();
+    expect(xchachaPoly(...$, new Uint8Array(), new Uint8Array())).toBeNull();
   })));
-Deno.test("polyxchacha() rejects wrong-size arguments", () =>
+Deno.test("polyXchacha() rejects wrong-size arguments", () =>
   fc.assert(fc.property(fcWrongLength(32, 24, 16), ($) => {
-    expect(polyxchacha(...$, new Uint8Array(), new Uint8Array())).toBeNull();
+    expect(polyXchacha(...$, new Uint8Array(), new Uint8Array())).toBeNull();
   })));
 Deno.test("encrypt() rejects wrong-size arguments", () =>
   fc.assert(fc.property(fcWrongLength(32), ($) => {

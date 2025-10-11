@@ -19,7 +19,7 @@
  */
 
 import { hchacha, xor } from "./chacha.ts";
-import { polyxchacha, xchachapoly } from "./aead.ts";
+import { polyXchacha, xchachaPoly } from "./aead.ts";
 
 /** Encrypts with XChaCha20-Poly1305. */
 export const encrypt = (
@@ -29,7 +29,7 @@ export const encrypt = (
 ): null | Uint8Array<ArrayBuffer> => {
   const iv = crypto.getRandomValues(new Uint8Array(24));
   const ciphertext = new Uint8Array(plaintext);
-  const result = xchachapoly(key, iv, ciphertext, associated_data);
+  const result = xchachaPoly(key, iv, ciphertext, associated_data);
   if (!result) return null;
   const out = new Uint8Array(ciphertext.length + 40);
   out.set(iv), out.set(result, 24), out.set(ciphertext, 40);
@@ -43,7 +43,7 @@ export const decrypt = (
 ): null | Uint8Array<ArrayBuffer> => {
   if (message.length < 40) return null;
   const plaintext = new Uint8Array(message.subarray(40));
-  return polyxchacha(
+  return polyXchacha(
       key,
       message.subarray(0, 24),
       message.subarray(24, 40),

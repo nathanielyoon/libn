@@ -10,7 +10,7 @@ const construct = (ciphertext: Uint8Array, ad: Uint8Array) => {
 };
 const ZERO = /* @__PURE__ */ new Uint32Array(16);
 /** If parameters are valid, XORs the plaintext in-place, then returns a tag. */
-export const xchachapoly = (
+export const xchachaPoly = (
   key: Uint8Array,
   iv: Uint8Array,
   plaintext: Uint8Array,
@@ -24,7 +24,7 @@ export const xchachapoly = (
   return poly(ZERO, construct(plaintext, ad));
 };
 /** If parameters are valid, checks a tag, then XORs the ciphertext in-place. */
-export const polyxchacha = (
+export const polyXchacha = (
   key: Uint8Array,
   iv: Uint8Array,
   tag: Uint8Array,
