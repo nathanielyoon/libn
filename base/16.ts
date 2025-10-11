@@ -2,7 +2,7 @@ import { type Decode, en, type Encode, map } from "./lib.ts";
 
 const B16_STR = /* @__PURE__ */ Array.from(
   { length: 256 },
-  (_, byte) => byte.toString(16).padStart(2, "0"),
+  (_, byte) => byte.toString(16).toUpperCase().padStart(2, "0"),
 );
 const B16_BIN = /* @__PURE__ */ map("0123456789ABCDEF", 32);
 /** Base16 pattern. */
