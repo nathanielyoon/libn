@@ -11,7 +11,7 @@ export const chacha = (
   iv0: number,
   iv1: number,
   iv2: number,
-  $: Uint32Array,
+  fill: Uint32Array,
 ): void => {
   let a = W.EXPA, b = W.ND_3, c = W["2_BY"], d = W.TE_K, e = key[0], f = key[1];
   let g = key[2], h = key[3], i = key[4], j = key[5], k = key[6], l = key[7];
@@ -80,10 +80,12 @@ export const chacha = (
     o = o << 8 | o >>> 24,
     e ^= j = j + o | 0,
     e = e << 7 | e >>> 25; while (--z);
-  $[0] = W.EXPA + a, $[1] = W.ND_3 + b, $[2] = W["2_BY"] + c, $[3] = W.TE_K + d;
-  $[4] = key[0] + e, $[5] = key[1] + f, $[6] = key[2] + g, $[7] = key[3] + h;
-  $[8] = key[4] + i, $[9] = key[5] + j, $[10] = key[6] + k, $[11] = key[7] + l;
-  $[12] = count + m, $[13] = iv0 + n, $[14] = iv1 + o, $[15] = iv2 + p;
+  fill[0] = W.EXPA + a, fill[1] = W.ND_3 + b, fill[2] = W["2_BY"] + c;
+  fill[3] = W.TE_K + d, fill[4] = key[0] + e, fill[5] = key[1] + f;
+  fill[6] = key[2] + g, fill[7] = key[3] + h, fill[8] = key[4] + i;
+  fill[9] = key[5] + j, fill[10] = key[6] + k, fill[11] = key[7] + l;
+  fill[12] = count + m, fill[13] = iv0 + n, fill[14] = iv1 + o;
+  fill[15] = iv2 + p;
 };
 const SUBKEY = /* @__PURE__ */ new Uint32Array(8);
 const STATE = /* @__PURE__ */ new Uint32Array(16);
@@ -93,8 +95,9 @@ export const hchacha = (
   key: Uint8Array,
   iv: Uint8Array,
 ): Uint32Array<ArrayBuffer> => {
-  for (let z = 0; z < 32;) {
-    SUBKEY[z >> 2] = key[z++] | key[z++] << 8 | key[z++] << 16 | key[z++] << 24;
+  for (let z = 0; z < 32; z += 4) {
+    SUBKEY[z >> 2] = key[z] | key[z + 1] << 8 | key[z + 2] << 16 |
+      key[z + 3] << 24;
   }
   const iv0 = iv[0] | iv[1] << 8 | iv[2] << 16 | iv[3] << 24;
   const iv1 = iv[4] | iv[5] << 8 | iv[6] << 16 | iv[7] << 24;
@@ -112,12 +115,12 @@ export const xor = (
   iv0: number,
   iv1: number,
   iv2: number,
-  $: Uint8Array,
+  text: Uint8Array,
   start_block: number,
 ): void => {
-  const most = $.length & ~63;
-  let view = new DataView($.buffer, $.byteOffset), offset, z = 0, y;
-  while (z < most) {
+  const max = text.length & ~63;
+  let view = new DataView(text.buffer, text.byteOffset), offset, z = 0, y;
+  while (z < max) {
     chacha(key, start_block++, iv0, iv1, iv2, STATE), offset = z, y = z += 64;
     do view.setUint32(
       y -= 4,
@@ -125,8 +128,8 @@ export const xor = (
       true,
     ); while (y > offset);
   }
-  if (most < $.length) {
+  if (max !== text.length) {
     chacha(key, start_block, iv0, iv1, iv2, STATE), view = VIEW, y = 0;
-    do $[z] ^= view.getUint8(y++); while (++z < $.length);
+    do text[z] ^= view.getUint8(y++); while (++z < text.length);
   }
 };
