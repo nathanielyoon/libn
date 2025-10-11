@@ -1,0 +1,10 @@
+{
+  "name": "@libn/ecc",
+  "version": "0.3.0",
+  "license": "GPL-3.0-or-later",
+  "exports": {
+    ".": "./mod.ts",
+    "./x25519": "./x25519.ts",
+    "./ed25519": "./ed25519.ts"
+  }
+}
