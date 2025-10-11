@@ -3,6 +3,9 @@
  *
  * @example RFC4648 schemes
  * ```ts
+ * import { deB16, enB16 } from "@libn/base/16";
+ * import { deB32, deH32, enB32, enH32 } from "@libn/base/32";
+ * import { deB64, deU64, enB64, enU64 } from "@libn/base/64";
  * import { assertEquals } from "@std/assert";
  *
  * const data = crypto.getRandomValues(new Uint8Array(100));
@@ -16,6 +19,8 @@
  *
  * @example Other schemes
  * ```ts
+ * import { deC32, enC32 } from "@libn/base/32";
+ * import { deA85, deZ85, enA85, enZ85 } from "@libn/base/85";
  * import { assertEquals } from "@std/assert";
  *
  * const data = crypto.getRandomValues(new Uint8Array(100));
@@ -27,6 +32,7 @@
  *
  * @example Bound `TextEncoder` and `TextDecoder` methods
  * ```ts
+ * import { deUtf8, enUtf8 } from "@libn/base";
  * import { assertEquals } from "@std/assert";
  *
  * const data = enUtf8("Hello");
@@ -36,22 +42,6 @@
  *
  * @module base
  */
-
-import type { Decode, Encode } from "./lib.ts";
-import { B16, deB16, enB16 } from "./16.ts";
-import {
-  B32,
-  C32,
-  deB32,
-  deC32,
-  deH32,
-  enB32,
-  enC32,
-  enH32,
-  H32,
-} from "./32.ts";
-import { B64, deB64, deU64, enB64, enU64, U64 } from "./64.ts";
-import { A85, deA85, deZ85, enA85, enZ85, Z85 } from "./85.ts";
 
 /** Converts UTF-8 to binary. */
 export const enUtf8: ($?: string) => Uint8Array<ArrayBuffer> =
@@ -65,8 +55,18 @@ export const deUtf8: (
 ) => string = /* @__PURE__ */ TextDecoder.prototype.decode.bind(
   /* @__PURE__ */ new TextDecoder("utf-8"),
 );
-export type { Decode, Encode };
-export { B16, deB16, enB16 };
-export { B32, C32, deB32, deC32, deH32, enB32, enC32, enH32, H32 };
-export { B64, deB64, deU64, enB64, enU64, U64 };
-export { A85, deA85, deZ85, enA85, enZ85, Z85 };
+export type { Decode, Encode } from "./lib.ts";
+export { B16, deB16, enB16 } from "./16.ts";
+export {
+  B32,
+  C32,
+  deB32,
+  deC32,
+  deH32,
+  enB32,
+  enC32,
+  enH32,
+  H32,
+} from "./32.ts";
+export { B64, deB64, deU64, enB64, enU64, U64 } from "./64.ts";
+export { A85, deA85, deZ85, enA85, enZ85, Z85 } from "./85.ts";
