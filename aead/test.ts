@@ -1,29 +1,38 @@
 import { expect } from "@std/expect/expect";
 import fc from "fast-check";
-import { chacha, xor } from "@libn/aead/chacha";
+import { chacha, hchacha, xor } from "@libn/aead/chacha";
 import { poly } from "@libn/aead/poly";
 import { polyXchacha, xchachaPoly } from "@libn/aead/aead";
 import { cipher, decrypt, encrypt } from "@libn/aead";
 
 Deno.test("vectors", async (t) => {
   const vectors = await import("./vectors.json", { with: { type: "json" } });
+  const u32 = ($: string) => new Uint32Array(Uint8Array.fromHex($).buffer);
   await t.step("chacha", () =>
     vectors.default.chacha.forEach(($) => {
       const state = new Uint32Array(16);
-      chacha(key($.key), $.count, ...iv($.iv), state);
+      const [iv0, iv1, iv2] = u32($.iv);
+      chacha(u32($.key), $.count, iv0, iv1, iv2, state);
       expect(
         new Uint8Array(state.buffer).subarray(0, $.state.length >> 1),
       ).toStrictEqual(Uint8Array.fromHex($.state));
     }));
+  await t.step("hchacha", () =>
+    vectors.default.hchacha.forEach(($) => {
+      expect(
+        hchacha(Uint8Array.fromHex($.key), Uint8Array.fromHex($.iv)),
+      ).toStrictEqual(u32($.subkey));
+    }));
   await t.step("xor", () =>
     vectors.default.xor.forEach(($) => {
       const plaintext = Uint8Array.fromHex($.plaintext);
-      xor(key($.key), ...iv($.iv), plaintext, $.count);
+      const [iv0, iv1, iv2] = u32($.iv);
+      xor(u32($.key), iv0, iv1, iv2, plaintext, $.count);
       expect(plaintext).toStrictEqual(Uint8Array.fromHex($.ciphertext));
     }));
   await t.step("poly", () =>
     vectors.default.poly.forEach(($) => {
-      expect(poly(key($.key), Uint8Array.fromHex($.message))).toStrictEqual(
+      expect(poly(u32($.key), Uint8Array.fromHex($.message))).toStrictEqual(
         Uint8Array.fromHex($.tag),
       );
     }));
@@ -35,7 +44,7 @@ Deno.test("vectors", async (t) => {
       const ciphertext = Uint8Array.fromHex($.ciphertext);
       const ad = Uint8Array.fromHex($.ad);
       const tag = Uint8Array.fromHex($.tag);
-      if ($.result !== false) {
+      if ($.result) {
         const text = new Uint8Array(plaintext);
         expect(xchachaPoly(key, iv, text, ad)).toStrictEqual(tag);
         expect(text).toStrictEqual(ciphertext);
@@ -107,50 +116,40 @@ Deno.test("encrypt()", () =>
       expect(decrypt(key, textWithoutAd!)).toStrictEqual(plaintext);
     },
   )));
-const key = ($: string) => new Uint32Array(Uint8Array.fromHex($).buffer);
-const iv = ($: string) =>
-  [...new Uint32Array(Uint8Array.fromHex($).buffer)] as [
-    number,
-    number,
-    number,
-  ];
-const trim = ($: string) =>
-  $.match(
-    /(?<=(?:^|\b0x|\W)(?:[\da-f]{2})*)[\da-f]{2}(?=(?:[\da-f]{2})*(?:\W|$))/g,
-  )?.join("") ?? "";
-const into = <A extends string[], B>(keys: A, $: B[]) => {
-  const size = keys.length, out = Array($.length / size);
-  for (let at, target: { [key: string]: any }, z = 0, y; z < out.length; ++z) {
-    at = z * size, target = out[z] = {}, y = 0;
-    do if (keys[y]) target[keys[y]] = $[at + y]; while (++y < size);
-  }
-  return out;
-};
-const sections = <A extends string[]>(from: string[][], keys: A) =>
-  Array.from(
-    from.map(($) => {
-      const size = keys.length + 1, out = Array($.length / size);
-      for (let at, temp: { [_: string]: any }, z = 0, y; z < out.length; ++z) {
-        at = z * size, temp = out[z] = {}, y = 1;
-        do temp[keys[y - 1]] = $[at + y]; while (++y < size);
-      }
-      return out;
-    }),
-    ([{ count, ...$ }]) => ({
-      ...(count === undefined ? {} : { count: Number(count) }),
-      ...Object.keys($).reduce((to, key) => ({
-        ...to,
-        [key]: String($[key]).match(
-          /(?<=^|[\da-f]{2}[\s(:])[\da-f]{2}(?=[\s.):]|$)|(?<=^|[\s(:])[\da-f]{2}(?=[\s.):][\da-f]{2}|$)/g,
-        )?.join("") ?? "",
-      }), {}),
-    }),
-  );
 import.meta.main && await Promise.all([
-  fetch("https://www.rfc-editor.org/rfc/rfc8439.txt").then(($) => $.text()),
-  fetch("https://www.ietf.org/archive/id/draft-irtf-cfrg-xchacha-03.txt").then(
-    ($) => $.text(),
+  fetch(
+    "https://www.rfc-editor.org/rfc/rfc8439.txt",
+  ).then(($) => $.text()).then(
+    (rfc8439) => (...sources: [from: [number, number], regex: RegExp][]) =>
+      sources.flatMap(([from, regex]) =>
+        Array.from(
+          regex.global
+            ? rfc8439.slice(...from).matchAll(regex)
+            : [rfc8439.slice(...from).match(regex)!],
+          ($) => $.groups!,
+        )
+      ).map(({ count, ...$ }) =>
+        Object.keys($).reduce((to, key) => ({
+          ...to,
+          [key]: String($[key]).match(
+            /(?<=^|[\da-f]{2}[\s:])[\da-f](?:\n {6})?[\da-f](?=[\s).:]|$)|(?<=^|[\s(:])[\da-f]{2}(?=[\s:][\da-f]{2}|$)/gi,
+          )?.join("").replaceAll("\n      ", "") ?? "",
+        }), count === undefined ? {} : { count: Number(count) })
+      ),
   ),
+  fetch(
+    "https://www.ietf.org/archive/id/draft-irtf-cfrg-xchacha-03.txt",
+  ).then(($) => $.text()).then((xchacha) => ({
+    "2.2.1": xchacha.slice(9906, 11288).match(
+      /Key = ([\da-f]{2}(?::\s*[\da-f]{2})+).*?Nonce = \(([^)]+)\).*?key:((?:\s+[\da-f]{8})+)/s,
+    )!.slice(1).map(($) => $.replace(/[\s\W]+/g, "")),
+    "A.3.1": xchacha.slice(30715, 31722).match(
+      /(?:[\da-f]{24,}\s*)+/g,
+    )!.map(($) => $.replace(/\s+/g, "")),
+    "A.3.2.1": xchacha.slice(31876, 34302).match(
+      /(?:[\da-f]{24,}\s*)+/g,
+    )!.map(($) => $.replace(/\s+/g, "")),
+  })),
   fetch(
     "https://raw.githubusercontent.com/floodyberry/poly1305-donna/e6ad6e091d30d7f4ec2d4f978be1fcfcbce72781/poly1305-donna.c",
   ).then(($) => $.text()),
@@ -171,65 +170,80 @@ import.meta.main && await Promise.all([
     }[];
   }>(($) => $.json()),
 ]).then(([rfc8439, xchacha, donna, wycheproof]) => ({
-  chacha: sections([
-    rfc8439.slice(17603, 19535).match(
-      /Key = (.+?)\..*?Nonce = \((.+?)\).*?Count = (\d+).*?Block:\n(.+)\n\n/s,
-    )!,
-    ...rfc8439.slice(57774, 62180).matchAll(
-      /Key:\n(.+?)\n\n.*?Nonce:\n(.+?)\n\n.*?Counter = (\d+)\n.*?Keystream:\n(.+?)\n\n/gs,
-    ),
-  ], ["key", "iv", "count", "state"]).concat(
-    sections([
-      rfc8439.slice(35223, 36189).match(
-        /Key:\n(.+?)\n\n.*?Nonce:\n(.+?)\n\n.*?Output bytes:\n(.+?)\n\n/s,
-      )!,
-      ...rfc8439.slice(78677, 80251).matchAll(
-        /Key:?\n(.+?)\n\n.*?nonce:\n(.+?)\n\n.*?key:\n(.+?)\n\n/gs,
+  chacha: rfc8439([
+    [17603, 19535],
+    /Key = (?<key>.+?)\..*?Nonce = \((?<iv>.+?)\).*?Count = (?<count>\d+).*?Block:\n(?<state>.+)\n\n/s,
+  ], [
+    [35223, 36189],
+    /Key:\n(?<key>.+?)\n\n.*?Nonce:\n(?<iv>.+?)\n\n(?<count>).*?Output bytes:\n(?<state>.+?)\n\n/s,
+  ], [
+    [57774, 62180],
+    /Key:\n(?<key>.+?)\n\n.*?Nonce:\n(?<iv>.+?)\n\n.*?Counter = (?<count>\d+)\n.*?Keystream:\n(?<state>.+?)\n\n/gs,
+  ], [
+    [78677, 80251],
+    /Key:?\n(?<key>.+?)\n\n.*?nonce:\n(?<iv>.+?)\n\n(?<count>).*?key:\n(?<state>.+?)\n\n/gs,
+  ]),
+  hchacha: [{
+    key: xchacha["2.2.1"][0],
+    iv: xchacha["2.2.1"][1],
+    subkey: xchacha["2.2.1"][2],
+  }],
+  xor: rfc8439([
+    [22184, 26014],
+    /Key = (?<key>.+?)\..*?Nonce = \((?<iv>.+?)\).*?Counter = (?<count>\d+).*?Plaintext Sunscreen:\n(?<plaintext>.+?)\n\n.*?Ciphertext Sunscreen:\n(?<ciphertext>.+?)\n\n/s,
+  ], [
+    [62351, 69083],
+    /Key:\n(?<key>.+?)\n\n.*?Nonce:\n(?<iv>.+?)\n\n.*?Counter = (?<count>\d+)\n\n.*?Plaintext:\n(?<plaintext>.+?)\n\n.*?Ciphertext:\n(?<ciphertext>.+?)\n\n/gs,
+  ]),
+  cipher: [{
+    plaintext: xchacha["A.3.2.1"][0],
+    key: xchacha["A.3.2.1"][1],
+    iv: xchacha["A.3.2.1"][2],
+    keystream: xchacha["A.3.2.1"][3],
+    ciphertext: xchacha["A.3.2.1"][4],
+  }],
+  poly: [
+    ...rfc8439([
+      [30257, 32670],
+      /Key Material: (?<key>.+?\n.+?)\n.*?Message to be Authenticated:\n(?<message>.+?)\n\n.*?Tag: (?<tag>.+)/s,
+    ], [
+      [69083, 75560],
+      /Key:\n(?<key>.+?)\n\n.*?Text to MAC:\n(?<message>.+?)\n\n.*?Tag:\n(?<tag>.+?)\n\n/gs,
+    ], [
+      [75560, 78677],
+      /R:\n(?<key>.+?)\s*data:\n(?<message>.+?)\s*tag:\n(?<tag>.+?)\n/gs,
+    ]),
+    ...Array.from(
+      donna.slice(2098, 5823).matchAll(
+        /key\[32\] = \{(.+?)\};.+?msg\[\d+\] = \{(.+?)\};.+?mac\[16\] = \{(.+?)\};/gs,
+      ).map((match) =>
+        match.slice(1).map(($) => $.match(/(?<=0x)[\da-f]{2}\b/g)!.join(""))
       ),
-    ], ["key", "iv", "state"]).map(($) => ({ ...$, count: 0 })),
-  ),
-  xor: sections([
-    rfc8439.slice(22184, 26014).match(
-      /Key = (.+?)\..*?Nonce = \((.+?)\).*?Counter = (\d+).*?Plaintext Sunscreen:\n(.+?)\n\n.*?Ciphertext Sunscreen:\n(.+?)\n\n/s,
-    )!,
-    ...rfc8439.slice(62351, 69083).matchAll(
-      /Key:\n(.+?)\n\n.*?Nonce:\n(.+?)\n\n.*?Counter = (\d+)\n\n.*?Plaintext:\n(.+?)\n\n.*?Ciphertext:\n(.+?)\n\n/gs,
+      ([key, message, tag]) => ({ key, message, tag }),
     ),
-  ], ["key", "iv", "count", "plaintext", "ciphertext"]),
-  cipher: into(
-    ["plaintext", "key", "iv", "keystream", "ciphertext"],
-    xchacha.slice(31876, 34302).match(/(?:[\da-f]{32,}\s*)+/g)!.map(trim),
-  ),
-  poly: sections([
-    rfc8439.slice(30257, 32670).replace(/(:0)\n {6}(3:)/, "$1$2").match(
-      /Key Material: (.+?)\n.*?Message to be Authenticated:\n(.+?)\n\n.*?Tag: (.+)/s,
-    )!,
-    ...rfc8439.slice(69083, 75560).matchAll(
-      /Key:\n(.+?)\n\n.*?Text to MAC:\n(.+?)\n\n.*?Tag:\n(.+?)\n\n/gs,
+  ],
+  aead: [
+    {
+      key: xchacha["A.3.1"][2],
+      iv: xchacha["A.3.1"][3],
+      plaintext: xchacha["A.3.1"][0],
+      ad: xchacha["A.3.1"][1],
+      ciphertext: xchacha["A.3.1"][5],
+      tag: xchacha["A.3.1"][6],
+      result: true,
+    },
+    ...wycheproof.testGroups.flatMap((group) =>
+      group.ivSize !== 192 ? [] : group.tests.map(($) => ({
+        key: $.key,
+        iv: $.iv,
+        plaintext: $.msg,
+        ad: $.aad,
+        ciphertext: $.ct,
+        tag: $.tag,
+        result: $.result === "valid",
+      }))
     ),
-    ...rfc8439.slice(75560, 78677).toLowerCase().matchAll(
-      /r:\n(.+?)\s*s:\n(.+?)\s*data:\n(.+?)\s*tag:\n(.+?)\n/gs,
-    ).map(($) => [$[0], $[1] + $[2], $[3], $[4]]),
-  ], ["key", "message", "tag"]).concat(Array.from(
-    donna.matchAll(
-      /key\[32\] = \{(.+?)\};.+?msg\[\d+\] = \{(.+?)\};.+?mac\[16\] = \{(.+?)\};/gs,
-    ),
-    ($) => into(["", "key", "message", "tag"], $.map(trim))[0],
-  )),
-  aead: wycheproof.testGroups.flatMap((group) =>
-    group.ivSize !== 192 ? [] : group.tests.map(($) => ({
-      key: $.key,
-      iv: $.iv,
-      plaintext: $.msg,
-      ad: $.aad,
-      ciphertext: $.ct,
-      tag: $.tag,
-      result: $.result === "valid",
-    }))
-  ).concat(into(
-    ["plaintext", "ad", "key", "iv", "", "ciphertext", "tag"],
-    xchacha.slice(30715, 31722).match(/(?:[\da-f]{24,}\s*)+/g)!.map(trim),
-  )),
+  ],
 })).then(($) =>
   Deno.writeTextFile(
     new URL(import.meta.resolve("./vectors.json")).pathname,
