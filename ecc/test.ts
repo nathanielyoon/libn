@@ -179,7 +179,7 @@ import.meta.main && await Promise.all([
       $.slice(18300, 19695).matchAll(
         /scalar:\s*(?<secret>[\da-f]{64}).*?coordinate:\s*(?<public>[\da-f]{64}).*?coordinate:\s*(?<shared>[\da-f]{64})/gs,
       ),
-      ({ groups }) => groups!,
+      ($) => $.groups!,
     ),
     "6.1": $.slice(23217, 25093).match(/(?<=^ {5})[\da-f]{64}$/gm)!,
   })),
