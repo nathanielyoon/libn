@@ -241,19 +241,22 @@ import.meta.main && await Promise.all([
     message: $.message,
     signature: $.signature,
   })),
-  verify: rfc8032.map(($) => ({
-    public: $.public,
-    message: $.message,
-    signature: $.signature,
-    result: true,
-  })).concat(ed25519.testGroups.flatMap((group) =>
-    group.tests.map(($) => ({
-      public: group.publicKey.pk,
-      message: $.msg,
-      signature: $.sig,
-      result: $.result === "valid",
-    }))
-  )),
+  verify: [
+    ...rfc8032.map(($) => ({
+      public: $.public,
+      message: $.message,
+      signature: $.signature,
+      result: true,
+    })),
+    ...ed25519.testGroups.flatMap((group) =>
+      group.tests.map(($) => ({
+        public: group.publicKey.pk,
+        message: $.msg,
+        signature: $.sig,
+        result: $.result === "valid",
+      }))
+    ),
+  ],
 })).then(($) =>
   Deno.writeTextFile(
     new URL(import.meta.resolve("./vectors.json")).pathname,
