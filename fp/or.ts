@@ -17,6 +17,6 @@ export const ok = <const A = undefined>($?: A): Or<never, A> => (
 /** Falsy values (except `NaN`, which isn't representable). */
 export type Falsy = undefined | null | false | 0 | 0n | "";
 /** Creates a failure (if falsy) or a success (if truthy). */
-export const or = <const A>($: A): Or<Extract<A, Falsy>, Exclude<A, Falsy>> => (
+export const or = <const A>($: A): Or<Extract<Falsy, A>, Exclude<A, Falsy>> => (
   { state: Boolean($), value: $ } as Or
 );
