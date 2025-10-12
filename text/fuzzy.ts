@@ -1,3 +1,4 @@
+import { en } from "@libn/base";
 import { enPoint } from "./lib.ts";
 
 /** Checks whether one string sorta-includes another. */
@@ -6,8 +7,8 @@ export const includes = (source: string, target: string): boolean => {
   if (min > max) return false;
   if (min === max) return source === target;
   top: for (let z = 0, y = 0; z < min; ++z) {
-    for (const next = target.charCodeAt(z); y < max; ++y) {
-      if (source.charCodeAt(y) === next) continue top;
+    for (const next = en.call(target, z); y < max; ++y) {
+      if (en.call(source, y) === next) continue top;
     }
     return false;
   }

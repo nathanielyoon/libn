@@ -1,3 +1,5 @@
+import { en } from "@libn/base";
+
 /** Replaces lone surrogates. */
 export const unlone = ($: string): string => $.replace(/\p{Cs}/gu, "\ufffd");
 /** Restricts to Unicode Assignables (RFC9839.4.3). */
@@ -19,9 +21,9 @@ export const unmark = ($: string): string =>
 export const unhtml = ($: string): string =>
   $.replaceAll("&", "&#38;").replaceAll('"', "&#34;").replaceAll("'", "&#39;")
     .replaceAll("<", "&#60;").replaceAll(">", "&#62;");
-const b1 = ($: string) => `\\${"btnvfr"[$.charCodeAt(0) - 8]}`; // \x08-\x0d
-const h2 = ($: string) => `\\x${$.charCodeAt(0).toString(16).padStart(2, "0")}`;
-const u4 = ($: string) => `\\u${$.charCodeAt(0).toString(16).padStart(4, "0")}`;
+const b1 = ($: string) => `\\${"btnvfr"[en.call($) - 8]}`; // \x08-\x0d
+const h2 = ($: string) => `\\x${en.call($).toString(16).padStart(2, "0")}`;
+const u4 = ($: string) => `\\u${en.call($).toString(16).padStart(4, "0")}`;
 /** Escapes a string as a regular expression literal. */
 export const unrexp = ($: string): string =>
   $.replace(/[$(-+./?[-^{|}]/g, "\\$&").replace(/[\b\t\n\v\f\r]/g, b1)
