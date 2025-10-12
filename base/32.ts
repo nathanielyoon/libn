@@ -51,7 +51,7 @@ export const deH32: Decode = /* @__PURE__ */ decode.bind(
   /* @__PURE__ */ map(H32_STR, 32),
 );
 /** Crockford base32 pattern. */
-export const C32 = /^[-^\dA-TV-Za-tv-z]*$/;
+export const C32 = /^[-\dA-TV-Za-tv-z]*$/;
 /** Converts binary to Crockford base 32. */
 export const enC32: Encode = /* @__PURE__ */ encode.bind(null, C32_STR);
 /** Converts Crockford base 32 to binary (case-insensitively). */
