@@ -1,7 +1,7 @@
 /**
  * Functional programming.
  *
- * @example Imperative style
+ * @example Method-chaining style
  * ```ts
  * import { or } from "@libn/fp/or";
  * import { Result } from "@libn/fp/result";
@@ -27,7 +27,7 @@
  * assert(digit === 7 || !either.state);
  * ```
  *
- * @example Method-chaining style
+ * @example Imperative style
  * ```ts
  * import { or } from "@libn/fp/or";
  * import { Result } from "@libn/fp/result";
