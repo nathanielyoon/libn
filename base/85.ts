@@ -44,7 +44,7 @@ export const A85 = /^[!-u]*$/;
 /** Converts binary to ascii85. */
 export const enA85: Encode = ($) => {
   const string = encode(A85_STR, $), to = $.length % 4;
-  return (to ? string.slice(0, (to - 4) % 4) : string).replaceAll("!!!!!", "z");
+  return (to ? string.slice(0, to - 4) : string).replaceAll("!!!!!", "z");
 };
 /** Converts ascii85 to binary. */
 export const deA85: Decode = ($) => {
