@@ -3,8 +3,9 @@ export type Encode = ($: Uint8Array) => string;
 /** String-to-binary function. */
 export type Decode = ($: string) => Uint8Array<ArrayBuffer>;
 /** Character code getter. */
-export const en: (this: string, index: number) => number =
-  /* @__PURE__ */ (() => String.prototype.charCodeAt)();
+export const en: (this: string, index?: number) => number =
+  /* @__PURE__ */ (() =>
+    String.prototype.charCodeAt as (this: string, index?: number) => number)();
 /** Character code setter. */
 export const de: (...codes: number[]) => string =
   /* @__PURE__ */ (() => String.fromCharCode)();
