@@ -12,7 +12,7 @@ import {
 } from "@libn/text/normalize";
 import { createRanges, source, uncase } from "@libn/text/case";
 
-Deno.test("vectors", async (t) => {
+Deno.test("spec", async (t) => {
   const vectors = await import("./vectors.json", { with: { type: "json" } });
   await t.step("uncode", () => {
     const all = new Uint32Array(0x110000).fill(0xfffd);
@@ -304,7 +304,7 @@ Deno.test("createRanges() matches source", async () => {
 });
 import.meta.main && await Promise.all([
   fetch(
-    "https://rfc-editor.org/rfc/rfc9839.txt",
+    "https://www.rfc-editor.org/rfc/rfc9839.txt",
   ).then(($) => $.text()).then(($) => $.slice(14538, 15597)),
   fetch(
     "https://www.unicode.org/Public/UNIDATA/CaseFolding.txt",

@@ -16,7 +16,7 @@ import { B64, deB64, deU64, enB64, enU64, U64 } from "@libn/base/64";
 import { A85, deA85, deZ85, enA85, enZ85, Z85 } from "@libn/base/85";
 import { deUtf8, enUtf8 } from "@libn/base";
 
-Deno.test("vectors", async (t) => {
+Deno.test("spec", async (t) => {
   const vectors = await import("./vectors.json", { with: { type: "json" } });
   await t.step("B16", () =>
     vectors.default.B16.forEach(($) => {

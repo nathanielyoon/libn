@@ -5,7 +5,7 @@ import { poly } from "@libn/aead/poly";
 import { polyXchacha, xchachaPoly } from "@libn/aead/aead";
 import { cipher, decrypt, encrypt } from "@libn/aead";
 
-Deno.test("vectors", async (t) => {
+Deno.test("spec", async (t) => {
   const vectors = await import("./vectors.json", { with: { type: "json" } });
   const u32 = ($: string) => new Uint32Array(Uint8Array.fromHex($).buffer);
   await t.step("chacha", () =>

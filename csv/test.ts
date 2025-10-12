@@ -3,7 +3,7 @@ import fc from "fast-check";
 import { deCsv } from "@libn/csv/parse";
 import { enCsv } from "@libn/csv/stringify";
 
-Deno.test("vectors", async (t) => {
+Deno.test("spec", async (t) => {
   const vectors = await import("./vectors.json", { with: { type: "json" } });
   await t.step("deCsv", () =>
     vectors.default.deCsv.forEach(($) => {

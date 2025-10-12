@@ -10,7 +10,7 @@ import {
 } from "@libn/ecc/x25519";
 import { generate, sign, verify } from "@libn/ecc/ed25519";
 
-Deno.test("vectors", async (t) => {
+Deno.test("spec", async (t) => {
   const vectors = await import("./vectors.json", { with: { type: "json" } });
   await t.step("ladder", () => {
     let k = enBig(Uint8Array.fromHex(vectors.default.ladder.k));

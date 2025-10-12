@@ -6,7 +6,7 @@ import { hkdf, hmac } from "@libn/hash/hmac";
 import { blake2b, blake2s } from "@libn/hash/blake2";
 import { blake3 } from "@libn/hash/blake3";
 
-Deno.test("vectors", async (t) => {
+Deno.test("spec", async (t) => {
   const vectors = await import("./vectors.json", { with: { type: "json" } });
   await t.step("sha224", () =>
     vectors.default.sha224.forEach(($) => {
