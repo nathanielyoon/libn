@@ -70,7 +70,7 @@
     },
     "all": {
       "dependencies": ["check", "lint", "test", "cover"],
-      "command": "cd \"$INIT_CWD\" && deno publish --dry-run --allow-dirty"
+      "command": "cd \"$INIT_CWD\" && deno task --cwd=. pure && deno publish --dry-run --allow-dirty"
     }
   }
 }
