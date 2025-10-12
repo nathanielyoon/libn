@@ -1,6 +1,5 @@
-import { Flag, Kind } from "./flags.ts";
-import type { Derive, Effect, Is, Link, Node, Scoper, Signal } from "./node.ts";
-import { dispose, drop, enlink, validate } from "./link.ts";
+import type { Derive, Effect, Is, Link, Node, Scoper, Signal } from "./lib.ts";
+import { dispose, drop, enlink, Flag, Kind, validate } from "./lib.ts";
 
 const queue: (Effect | Scoper)[] = [];
 let depth = 0, step = 0, on: Node | null = null;

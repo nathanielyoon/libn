@@ -3,6 +3,7 @@
  *
  * @example Push-pull updates
  * ```ts
+ * import { derive, effect, signal } from "@libn/signal";
  * import { assertEquals } from "@std/assert";
  *
  * const count = signal(0), half = derive(() => count() >> 1);
@@ -18,7 +19,7 @@
  * @module signal
  */
 
-import {
+export {
   batch,
   derive,
   effect,
@@ -26,6 +27,4 @@ import {
   scoper,
   type Setter,
   signal,
-} from "./src/system.ts";
-
-export { batch, derive, effect, type Getter, scoper, type Setter, signal };
+} from "./system.ts";

@@ -1,6 +1,15 @@
 {
   "name": "@libn/json",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "license": "GPL-3.0-or-later",
-  "exports": "./mod.ts"
+  "exports": {
+    ".": "./mod.ts",
+    "./schema": "./schema.ts",
+    "./build": "./build.ts",
+    "./code": "./code.ts",
+    "./parse": "./parse.ts"
+  },
+  "imports": {
+    "@std/testing": "jsr:@std/testing@^1.0.16"
+  }
 }

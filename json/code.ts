@@ -1,4 +1,5 @@
-import type { Data, Type } from "./types.ts";
+import { flat } from "@libn/json/build";
+import type { Data, Type } from "./schema.ts";
 
 const FORMATS = /* @__PURE__ */ (() => {
   const fix = "raw=row[at++]?.trim().normalize()??null;";
@@ -34,7 +35,7 @@ const coders = ($: Type): { length: number; en: string; de: string } => {
         en: "row[at++]=data;",
         de: $.format ? FORMATS[$.format] : "raw=row[at++]??null;",
       };
-    case "array": {
+    case "array":
       if (
         $.items?.type === "boolean" || $.items?.type === "number" ||
         $.items?.type === "string" && ($.items.format ||
@@ -50,8 +51,9 @@ const coders = ($: Type): { length: number; en: string; de: string } => {
             }if(raw!=null)r[z]=raw}else raw=row[at++]==null?null:[];`,
         };
       }
-      if ($.items && $.maxItems !== undefined) {
-        const { length, en, de } = coders($.items), a = length * $.maxItems + 1;
+      if ($.items && $.maxItems! > 0) {
+        const { length, en, de } = coders($.items);
+        const a = length * $.maxItems! + 1;
         return {
           length: a,
           en:
@@ -61,7 +63,6 @@ const coders = ($: Type): { length: number; en: string; de: string } => {
         };
       }
       break;
-    }
     case "object":
       if ($.properties && $.required?.length) {
         let a = 0, b = "{const d=data;", c = "{const r={};let c=false;";
@@ -69,7 +70,8 @@ const coders = ($: Type): { length: number; en: string; de: string } => {
           const { length, en, de } = coders($.properties[d[z]]);
           const e = JSON.stringify([d[z]]);
           a += length;
-          b += `{const data=d${e};if(data!==undefined)${en}else at+=${length}}`;
+          b +=
+            `{const data=d${e};switch(typeof data){case"boolean":case"number":case"string":case"object":${en}break;default:at+=${length}}}`;
           c += `{let raw;${de}if(raw!==null)r${e}=raw,c=true}`;
         }
         return { length: a, en: b + "}", de: c + "raw=c?r:null}" };
@@ -83,12 +85,12 @@ const coders = ($: Type): { length: number; en: string; de: string } => {
   };
 };
 /** Creates encoding and decoding functions. */
-export const coder = <A extends Type>(type: A): {
+export const coder = <A extends Type>(type: A | { type: A }): {
   length: number;
   encode: (data: Data<A>) => (string | null)[];
   decode: (row: (string | null)[]) => unknown;
 } => {
-  const { length, en, de } = coders(type);
+  const { length, en, de } = coders(flat(type));
   return {
     length,
     encode: Function(

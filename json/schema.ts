@@ -1,6 +1,7 @@
-/** @internal */
-import type { Json } from "@libn/lib";
-
+/** Non-null JSON. */
+export type Json =
+  | (boolean | number | string)
+  | (Json[] | readonly Json[] | { [_: string]: Json });
 /** Content encoding types. */
 export type Base = `base${"16" | "32" | "32hex" | "64" | "64url"}`;
 /** String formats (asserted). */

@@ -1,5 +1,8 @@
-import type { Base, Format, Type } from "./types.ts";
+import type { Base, Format, Type } from "./schema.ts";
 
+/** Flattens a type. */
+export const flat = <A extends Type>($: A | { type: A }): A =>
+  typeof $.type === "object" ? $.type : $ as A;
 type Un<A extends Type, B extends keyof A> = Omit<A, B> extends infer C
   ? C extends {} ? { [D in keyof C]: C[D] } : never
   : never;
@@ -7,6 +10,12 @@ type To<A extends Type, B extends keyof A, C> =
   Omit<A, B> & { [_ in B]-?: C } extends infer D
     ? D extends {} ? { [E in keyof D]: D[E] } : never
     : never;
+type Intersect<A> = (A extends never ? never : (_: A) => void) extends
+  (_: infer B) => void ? B : never;
+type Tuple<A extends string> = string extends A ? string[]
+  : Intersect<A extends never ? never : (_: A) => A> extends
+    ((_: never) => infer B extends A) ? [...Tuple<Exclude<A, B>>, B]
+  : [];
 abstract class Typer<A extends Type, B> {
   constructor(public type: A) {}
   protected abstract get child(): { new (type: A): B };
@@ -34,7 +43,7 @@ class Booleaner<A extends Type<"boolean"> = Type<"boolean">>
     return this.to("description", $);
   }
   enum(): Booleaner<Un<A, "enum">>;
-  enum<const B extends [boolean]>($: B): Booleaner<To<A, "enum", B>>;
+  enum<const B extends readonly [boolean]>($: B): Booleaner<To<A, "enum", B>>;
   enum($?: [boolean]): Booleaner {
     return this.to("enum", $);
   }
@@ -45,17 +54,19 @@ class Numberer<A extends Type<"number"> = Type<"number">>
     return Numberer;
   }
   title(): Numberer<Un<A, "title">>;
-  title<const B extends string>(): Numberer<To<A, "title", B>>;
+  title<const B extends string>($: B): Numberer<To<A, "title", B>>;
   title($?: string): Numberer {
     return this.to("title", $);
   }
   description(): Numberer<Un<A, "description">>;
-  description<const B extends string>(): Numberer<To<A, "description", B>>;
+  description<const B extends string>($: B): Numberer<To<A, "description", B>>;
   description($?: string): Numberer {
     return this.to("description", $);
   }
   enum(): Numberer<Un<A, "enum">>;
-  enum<const B extends [number, ...number[]]>($: B): Numberer<To<A, "enum", B>>;
+  enum<const B extends readonly [number, ...number[]]>(
+    $: B,
+  ): Numberer<To<A, "enum", B>>;
   enum($?: number[]): Numberer {
     return this.to("enum", $);
   }
@@ -105,7 +116,9 @@ class Stringer<A extends Type<"string"> = Type<"string">>
     return this.to("description", $);
   }
   enum(): Stringer<Un<A, "enum">>;
-  enum<const B extends [string, ...string[]]>($: B): Stringer<To<A, "enum", B>>;
+  enum<const B extends readonly [string, ...string[]]>(
+    $: B,
+  ): Stringer<To<A, "enum", B>>;
   enum($?: string[]): Stringer {
     return this.to("enum", $);
   }
@@ -153,9 +166,9 @@ class Arrayer<A extends Type<"array"> = Type<"array">>
     return this.to("description", $);
   }
   items(): Arrayer<Un<A, "items">>;
-  items<const B extends Type>($: { type: B }): Arrayer<To<A, "items", B>>;
-  items($?: { type: Type }): Arrayer {
-    return this.to("items", $?.type);
+  items<const B extends Type>($: B | { type: B }): Arrayer<To<A, "items", B>>;
+  items($?: Type | { type: Type }): Arrayer {
+    return this.to("items", $ && flat($));
   }
   minItems(): Arrayer<Un<A, "minItems">>;
   minItems<const B extends number>($: B): Arrayer<To<A, "minItems", B>>;
@@ -167,10 +180,10 @@ class Arrayer<A extends Type<"array"> = Type<"array">>
   maxItems($?: number): Arrayer {
     return this.to("maxItems", $);
   }
-  uniqueItems(): Arrayer<To<A, "uniqueItems", true>>;
+  uniqueItems(): Arrayer<Un<A, "uniqueItems">>;
   uniqueItems<const B extends boolean>($: B): Arrayer<To<A, "uniqueItems", B>>;
   uniqueItems($?: boolean): Arrayer {
-    return this.to("uniqueItems", $ ?? true);
+    return this.to("uniqueItems", $);
   }
 }
 class Objecter<A extends Type<"object"> = Type<"object">>
@@ -189,33 +202,33 @@ class Objecter<A extends Type<"object"> = Type<"object">>
     return this.to("description", $);
   }
   properties(): Objecter<Un<A, "properties">>;
-  properties<const B extends { [key: string]: Type }>(
-    $: { [C in keyof B]: { type: B[C] } },
+  properties<const B extends { [_: string]: Type }>(
+    $: { [C in keyof B]: B[C] | { type: B[C] } },
   ): Objecter<To<A, "properties", B>>;
-  properties($?: { [key: string]: { type: Type } }): Objecter {
+  properties($?: { [_: string]: Type | { type: Type } }): Objecter {
     if (!$) return this.to("properties", $);
-    const properties: { [key: string]: Type } = {};
-    for (let keys = Object.keys($), z = 0; z < keys.length; ++z) {
-      properties[keys[z]] = $[keys[z]].type;
-    }
+    const properties: { [_: string]: Type } = {};
+    for (const [key, value] of Object.entries($)) properties[key] = flat(value);
     return this.to("properties", properties);
   }
-  required(): Objecter<
+  required(): Objecter<Un<A, "required">>;
+  required<
+    const B extends A extends { properties: infer C }
+      ? readonly (keyof C & string)[]
+      : readonly string[],
+  >($: B): Objecter<To<A, "required", B>>;
+  required(_: Record<PropertyKey, never>): Objecter<
     To<
       A,
       "required",
       A extends { properties: infer B } ? string extends keyof B ? string[]
-        : readonly (keyof B & string)[]
+        : Tuple<keyof B & string>
         : readonly []
     >
   >;
-  required<
-    const B extends A extends { properties: infer C }
-      ? readonly (keyof C & string)[]
-      : readonly [],
-  >($: B): Objecter<To<A, "required", B>>;
-  required($?: string[]): Objecter {
-    return this.to("required", $ ?? Object.keys(this.type.properties ?? {}));
+  required($?: string[] | Record<PropertyKey, never>): Objecter {
+    if (Array.isArray($) || !$) return this.to("required", $);
+    return this.to("required", Object.keys(this.type.properties ?? {}));
   }
   minProperties(): Objecter<Un<A, "minProperties">>;
   minProperties<const B extends number>(
@@ -231,12 +244,12 @@ class Objecter<A extends Type<"object"> = Type<"object">>
   maxProperties($?: number): Objecter {
     return this.to("maxProperties", $);
   }
-  additionalProperties(): Objecter<To<A, "additionalProperties", true>>;
+  additionalProperties(): Objecter<Un<A, "additionalProperties">>;
   additionalProperties<const B extends boolean>(
     $: B,
   ): Objecter<To<A, "additionalProperties", B>>;
   additionalProperties($?: boolean): Objecter {
-    return this.to("additionalProperties", $ ?? true);
+    return this.to("additionalProperties", $);
   }
 }
 /** Creates a boolean schema. */

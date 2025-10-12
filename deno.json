@@ -1,40 +1,38 @@
 {
   "license": "GPL-3.0-or-later",
   "workspace": [
-    "./25519",
     "./aead",
     "./base",
     "./csv",
-    "./dom",
-    "./fuzz",
+    "./ecc",
+    "./fp",
     "./hash",
     "./json",
-    "./lib",
-    "./paseto",
-    "./result",
+    "./query",
     "./signal",
-    "./url",
-    "./vite",
-    "./weight"
+    "./text"
   ],
   "imports": {
-    "@deno/dnt": "jsr:@deno/dnt@^0.42.3",
-    "@std/assert": "jsr:@std/assert@^1.0.14",
+    "@std/assert": "jsr:@std/assert@^1.0.15",
+    "@std/expect": "jsr:@std/expect@^1.0.17",
     "fast-check": "npm:fast-check@^4.3.0"
   },
   "compilerOptions": {
-    "exactOptionalPropertyTypes": true
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true
   },
   "lint": {
     "rules": {
       "include": [
-        "explicit-module-boundary-types",
+        "camelcase",
+        "eqeqeq",
+        "no-console",
+        "no-external-import",
         "no-inferrable-types",
         "no-self-compare",
         "no-sparse-arrays",
         "no-useless-rename",
-        "prefer-ascii",
-        "verbatim-module-syntax"
+        "prefer-ascii"
       ],
       "exclude": [
         "ban-types",
@@ -42,16 +40,37 @@
         "no-control-regex",
         "no-explicit-any",
         "no-invalid-regexp"
-      ]
+      ],
+      "tags": ["recommended", "workspace", "jsr"]
     }
   },
   "tasks": {
-    "write": "deno run --allow-net --allow-write ./write.ts",
-    "check": "deno check --doc --unstable-bundle",
-    "lint": "deno lint --permit-no-files --compact && deno doc --lint **/*.ts",
-    "test": "deno test --permit-no-files --allow-env --allow-read --allow-write --allow-ffi --unstable-bundle --no-check --doc --parallel",
-    "coverage": "deno test --allow-env --allow-read --allow-write --allow-ffi --unstable-bundle --no-check --reporter=dot --coverage --coverage-raw-data-only --clean && deno coverage --detailed --include=\"^file://$(pwd)\"; rm -r coverage",
-    "all": "deno task --cwd=. check && deno task --cwd=. lint && deno task --cwd=. coverage && deno publish --dry-run --allow-dirty",
-    "npm": "deno eval 'import{build,emptyDir}from\"@deno/dnt\";const{name,version}=JSON.parse(await Deno.readTextFile(\"./deno.json\"));await Deno.mkdir(\"./npm\",{recursive:true});await emptyDir(\"./npm\");await build({entryPoints:[\"./mod.ts\"],outDir:\"./npm\",package:{name,version,license:\"GPL-3.0-or-later\",repository:{type:\"git\",url:\"git+https://github.com/nathanielyoon/libn.git\",},},shims:{},typeCheck:false,test:false,scriptModule:false,skipNpmInstall:true})'"
+    "bundle": {
+      "description": "Bundle files (with flags and file names passed to `deno task`).",
+      "command": "deno run --allow-env --allow-run npm:esbuild --bundle --format=esm --external:@libn"
+    },
+    "write": {
+      "description": "Runs a test-vector-writing script (with file name and arguments passed to `deno task`).",
+      "command": "deno run --allow-net=\"www.rfc-editor.org,raw.githubusercontent.com,en.wikipedia.org,earthquake.usgs.gov,www.unicode.org,crockford.com,www.ietf.org\" --allow-write"
+    },
+    "vectors": {
+      "description": "Runs all test-vector-writing scripts.",
+      "command": "cd aead && rm -f ./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd base && rm -f ./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd csv && rm -f ./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd ecc && rm -f ./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd hash && rm -f ./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd text && rm -f ./vectors.json && deno task --cwd=. write ./test.ts && cd ..;"
+    },
+    "check": "cd \"$INIT_CWD\" && deno check --doc",
+    "lint": "cd \"$INIT_CWD\" && deno lint --compact && deno doc --lint **/*.ts",
+    "test": "cd \"$INIT_CWD\" && deno test --doc --allow-net=\"unicode.org\" --allow-read=\"unicode.txt\" --no-check --parallel --clean --coverage=/tmp/deno-coverage --coverage-raw-data-only",
+    "cover": {
+      "dependencies": ["test"],
+      "command": "cd \"$INIT_CWD\" && deno coverage --detailed /tmp/deno-coverage --include=\"^file://$(pwd)\""
+    },
+    "pure": {
+      "description": "Checks whether the current directory's module has side-effects, which would be included in the generated output.",
+      "command": "cd \"$INIT_CWD\" && echo \"import \\\"./mod.ts\\\";\" >bundle.ts && deno task --cwd=. bundle ./bundle.ts; rm -f ./bundle.ts;"
+    },
+    "all": {
+      "dependencies": ["check", "lint", "test", "cover"],
+      "command": "cd \"$INIT_CWD\" && deno publish --dry-run --allow-dirty"
+    }
   }
 }

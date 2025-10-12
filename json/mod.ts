@@ -3,6 +3,9 @@
  *
  * @example Building, decoding, parsing, encoding
  * ```ts
+ * import { array, boolean, number, object, string } from "@libn/json/build";
+ * import { coder } from "@libn/json/code";
+ * import { parser } from "@libn/json/parse";
  * import { assert, assertEquals } from "@std/assert";
  *
  * const { type } = object().properties({
@@ -11,7 +14,7 @@
  *   nested: object().properties({
  *     integer: number().multipleOf(1),
  *     string: string().format("email"),
- *   }).required(),
+ *   }).required({}),
  * }).required(["numbers", "nested"]);
  * const row = [null, "0, 3.14", "12345", "john@jh.edu"];
  *
@@ -24,22 +27,7 @@
  * @module json
  */
 
-import type { Base, Data, Fail, Formats, Type } from "./src/types.ts";
-import { array, boolean, number, object, string } from "./src/build.ts";
-import { coder } from "./src/code.ts";
-import { parser } from "./src/parse.ts";
-
-export {
-  array,
-  type Base,
-  boolean,
-  coder,
-  type Data,
-  type Fail,
-  type Formats,
-  number,
-  object,
-  parser,
-  string,
-  type Type,
-};
+export type { Base, Data, Fail, Formats, Type } from "./schema.ts";
+export { array, boolean, number, object, string } from "./build.ts";
+export { coder } from "./code.ts";
+export { parser } from "./parse.ts";

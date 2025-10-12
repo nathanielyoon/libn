@@ -1,13 +1,16 @@
-import type { Result } from "@libn/result";
-import type { Base, Data, Fail, Format, Type } from "./types.ts";
+import { unrexp } from "@libn/text/normalize";
+import type { Or } from "@libn/fp/or";
+import { B16, B32, B64, H32, U64 } from "@libn/base";
+import type { Base, Data, Fail, Format, Type } from "./schema.ts";
+import { flat } from "@libn/json/build";
 
 /** Content encoding patterns. */
 export const BASES: { [_ in Base]: RegExp } = {
-  base16: /^[\dA-Fa-f]*$/,
-  base32: /^[2-7A-Za-z]*$/,
-  base32hex: /^[\dA-Va-v]*$/,
-  base64: /^[+/\dA-Za-z]*={0,2}$/,
-  base64url: /^[-\w]*$/,
+  base16: B16,
+  base32: B32,
+  base32hex: H32,
+  base64: B64,
+  base64url: U64,
 };
 /** Format patterns. */
 export const FORMATS: { [_ in Format]: RegExp } = /* @__PURE__ */ (() => {
@@ -32,16 +35,15 @@ const NOT = {
 const add = (key: PropertyKey, value: {}) =>
   `errors.push({path,raw,error:${JSON.stringify([key, value])}});`;
 const not = <A extends Type>($: A, key: keyof A, pre?: string, and = "") =>
+  // deno-lint-ignore eqeqeq
   $[key] == null ? "" : `${and ? pre : `if(${pre})`}${add(key, $[key])}${and}`;
 const parsers = ($: Type): string => {
   let a = not($, "type", `if(${NOT[$.type]})`, "else{"), z;
   if ("enum" in $) {
     a += "if(!/^(?:", z = 0;
-    do a += JSON.stringify($.enum[z]).replace(
-      /([$(-+./?[-^{|}])|[\n\r\u2028\u2029]/g,
-      ($, $1) =>
-        `\\${$1 ?? "u" + $.charCodeAt(0).toString(16).padStart(4, "0")}`,
-    ); while (++z < $.enum.length && (a += "|"));
+    do a += unrexp(JSON.stringify($.enum[z])); while (
+      ++z < $.enum.length && (a += "|")
+    );
     a += ")$/.test(JSON.stringify(raw)))" + add("enum", $.enum);
   }
   switch ($.type) {
@@ -75,36 +77,48 @@ const parsers = ($: Type): string => {
             "break}}",
           )
           : "}");
-    case "object": {
-      if (!$.properties) return a + "data=JSON.parse(JSON.stringify(raw))}";
-      const b = $.additionalProperties === false || "";
-      a += `const p=path,r=raw,d=data={}${b && ",s=new Set(Object.keys(r))"};`;
-      for (let c = Object.keys($.properties), z = 0; z < c.length; ++z) {
-        const d = c[z], e = JSON.stringify(d);
-        a += `{const path=p+"/${
-          e.slice(1).replaceAll("~", "~0").replaceAll("/", "~1")
-        };if(Object.hasOwn(r,${e})){const raw=r[${e}];let data;${
-          parsers($.properties[d])
-        }d[${e}]=data}${
-          $.required?.includes(d)
-            ? `else{const path=p,raw=null;${add("required", d)}}`
-            : ""
-        }${b && `s.delete(${e})`}}`;
+    case "object":
+      if ($.properties) {
+        const b = $.additionalProperties === false || "";
+        a += `const p=path,r=raw,d=data={}${
+          b && ",s=new Set(Object.keys(r))"
+        };`;
+        for (let c = Object.keys($.properties), z = 0; z < c.length; ++z) {
+          const d = c[z], e = JSON.stringify(d);
+          a += `{const path=p+"/${
+            e.slice(1).replaceAll("~", "~0").replaceAll("/", "~1")
+          };if(Object.hasOwn(r,${e})){const raw=r[${e}];let data;${
+            parsers($.properties[d])
+          }d[${e}]=data}${
+            $.required?.includes(d)
+              ? `else{const path=p,raw=null;${add("required", d)}}`
+              : ""
+          }${b && `s.delete(${e})`}}`;
+        }
+        a += b && not($, "additionalProperties", "s.size");
+      } else {
+        a += "data=JSON.parse(JSON.stringify(raw));";
+        if ($.required) {
+          for (let z = 0; z < $.required.length; ++z) {
+            a += `if(!Object.hasOwn(raw,${
+              JSON.stringify($.required[z])
+            })){const raw=null;${add("required", $.required[z])}}`;
+          }
+        }
       }
-      return a + (b && not($, "additionalProperties", "s.size")) +
+      return a +
         not($, "minProperties", `Object.keys(data).length<${$.minProperties}`) +
         not($, "maxProperties", `Object.keys(data).length>${$.maxProperties}`) +
         "}";
-    }
   }
 };
 /** Creates a parsing function. */
 export const parser = <A extends Type>(
-  type: A,
-): ($: unknown) => Result<Fail, Data<A>> =>
+  type: A | { type: A },
+): ($: unknown) => Or<Fail, Data<A>> =>
   Function(
     "raw",
     `let path="",data;const errors=[];${
-      parsers(type)
+      parsers(flat(type))
     }return errors.length?{state:false,value:errors}:{state:true,value:data}`,
   ) as any;
