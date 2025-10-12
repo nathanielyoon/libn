@@ -24,9 +24,7 @@ const decode = (bin: Uint8Array, $: string) => {
   return binary;
 };
 const B32_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-const B32_BIN = /* @__PURE__ */ map(B32_STR, 32);
 const H32_STR = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
-const H32_BIN = /* @__PURE__ */ map(H32_STR, 32);
 const C32_STR = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const C32_BIN = /* @__PURE__ */ (() => {
   const bin = map(C32_STR, 32);
@@ -39,13 +37,19 @@ export const B32 = /^[2-7A-Za-z]*$/;
 /** Converts binary to base32. */
 export const enB32: Encode = /* @__PURE__ */ encode.bind(null, B32_STR);
 /** Converts base32 to binary (case-insensitively). */
-export const deB32: Decode = /* @__PURE__ */ decode.bind(null, B32_BIN);
+export const deB32: Decode = /* @__PURE__ */ decode.bind(
+  null,
+  /* @__PURE__ */ map(B32_STR, 32),
+);
 /** Base32hex pattern. */
 export const H32 = /^[\dA-Va-v]*$/;
 /** Converts binary to base32hex. */
 export const enH32: Encode = /* @__PURE__ */ encode.bind(null, H32_STR);
 /** Converts base32hex to binary (case-insensitively). */
-export const deH32: Decode = /* @__PURE__ */ decode.bind(null, H32_BIN);
+export const deH32: Decode = /* @__PURE__ */ decode.bind(
+  null,
+  /* @__PURE__ */ map(H32_STR, 32),
+);
 /** Crockford base32 pattern. */
 export const C32 = /^[-^\dA-TV-Za-tv-z]*$/;
 /** Converts binary to Crockford base 32. */
