@@ -7,9 +7,10 @@ const aToB = ($: string) => {
   try {
     return atob($); // throws on non-base64 characters or bad padding
   } catch {
+    $ = $.replace(/=+$/, "");
     let string = "";
-    for (let un = $.replace(/=+$/, ""), z = 0; z < $.length; z += 4) {
-      const a = en.call(un, z), b = en.call(un, z + 1), c = en.call(un, z + 2);
+    for (let z = 0; z < $.length; z += 4) {
+      const a = en.call($, z), b = en.call($, z + 1), c = en.call($, z + 2);
       string += de(B64_BIN[a << 2 | b >> 4] | 0) +
         de(B64_BIN[b << 4 | c >> 2] | 0) +
         de(B64_BIN[c << 6 | en.call($, z + 3)] | 0);
