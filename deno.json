@@ -8,7 +8,6 @@
     "./fp",
     "./hash",
     "./json",
-    "./lib",
     "./query",
     "./signal",
     "./text"
