@@ -13,14 +13,13 @@ const encode = (str: string, $: Uint8Array) => {
 const decode = (bin: Uint8Array, $: string) => {
   const binary = new Uint8Array($.length * 5 >> 3);
   for (let z = 0, y = 0; z < $.length; z += 8, y += 5) {
-    const a = bin[en.call($, z)], b = bin[en.call($, z + 1)];
-    const c = bin[en.call($, z + 3)], d = bin[en.call($, z + 4)];
-    const e = bin[en.call($, z + 6)];
-    binary[y] = a << 3 | b >> 2 & 7;
-    binary[y + 1] = b << 6 & 192 | bin[en.call($, z + 2)] << 1 | c >> 4 & 1;
-    binary[y + 2] = c << 4 & 240 | d >> 1 & 15;
-    binary[y + 3] = d << 7 & 128 | bin[en.call($, z + 5)] << 2 | e >> 3 & 7;
-    binary[y + 4] = e << 5 & 224 | bin[en.call($, z + 7)];
+    const a = bin[en.call($, z + 1)], b = bin[en.call($, z + 3)];
+    const c = bin[en.call($, z + 4)], d = bin[en.call($, z + 6)];
+    binary[y] = bin[en.call($, z)] << 3 | a >> 2 & 7;
+    binary[y + 1] = a << 6 & 192 | bin[en.call($, z + 2)] << 1 | b >> 4 & 1;
+    binary[y + 2] = b << 4 & 240 | c >> 1 & 15;
+    binary[y + 3] = c << 7 & 128 | bin[en.call($, z + 5)] << 2 | d >> 3 & 7;
+    binary[y + 4] = d << 5 & 224 | bin[en.call($, z + 7)];
   }
   return binary;
 };
@@ -31,8 +30,8 @@ const H32_BIN = /* @__PURE__ */ map(H32_STR, 32);
 const C32_STR = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const C32_BIN = /* @__PURE__ */ (() => {
   const bin = map(C32_STR, 32);
-  for (const $ of "Oo") bin[$.charCodeAt(0)] = 0;
-  for (const $ of "IiLl") bin[$.charCodeAt(0)] = 1;
+  for (const $ of "Oo") bin[en.call($)] = 0;
+  for (const $ of "IiLl") bin[en.call($)] = 1;
   return bin;
 })();
 /** Base32 pattern. */
