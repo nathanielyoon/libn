@@ -11,8 +11,8 @@ type Trim<A extends string> = A extends
   : A extends `${infer B}${"#" | "." | "[" | ":"}${string}` ? Trim<B>
   : A;
 /** @internal */
-type Either<A, B, D extends string> = D extends keyof A ? A[D]
-  : D extends keyof B ? B[D]
+type Either<A, B, C extends string> = C extends keyof A ? A[C]
+  : C extends keyof B ? B[C]
   : Element;
 /** Query-selects an element. */
 export const qs =
