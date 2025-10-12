@@ -1,6 +1,6 @@
 import ranges from "./ranges.json" with { type: "json" };
 
-/** Fetches the Unicode case folding source. */
+/** Fetches the Unicode case-folding source. */
 export const source = async (): Promise<string> =>
   (await fetch("https://unicode.org/Public/UNIDATA/CaseFolding.txt")).text();
 /** Creates a case-folding range set from the Unicode source text. */
