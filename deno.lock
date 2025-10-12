@@ -5,6 +5,7 @@
     "jsr:@denosaurs/plug@1.1.0": "1.1.0",
     "jsr:@std/assert@^1.0.14": "1.0.15",
     "jsr:@std/assert@^1.0.15": "1.0.15",
+    "jsr:@std/async@^1.0.15": "1.0.15",
     "jsr:@std/crypto@^1.0.5": "1.0.5",
     "jsr:@std/data-structures@^1.0.9": "1.0.9",
     "jsr:@std/encoding@1": "1.0.10",
@@ -18,7 +19,6 @@
     "jsr:@std/path@1": "1.1.2",
     "jsr:@std/path@^1.1.1": "1.1.2",
     "jsr:@std/path@^1.1.2": "1.1.2",
-    "jsr:@std/testing@^1.0.15": "1.0.16",
     "jsr:@std/testing@^1.0.16": "1.0.16",
     "npm:esbuild@*": "0.25.10",
     "npm:fast-check@^4.3.0": "4.3.0"
@@ -44,6 +44,9 @@
       "dependencies": [
         "jsr:@std/internal@^1.0.12"
       ]
+    },
+    "@std/async@1.0.15": {
+      "integrity": "55d1d9d04f99403fe5730ab16bdcc3c47f658a6bf054cafb38a50f046238116e"
     },
     "@std/crypto@1.0.5": {
       "integrity": "0dcfbb319fe0bba1bd3af904ceb4f948cde1b92979ec1614528380ed308a3b40"
@@ -84,6 +87,7 @@
       "integrity": "a917ffdeb5924c9be436dc78bc32e511760e14d3a96e49c607fc5ecca86d0092",
       "dependencies": [
         "jsr:@std/assert@^1.0.15",
+        "jsr:@std/async",
         "jsr:@std/data-structures",
         "jsr:@std/fs@^1.0.19",
         "jsr:@std/internal@^1.0.12",
@@ -269,33 +273,18 @@
     "dependencies": [
       "jsr:@std/assert@^1.0.15",
       "jsr:@std/expect@^1.0.17",
+      "jsr:@std/testing@^1.0.16",
       "npm:fast-check@^4.3.0"
     ],
     "members": {
-      "fp": {
-        "dependencies": [
-          "jsr:@std/testing@^1.0.16"
-        ]
-      },
       "hash": {
         "dependencies": [
           "jsr:@std/crypto@^1.0.5"
         ]
       },
-      "json": {
-        "dependencies": [
-          "jsr:@std/testing@^1.0.16"
-        ]
-      },
       "query": {
         "dependencies": [
-          "jsr:@b-fuze/deno-dom@~0.1.56",
-          "jsr:@std/testing@^1.0.16"
-        ]
-      },
-      "signal": {
-        "dependencies": [
-          "jsr:@std/testing@^1.0.15"
+          "jsr:@b-fuze/deno-dom@~0.1.56"
         ]
       }
     }
