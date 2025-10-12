@@ -1,3 +1,5 @@
+import { enPoint } from "./lib.ts";
+
 /** Checks whether one string sorta-includes another. */
 export const includes = (source: string, target: string): boolean => {
   const max = source.length, min = target.length;
@@ -12,8 +14,6 @@ export const includes = (source: string, target: string): boolean => {
   return true;
 };
 const TEMP = /* @__PURE__ */ new Uint32Array(0x110000);
-const code = /* @__PURE__ */
-  (() => String.prototype.codePointAt as (this: string) => number)();
 /** Calculates the distance between two strings. */
 export const distance = (one: string, two: string): number => {
   let a = [...one], b = [...two];
@@ -25,8 +25,8 @@ export const distance = (one: string, two: string): number => {
   do hi[--z] = -1, lo[z] = 0; while (z);
   for (const end = (max + 31 >> 5) - 1; z < end; ++z) {
     c = y = z << 5, d = Math.min(32, max) + c, e = -1, f = x = 0;
-    while (y < d) TEMP[code.call(a[y])] |= 1 << y++;
-    do g = TEMP[code.call(b[x])],
+    while (y < d) TEMP[enPoint.call(a[y])] |= 1 << y++;
+    do g = TEMP[enPoint.call(b[x])],
       h = lo[x >> 5] >>> x & 1,
       i = (e & (g | h)) + e ^ e | g | h,
       j = f | ~(e | i),
@@ -37,11 +37,11 @@ export const distance = (one: string, two: string): number => {
       j = j << 1 | i,
       e = e << 1 | h | ~(f | g | j),
       f = j & (f | g); while (++x < min);
-    while (y-- > c) TEMP[code.call(a[y])] = 0;
+    while (y-- > c) TEMP[enPoint.call(a[y])] = 0;
   }
   c = z <<= 5, d = Math.min(32, max-- - c) + c, e = -1, f = y = 0;
-  while (z < d) TEMP[code.call(a[z])] |= 1 << z++;
-  do g = TEMP[code.call(b[y])],
+  while (z < d) TEMP[enPoint.call(a[z])] |= 1 << z++;
+  do g = TEMP[enPoint.call(b[y])],
     h = lo[y >> 5] >>> y & 1,
     i = (e & (g | h)) + e ^ e | g | h,
     j = f | ~(e | i),
@@ -54,6 +54,6 @@ export const distance = (one: string, two: string): number => {
     j = j << 1 | i,
     e = e << 1 | h | ~(f | g | j),
     f = j & (f | g); while (++y < min);
-  while (z-- > c) TEMP[code.call(a[z])] = 0;
+  while (z-- > c) TEMP[enPoint.call(a[z])] = 0;
   return to;
 };
