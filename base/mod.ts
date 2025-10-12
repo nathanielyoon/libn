@@ -55,7 +55,7 @@ export const deUtf8: (
 ) => string = /* @__PURE__ */ TextDecoder.prototype.decode.bind(
   /* @__PURE__ */ new TextDecoder("utf-8"),
 );
-export type { Decode, Encode } from "./lib.ts";
+export { de, type Decode, en, type Encode } from "./lib.ts";
 export { B16, deB16, enB16 } from "./16.ts";
 export {
   B32,
