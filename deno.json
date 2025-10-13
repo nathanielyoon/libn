@@ -56,7 +56,7 @@
     },
     "vectors": {
       "description": "Runs all test-vector-writing scripts.",
-      "command": "cd aead && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd base && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./vectors.ts && cd ..; cd csv && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd ecc && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd hash && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd text && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..;"
+      "command": "cd aead && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd .. && cd base && rm -f ./vectors.json && deno task --cwd=. write ./vectors.ts && cd .. && cd csv && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd .. && cd ecc && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd .. && cd hash && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd .. && cd text && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd .."
     },
     "check": "cd \"$INIT_CWD\" && deno check --doc",
     "lint": "cd \"$INIT_CWD\" && deno lint --compact && deno doc --lint **/*.ts",
