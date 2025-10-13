@@ -18,9 +18,12 @@ import.meta.main && await Promise.all([
     "https://raw.githubusercontent.com/zeromq/rfc/3d4c0cef87ed761fe09ab9abf8a6e5ea45df0e9f/src/spec_32.c",
   ).then(($) => $.text()).then(($) => $.slice(4717, 5975)),
   fetch(
+    "https://raw.githubusercontent.com/bitcoin/bitcoin/5dd3a0d8a899e4c7263d5b999135f4d7584e1244/src/test/data/base58_encode_decode.json",
+  ).then<[string, string][]>(($) => $.json()),
+  fetch(
     "https://en.wikipedia.org/w/index.php?title=Ascii85&oldid=1305034107",
   ).then(($) => $.text()),
-]).then(([rfc4648, crockford, spec32, wikipedia]) => ({
+]).then(([rfc4648, crockford, spec32, base58, wikipedia]) => ({
   b16: rfc4648("16", false),
   b32: rfc4648("32", true),
   h32: rfc4648("32-HEX", true),
@@ -36,6 +39,7 @@ import.meta.main && await Promise.all([
       return { binary: binary.subarray(3).toHex(), string: encode.repeat(8) };
     },
   ),
+  b58: base58.map(([binary, string]) => ({ binary, string })),
   b64: rfc4648("64", false),
   u64: rfc4648("64", true),
   z85: Array.from([1, 2], ($) => {
