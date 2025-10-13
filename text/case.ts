@@ -5,17 +5,17 @@ import ranges from "./ranges.json" with { type: "json" };
 export const source = async (): Promise<string> =>
   (await fetch("https://unicode.org/Public/UNIDATA/CaseFolding.txt")).text();
 /** Creates a case-folding range set from the Unicode source text. */
-export const createRanges = (text: string): { [_: string]: string[] } => {
-  let head = "";
+export const createRanges = (text: string) => {
+  let head = -1;
   return text.match(/^.{4,5}; [CF];(?: [\dA-F]{4,5})+/gm)!.reduce((out, $) => {
     const line = $.split(/; [CF]; /), set = line[1].split(" ");
     let all = "";
     for (let y = 0; y < set.length; ++y) all += dePoint(parseInt(set[y], 16));
-    const code = parseInt(line[0], 16), prev = out[head];
-    if (code === enPoint.call(head) + prev?.length) prev.push(all); // continues
-    else out[head = dePoint(code)] = [all]; // disjoint, start new range
+    const code = parseInt(line[0], 16), prev = out[out.length - 1];
+    if (code < head + prev?.length) prev.push(all);
+    else out.push([dePoint(head = code), all]);
     return out;
-  }, {} as { [_: string]: string[] });
+  }, [] as string[][]).map(($) => $.join(" ")).join(",");
 };
 const regex = /* @__PURE__ */ (() => {
   const hex = ($: number) => {
@@ -24,17 +24,20 @@ const regex = /* @__PURE__ */ (() => {
     return `\\u{${$.toString(16)}}`;
   };
   let pattern = "";
-  for (const range of Object.entries(ranges)) {
-    const code = enPoint.call(range[0]), rest = range[1].length - 1;
-    pattern += hex(code), rest && (pattern += "-" + hex(code + rest));
+  for (const row of ranges.split(",")) {
+    const [head, ...tail] = row.split(" "), code = enPoint.call(head);
+    pattern += hex(code);
+    const rest = tail.length - 1;
+    if (rest) pattern += "-" + hex(code + rest);
   }
   return RegExp(`[${pattern}]`, "gu");
 })();
 const map = /* @__PURE__ */ (() => {
   const object: { [_: string]: string } = {};
-  for (const range of Object.entries(ranges)) {
-    let code = enPoint.call(range[0]);
-    for (const $ of range[1]) object[dePoint(code++)] = $;
+  for (const row of ranges.split(",")) {
+    const [head, ...tail] = row.split(" ");
+    let code = enPoint.call(head);
+    for (const $ of tail) object[dePoint(code++)] = $;
   }
   return Reflect.get.bind(null, object);
 })();
