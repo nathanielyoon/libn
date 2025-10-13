@@ -10,10 +10,10 @@ const aToB = ($: string) => {
     $ = $.replace(/=+$/, "");
     let string = "";
     for (let z = 0; z < $.length; z += 4) {
-      const a = en.call($, z), b = en.call($, z + 1), c = en.call($, z + 2);
-      string += de(B64_BIN[a << 2 | b >> 4] | 0) +
-        de(B64_BIN[b << 4 | c >> 2] | 0) +
-        de(B64_BIN[c << 6 | en.call($, z + 3)] | 0);
+      const a = B64_BIN[en.call($, z + 1)], b = B64_BIN[en.call($, z + 2)];
+      string += de(B64_BIN[en.call($, z)] << 2 & 252 | a >> 4) +
+        de(a << 4 & 240 | b >> 2) +
+        de(b << 6 & 192 | B64_BIN[en.call($, z + 3)]);
     }
     return string.slice(0, $.length * 3 >> 2);
   }
