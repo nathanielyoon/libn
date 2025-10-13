@@ -1,43 +1,14 @@
 /**
  * Binary-to-text encoding.
  *
- * @example RFC4648 schemes
+ * @example Usage
  * ```ts
- * import { deB16, enB16 } from "@libn/base/16";
- * import { deB32, deH32, enB32, enH32 } from "@libn/base/32";
- * import { deB64, deU64, enB64, enU64 } from "@libn/base/64";
+ * import { deB16, enB16 } from "@libn/base/b16";
  * import { assertEquals } from "@std/assert";
  *
- * const data = crypto.getRandomValues(new Uint8Array(100));
- *
- * assertEquals(deB16(enB16(data)), data); // base16
- * assertEquals(deB32(enB32(data)), data); // base32
- * assertEquals(deH32(enH32(data)), data); // base32hex
- * assertEquals(deB64(enB64(data)), data); // base64
- * assertEquals(deU64(enU64(data)), data); // base64url
- * ```
- *
- * @example Other schemes
- * ```ts
- * import { deC32, enC32 } from "@libn/base/32";
- * import { deA85, deZ85, enA85, enZ85 } from "@libn/base/85";
- * import { assertEquals } from "@std/assert";
- *
- * const data = crypto.getRandomValues(new Uint8Array(100));
- *
- * assertEquals(deC32(enC32(data)), data); // Crockford base32
- * assertEquals(deZ85(enZ85(data)), data); // z85
- * assertEquals(deA85(enA85(data)), data); // ascii85
- * ```
- *
- * @example Bound `TextEncoder` and `TextDecoder` methods
- * ```ts
- * import { deUtf8, enUtf8 } from "@libn/base";
- * import { assertEquals } from "@std/assert";
- *
- * const data = enUtf8("Hello");
- * assertEquals(data, new TextEncoder().encode("Hello"));
- * assertEquals(deUtf8(data), new TextDecoder().decode(data));
+ * const data = new Uint8Array([0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]);
+ * assertEquals(enB16(data), "0123456789ABCDEF");
+ * assertEquals(deB16("0123456789ABCDEF"), data);
  * ```
  *
  * @module base
@@ -56,17 +27,11 @@ export const deUtf8: (
   /* @__PURE__ */ new TextDecoder("utf-8"),
 );
 export { de, type Decode, en, type Encode } from "./lib.ts";
-export { B16, deB16, enB16 } from "./16.ts";
-export {
-  B32,
-  C32,
-  deB32,
-  deC32,
-  deH32,
-  enB32,
-  enC32,
-  enH32,
-  H32,
-} from "./32.ts";
-export { B64, deB64, deU64, enB64, enU64, U64 } from "./64.ts";
-export { A85, deA85, deZ85, enA85, enZ85, Z85 } from "./85.ts";
+export { B16, deB16, enB16 } from "./b16.ts";
+export { B32, deB32, enB32 } from "./b32.ts";
+export { deH32, enH32, H32 } from "./h32.ts";
+export { C32, deC32, enC32 } from "./c32.ts";
+export { B64, deB64, enB64 } from "./b64.ts";
+export { deU64, enU64, U64 } from "./u64.ts";
+export { deZ85, enZ85, Z85 } from "./z85.ts";
+export { A85, deA85, enA85 } from "./a85.ts";

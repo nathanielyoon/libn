@@ -56,7 +56,7 @@
     },
     "vectors": {
       "description": "Runs all test-vector-writing scripts.",
-      "command": "cd aead && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd base && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd csv && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd ecc && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd hash && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd text && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..;"
+      "command": "cd aead && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd base && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./vectors.ts && cd ..; cd csv && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd ecc && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd hash && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..; cd text && rm -f ./vectors.json && echo \"{}\" >./vectors.json && deno task --cwd=. write ./test.ts && cd ..;"
     },
     "check": "cd \"$INIT_CWD\" && deno check --doc",
     "lint": "cd \"$INIT_CWD\" && deno lint --compact && deno doc --lint **/*.ts",
@@ -67,8 +67,8 @@
       "command": "cd \"$INIT_CWD\" && echo \"import \\\"./mod.ts\\\";\" >bundle.ts && deno task --cwd=. bundle ./bundle.ts; rm -f ./bundle.ts;"
     },
     "all": {
-      "dependencies": ["check", "lint", "test", "cover"],
-      "command": "cd \"$INIT_CWD\" && deno task --cwd=. pure && deno publish --dry-run --allow-dirty"
+      "dependencies": ["check", "lint"],
+      "command": "cd \"$INIT_CWD\" || exit; deno task --cwd=. test && deno task --cwd=. cover; deno task --cwd=. pure; deno publish --dry-run --allow-dirty"
     }
   }
 }

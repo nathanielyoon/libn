@@ -5,15 +5,13 @@ const B16_STR = /* @__PURE__ */ Array.from(
   (_, byte) => byte.toString(16).toUpperCase().padStart(2, "0"),
 );
 const B16_BIN = /* @__PURE__ */ map("0123456789ABCDEF", 32);
-/** Base16 pattern. */
-export const B16 = /^(?:[\dA-Fa-f]{2})*$/;
 /** Converts binary to base16. */
 export const enB16: Encode = ($) => {
   let string = "";
   for (let z = 0; z < $.length; ++z) string += B16_STR[$[z]];
   return string;
 };
-/** Converts base16 to binary (case-insensitively). */
+/** Converts base16 to binary. */
 export const deB16: Decode = ($) => {
   const binary = new Uint8Array($.length >> 1);
   for (let z = 0; z < $.length; z += 2) {
@@ -21,3 +19,5 @@ export const deB16: Decode = ($) => {
   }
   return binary;
 };
+/** Decodable base16. */
+export const B16 = /^(?:[\dA-Fa-f]{2})*$/;
