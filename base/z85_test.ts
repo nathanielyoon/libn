@@ -5,10 +5,9 @@ import { deZ85, enZ85, Z85 } from "@libn/base/z85";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("ref", () => {
-  for (const $ of vectors.Z85) {
-    const binary = Uint8Array.fromHex($.binary);
-    assertEquals(enZ85(binary), $.string);
-    assertEquals(deZ85($.string), binary);
+  for (const $ of vectors.z85) {
+    assertEquals(enZ85(Uint8Array.fromHex($.binary)), $.string);
+    assertEquals(deZ85($.string), Uint8Array.fromHex($.binary));
   }
 });
 Deno.test("pbt", async (t) => {
@@ -48,12 +47,6 @@ Deno.test("bdd", async (t) => {
       "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#",
       Z85,
     );
-    assertNotMatch('"', Z85);
-    assertNotMatch("'", Z85);
-    assertNotMatch(",", Z85);
-    assertNotMatch(";", Z85);
-    assertNotMatch("\\", Z85);
-    assertNotMatch("_", Z85);
-    assertNotMatch("`", Z85);
+    for (const $ of "\"',;\\_`") assertNotMatch($, Z85);
   });
 });

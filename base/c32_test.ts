@@ -5,7 +5,7 @@ import { C32, deC32, enC32 } from "@libn/base/c32";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("ref", () => {
-  for (const $ of vectors.C32) {
+  for (const $ of vectors.c32) {
     assertEquals(enC32(Uint8Array.fromHex($.binary)), $.string);
     assertEquals(deC32($.string), Uint8Array.fromHex($.binary));
     assertEquals(deC32($.string + "-"), Uint8Array.fromHex($.binary));
@@ -66,8 +66,7 @@ Deno.test("bdd", async (t) => {
   });
   await t.step("C32 matches Crockford base32", () => {
     assertMatch("0123456789ABCDEFGHJKMNPQRSTVWXYZ", C32);
-    assertNotMatch("U", C32);
-    assertNotMatch("u", C32);
+    for (const $ of "Uu+/_") assertNotMatch($, C32);
   });
   await t.step("deC32() handles extra characters", () => {
     assertEquals(deC32("Oo-IiLl"), deC32("001111"));

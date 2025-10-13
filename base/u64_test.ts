@@ -5,7 +5,7 @@ import { deU64, enU64, U64 } from "@libn/base/u64";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("ref", () => {
-  for (const $ of vectors.U64) {
+  for (const $ of vectors.u64) {
     assertEquals(enU64(enUtf8($.binary)), $.string);
     assertEquals(deU64($.string), enUtf8($.binary));
   }
@@ -64,6 +64,6 @@ Deno.test("bdd", async (t) => {
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",
       U64,
     );
-    assertNotMatch("=", U64);
+    for (const $ of "+/=") assertNotMatch($, U64);
   });
 });

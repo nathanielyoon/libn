@@ -10,7 +10,7 @@ import { B64, deB64, enB64 } from "@libn/base/b64";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("ref", () => {
-  for (const $ of vectors.B64) {
+  for (const $ of vectors.b64) {
     assertEquals(enB64(enUtf8($.binary)), $.string);
     assertEquals(deB64($.string), enUtf8($.binary));
     assertEquals(deB64($.string + "="), enUtf8($.binary));

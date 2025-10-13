@@ -5,7 +5,7 @@ import { B32, deB32, enB32 } from "@libn/base/b32";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("ref", () => {
-  for (const $ of vectors.B32) {
+  for (const $ of vectors.b32) {
     assertEquals(enB32(enUtf8($.binary)), $.string);
     assertEquals(deB32($.string), enUtf8($.binary));
   }
@@ -42,9 +42,6 @@ Deno.test("bdd", async (t) => {
   });
   await t.step("B32 matches base32", () => {
     assertMatch("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567", B32);
-    assertNotMatch("0", B32);
-    assertNotMatch("1", B32);
-    assertNotMatch("8", B32);
-    assertNotMatch("9", B32);
+    for (const $ of "0189") assertNotMatch($, B32);
   });
 });

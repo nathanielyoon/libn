@@ -5,10 +5,9 @@ import { B16, deB16, enB16 } from "@libn/base/b16";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("ref", () => {
-  for (const $ of vectors.B16) {
-    const binary = enUtf8($.binary);
-    assertEquals(enB16(binary), $.string);
-    assertEquals(deB16($.string), binary);
+  for (const $ of vectors.b16) {
+    assertEquals(enB16(enUtf8($.binary)), $.string);
+    assertEquals(deB16($.string), enUtf8($.binary));
   }
 });
 Deno.test("pbt", async (t) => {

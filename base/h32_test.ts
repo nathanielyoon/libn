@@ -5,7 +5,7 @@ import { deH32, enH32, H32 } from "@libn/base/h32";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("ref", () => {
-  for (const $ of vectors.H32) {
+  for (const $ of vectors.h32) {
     assertEquals(enH32(enUtf8($.binary)), $.string);
     assertEquals(deH32($.string), enUtf8($.binary));
   }
@@ -42,13 +42,6 @@ Deno.test("bdd", async (t) => {
   });
   await t.step("H32 matches base32hex", () => {
     assertMatch("0123456789ABCDEFGHIJKLMNOPQRSTUV", H32);
-    assertNotMatch("W", H32);
-    assertNotMatch("w", H32);
-    assertNotMatch("X", H32);
-    assertNotMatch("x", H32);
-    assertNotMatch("Y", H32);
-    assertNotMatch("y", H32);
-    assertNotMatch("Z", H32);
-    assertNotMatch("z", H32);
+    for (const $ of "WwXxYyZz") assertNotMatch($, H32);
   });
 });

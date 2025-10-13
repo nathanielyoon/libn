@@ -21,10 +21,10 @@ import.meta.main && await Promise.all([
     "https://en.wikipedia.org/w/index.php?title=Ascii85&oldid=1305034107",
   ).then(($) => $.text()),
 ]).then(([rfc4648, crockford, spec32, wikipedia]) => ({
-  B16: rfc4648("16", false),
-  B32: rfc4648("32", true),
-  H32: rfc4648("32-HEX", true),
-  C32: Array.from(
+  b16: rfc4648("16", false),
+  b32: rfc4648("32", true),
+  h32: rfc4648("32-HEX", true),
+  c32: Array.from(
     crockford.matchAll(
       /<tr>.*?<td>(\d+)<\/td>.*?<td><code>[\s\dA-Za-z]+<\/code><\/td>.*?<td><code>([\dA-Z])<\/code><\/td>.*?<\/tr>/gs,
     ),
@@ -36,16 +36,16 @@ import.meta.main && await Promise.all([
       return { binary: binary.subarray(3).toHex(), string: encode.repeat(8) };
     },
   ),
-  B64: rfc4648("64", false),
-  U64: rfc4648("64", true),
-  Z85: Array.from([1, 2], ($) => {
+  b64: rfc4648("64", false),
+  u64: rfc4648("64", true),
+  z85: Array.from([1, 2], ($) => {
     const [_, bytes, string] = RegExp(
       `byte test_data_${$} \\[\\d+\\] = \\{(.+?)\\};.*?encoded = Z85_encode \\(test_data_${$}.*?assert \\(streq \\(encoded, "(.+?)"\\)\\)`,
       "s",
     ).exec(spec32)!;
     return { binary: bytes.match(/(?<=0x)[\dA-F]{2}\b/g)!.join(""), string };
   }),
-  A85: [{
+  a85: [{
     binary: /<code>(.{269})<\/code>/s.exec(wikipedia)![1],
     string: /<pre>(.{395})<\/pre>/s.exec(wikipedia)![1]
       .replaceAll("&lt;", "<").replaceAll("&gt;", ">")

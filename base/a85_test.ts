@@ -5,10 +5,9 @@ import { A85, deA85, enA85 } from "@libn/base/a85";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("ref", () => {
-  for (const $ of vectors.A85) {
-    const binary = enUtf8($.binary);
-    assertEquals(enA85(binary), $.string);
-    assertEquals(deA85($.string), binary);
+  for (const $ of vectors.a85) {
+    assertEquals(enA85(enUtf8($.binary)), $.string);
+    assertEquals(deA85($.string), enUtf8($.binary));
   }
 });
 Deno.test("pbt", async (t) => {
