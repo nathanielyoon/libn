@@ -3,7 +3,7 @@
  *
  * @example Usage
  * ```ts
- * import { deB16, enB16 } from "@libn/base/b16";
+ * import { deB16, enB16 } from "@libn/base/16";
  * import { assertEquals } from "@std/assert";
  *
  * const data = new Uint8Array([0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]);
@@ -27,11 +27,11 @@ export const deUtf8: (
   /* @__PURE__ */ new TextDecoder("utf-8"),
 );
 export { de, type Decode, en, type Encode } from "./lib.ts";
-export { B16, deB16, enB16 } from "./b16.ts";
-export { B32, deB32, enB32 } from "./b32.ts";
-export { deH32, enH32, H32 } from "./h32.ts";
-export { C32, deC32, enC32 } from "./c32.ts";
-export { B64, deB64, enB64 } from "./b64.ts";
-export { deU64, enU64, U64 } from "./u64.ts";
-export { deZ85, enZ85, Z85 } from "./z85.ts";
-export { A85, deA85, enA85 } from "./a85.ts";
+export { B16, deB16, enB16 } from "./16.ts";
+export { B32, deB32, enB32 } from "./32.ts";
+export { deH32, enH32, H32 } from "./32.ts";
+export { C32, deC32, enC32 } from "./32.ts";
+export { B64, deB64, enB64 } from "./64.ts";
+export { deU64, enU64, U64 } from "./64.ts";
+export { deZ85, enZ85, Z85 } from "./85.ts";
+export { A85, deA85, enA85 } from "./85.ts";
