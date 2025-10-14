@@ -4,8 +4,9 @@
   "license": "GPL-3.0-or-later",
   "exports": {
     ".": "./mod.ts",
-    "./fuzzy": "./fuzzy.ts",
     "./normalize": "./normalize.ts",
-    "./case": "./case.ts"
+    "./case": "./case.ts",
+    "./includes": "./includes.ts",
+    "./distance": "./distance.ts"
   }
 }

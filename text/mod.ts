@@ -14,7 +14,6 @@
  * @module text
  */
 
-import { distance, includes } from "./fuzzy.ts";
 import {
   uncode,
   unhtml,
@@ -25,6 +24,8 @@ import {
   unwide,
 } from "./normalize.ts";
 import { uncase } from "./case.ts";
+import { includes } from "./includes.ts";
+import { distance } from "./distance.ts";
 
 export {
   distance,

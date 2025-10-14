@@ -1,19 +1,5 @@
-import { en } from "@libn/base";
 import { enPoint } from "./lib.ts";
 
-/** Checks whether one string sorta-includes another. */
-export const includes = (source: string, target: string): boolean => {
-  const a = [...source], b = [...target], max = a.length, min = b.length;
-  if (min > max) return false;
-  if (min === max) return source === target;
-  top: for (let z = 0, y = 0; z < min; ++z) {
-    for (const next = en.call(b[z]); y < max; ++y) {
-      if (en.call(a[y]) === next) continue top;
-    }
-    return false;
-  }
-  return true;
-};
 const TEMP = /* @__PURE__ */ new Uint32Array(0x110000);
 /** Calculates the distance between two strings. */
 export const distance = (one: string, two: string): number => {

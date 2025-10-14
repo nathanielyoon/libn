@@ -1,6 +1,13 @@
-import { expect } from "@std/expect/expect";
+import {
+  assert,
+  assertEquals,
+  assertGreaterOrEqual,
+  assertLessOrEqual,
+  assertMatch,
+  assertNotEquals,
+  assertNotMatch,
+} from "@std/assert";
 import fc from "fast-check";
-import { distance, includes } from "@libn/text/fuzzy";
 import {
   uncode,
   unhtml,
@@ -10,297 +17,348 @@ import {
   unrexp,
   unwide,
 } from "@libn/text/normalize";
-import { createRanges, source, uncase } from "@libn/text/case";
+import { createRanges, uncase } from "@libn/text/case";
+import { includes } from "@libn/text/includes";
+import { distance } from "@libn/text/distance";
+import vectors from "./vectors.json" with { type: "json" };
 
-Deno.test("spec", async (t) => {
-  const vectors = await import("./vectors.json", { with: { type: "json" } });
-  await t.step("uncode", () => {
-    const all = new Uint32Array(0x110000).fill(0xfffd);
-    for (const $ of vectors.default.uncode) {
-      if (typeof $ === "number") all[$] = $;
-      else for (let z = $[0]; z <= $[1]; ++z) all[z] = z;
+Deno.test("normalize", async (t) => {
+  await t.step("uncode() passes reference vectors", () => {
+    const to = new Uint32Array(0x110000).fill(0xfffd);
+    for (const $ of vectors.uncode) {
+      if (typeof $ === "number") to[$] = $;
+      else for (let z = $[0]; z <= $[1]; ++z) to[z] = z;
     }
     for (let z = 0; z < 0x110000; ++z) {
-      expect(all[uncode(String.fromCodePoint(z)).codePointAt(0)!]).toBe(all[z]);
+      assertEquals(to[uncode(String.fromCodePoint(z)).codePointAt(0)!], to[z]);
     }
   });
-  await t.step("uncase", () =>
-    vectors.default.uncase.forEach(($) => {
-      expect(uncase($.source)).toBe($.target);
+  await t.step("unlone() replaces lone surrogates", () => {
+    fc.assert(fc.property(
+      fc.uint16Array().map(($) =>
+        $.reduce((to, code) => to + String.fromCharCode(code), "")
+      ),
+      ($) => {
+        assertEquals(unlone($), $.toWellFormed());
+      },
+    ));
+  });
+  await t.step("unlone() never changes string length", () => {
+    fc.assert(fc.property(
+      fc.stringMatching(
+        /^(?:[\ud800-\udbff](?:[^\udc00-\udfff]|$)|(?:^|[^\ud800-\udbff])[\udc00-\udfff])*$/,
+      ),
+      ($) => {
+        assertEquals(unlone($).length, $.length);
+      },
+    ));
+  });
+  await t.step("uncode() replaces all control codes", () => {
+    for (let z = 0x00; z <= 0x1f; ++z) {
+      if (z !== 0x9 && z !== 0xa && z !== 0xd) {
+        assertEquals(uncode(String.fromCharCode(z)), "\ufffd");
+      }
+    }
+    for (let z = 0x7f; z <= 0x9f; ++z) {
+      assertEquals(uncode(String.fromCharCode(z)), "\ufffd");
+    }
+  });
+  await t.step("uncode() replaces all un-paired surrogates", () => {
+    for (let z = 0xd800; z <= 0xdfff; ++z) {
+      assertEquals(uncode(String.fromCharCode(z)), "\ufffd");
+    }
+    for (let z = 0x10000; z <= 0x10ffff; ++z) {
+      assertEquals(
+        String.fromCharCode(0xd800 | z - 0x10000 >> 10) +
+          String.fromCharCode(0xdc00 | z - 0x10000 & 0x3ff),
+        String.fromCodePoint(z),
+      );
+    }
+  });
+  await t.step("uncode() replaces all noncharacters", () => {
+    for (let z = 0x00; z <= 0x10; ++z) {
+      assertEquals(uncode(String.fromCodePoint(z << 16 | 0xfffe)), "\ufffd");
+      assertEquals(uncode(String.fromCodePoint(z << 16 | 0xffff)), "\ufffd");
+    }
+  });
+  await t.step("unline() replaces weird breaks with linefeeds", () => {
+    fc.assert(fc.property(
+      fc.nat({ max: 255 }).chain(($) =>
+        fc.record({
+          string: fc.array(
+            fc.constantFrom("\r\n", "\n", "\u2028", "\u2029"),
+            { minLength: $, maxLength: $ },
+          ).map(($) => $.join("")),
+          length: fc.constant($),
+        })
+      ),
+      ({ string, length }) => {
+        assertEquals(unline(string), "\n".repeat(length));
+      },
+    ));
+  });
+  await t.step("unline() matches any break", () => {
+    for (const $ of ["\r\n", "\x85", "\u2028", "\u2029"]) {
+      assertEquals(unline($), "\n");
+    }
+  });
+  await t.step("unwide() trims", () => {
+    fc.assert(fc.property(fc.string({ unit: "grapheme" }), ($) => {
+      assertNotMatch(unwide($), /^\s|\s$/);
     }));
-});
-const fcPair = fc.record({
-  one: fc.string({ size: "medium", unit: "grapheme" }),
-  two: fc.string({ size: "medium", unit: "grapheme" }),
-});
-Deno.test("includes() follows built-in includes", () =>
-  fc.assert(fc.property(fcPair, ({ one, two }) => {
-    if (one.includes(two)) expect(includes(one, two)).toBe(true);
-    if (two.includes(one)) expect(includes(two, one)).toBe(true);
-  })));
-Deno.test("includes() returns true for any partial substring", () =>
-  fc.assert(fc.property(
-    fc.string().chain(($) =>
-      fc.record({
-        source: fc.constant($),
-        target: fc.subarray($.split("")).map(($) => $.join("")),
-      })
-    ),
-    ({ source, target }) => {
-      expect(includes(source, target)).toBe(true);
-    },
-  )));
-Deno.test("includes() returns false for longer targets", () =>
-  fc.assert(fc.property(
-    fc.string({ unit: "grapheme" }).chain(($) =>
-      fc.record({
-        shorter: fc.constant($),
-        longer: fc.string({ unit: "grapheme", minLength: [...$].length + 1 }),
-      })
-    ),
-    ({ shorter, longer }) => {
-      expect(includes(shorter, longer)).toBe(false);
-    },
-  )));
-Deno.test("includes() checks equality for same-length strings", () =>
-  fc.assert(fc.property(
-    fc.string({ unit: "grapheme" }).chain(($) =>
-      fc.record({
-        one: fc.constant($),
-        two: fc.string({
-          unit: "grapheme",
-          minLength: [...$].length,
-          maxLength: [...$].length,
-        }),
-      })
-    ),
-    ({ one, two }) => {
-      expect(includes(one, two)).toBe(one === two);
-      expect(includes(two, one)).toBe(one === two);
-    },
-  )));
-const levenshtein = (one: string, two: string) => {
-  const a = [...one], b = [...two], c = [...b.map((_, z) => z), b.length];
-  for (let d, e, z = 1, y; z <= a.length; c[b.length] = d, ++z) {
-    for (d = z, y = 1; y <= b.length; c[y - 1] = d, d = e, ++y) {
-      if (a[z - 1] === b[y - 1]) e = c[y - 1];
-      else e = Math.min(c[y - 1] + 1, d + 1, c[y] + 1);
-    }
-  }
-  return c[b.length];
-};
-Deno.test("distance() follows levenshtein", () =>
-  fc.assert(fc.property(fcPair, ({ one, two }) => {
-    expect(distance(one, two)).toBe(levenshtein(one, two));
-  })));
-Deno.test("distance() falls inside levenshtein bounds", () =>
-  fc.assert(fc.property(fcPair, ({ one, two }) => {
-    const length1 = [...one].length, length2 = [...two].length;
-    expect(distance(one, two)).toBeLessThanOrEqual(
-      Math.max(length1, length2),
-    );
-    expect(distance(one, two)).toBeGreaterThanOrEqual(
-      Math.abs(length1 - length2),
-    );
-  })));
-Deno.test("distance() accounts for high code points", () =>
-  fc.assert(fc.property(
-    fc.record({
-      points: fc.uniqueArray(fc.integer({ min: 0x10000, max: 0x10ffff }), {
-        minLength: 2,
-        maxLength: 2,
-        comparator: "SameValueZero",
-      }).map((points) => points.map(($) => String.fromCodePoint($))),
-      repeat: fc.integer({ min: 1, max: 1e3 }),
-    }),
-    ({ points: [one, two], repeat }) => {
-      expect(distance(one, two)).toBe(1);
-      expect(distance(one.repeat(repeat), two.repeat(repeat))).toBe(repeat);
-    },
-  )));
-Deno.test("distance() checks surrogate pairs together", () => {
-  expect(distance("\u{1f4a9}", "\u{1f4a9}")).toBe(0);
-  expect(distance("\u{1f4a9}", "x")).toBe(1);
-  expect(distance("\u{1f4a9}", "\u{1f4ab}")).toBe(1);
-  expect(distance("\u{1f4ab}", "\u{1f984}")).toBe(1);
-});
-Deno.test("unlone() replaces lone surrogates", () =>
-  fc.assert(fc.property(
-    fc.uint16Array().map(($) =>
-      $.reduce((to, code) => to + String.fromCharCode(code), "")
-    ),
-    ($) => {
-      expect(unlone($)).toBe($.toWellFormed());
-    },
-  )));
-Deno.test("unlone() never changes string length", () =>
-  fc.assert(fc.property(
-    fc.stringMatching(
-      /^(?:[\ud800-\udbff](?:[^\udc00-\udfff]|$)|(?:^|[^\ud800-\udbff])[\udc00-\udfff])*$/,
-    ),
-    ($) => {
-      expect(unlone($).length).toBe($.length);
-    },
-  )));
-const replaced = ($: string) => expect(uncode($)).toBe("\ufffd");
-Deno.test("uncode() replaces any unassignable code point", () =>
-  fc.assert(fc.property(
-    fc.stringMatching(
-      /^[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\ud800-\udfff\ufdd0-\ufdef\ufffe\uffff\u{1fffe}\u{1ffff}\u{2fffe}\u{2ffff}\u{3fffe}\u{3ffff}\u{4fffe}\u{4ffff}\u{5fffe}\u{5ffff}\u{6fffe}\u{6ffff}\u{7fffe}\u{7ffff}\u{8fffe}\u{8ffff}\u{9fffe}\u{9ffff}\u{afffe}\u{affff}\u{bfffe}\u{bffff}\u{cfffe}\u{cffff}\u{dfffe}\u{dffff}\u{efffe}\u{effff}\u{ffffe}\u{fffff}]$/u,
-    ),
-    replaced,
-  )));
-Deno.test("uncode() replaces all lone surrogates", () => {
-  for (let z = 0xd800; z <= 0xdfff; ++z) replaced(String.fromCharCode(z));
-});
-Deno.test("uncode() replaces all control codes", () => {
-  for (let z = 0x00; z <= 0x1f; ++z) {
-    if (z !== 0x9 && z !== 0xa && z !== 0xd) {
-      replaced(String.fromCharCode(z));
-    }
-  }
-  for (let z = 0x7f; z <= 0x9f; ++z) replaced(String.fromCharCode(z));
-});
-Deno.test("uncode() replaces all noncharacters", () => {
-  for (let z = 0x00; z <= 0x10; ++z) {
-    replaced(String.fromCodePoint(z << 16 | 0xfffe));
-    replaced(String.fromCodePoint(z << 16 | 0xffff));
-  }
-});
-Deno.test("unline() replaces weird breaks with linefeeds", () =>
-  fc.assert(fc.property(
-    fc.nat({ max: 255 }).chain(($) =>
-      fc.record({
-        string: fc.array(
-          fc.constantFrom("\r\n", "\n", "\u2028", "\u2029"),
-          { minLength: $, maxLength: $ },
-        ).map(($) => $.join("")),
-        length: fc.constant($),
-      })
-    ),
-    ({ string, length }) => {
-      expect(unline(string)).toBe("\n".repeat(length));
-    },
-  )));
-Deno.test("unline() matches any break", () => {
-  expect(unline("\r\n")).toBe("\n");
-  expect(unline("\x85")).toBe("\n");
-  expect(unline("\u2028")).toBe("\n");
-  expect(unline("\u2029")).toBe("\n");
-});
-Deno.test("unwide() trims", () =>
-  fc.assert(fc.property(fc.string({ unit: "grapheme" }), ($) => {
-    expect(unwide($)).not.toMatch(/^\s|\s$/);
-  })));
-Deno.test("unwide() collapses consecutive spaces", () =>
-  fc.assert(fc.property(fc.string({ unit: "grapheme" }), ($) => {
-    expect(unwide($)).toMatch(/^(?:\S|(\s|\r\n)(?!\1))*$/);
-  })));
-Deno.test("unwide() matches any space", () =>
-  Array.from({ length: 11 }, (_, z) => z + 0x2000).concat(
-    [0x1680, 0x2028, 0x2029, 0x202f, 0x205f, 0x3000, 0xfeff],
-  ).map(($) => String.fromCharCode($)).concat(
-    ["\t", "\n", "\v", "\f", "\r", "\r\n", " ", "\xa0"],
-  ).forEach(($) => {
-    expect(unwide(`\0${$}\0`).slice(1, -1)).toBe($);
-    expect(unwide(`\0${$ + $}\0`).slice(1, -1)).toBe($);
-  }));
-Deno.test("unmark() removes diacritics", () =>
-  fc.assert(fc.property(
-    fc.record({
-      character: fc.oneof(
-        fc.integer({ min: 0x41, max: 0x5a }),
-        fc.integer({ min: 0x61, max: 0x7a }),
-      ).map(String.fromCharCode),
-      mark: fc.integer({ min: 0x300, max: 0x36f }).map(String.fromCharCode),
-    }),
-    ({ character, mark }) => {
-      expect(unmark(character + mark)).toBe(character);
-    },
-  )));
-Deno.test("unhtml() removes special html characters", () =>
-  fc.assert(fc.property(fc.string(), ($) => {
-    expect(unhtml($)).toMatch(/^(?:[^&"'<>]|&#\d\d;)*$/);
-  })));
-Deno.test("unhtml() escapes with right codes", () =>
-  fc.assert(fc.property(
-    fc.string({ unit: fc.constantFrom('"', "&", "'", "<", ">") }),
-    ($) => {
-      const codes = unhtml($).match(/&#[\da-f]{2};/g) ?? [];
-      expect(codes.length).toBe($.length);
-      for (let z = 0; z < $.length; ++z) {
-        expect(+codes[z].slice(2, -1)).toBe($.charCodeAt(z));
+  });
+  await t.step("unwide() collapses consecutive spaces", () => {
+    fc.assert(fc.property(fc.string({ unit: "grapheme" }), ($) => {
+      assertMatch(unwide($), /^(?:\S|(\s|\r\n)(?!\1))*$/);
+    }));
+  });
+  await t.step("unwide() matches any space", () => {
+    for (
+      const $ of Array.from({ length: 11 }, (_, z) => z + 0x2000).concat(
+        [0x1680, 0x2028, 0x2029, 0x202f, 0x205f, 0x3000, 0xfeff],
+      ).map(($) => String.fromCharCode($)).concat(
+        ["\t", "\n", "\v", "\f", "\r", "\r\n", " ", "\xa0"],
+      )
+    ) {
+      for (let z = 1; z < 9; ++z) {
+        assertEquals(unwide(`\0${$.repeat(z)}\0`).slice(1, -1), $);
       }
-    },
-  )));
-Deno.test("unrexp() makes literal", () =>
-  fc.assert(fc.property(fc.string({ unit: "grapheme" }), ($) => {
-    expect(RegExp(`^${unrexp($)}$`).exec($)?.[0]).toBe($);
-  })));
-Deno.test("unrexp() escapes all regex syntax characters", () => {
-  for (const $ of "/^$\\*+?{}()[]|") expect(unrexp($)).toBe(`\\${$}`);
+    }
+  });
+  await t.step("unmark() removes diacritics", () => {
+    fc.assert(fc.property(
+      fc.record({
+        character: fc.oneof(
+          fc.integer({ min: 0x41, max: 0x5a }),
+          fc.integer({ min: 0x61, max: 0x7a }),
+        ).map(String.fromCharCode),
+        mark: fc.integer({ min: 0x300, max: 0x36f }).map(String.fromCharCode),
+      }),
+      ({ character, mark }) => {
+        assertEquals(unmark(character + mark), character);
+      },
+    ));
+  });
+  await t.step("unhtml() removes special html characters", () => {
+    fc.assert(fc.property(fc.string(), ($) => {
+      assertMatch(unhtml($), /^(?:[^&"'<>]|&#\d\d;)*$/);
+    }));
+  });
+  await t.step("unhtml() escapes with right codes", () => {
+    fc.assert(fc.property(
+      fc.string({ unit: fc.constantFrom('"', "&", "'", "<", ">") }),
+      ($) => {
+        const codes = unhtml($).match(/&#[\da-f]{2};/g) ?? [];
+        assertEquals(codes.length, $.length);
+        for (let z = 0; z < $.length; ++z) {
+          assertEquals(+codes[z].slice(2, -1), $.charCodeAt(z));
+        }
+      },
+    ));
+  });
+  await t.step("unrexp() makes literal", () => {
+    fc.assert(fc.property(fc.string({ unit: "grapheme" }), ($) => {
+      assertMatch($, RegExp(`^${unrexp($)}$`));
+    }));
+  });
+  await t.step("unrexp() escapes all regex syntax characters", () => {
+    for (const $ of "/^$\\*+?{}()[]|") assertEquals(unrexp($), `\\${$}`);
+  });
+  await t.step("unrexp() escapes all directly-escapable characters", () => {
+    assertEquals(unrexp("\b"), "\\b");
+    assertEquals(unrexp("\t"), "\\t");
+    assertEquals(unrexp("\n"), "\\n");
+    assertEquals(unrexp("\v"), "\\v");
+    assertEquals(unrexp("\f"), "\\f");
+    assertEquals(unrexp("\r"), "\\r");
+  });
+  await t.step("unrexp() escapes all weird characters", () => {
+    for (let z = 0; z < 0x08; ++z) {
+      assertEquals(
+        unrexp(String.fromCharCode(z)),
+        `\\x${z.toString(16).padStart(2, "0")}`,
+      );
+    }
+    for (let z = 0x0e; z <= 0x23; ++z) {
+      assertEquals(
+        unrexp(String.fromCharCode(z)),
+        `\\x${z.toString(16).padStart(2, "0")}`,
+      );
+    }
+    for (const $ of "&',-:;<=>@_`~\x7f\x85\xa0") {
+      assertEquals(unrexp($), `\\x${$.charCodeAt(0).toString(16)}`);
+    }
+    for (let z = 0x2000; z <= 0x200a; ++z) {
+      assertEquals(unrexp(String.fromCharCode(z)), `\\u${z.toString(16)}`);
+    }
+    for (const $ of "\u1680\u2028\u2029\u202f\u205f\u3000\uffef") {
+      assertEquals(unrexp($), `\\u${$.charCodeAt(0).toString(16)}`);
+    }
+  });
+  await t.step("unrexp() escapes the first character if alphanumeric", () => {
+    for (let z = 0; z < 10; ++z) {
+      assertEquals(unrexp(`${z}${z}`), `\\x${(z + 0x30).toString(16)}${z}`);
+    }
+    for (let $ of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+      assertEquals(
+        unrexp(`${$}${$}`),
+        `\\x${$.charCodeAt(0).toString(16)}${$}`,
+      );
+      assertEquals(
+        unrexp(`${$ = $.toLowerCase()}${$}`),
+        `\\x${$.charCodeAt(0).toString(16)}${$}`,
+      );
+    }
+  });
 });
-Deno.test("unrexp() directly escapes all directly-escapable characters", () => {
-  expect(unrexp("\b")).toBe("\\b");
-  expect(unrexp("\t")).toBe("\\t");
-  expect(unrexp("\n")).toBe("\\n");
-  expect(unrexp("\v")).toBe("\\v");
-  expect(unrexp("\f")).toBe("\\f");
-  expect(unrexp("\r")).toBe("\\r");
-});
-Deno.test("unrexp() hex-encodes all weird characters", () => {
-  for (let z = 0; z < 0x08; ++z) {
-    expect(unrexp(String.fromCharCode(z))).toBe(
-      `\\x${z.toString(16).padStart(2, "0")}`,
+Deno.test("case", async (t) => {
+  await t.step("createRanges() creates same ranges", async () => {
+    const text = await fetch(
+      "https://www.unicode.org/Public/UNIDATA/CaseFolding.txt",
+    ).then(($) => $.text()).catch(() =>
+      Deno.readTextFile(new URL(import.meta.resolve("./unicode.txt")).pathname)
     );
-  }
-  for (let z = 0x0e; z <= 0x23; ++z) {
-    expect(unrexp(String.fromCharCode(z))).toBe(
-      `\\x${z.toString(16).padStart(2, "0")}`,
+    assertEquals(
+      createRanges(text),
+      (await import("./ranges.json", { with: { type: "json" } })).default,
     );
-  }
-  for (const $ of "&',-:;<=>@_`~\x7f\x85\xa0") {
-    expect(unrexp($)).toBe(`\\x${$.charCodeAt(0).toString(16)}`);
-  }
-  for (let z = 0x2000; z <= 0x200a; ++z) {
-    expect(unrexp(String.fromCharCode(z))).toBe(`\\u${z.toString(16)}`);
-  }
-  for (const $ of "\u1680\u2028\u2029\u202f\u205f\u3000\uffef") {
-    expect(unrexp($)).toBe(`\\u${$.charCodeAt(0).toString(16)}`);
-  }
+  });
+  await t.step("uncase() passes reference vectors", () => {
+    for (const $ of vectors.uncase) assertEquals(uncase($.source), $.target);
+  });
+  await t.step("uncase() un-mixes case", () => {
+    fc.assert(fc.property(
+      fc.string({ unit: "grapheme" }).chain(($) =>
+        fc.array(fc.mixedCase(fc.constant($)), { minLength: 2 })
+      ),
+      ($) => {
+        assertEquals(new Set($.map(uncase)), new Set([uncase($[0])]));
+      },
+    ));
+  });
+  await t.step("uncase() uses full case folding", () => {
+    assertNotEquals("\xdf".length, uncase("\xdf").length);
+    assertNotEquals("\u0130".length, uncase("\u0130").length);
+    assertNotEquals("\u0149".length, uncase("\u0149").length);
+    assertNotEquals("\u01f0".length, uncase("\u01f0").length);
+  });
+  await t.step("uncase() uses non-Turkic mappings", () => {
+    assertEquals(uncase("\x49"), "\x69");
+    assertEquals(uncase("\u0130"), "\x69\u0307");
+  });
 });
-Deno.test("unrexp() hex-encodes the first character if alphanumeric", () => {
-  for (let z = 0; z < 10; ++z) {
-    expect(unrexp(`${z}${z}`)).toBe(`\\x${(z + 0x30).toString(16)}${z}`);
-  }
-  for (let $ of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
-    expect(unrexp(`${$}${$}`)).toBe(`\\x${$.charCodeAt(0).toString(16)}${$}`);
-    $ = $.toLowerCase();
-    expect(unrexp(`${$}${$}`)).toBe(`\\x${$.charCodeAt(0).toString(16)}${$}`);
-  }
+Deno.test("includes", async (t) => {
+  await t.step("includes() follows built-in includes", () => {
+    fc.assert(fc.property(
+      fc.string({ size: "medium", unit: "grapheme" }),
+      fc.string({ size: "medium", unit: "grapheme" }),
+      (one, two) => {
+        if (one.includes(two)) assert(includes(one, two));
+        if (two.includes(one)) assert(includes(two, one));
+      },
+    ));
+  });
+  await t.step("includes() returns true for any partial substring", () => {
+    fc.assert(fc.property(
+      fc.string().chain(($) =>
+        fc.record({
+          source: fc.constant($),
+          target: fc.subarray($.split("")).map(($) => $.join("")),
+        })
+      ),
+      ({ source, target }) => {
+        assert(includes(source, target));
+      },
+    ));
+  });
+  await t.step("includes() returns false for longer targets", () => {
+    fc.assert(fc.property(
+      fc.string({ unit: "grapheme" }).chain(($) =>
+        fc.record({
+          shorter: fc.constant($),
+          longer: fc.string({
+            unit: "grapheme",
+            minLength: [...$].length + 1,
+          }),
+        })
+      ),
+      ({ shorter, longer }) => {
+        assert(!includes(shorter, longer));
+      },
+    ));
+  });
+  await t.step("includes() checks equality for same-length strings", () => {
+    fc.assert(fc.property(
+      fc.string({ unit: "grapheme" }).chain(($) =>
+        fc.record({
+          one: fc.constant($),
+          two: fc.string({
+            unit: "grapheme",
+            minLength: [...$].length,
+            maxLength: [...$].length,
+          }),
+        })
+      ),
+      ({ one, two }) => {
+        assertEquals(includes(one, two), one === two);
+        assertEquals(includes(two, one), one === two);
+      },
+    ));
+  });
 });
-Deno.test("uncase() case-folds", () =>
-  fc.assert(fc.property(
-    fc.string().chain(($) =>
-      fc.array(fc.mixedCase(fc.constant($)), { minLength: 2 })
-    ),
-    ($) => {
-      expect(new Set($.map(uncase))).toStrictEqual(new Set([uncase($[0])]));
-    },
-  )));
-Deno.test("createRanges() matches source", async () => {
-  expect(createRanges(
-    await source().catch(($) => {
-      if ($ instanceof TypeError) {
-        return Deno.readTextFile(
-          new URL(import.meta.resolve("./unicode.txt")).pathname,
-        );
+Deno.test("distance", async (t) => {
+  const levenshtein = (one: string, two: string) => {
+    const a = [...one], b = [...two], c = [...b.map((_, z) => z), b.length];
+    for (let d, e, z = 1, y; z <= a.length; c[b.length] = d, ++z) {
+      for (d = z, y = 1; y <= b.length; c[y - 1] = d, d = e, ++y) {
+        if (a[z - 1] === b[y - 1]) e = c[y - 1];
+        else e = Math.min(c[y - 1] + 1, d + 1, c[y] + 1);
       }
-      throw $;
-    }),
-  )).toStrictEqual(
-    (await import("./ranges.json", { with: { type: "json" } })).default,
-  );
+    }
+    return c[b.length];
+  };
+  await t.step("distance() follows levenshtein", () => {
+    fc.assert(fc.property(
+      fc.string({ size: "medium", unit: "grapheme" }),
+      fc.string({ size: "medium", unit: "grapheme" }),
+      (one, two) => {
+        assertEquals(distance(one, two), levenshtein(one, two));
+      },
+    ));
+  });
+  await t.step("distance() falls inside levenshtein bounds", () => {
+    fc.assert(fc.property(
+      fc.string({ size: "medium", unit: "grapheme" }),
+      fc.string({ size: "medium", unit: "grapheme" }),
+      (one, two) => {
+        const length1 = [...one].length, length2 = [...two].length;
+        assertLessOrEqual(distance(one, two), Math.max(length1, length2));
+        assertGreaterOrEqual(distance(one, two), Math.abs(length1 - length2));
+      },
+    ));
+  });
+  await t.step("distance() accounts for high code points", () => {
+    fc.assert(fc.property(
+      fc.record({
+        points: fc.uniqueArray(fc.integer({ min: 0x10000, max: 0x10ffff }), {
+          minLength: 2,
+          maxLength: 2,
+          comparator: "SameValueZero",
+        }).map((points) => points.map(($) => String.fromCodePoint($))),
+        repeat: fc.integer({ min: 1, max: 1e3 }),
+      }),
+      ({ points: [one, two], repeat }) => {
+        assertEquals(distance(one, two), 1);
+        assertEquals(distance(one.repeat(repeat), two.repeat(repeat)), repeat);
+      },
+    ));
+  });
+  await t.step("distance() checks surrogate pairs together", () => {
+    assertEquals(distance("\u{1f4a9}", "\u{1f4a9}"), 0);
+    assertEquals(distance("\u{1f4a9}", "x"), 1);
+    assertEquals(distance("\u{1f4a9}", "\u{1f4ab}"), 1);
+    assertEquals(distance("\u{1f4ab}", "\u{1f984}"), 1);
+  });
 });
 import.meta.main && await Promise.all([
   fetch(
@@ -325,6 +383,7 @@ import.meta.main && await Promise.all([
       ),
     };
   }),
+  createRanges: fold,
 })).then(($) =>
   Deno.writeTextFile(
     new URL(import.meta.resolve("./vectors.json")).pathname,
