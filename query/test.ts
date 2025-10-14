@@ -7,8 +7,8 @@ import { ce } from "@libn/query/create";
 import { qa, qs } from "@libn/query/select";
 
 Deno.test.beforeAll(() => {
-  globalThis.Element = DenoDomElement as any;
   globalThis.document = new Document() as any;
+  globalThis.Element = DenoDomElement as any;
 });
 const fcText = fc.stringMatching(/^[^'&"<>]*$/);
 Deno.test("create", async (t) => {
@@ -72,16 +72,13 @@ Deno.test("create", async (t) => {
       ($) => {
         assertEquals(
           ce("a", {}, ...$).innerHTML,
-          $.flat().map(($) => typeof $ === "function" ? $() : $).flat()
-            .reduce(
-              (to, node) =>
-                `${to}${
-                  typeof node === "string"
-                    ? unhtml(node)
-                    : node?.outerHTML ?? ""
-                }`,
-              "",
-            ),
+          $.flat().map(($) => typeof $ === "function" ? $() : $).flat().reduce(
+            (to, node) =>
+              `${to}${
+                typeof node === "string" ? unhtml(node) : node?.outerHTML ?? ""
+              }`,
+            "",
+          ),
         );
       },
     ));
