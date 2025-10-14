@@ -53,7 +53,7 @@ export class Result<A = any, B = any, C extends boolean = boolean> {
     if (state === undefined && value instanceof Promise) this.next = value;
   }
   /** Yields itself, for delegation in generator functions. */
-  protected *[Symbol.iterator](): Iterator<Result<A, B, C>, B> {
+  protected *[Symbol.iterator](): Generator<Result<A, B, C>, B, B> {
     return yield this;
   }
   /** Applies synchronous functions. */
