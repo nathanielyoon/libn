@@ -5,41 +5,35 @@ import ranges from "./ranges.json" with { type: "json" };
 export const source = async (): Promise<string> =>
   (await fetch("https://unicode.org/Public/UNIDATA/CaseFolding.txt")).text();
 /** Creates a case-folding range set from the Unicode source text. */
-export const createRanges = (text: string) => {
+export const createRanges = (text: string): string => {
   let head = -1;
   return text.match(/^.{4,5}; [CF];(?: [\dA-F]{4,5})+/gm)!.reduce((out, $) => {
-    const line = $.split(/; [CF]; /), set = line[1].split(" ");
-    let all = "";
-    for (let y = 0; y < set.length; ++y) all += dePoint(parseInt(set[y], 16));
+    const line = $.split(/; [CF]; /), to = line[1].split(" ");
+    let next = "";
+    for (let y = 0; y < to.length; ++y) next += dePoint(parseInt(to[y], 16));
     const code = parseInt(line[0], 16), prev = out[out.length - 1];
-    if (code < head + prev?.length) prev.push(all);
-    else out.push([dePoint(head = code), all]);
+    if (code < head + prev?.length) prev.push(next);
+    else out.push([dePoint(head = code), next]);
     return out;
   }, [] as string[][]).map(($) => $.join(" ")).join(",");
 };
-const regex = /* @__PURE__ */ (() => {
+const replace = /* @__PURE__ */ (() => String.prototype.replace)();
+const args = /* @__PURE__ */ ((): Parameters<typeof replace> => {
   const hex = ($: number) => {
     if ($ < 256) return `\\x${$.toString(16).padStart(2, "0")}`;
     else if ($ < 0x10000) return `\\u${$.toString(16).padStart(4, "0")}`;
     return `\\u{${$.toString(16)}}`;
   };
-  let pattern = "";
+  const map: { [_: string]: string } = {};
+  let regex = "";
   for (const row of ranges.split(",")) {
-    const [head, ...tail] = row.split(" "), code = enPoint.call(head);
-    pattern += hex(code);
-    const rest = tail.length - 1;
-    if (rest) pattern += "-" + hex(code + rest);
-  }
-  return RegExp(`[${pattern}]`, "gu");
-})();
-const map = /* @__PURE__ */ (() => {
-  const object: { [_: string]: string } = {};
-  for (const row of ranges.split(",")) {
-    const [head, ...tail] = row.split(" ");
+    const [head, ...tail] = row.split(" "), rest = tail.length - 1;
     let code = enPoint.call(head);
-    for (const $ of tail) object[dePoint(code++)] = $;
+    regex += hex(code);
+    if (rest) regex += "-" + hex(code + rest);
+    for (const $ of tail) map[dePoint(code++)] = $;
   }
-  return Reflect.get.bind(null, object);
+  return [RegExp(`[${regex}]`, "gu"), Reflect.get.bind(null, map)];
 })();
 /** Case-folds. */
-export const uncase = ($: string): string => $.replace(regex, map);
+export const uncase = ($: string): string => replace.apply($, args);
