@@ -42,7 +42,7 @@
         "no-explicit-any",
         "no-invalid-regexp"
       ],
-      "tags": ["recommended", "workspace", "jsr"]
+      "tags": ["recommended", "jsr"]
     }
   },
   "tasks": {
