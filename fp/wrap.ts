@@ -30,13 +30,13 @@ export const safe =
     }
   }) as {
     <A, B, C = Error>(
-      unsafe: ($: A) => Promise<B>,
-      ifThrown?: ($: A, thrown: unknown) => Both<C>,
-    ): ($: A) => Result<C, B, true>;
-    <A, B, C = Error>(
       unsafe: ($: A) => Sync<B>,
       ifThrown?: ($: A, thrown: unknown) => Sync<C>,
     ): ($: A) => Result<C, B, false>;
+    <A, B, C = Error>(
+      unsafe: ($: A) => Promise<B>,
+      ifThrown?: ($: A, thrown: unknown) => Both<C>,
+    ): ($: A) => Result<C, B, true>;
     <A, B, C>(
       unsafe: ($: A) => Sync<B>,
       ifThrown: ($: A, thrown: unknown) => Both<C>,
@@ -83,8 +83,8 @@ export const drop = ((not: ($: any) => Both<any>) => ($: any) => {
   } else if (next) return Result.no(next);
   return Result.ok($);
 }) as {
-  <A, B>(not: ($: A) => Promise<Falsy | B>): ($: A) => Result<B, A, true>;
   <A, B>(not: ($: A) => Sync<Falsy | B>): ($: A) => Result<B, A, false>;
+  <A, B>(not: ($: A) => Promise<Falsy | B>): ($: A) => Result<B, A, true>;
 };
 /** Wraps an imperative block. */
 export const exec =
@@ -103,10 +103,10 @@ export const exec =
       return result.value.bind(get);
     })();
   }) as {
-    <A, B, C, D>(
-      block: ($: A) => AsyncGenerator<Result<B, C, boolean>, D, C>,
-    ): ($: A) => Promise<Result<B, D, false>>;
     <A, B, C, D extends boolean, E>(
       block: ($: A) => Generator<Result<B, C, D>, E, C>,
     ): ($: A) => Result<B, E, D>;
+    <A, B, C, D>(
+      block: ($: A) => AsyncGenerator<Result<B, C, boolean>, D, C>,
+    ): ($: A) => Promise<Result<B, D, false>>;
   };

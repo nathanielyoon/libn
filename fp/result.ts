@@ -8,28 +8,28 @@ export type Both<A = unknown> = Promise<A> | A;
 export type Sync<A> = A extends Promise<any> ? never : A;
 /** Chainable result type. */
 export class Result<A = any, B = any, C extends boolean = boolean> {
-  /** Creates an asynchronous failure. */
-  static no<const A>($: Promise<A>): Result<A, never, true>;
   /** Creates a synchronous failure. */
   static no<const A>($: Sync<A>): Result<A, never, false>;
+  /** Creates an asynchronous failure. */
+  static no<const A>($: Promise<A>): Result<A, never, true>;
   /** Creates a failure. */
   static no<const A>($: Both<A>): Result<A, never, boolean>;
   static no<const A>($: A): Result {
     return $ instanceof Promise ? new Result($.then(no)) : new Result($, false);
   }
-  /** Creates an asynchronous failure. */
-  static ok<const A>($: Promise<A>): Result<never, A, true>;
   /** Creates a synchronous failure. */
   static ok<const A>($: Sync<A>): Result<never, A, false>;
+  /** Creates an asynchronous failure. */
+  static ok<const A>($: Promise<A>): Result<never, A, true>;
   /** Creates a failure. */
   static ok<const A>($: Both<A>): Result<never, A, boolean>;
   static ok<const A>($: A): Result {
     return $ instanceof Promise ? new Result($.then(ok)) : new Result($, true);
   }
-  /** Creates an asynchronous result. */
-  static or<const A, const B>($: Promise<Or<A, B>>): Result<A, B, true>;
   /** Creates a synchronous result. */
   static or<const A, const B>($: Or<A, B>): Result<A, B, false>;
+  /** Creates an asynchronous result. */
+  static or<const A, const B>($: Promise<Or<A, B>>): Result<A, B, true>;
   /** Creates a result. */
   static or<const A, const B>($: Both<Or<A, B>>): Result<A, B, boolean>;
   static or($: Both<Or>): Result {
@@ -56,16 +56,16 @@ export class Result<A = any, B = any, C extends boolean = boolean> {
   protected *[Symbol.iterator](): Iterator<Result<A, B, C>, B> {
     return yield this;
   }
-  /** Applies asynchronous functions. */
-  fmap<D, E = A>(
-    ifOk: ($: B) => Promise<D>,
-    ifNo: ($: A) => Promise<E>,
-  ): Result<E, D, true>;
   /** Applies synchronous functions. */
   fmap<D, E = A>(
     ifOk: ($: B) => Sync<D>,
     ifNo?: ($: A) => Sync<E>,
   ): Result<E, D, C>;
+  /** Applies asynchronous functions. */
+  fmap<D, E = A>(
+    ifOk: ($: B) => Promise<D>,
+    ifNo: ($: A) => Promise<E>,
+  ): Result<E, D, true>;
   /** Applies functions. */
   fmap<D, E = A>(
     ifOk: ($: B) => Both<D>,
@@ -86,16 +86,16 @@ export class Result<A = any, B = any, C extends boolean = boolean> {
       ? new Result(to.then((value) => ({ state, value })))
       : new Result(to, state);
   }
-  /** Chains asynchronous functions. */
-  bind<D, E, F = D, G = E>(
-    ifOk: ($: B) => Promise<Result<D, E, boolean>> | Result<D, E, true>,
-    ifNo: ($: A) => Promise<Result<F, G, boolean>> | Result<D, E, true>,
-  ): Result<A | D | F, E | G, true>;
   /** Chains synchronous functions. */
   bind<D, E, F = D, G = E>(
     ifOk: ($: B) => Result<D, E, false>,
     ifNo?: ($: A) => Result<F, G, false>,
   ): Result<A | D | F, E | G, C>;
+  /** Chains asynchronous functions. */
+  bind<D, E, F = D, G = E>(
+    ifOk: ($: B) => Promise<Result<D, E, boolean>> | Result<D, E, true>,
+    ifNo: ($: A) => Promise<Result<F, G, boolean>> | Result<D, E, true>,
+  ): Result<A | D | F, E | G, true>;
   /** Chains functions. */
   bind<D, E, F = D, G = E>(
     ifOk: ($: B) => Both<Result<D, E, boolean>>,
