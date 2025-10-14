@@ -5,7 +5,7 @@
   "exports": {
     ".": "./mod.ts",
     "./create": "./create.ts",
-    "./query": "./query.ts"
+    "./select": "./select.ts"
   },
   "imports": {
     "@b-fuze/deno-dom": "jsr:@b-fuze/deno-dom@^0.1.56"

@@ -1,4 +1,2 @@
-import { qa, qs } from "./query.ts";
-import { ce } from "./create.ts";
-
-export { ce, qa, qs };
+export { ce } from "./create.ts";
+export { qa, qs } from "./select.ts";
