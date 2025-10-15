@@ -18,8 +18,7 @@ import {
   unwide,
 } from "@libn/text/normalize";
 import { createRanges, uncase } from "@libn/text/case";
-import { includes } from "@libn/text/includes";
-import { distance } from "@libn/text/distance";
+import { distance, includes } from "@libn/text/fuzzy";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("normalize", async (t) => {
