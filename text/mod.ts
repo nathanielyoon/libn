@@ -3,6 +3,7 @@
  *
  * @example Fuzzy comparison
  * ```ts
+ * import { distance, includes } from "@libn/text/fuzzy"
  * import { assert } from "@std/assert";
  *
  * assert(includes("a b c", "abc"));
@@ -14,7 +15,7 @@
  * @module text
  */
 
-import {
+export {
   uncode,
   unhtml,
   unline,
@@ -23,19 +24,5 @@ import {
   unrexp,
   unwide,
 } from "./normalize.ts";
-import { uncase } from "./case.ts";
-import { includes } from "./includes.ts";
-import { distance } from "./distance.ts";
-
-export {
-  distance,
-  includes,
-  uncase,
-  uncode,
-  unhtml,
-  unline,
-  unlone,
-  unmark,
-  unrexp,
-  unwide,
-};
+export { uncase } from "./case.ts";
+export { distance, includes } from "./fuzzy.ts";
