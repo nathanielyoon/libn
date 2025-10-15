@@ -1,5 +1,5 @@
 import { unrexp } from "@libn/text/normalize";
-import type { Result } from "@libn/fp/or";
+import type { Result } from "@libn/fp/result";
 import { B16, B32, B64, H32, U64 } from "@libn/base";
 import type { Base, Data, Fail, Format, Type } from "./schema.ts";
 import { flat } from "@libn/json/build";

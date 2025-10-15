@@ -1,4 +1,4 @@
-import { fail, type Ok, pass, type Result } from "./or.ts";
+import { fail, type Ok, pass, type Result } from "@libn/fp/result";
 
 /** Aggregates results. */
 export const join = <const A extends [Result, ...Result[]]>(
