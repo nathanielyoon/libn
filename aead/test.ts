@@ -1,72 +1,12 @@
-import { expect } from "@std/expect/expect";
+import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { chacha, hchacha, xor } from "@libn/aead/chacha";
 import { poly } from "@libn/aead/poly";
 import { polyXchacha, xchachaPoly } from "@libn/aead/aead";
 import { cipher, decrypt, encrypt } from "@libn/aead";
+import vectors from "./vectors.json" with { type: "json" };
 
-Deno.test("spec", async (t) => {
-  const vectors = await import("./vectors.json", { with: { type: "json" } });
-  const u32 = ($: string) => new Uint32Array(Uint8Array.fromHex($).buffer);
-  await t.step("chacha", () =>
-    vectors.default.chacha.forEach(($) => {
-      const state = new Uint32Array(16);
-      const [iv0, iv1, iv2] = u32($.iv);
-      chacha(u32($.key), $.count, iv0, iv1, iv2, state);
-      expect(
-        new Uint8Array(state.buffer).subarray(0, $.state.length >> 1),
-      ).toStrictEqual(Uint8Array.fromHex($.state));
-    }));
-  await t.step("hchacha", () =>
-    vectors.default.hchacha.forEach(($) => {
-      expect(
-        hchacha(Uint8Array.fromHex($.key), Uint8Array.fromHex($.iv)),
-      ).toStrictEqual(u32($.subkey));
-    }));
-  await t.step("xor", () =>
-    vectors.default.xor.forEach(($) => {
-      const plaintext = Uint8Array.fromHex($.plaintext);
-      const [iv0, iv1, iv2] = u32($.iv);
-      xor(u32($.key), iv0, iv1, iv2, plaintext, $.count);
-      expect(plaintext).toStrictEqual(Uint8Array.fromHex($.ciphertext));
-    }));
-  await t.step("poly", () =>
-    vectors.default.poly.forEach(($) => {
-      expect(poly(u32($.key), Uint8Array.fromHex($.message))).toStrictEqual(
-        Uint8Array.fromHex($.tag),
-      );
-    }));
-  await t.step("aead", () =>
-    vectors.default.aead.forEach(($) => {
-      const key = Uint8Array.fromHex($.key);
-      const iv = Uint8Array.fromHex($.iv);
-      const plaintext = Uint8Array.fromHex($.plaintext);
-      const ciphertext = Uint8Array.fromHex($.ciphertext);
-      const ad = Uint8Array.fromHex($.ad);
-      const tag = Uint8Array.fromHex($.tag);
-      if ($.result) {
-        const text = new Uint8Array(plaintext);
-        expect(xchachaPoly(key, iv, text, ad)).toStrictEqual(tag);
-        expect(text).toStrictEqual(ciphertext);
-        expect(polyXchacha(key, iv, tag, text, ad)).toStrictEqual(true);
-        expect(text).toStrictEqual(plaintext);
-      } else {
-        expect(polyXchacha(key, iv, tag, ciphertext, ad)).toStrictEqual(false);
-      }
-    }));
-  await t.step("cipher", () =>
-    vectors.default.cipher.forEach(($) => {
-      const key = Uint8Array.fromHex($.key);
-      const iv = Uint8Array.fromHex($.iv);
-      const plaintext = Uint8Array.fromHex($.plaintext);
-      const text = new Uint8Array(plaintext.length);
-      cipher(key, iv, text);
-      expect(text).toStrictEqual(Uint8Array.fromHex($.keystream));
-      text.set(plaintext);
-      cipher(key, iv, text);
-      expect(text).toStrictEqual(Uint8Array.fromHex($.ciphertext));
-    }));
-});
+const u32 = ($: string) => new Uint32Array(Uint8Array.fromHex($).buffer);
 const fcRight = ($: number) => fc.uint8Array({ minLength: $, maxLength: $ });
 const fcWrong = ($: number) =>
   fc.oneof(
@@ -78,44 +18,132 @@ const fcWrongLength = <const A extends number[]>(...lengths: A) =>
     fc.tuple(
       ...lengths.map(($, z) => z !== index ? fcRight($) : fcWrong($)),
     ) as fc.Arbitrary<{ [_ in keyof A]: Uint8Array<ArrayBuffer> }>));
-Deno.test("xchachaPoly() rejects wrong-size arguments", () =>
-  fc.assert(fc.property(fcWrongLength(32, 24), ($) => {
-    expect(xchachaPoly(...$, new Uint8Array(), new Uint8Array())).toBeNull();
-  })));
-Deno.test("polyXchacha() rejects wrong-size arguments", () =>
-  fc.assert(fc.property(fcWrongLength(32, 24, 16), ($) => {
-    expect(polyXchacha(...$, new Uint8Array(), new Uint8Array())).toBeNull();
-  })));
-Deno.test("encrypt() rejects wrong-size arguments", () =>
-  fc.assert(fc.property(fcWrongLength(32), ($) => {
-    expect(encrypt(...$, new Uint8Array())).toBeNull();
-  })));
-Deno.test("decrypt() rejects wrong-size arguments", () => {
-  fc.assert(fc.property(fcWrongLength(32), ($) => {
-    expect(decrypt(...$, new Uint8Array(40))).toBeNull();
-  }));
-  fc.assert(fc.property(
-    fc.uint8Array({ minLength: 32, maxLength: 32 }),
-    fc.uint8Array({ maxLength: 39 }),
-    (key, text) => {
-      expect(decrypt(key, text)).toBeNull();
-    },
-  ));
+Deno.test("chacha", async (t) => {
+  await t.step("chacha() passes reference vectors", () => {
+    for (const $ of vectors.chacha) {
+      const state = new Uint32Array(16);
+      const [iv0, iv1, iv2] = u32($.iv);
+      chacha(u32($.key), $.count, iv0, iv1, iv2, state);
+      assertEquals(
+        new Uint8Array(state.buffer).subarray(0, $.state.length >> 1),
+        Uint8Array.fromHex($.state),
+      );
+    }
+  });
+  await t.step("hchacha() passes reference vectors", () => {
+    for (const $ of vectors.hchacha) {
+      assertEquals(
+        hchacha(Uint8Array.fromHex($.key), Uint8Array.fromHex($.iv)),
+        u32($.subkey),
+      );
+    }
+  });
+  await t.step("xor() passes reference vectors", () => {
+    for (const $ of vectors.xor) {
+      const plaintext = Uint8Array.fromHex($.plaintext);
+      const [iv0, iv1, iv2] = u32($.iv);
+      xor(u32($.key), iv0, iv1, iv2, plaintext, $.count);
+      assertEquals(plaintext, Uint8Array.fromHex($.ciphertext));
+    }
+  });
 });
-Deno.test("encrypt()", () =>
-  fc.assert(fc.property(
-    fcRight(32),
-    fc.uint8Array(),
-    fc.uint8Array(),
-    (key, plaintext, data) => {
-      const textWithAd = encrypt(key, plaintext, data);
-      expect(textWithAd).not.toBeNull();
-      expect(decrypt(key, textWithAd!, data)).toStrictEqual(plaintext);
-      const textWithoutAd = encrypt(key, plaintext);
-      expect(textWithoutAd).not.toBeNull();
-      expect(decrypt(key, textWithoutAd!)).toStrictEqual(plaintext);
-    },
-  )));
+Deno.test("poly", async (t) => {
+  await t.step("poly() passes reference vectors", () => {
+    for (const $ of vectors.poly) {
+      assertEquals(
+        poly(u32($.key), Uint8Array.fromHex($.message)),
+        Uint8Array.fromHex($.tag),
+      );
+    }
+  });
+});
+Deno.test("aead", async (t) => {
+  await t.step("xchachapoly() passes reference vectors", () => {
+    for (const $ of vectors.xchachaPoly) {
+      const plaintext = Uint8Array.fromHex($.plaintext);
+      assertEquals(
+        xchachaPoly(
+          Uint8Array.fromHex($.key),
+          Uint8Array.fromHex($.iv),
+          plaintext,
+          Uint8Array.fromHex($.ad),
+        ),
+        Uint8Array.fromHex($.tag),
+      );
+      assertEquals(plaintext, Uint8Array.fromHex($.ciphertext));
+    }
+  });
+  await t.step("polyxchacha() passes reference vectors", () => {
+    for (const $ of vectors.polyXchacha) {
+      const key = Uint8Array.fromHex($.key);
+      const iv = Uint8Array.fromHex($.iv);
+      const ciphertext = Uint8Array.fromHex($.ciphertext);
+      const ad = Uint8Array.fromHex($.ad);
+      const tag = Uint8Array.fromHex($.tag);
+      if ($.result) {
+        assertEquals(polyXchacha(key, iv, tag, ciphertext, ad), true);
+        assertEquals(ciphertext, Uint8Array.fromHex($.plaintext));
+      } else assertEquals(polyXchacha(key, iv, tag, ciphertext, ad), false);
+    }
+  });
+  await t.step("xchachaPoly() rejects wrong-size arguments", () => {
+    fc.assert(fc.property(fcWrongLength(32, 24), ($) => {
+      assertEquals(xchachaPoly(...$, new Uint8Array(), new Uint8Array()), null);
+    }));
+  });
+  await t.step("polyXchacha() rejects wrong-size arguments", () => {
+    fc.assert(fc.property(fcWrongLength(32, 24, 16), ($) => {
+      assertEquals(polyXchacha(...$, new Uint8Array(), new Uint8Array()), null);
+    }));
+  });
+});
+Deno.test("mod", async (t) => {
+  await t.step("cipher() passes reference vectors", () => {
+    for (const $ of vectors.cipher) {
+      const key = Uint8Array.fromHex($.key);
+      const iv = Uint8Array.fromHex($.iv);
+      const plaintext = Uint8Array.fromHex($.plaintext);
+      const text = new Uint8Array(plaintext.length);
+      cipher(key, iv, text);
+      assertEquals(text, Uint8Array.fromHex($.keystream));
+      text.set(plaintext);
+      cipher(key, iv, text);
+      assertEquals(text, Uint8Array.fromHex($.ciphertext));
+    }
+  });
+  await t.step("mod round-trips losslessly", () => {
+    fc.assert(fc.property(
+      fcRight(32),
+      fc.uint8Array(),
+      fc.uint8Array(),
+      (key, plaintext, data) => {
+        const textWithAd = encrypt(key, plaintext, data);
+        assert(textWithAd);
+        assertEquals(decrypt(key, textWithAd!, data), plaintext);
+        const textWithoutAd = encrypt(key, plaintext);
+        assert(textWithoutAd);
+        assertEquals(decrypt(key, textWithoutAd!), plaintext);
+      },
+    ));
+  });
+  await t.step("encrypt() rejects wrong-size arguments", () => {
+    fc.assert(fc.property(fcWrongLength(32), ($) => {
+      assertEquals(encrypt(...$, new Uint8Array()), null);
+    }));
+  });
+  await t.step("decrypt() rejects wrong-size arguments", () => {
+    fc.assert(fc.property(fcWrongLength(32), ($) => {
+      assertEquals(decrypt(...$, new Uint8Array(40)), null);
+    }));
+    fc.assert(fc.property(
+      fcRight(32),
+      fc.uint8Array({ maxLength: 39 }),
+      (key, text) => {
+        assertEquals(decrypt(key, text), null);
+      },
+    ));
+  });
+});
 import.meta.main && await Promise.all([
   fetch(
     "https://www.rfc-editor.org/rfc/rfc8439.txt",
@@ -222,7 +250,7 @@ import.meta.main && await Promise.all([
       ([key, message, tag]) => ({ key, message, tag }),
     ),
   ],
-  aead: [
+  ...[
     {
       key: xchacha["A.3.1"][2],
       iv: xchacha["A.3.1"][3],
@@ -243,7 +271,17 @@ import.meta.main && await Promise.all([
         result: $.result === "valid",
       }))
     ),
-  ],
+  ].reduce<{ [_: string]: { [_: string]: string | boolean }[] }>(
+    (to, $) => {
+      if ($.result) {
+        const { result: _, ...rest } = $;
+        to.xchachaPoly.push(rest);
+      }
+      to.polyXchacha.push($);
+      return to;
+    },
+    { xchachaPoly: [], polyXchacha: [] },
+  ),
 })).then(($) =>
   Deno.writeTextFile(
     new URL(import.meta.resolve("./vectors.json")).pathname,
