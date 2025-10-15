@@ -1,20 +1,19 @@
 /** Failure/success discriminated union. */
-export type Or<A = any, B = any> =
+export type Result<A = any, B = any> =
   & ({ state: false; value: A } | { state: true; value: B })
-  & { [Symbol.iterator](): Generator<Or<A, B>, B, any> };
+  & { [Symbol.iterator](): Generator<Result<A, B>, B, any> };
 /** Failure value. */
-export type No<A extends Or> = Extract<A, { state: false }>["value"];
+export type No<A extends Result> = Extract<A, { state: false }>["value"];
 /** Success value. */
-export type Ok<A extends Or> = Extract<A, { state: true }>["value"];
-/** Generator function to bind. */
-export function* generate<A, B>(this: Or<A, B>): Generator<Or<A, B>, B, any> {
+export type Ok<A extends Result> = Extract<A, { state: true }>["value"];
+function* generate<A, B>(this: Result<A, B>): Generator<Result<A, B>, B, any> {
   return yield this;
 }
 /** Creates a success. */
-export const fail = <const A>($: A): Or<A, never> => (
+export const fail = <const A>($: A): Result<A, never> => (
   { state: false, value: $, [Symbol.iterator]: generate }
 );
 /** Creates a failure. */
-export const pass = <const A>($: A): Or<never, A> => (
+export const pass = <const A>($: A): Result<never, A> => (
   { state: true, value: $, [Symbol.iterator]: generate }
 );

@@ -1,9 +1,9 @@
-import { fail, type Ok, type Or, pass } from "./or.ts";
+import { fail, type Ok, pass, type Result } from "./or.ts";
 
 /** Aggregates results. */
-export const join = <const A extends [Or, ...Or[]]>(
+export const join = <const A extends [Result, ...Result[]]>(
   $: A,
-): Or<A, { [B in keyof A]: Ok<A[B]> }> => {
+): Result<A, { [B in keyof A]: Ok<A[B]> }> => {
   const ok = Array($.length) as { [B in keyof A]: Ok<A[B]> };
   let z = 0;
   do if ($[z].state) ok[z] = $[z].value;
@@ -32,23 +32,23 @@ export const safe =
     <A, B, C = Error>(
       unsafe: B extends Promise<any> ? never : ($: A) => B,
       or?: C extends Promise<any> ? never : ($: A, cause: unknown) => C,
-    ): ($: A) => Or<C, B>;
+    ): ($: A) => Result<C, B>;
     <A, B, C = Error>(
       unsafe: ($: A) => Promise<B>,
       or?: ($: A, cause: unknown) => C | Promise<C>,
-    ): ($: A) => Promise<Or<C, B>>;
+    ): ($: A) => Promise<Result<C, B>>;
   };
 /** Runs an imperative block, returning failures early. */
-export const exec = ((block: () => Generator<Or> | AsyncGenerator<Or>) => {
-  const generator = block();
-  const next = ($?: any): Or | Promise<Or> =>
-    sync(generator.next($), ({ done, value }): Or | Promise<Or> => {
+export const exec = (($: () => Generator<Result> | AsyncGenerator<Result>) => {
+  const generator = $();
+  const next = (prev?: any): Result | Promise<Result> =>
+    sync(generator.next(prev), ({ done, value }): Result | Promise<Result> => {
       if (done) return pass(value);
       else if (value.state) return next(value.value);
       return value;
     });
   return next();
 }) as {
-  <A, B, C>(block: () => Generator<Or<A, B>, C, B>): Or<A, C>;
-  <A, B, C>(block: () => AsyncGenerator<Or<A, B>, C, B>): Promise<Or<A, C>>;
+  <A, B, C>($: () => Generator<Result<A, B>, C, B>): Result<A, C>;
+  <A, B, C>($: () => AsyncGenerator<Result<A, B>, C, B>): Promise<Result<A, C>>;
 };

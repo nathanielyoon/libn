@@ -1,5 +1,5 @@
 import { unrexp } from "@libn/text/normalize";
-import type { Or } from "@libn/fp/or";
+import type { Result } from "@libn/fp/or";
 import { B16, B32, B64, H32, U64 } from "@libn/base";
 import type { Base, Data, Fail, Format, Type } from "./schema.ts";
 import { flat } from "@libn/json/build";
@@ -115,7 +115,7 @@ const parsers = ($: Type): string => {
 /** Creates a parsing function. */
 export const parser = <A extends Type>(
   type: A | { type: A },
-): ($: unknown) => Or<Fail, Data<A>> =>
+): ($: unknown) => Result<Fail, Data<A>> =>
   Function(
     "raw",
     `let path="",data;const errors=[];${
