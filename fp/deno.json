@@ -5,7 +5,6 @@
   "exports": {
     ".": "./mod.ts",
     "./or": "./or.ts",
-    "./result": "./result.ts",
     "./wrap": "./wrap.ts"
   }
 }
