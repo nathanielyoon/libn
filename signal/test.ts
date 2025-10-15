@@ -1,4 +1,4 @@
-import { expect } from "@std/expect/expect";
+import { assertEquals, assertLess, assertThrows, fail } from "@std/assert";
 import {
   assertSpyCall,
   assertSpyCalls,
@@ -15,7 +15,6 @@ import {
   type Setter,
   signal,
 } from "@libn/signal/system";
-import { fail } from "@std/assert/fail";
 
 Deno.test("spec", async (t) => {
   await t.step("alien-signals computed", () => {
@@ -28,7 +27,7 @@ Deno.test("spec", async (t) => {
       src(1); // c1 -> dirty, c2 -> toCheckDirty, c3 -> toCheckDirty
       c2(); // c1 -> none, c2 -> none
       src(3); // c1 -> dirty, c2 -> toCheckDirty
-      expect(c3()).toStrictEqual(1);
+      assertEquals(c3(), 1);
     }
     { // should propagate updated source value through chained computations
       const src = signal(0);
@@ -36,9 +35,9 @@ Deno.test("spec", async (t) => {
       const b = derive(() => a() % 2);
       const c = derive(() => src());
       const d = derive(() => b() + c());
-      expect(d()).toStrictEqual(0);
+      assertEquals(d(), 0);
       src(2);
-      expect(d()).toStrictEqual(2);
+      assertEquals(d(), 2);
     }
     { // should handle flags are indirectly updated during checkDirty
       const a = signal(false);
@@ -51,9 +50,9 @@ Deno.test("spec", async (t) => {
         c();
         return b();
       });
-      expect(d()).toStrictEqual(false);
+      assertEquals(d(), false);
       a(true);
-      expect(d()).toStrictEqual(true);
+      assertEquals(d(), true);
     }
     { // should not update if the signal value is reverted
       let times = 0;
@@ -63,11 +62,11 @@ Deno.test("spec", async (t) => {
         return src();
       });
       c1();
-      expect(times).toStrictEqual(1);
+      assertEquals(times, 1);
       src(1);
       src(0);
       c1();
-      expect(times).toStrictEqual(1);
+      assertEquals(times, 1);
     }
   });
   await t.step("alien-signals effect", () => {
@@ -81,12 +80,12 @@ Deno.test("spec", async (t) => {
       const stopEffect = effect(() => {
         b();
       });
-      expect(bRunTimes).toStrictEqual(1);
+      assertEquals(bRunTimes, 1);
       a(2);
-      expect(bRunTimes).toStrictEqual(2);
+      assertEquals(bRunTimes, 2);
       stopEffect();
       a(3);
-      expect(bRunTimes).toStrictEqual(2);
+      assertEquals(bRunTimes, 2);
     }
     { // should not run untracked inner effect
       const a = signal(3);
@@ -153,7 +152,7 @@ Deno.test("spec", async (t) => {
         b(1);
         a(1);
       });
-      expect(order).toStrictEqual(["first inner", "last inner"]);
+      assertEquals(order, ["first inner", "last inner"]);
     }
     { // should trigger inner effects in sequence in effect scope
       const a = signal(0);
@@ -175,7 +174,7 @@ Deno.test("spec", async (t) => {
         b(1);
         a(1);
       });
-      expect(order).toStrictEqual(["first inner", "last inner"]);
+      assertEquals(order, ["first inner", "last inner"]);
     }
     { // should custom effect support batch
       const batchEffect = (fn: () => void) => effect(() => batch(fn));
@@ -197,7 +196,7 @@ Deno.test("spec", async (t) => {
       batchEffect(() => {
         aa();
       });
-      expect(logs).toStrictEqual(["bb", "aa-0", "aa-1", "bb"]);
+      assertEquals(logs, ["bb", "aa-0", "aa-1", "bb"]);
     }
     { // should duplicate subscribers do not affect the notify order
       const src1 = signal(0);
@@ -219,7 +218,7 @@ Deno.test("spec", async (t) => {
       src2(1); // src1.subs: a -> b -> a
       order.length = 0;
       src1(src1() + 1);
-      expect(order).toStrictEqual(["a", "b"]);
+      assertEquals(order, ["a", "b"]);
     }
     { // should handle side effect with inner effects
       const a = signal(0);
@@ -234,11 +233,11 @@ Deno.test("spec", async (t) => {
           b();
           order.push("b");
         });
-        expect(order).toStrictEqual(["a", "b"]);
+        assertEquals(order, ["a", "b"]);
         order.length = 0;
         b(1);
         a(1);
-        expect(order).toStrictEqual(["b", "a"]);
+        assertEquals(order, ["b", "a"]);
       });
     }
     { // should handle flags are indirectly updated during checkDirty
@@ -257,9 +256,9 @@ Deno.test("spec", async (t) => {
         d();
         triggers++;
       });
-      expect(triggers).toStrictEqual(1);
+      assertEquals(triggers, 1);
       a(true);
-      expect(triggers).toStrictEqual(2);
+      assertEquals(triggers, 2);
     }
   });
   await t.step("alien-signals effectScope", () => {
@@ -271,15 +270,15 @@ Deno.test("spec", async (t) => {
           triggers++;
           count();
         });
-        expect(triggers).toStrictEqual(1);
+        assertEquals(triggers, 1);
         count(2);
-        expect(triggers).toStrictEqual(2);
+        assertEquals(triggers, 2);
       });
       count(3);
-      expect(triggers).toStrictEqual(3);
+      assertEquals(triggers, 3);
       stopScope();
       count(4);
-      expect(triggers).toStrictEqual(3);
+      assertEquals(triggers, 3);
     }
     { // should dispose inner effects if created in an effect
       const source = signal(1);
@@ -291,12 +290,12 @@ Deno.test("spec", async (t) => {
             triggers++;
           });
         });
-        expect(triggers).toStrictEqual(1);
+        assertEquals(triggers, 1);
         source(2);
-        expect(triggers).toStrictEqual(2);
+        assertEquals(triggers, 2);
         dispose();
         source(3);
-        expect(triggers).toStrictEqual(2);
+        assertEquals(triggers, 2);
       });
     }
     { // should track signal updates in an inner scope when accessed by an outer effect
@@ -308,9 +307,9 @@ Deno.test("spec", async (t) => {
         });
         triggers++;
       });
-      expect(triggers).toStrictEqual(1);
+      assertEquals(triggers, 1);
       source(2);
-      expect(triggers).toStrictEqual(2);
+      assertEquals(triggers, 2);
     }
   });
   await t.step("alien-signals issue_48", () => {
@@ -408,11 +407,11 @@ Deno.test("spec", async (t) => {
         activate(currentSub);
         return value;
       });
-      expect(c()).toStrictEqual(0);
-      expect(deriveTriggerTimes).toStrictEqual(1);
+      assertEquals(c(), 0);
+      assertEquals(deriveTriggerTimes, 1);
       src(1), src(2), src(3);
-      expect(c()).toStrictEqual(0);
-      expect(deriveTriggerTimes).toStrictEqual(1);
+      assertEquals(c(), 0);
+      assertEquals(deriveTriggerTimes, 1);
     }
     { // should pause tracking in effect
       const src = signal(0);
@@ -426,19 +425,19 @@ Deno.test("spec", async (t) => {
           activate(currentSub);
         }
       });
-      expect(effectTriggerTimes).toStrictEqual(1);
+      assertEquals(effectTriggerTimes, 1);
       is(1);
-      expect(effectTriggerTimes).toStrictEqual(2);
+      assertEquals(effectTriggerTimes, 2);
       src(1), src(2), src(3);
-      expect(effectTriggerTimes).toStrictEqual(2);
+      assertEquals(effectTriggerTimes, 2);
       is(2);
-      expect(effectTriggerTimes).toStrictEqual(3);
+      assertEquals(effectTriggerTimes, 3);
       src(4), src(5), src(6);
-      expect(effectTriggerTimes).toStrictEqual(3);
+      assertEquals(effectTriggerTimes, 3);
       is(0);
-      expect(effectTriggerTimes).toStrictEqual(4);
+      assertEquals(effectTriggerTimes, 4);
       src(7), src(8), src(9);
-      expect(effectTriggerTimes).toStrictEqual(4);
+      assertEquals(effectTriggerTimes, 4);
     }
     { // should pause tracking in effect scope
       const src = signal(0);
@@ -451,16 +450,16 @@ Deno.test("spec", async (t) => {
           activate(currentSub);
         });
       });
-      expect(effectTriggerTimes).toStrictEqual(1);
+      assertEquals(effectTriggerTimes, 1);
       src(1), src(2), src(3);
-      expect(effectTriggerTimes).toStrictEqual(1);
+      assertEquals(effectTriggerTimes, 1);
     }
   });
   await t.step("preact signal", () => {
     { // should return value
       const v = [1, 2];
       const s = signal(v);
-      expect(s()).toStrictEqual(v);
+      assertEquals(s(), v);
     }
     { // should notify other listeners of changes after one listener is disposed
       const s = signal(0);
@@ -665,7 +664,14 @@ Deno.test("spec", async (t) => {
     { // should allow disposing the effect multiple times
       const dispose = effect(() => undefined);
       dispose();
-      expect(() => dispose()).not.toThrow();
+      assertThrows(() => {
+        try {
+          dispose();
+        } catch {
+          return;
+        }
+        throw Error("ok");
+      });
     }
     { // should allow disposing a running effect
       const a = signal(0);
@@ -737,15 +743,15 @@ Deno.test("spec", async (t) => {
       const a = signal("a");
       const b = signal("b");
       const c = derive(() => a() + b());
-      expect(c()).toStrictEqual("ab");
+      assertEquals(c(), "ab");
     }
     { // should return updated value
       const a = signal("a");
       const b = signal("b");
       const c = derive(() => a() + b());
-      expect(c()).toStrictEqual("ab");
+      assertEquals(c(), "ab");
       a("aa");
-      expect(c()).toStrictEqual("aab");
+      assertEquals(c(), "aab");
     }
     { // should be lazily computed on demand
       const a = signal("a");
@@ -781,26 +787,26 @@ Deno.test("spec", async (t) => {
         return cond() ? a() : b();
       });
       const c = derive($spy);
-      expect(c()).toStrictEqual("a");
+      assertEquals(c(), "a");
       assertSpyCalls($spy, 1);
       b("bb");
-      expect(c()).toStrictEqual("a");
+      assertEquals(c(), "a");
       assertSpyCalls($spy, 1);
       cond(false);
-      expect(c()).toStrictEqual("bb");
+      assertEquals(c(), "bb");
       assertSpyCalls($spy, 2);
       $spy.calls.length = 0;
       a("aaa");
-      expect(c()).toStrictEqual("bb");
+      assertEquals(c(), "bb");
       assertSpyCalls($spy, 0);
     }
     { // should consider undefined value separate from uninitialized value
       const a = signal(0);
       const $spy = spy(() => undefined);
       const c = derive($spy);
-      expect(c()).toStrictEqual(undefined);
+      assertEquals(c(), undefined);
       a(1);
-      expect(c()).toStrictEqual(undefined);
+      assertEquals(c(), undefined);
       assertSpyCalls($spy, 1);
     }
     { // should not leak errors raised by dependencies
@@ -816,9 +822,9 @@ Deno.test("spec", async (t) => {
           return "ok";
         }
       });
-      expect(c()).toStrictEqual("ok");
+      assertEquals(c(), "ok");
       a(1);
-      expect(c()).toStrictEqual("ok");
+      assertEquals(c(), "ok");
     }
     { // should propagate notifications even right after first subscription
       const a = signal(0);
@@ -842,7 +848,7 @@ Deno.test("spec", async (t) => {
       effect(() => {
         c();
       });
-      expect(c()).toStrictEqual(1);
+      assertEquals(c(), 1);
     }
     { // should propagate notification to other listeners after one listener is disposed
       const s = signal(0);
@@ -926,7 +932,7 @@ Deno.test("spec", async (t) => {
         return a() + b();
       });
       const c = derive(compute);
-      expect(c()).toStrictEqual("ab");
+      assertEquals(c(), "ab");
       assertSpyCalls(compute, 1);
       compute.calls.length = 0;
       a("aa");
@@ -948,7 +954,7 @@ Deno.test("spec", async (t) => {
       const compute = spy(() => "d: " + c());
       const d = derive(compute);
       // Trigger read
-      expect(d()).toStrictEqual("d: 3");
+      assertEquals(d(), "d: 3");
       assertSpyCalls(compute, 1);
       compute.calls.length = 0;
       a(4);
@@ -968,10 +974,10 @@ Deno.test("spec", async (t) => {
       const c = derive(() => a());
       const $spy = spy(() => b() + " " + c());
       const d = derive($spy);
-      expect(d()).toStrictEqual("a a");
+      assertEquals(d(), "a a");
       assertSpyCalls($spy, 1);
       a("aa");
-      expect(d()).toStrictEqual("aa aa");
+      assertEquals(d(), "aa aa");
       assertSpyCalls($spy, 2);
     }
     { // should only update every signal once (diamond graph + tail)
@@ -989,10 +995,10 @@ Deno.test("spec", async (t) => {
       const d = derive(() => b() + " " + c());
       const $spy = spy(() => d());
       const e = derive($spy);
-      expect(e()).toStrictEqual("a a");
+      assertEquals(e(), "a a");
       assertSpyCalls($spy, 1);
       a("aa");
-      expect(e()).toStrictEqual("aa aa");
+      assertEquals(e(), "aa aa");
       assertSpyCalls($spy, 2);
     }
     { // should bail out if result is the same
@@ -1005,10 +1011,10 @@ Deno.test("spec", async (t) => {
       });
       const $spy = spy(() => b());
       const c = derive($spy);
-      expect(c()).toStrictEqual("foo");
+      assertEquals(c(), "foo");
       assertSpyCalls($spy, 1);
       a("aa");
-      expect(c()).toStrictEqual("foo");
+      assertEquals(c(), "foo");
       assertSpyCalls($spy, 1);
     }
     { // should only update every signal once (jagged diamond graph + tails)
@@ -1035,36 +1041,36 @@ Deno.test("spec", async (t) => {
       const f = derive(fSpy);
       const gSpy: Spy<any, [], string> = spy(() => (order.push(gSpy), e()));
       const g = derive(gSpy);
-      expect(f()).toStrictEqual("a a");
+      assertEquals(f(), "a a");
       assertSpyCalls(fSpy, 1);
-      expect(g()).toStrictEqual("a a");
+      assertEquals(g(), "a a");
       assertSpyCalls(gSpy, 1);
       order.length = 0;
       eSpy.calls.length = 0;
       fSpy.calls.length = 0;
       gSpy.calls.length = 0;
       a("b");
-      expect(e()).toStrictEqual("b b");
+      assertEquals(e(), "b b");
       assertSpyCalls(eSpy, 1);
-      expect(f()).toStrictEqual("b b");
+      assertEquals(f(), "b b");
       assertSpyCalls(fSpy, 1);
-      expect(g()).toStrictEqual("b b");
+      assertEquals(g(), "b b");
       assertSpyCalls(gSpy, 1);
       order.length = 0;
       eSpy.calls.length = 0;
       fSpy.calls.length = 0;
       gSpy.calls.length = 0;
       a("c");
-      expect(e()).toStrictEqual("c c");
+      assertEquals(e(), "c c");
       assertSpyCalls(eSpy, 1);
-      expect(f()).toStrictEqual("c c");
+      assertEquals(f(), "c c");
       assertSpyCalls(fSpy, 1);
-      expect(g()).toStrictEqual("c c");
+      assertEquals(g(), "c c");
       assertSpyCalls(gSpy, 1);
       // top to bottom
-      expect(order.indexOf(eSpy)).toBeLessThan(order.indexOf(fSpy));
+      assertLess(order.indexOf(eSpy), order.indexOf(fSpy));
       // left to right
-      expect(order.indexOf(fSpy)).toBeLessThan(order.indexOf(gSpy));
+      assertLess(order.indexOf(fSpy), order.indexOf(gSpy));
     }
     { // should only subscribe to signals listened to
       //    *A
@@ -1074,10 +1080,10 @@ Deno.test("spec", async (t) => {
       const b = derive(() => a());
       const $spy = spy(() => a());
       derive($spy);
-      expect(b()).toStrictEqual("a");
+      assertEquals(b(), "a");
       assertSpyCalls($spy, 0);
       a("aa");
-      expect(b()).toStrictEqual("aa");
+      assertEquals(b(), "aa");
       assertSpyCalls($spy, 0);
     }
     { // should only subscribe to signals listened to
@@ -1099,15 +1105,15 @@ Deno.test("spec", async (t) => {
       const unsub = effect(() => {
         result = c();
       });
-      expect(result).toStrictEqual("a");
-      expect(d()).toStrictEqual("a");
+      assertEquals(result, "a");
+      assertEquals(d(), "a");
       spyB.calls.length = 0;
       spyC.calls.length = 0;
       unsub();
       a("aa");
       assertSpyCalls(spyB, 0);
       assertSpyCalls(spyC, 0);
-      expect(d()).toStrictEqual("aa");
+      assertEquals(d(), "aa");
     }
     { // should ensure subs update even if one dep unmarks it
       // In this scenario "C" always returns the same value. When "A"
@@ -1127,7 +1133,7 @@ Deno.test("spec", async (t) => {
       });
       const $spy = spy(() => b() + " " + c());
       const d = derive($spy);
-      expect(d()).toStrictEqual("a c");
+      assertEquals(d(), "a c");
       $spy.calls.length = 0;
       a("aa");
       d();
@@ -1154,27 +1160,21 @@ Deno.test("spec", async (t) => {
       });
       const $spy = spy(() => b() + " " + c() + " " + d());
       const e = derive($spy);
-      expect(e()).toStrictEqual("a c d");
+      assertEquals(e(), "a c d");
       $spy.calls.length = 0;
       a("aa");
       e();
       assertSpyCall($spy, 0, { returned: "aa c d" });
     }
-    // { // should throw when writing to computeds
-    //   const a = signal("a");
-    //   const b = derive(() => a());
-    //   const fn = () => ((b as Signal).value = "aa");
-    //   expect(fn).toThrow();
-    // }
     { // should keep graph consistent on errors during activation
       const a = signal(0);
       const b = derive(() => {
         throw new Error("fail");
       });
       const c = derive(() => a());
-      expect(() => b()).toThrow("fail");
+      assertThrows(() => b(), Error, "fail");
       a(1);
-      expect(c()).toStrictEqual(1);
+      assertEquals(c(), 1);
     }
     { // should keep graph consistent on errors in computeds
       const a = signal(0);
@@ -1183,21 +1183,21 @@ Deno.test("spec", async (t) => {
         return a();
       });
       const c = derive(() => b());
-      expect(c()).toStrictEqual(0);
+      assertEquals(c(), 0);
       a(1);
-      expect(() => b()).toThrow("fail");
+      assertThrows(() => b(), Error, "fail");
       a(2);
-      expect(c()).toStrictEqual(2);
+      assertEquals(c(), 2);
     }
     { // should support lazy branches
       const a = signal(0);
       const b = derive(() => a());
       const c = derive(() => (a() > 0 ? a() : b()));
-      expect(c()).toStrictEqual(0);
+      assertEquals(c(), 0);
       a(1);
-      expect(c()).toStrictEqual(1);
+      assertEquals(c(), 1);
       a(0);
-      expect(c()).toStrictEqual(0);
+      assertEquals(c(), 0);
     }
     { // should not update a sub if all deps unmark it
       // In this scenario "B" and "C" always return the same value. When "A"
@@ -1218,7 +1218,7 @@ Deno.test("spec", async (t) => {
       });
       const $spy = spy(() => b() + " " + c());
       const d = derive($spy);
-      expect(d()).toStrictEqual("b c");
+      assertEquals(d(), "b c");
       $spy.calls.length = 0;
       a("aa");
       assertSpyCalls($spy, 0);
@@ -1226,14 +1226,17 @@ Deno.test("spec", async (t) => {
   });
   await t.step("preact batch/transaction", () => {
     { // should return the value from the callback
-      expect(batch(() => 1)).toStrictEqual(1);
+      assertEquals(batch(() => 1), 1);
     }
     { // should throw errors thrown from the callback
-      expect(() =>
-        batch(() => {
-          throw Error("hello");
-        })
-      ).toThrow("hello");
+      assertThrows(
+        () =>
+          batch(() => {
+            throw Error("hello");
+          }),
+        Error,
+        "hello",
+      );
     }
     { // should throw non-errors thrown from the callback
       try {
@@ -1242,7 +1245,7 @@ Deno.test("spec", async (t) => {
         });
         fail();
       } catch (err) {
-        expect(err).toStrictEqual(undefined);
+        assertEquals(err, undefined);
       }
     }
     { // should delay writes
@@ -1286,7 +1289,7 @@ Deno.test("spec", async (t) => {
         a("aa");
         result = a();
       });
-      expect(result).toStrictEqual("aa");
+      assertEquals(result, "aa");
     }
     { // should read computed signals with updated source signals
       // A->B->C->D->E
@@ -1309,9 +1312,9 @@ Deno.test("spec", async (t) => {
         // update it, only after batching has completed
         assertSpyCalls(spyD, 0);
       });
-      expect(result).toStrictEqual("aa");
-      expect(d()).toStrictEqual("aa");
-      expect(e()).toStrictEqual("aa");
+      assertEquals(result, "aa");
+      assertEquals(d(), "aa");
+      assertEquals(e(), "aa");
       assertSpyCalls(spyC, 1);
       assertSpyCalls(spyD, 1);
       assertSpyCalls(spyE, 1);
@@ -1333,7 +1336,7 @@ Deno.test("spec", async (t) => {
         b("bb");
       });
       c("cc");
-      expect(result).toStrictEqual("aa bb cc");
+      assertEquals(result, "aa bb cc");
     }
     { // should not lead to stale signals with .value in batch
       const invokes: number[][] = [];
@@ -1343,12 +1346,12 @@ Deno.test("spec", async (t) => {
       effect(() => {
         invokes.push([double(), triple()]);
       });
-      expect(invokes).toStrictEqual([[0, 0]]);
+      assertEquals(invokes, [[0, 0]]);
       batch(() => {
         counter(1);
-        expect(double()).toStrictEqual(2);
+        assertEquals(double(), 2);
       });
-      expect(invokes[1]).toStrictEqual([2, 3]);
+      assertEquals(invokes[1], [2, 3]);
     }
     { // should run pending effects even if the callback throws
       const a = signal(0);
@@ -1363,13 +1366,16 @@ Deno.test("spec", async (t) => {
       effect(spy2);
       spy1.calls.length = 0;
       spy2.calls.length = 0;
-      expect(() =>
-        batch(() => {
-          a(($) => $ + 1);
-          b(($) => $ + 1);
-          throw Error("hello");
-        })
-      ).toThrow("hello");
+      assertThrows(
+        () =>
+          batch(() => {
+            a(($) => $ + 1);
+            b(($) => $ + 1);
+            throw Error("hello");
+          }),
+        Error,
+        "hello",
+      );
       assertSpyCalls(spy1, 1);
       assertSpyCalls(spy2, 1);
     }
@@ -1380,7 +1386,7 @@ Deno.test("spec", async (t) => {
         effect($spy);
         callCount = $spy.calls.length;
       });
-      expect(callCount).toStrictEqual(1);
+      assertEquals(callCount, 1);
     }
   });
   await t.step("reactively async", async () => {
@@ -1388,7 +1394,7 @@ Deno.test("spec", async (t) => {
       const a = signal(1);
       const b = derive(() => a() + 10);
       await new Promise(($) => setTimeout($, 10)).then(() => a(2));
-      expect(b()).toStrictEqual(12);
+      assertEquals(b(), 12);
     }
     { // async modify in reaction before await
       const s = signal(1);
@@ -1398,7 +1404,7 @@ Deno.test("spec", async (t) => {
       });
       const l = derive(() => s() + 100);
       a();
-      expect(l()).toStrictEqual(102);
+      assertEquals(l(), 102);
     }
     { // async modify in reaction after await
       const s = signal(1);
@@ -1408,7 +1414,7 @@ Deno.test("spec", async (t) => {
       });
       const l = derive(() => s() + 100);
       await a();
-      expect(l()).toStrictEqual(102);
+      assertEquals(l(), 102);
     }
   });
   await t.step("reactively core", () => {
@@ -1424,12 +1430,12 @@ Deno.test("spec", async (t) => {
         return a() * b();
       });
       a(2);
-      expect(c()).toStrictEqual(2);
+      assertEquals(c(), 2);
       b(3);
-      expect(c()).toStrictEqual(6);
-      expect(callCount).toStrictEqual(2);
+      assertEquals(c(), 6);
+      assertEquals(callCount, 2);
       c();
-      expect(callCount).toStrictEqual(2);
+      assertEquals(callCount, 2);
     }
     { // dependent computed
       //  a  b
@@ -1449,13 +1455,13 @@ Deno.test("spec", async (t) => {
         callCount2++;
         return c() + 1;
       });
-      expect(d()).toStrictEqual(8);
-      expect(callCount1).toStrictEqual(1);
-      expect(callCount2).toStrictEqual(1);
+      assertEquals(d(), 8);
+      assertEquals(callCount1, 1);
+      assertEquals(callCount2, 1);
       a(3);
-      expect(d()).toStrictEqual(4);
-      expect(callCount1).toStrictEqual(2);
-      expect(callCount2).toStrictEqual(2);
+      assertEquals(d(), 4);
+      assertEquals(callCount1, 2);
+      assertEquals(callCount2, 2);
     }
     { // equality check
       //  a
@@ -1469,9 +1475,9 @@ Deno.test("spec", async (t) => {
       });
       c();
       c();
-      expect(callCount).toStrictEqual(1);
+      assertEquals(callCount, 1);
       a(7);
-      expect(callCount).toStrictEqual(1); // unchanged, equality check
+      assertEquals(callCount, 1); // unchanged, equality check
     }
     { // dynamic computed
       //  a     b
@@ -1496,23 +1502,23 @@ Deno.test("spec", async (t) => {
         callCountAB++;
         return cA() || cB();
       });
-      expect(cAB()).toStrictEqual(1);
+      assertEquals(cAB(), 1);
       a(2);
       b(3);
-      expect(cAB()).toStrictEqual(2);
-      expect(callCountA).toStrictEqual(2);
-      expect(callCountAB).toStrictEqual(2);
-      expect(callCountB).toStrictEqual(0);
+      assertEquals(cAB(), 2);
+      assertEquals(callCountA, 2);
+      assertEquals(callCountAB, 2);
+      assertEquals(callCountB, 0);
       a(0);
-      expect(cAB()).toStrictEqual(3);
-      expect(callCountA).toStrictEqual(3);
-      expect(callCountAB).toStrictEqual(3);
-      expect(callCountB).toStrictEqual(1);
+      assertEquals(cAB(), 3);
+      assertEquals(callCountA, 3);
+      assertEquals(callCountAB, 3);
+      assertEquals(callCountB, 1);
       b(4);
-      expect(cAB()).toStrictEqual(4);
-      expect(callCountA).toStrictEqual(3);
-      expect(callCountAB).toStrictEqual(4);
-      expect(callCountB).toStrictEqual(2);
+      assertEquals(cAB(), 4);
+      assertEquals(callCountA, 3);
+      assertEquals(callCountAB, 4);
+      assertEquals(callCountB, 2);
     }
     { // boolean equality check
       //   a
@@ -1527,14 +1533,14 @@ Deno.test("spec", async (t) => {
         callCount++;
         return b() ? 1 : 0;
       });
-      expect(c()).toStrictEqual(0);
-      expect(callCount).toStrictEqual(1);
+      assertEquals(c(), 0);
+      assertEquals(callCount, 1);
       a(1);
-      expect(c()).toStrictEqual(1);
-      expect(callCount).toStrictEqual(2);
+      assertEquals(c(), 1);
+      assertEquals(callCount, 2);
       a(2);
-      expect(c()).toStrictEqual(1);
-      expect(callCount).toStrictEqual(2); // unchanged, oughtn't run because bool didn't change
+      assertEquals(c(), 1);
+      assertEquals(callCount, 2); // unchanged, oughtn't run because bool didn't change
     }
     { // diamond computeds
       //  s
@@ -1553,14 +1559,14 @@ Deno.test("spec", async (t) => {
         callCount++;
         return b() + c();
       });
-      expect(d()).toStrictEqual(5);
-      expect(callCount).toStrictEqual(1);
+      assertEquals(d(), 5);
+      assertEquals(callCount, 1);
       s(2);
-      expect(d()).toStrictEqual(10);
-      expect(callCount).toStrictEqual(2);
+      assertEquals(d(), 10);
+      assertEquals(callCount, 2);
       s(3);
-      expect(d()).toStrictEqual(15);
-      expect(callCount).toStrictEqual(3);
+      assertEquals(d(), 15);
+      assertEquals(callCount, 3);
     }
     { // set inside reaction
       //  s
@@ -1570,7 +1576,7 @@ Deno.test("spec", async (t) => {
       const a = derive(() => s(2));
       const l = derive(() => s() + 100);
       a();
-      expect(l()).toStrictEqual(102);
+      assertEquals(l(), 102);
     }
   });
   await t.step("reactively dynamic", () => {
@@ -1586,13 +1592,13 @@ Deno.test("spec", async (t) => {
         a() || b();
       });
       c();
-      expect(count).toStrictEqual(1);
+      assertEquals(count, 1);
       a(true);
       c();
-      expect(count).toStrictEqual(2);
+      assertEquals(count, 2);
       b(4);
       c();
-      expect(count).toStrictEqual(2);
+      assertEquals(count, 2);
     }
     { // dynamic sources don't re-execute a parent unnecessarily
       // dependency is dynamic: sometimes l depends on b, sometimes not.
@@ -1616,11 +1622,11 @@ Deno.test("spec", async (t) => {
         }
         return result;
       });
-      expect(l()).toStrictEqual(15);
-      expect(bCount).toStrictEqual(1);
+      assertEquals(l(), 15);
+      assertEquals(bCount, 1);
       s(3);
-      expect(l()).toStrictEqual(4);
-      expect(bCount).toStrictEqual(1);
+      assertEquals(l(), 4);
+      assertEquals(bCount, 1);
     }
     { // dynamic source disappears entirely
       //  s
@@ -1641,19 +1647,19 @@ Deno.test("spec", async (t) => {
           return value;
         }
       });
-      expect(c()).toStrictEqual(1);
-      expect(count).toStrictEqual(1);
+      assertEquals(c(), 1);
+      assertEquals(count, 1);
       s(3);
-      expect(c()).toStrictEqual(3);
-      expect(count).toStrictEqual(2);
+      assertEquals(c(), 3);
+      assertEquals(count, 2);
       s(1); // we've now locked into 'done' state
-      expect(c()).toStrictEqual(0);
-      expect(count).toStrictEqual(3);
+      assertEquals(c(), 0);
+      assertEquals(count, 3);
       // we're still locked into 'done' state, and count no longer advances
       // in fact, c() will never execute again..
       s(0);
-      expect(c()).toStrictEqual(0);
-      expect(count).toStrictEqual(3);
+      assertEquals(c(), 0);
+      assertEquals(count, 3);
     }
     { // small dynamic graph with signal grandparents
       const z = signal(3);
@@ -1713,7 +1719,7 @@ Deno.test("spec", async (t) => {
       seq = "";
       a1(true);
       c1();
-      expect(seq).toStrictEqual("b1b2c1");
+      assertEquals(seq, "b1b2c1");
     }
     { // only propagates once with linear convergences
       //          d
@@ -1740,7 +1746,7 @@ Deno.test("spec", async (t) => {
       gcount = 0;
       d(1);
       g();
-      expect(gcount).toStrictEqual(1);
+      assertEquals(gcount, 1);
     }
     { // only propagates once with exponential convergence
       //      d
@@ -1784,7 +1790,7 @@ Deno.test("spec", async (t) => {
       hcount = 0;
       d(1);
       h();
-      expect(hcount).toStrictEqual(1);
+      assertEquals(hcount, 1);
     }
     { // does not trigger downstream computations unless changed
       const s1 = signal(1, { is: () => false });
@@ -1798,15 +1804,15 @@ Deno.test("spec", async (t) => {
         t1();
       });
       t2();
-      expect(order).toStrictEqual("c1t1");
+      assertEquals(order, "c1t1");
       order = "";
       s1(1);
       t2();
-      expect(order).toStrictEqual("t1");
+      assertEquals(order, "t1");
       order = "";
       s1(2);
       t2();
-      expect(order).toStrictEqual("t1c1");
+      assertEquals(order, "t1c1");
     }
     { // applies updates to changed dependees in same order as derive
       const s1 = signal(0);
@@ -1825,12 +1831,12 @@ Deno.test("spec", async (t) => {
       });
       t2();
       t3();
-      expect(order).toStrictEqual("c1c2t1");
+      assertEquals(order, "c1c2t1");
       order = "";
       s1(1);
       t2();
       t3();
-      expect(order).toStrictEqual("c1t1c2");
+      assertEquals(order, "c1t1c2");
     }
     { // updates downstream pending computations
       const s1 = signal(0);
@@ -1856,7 +1862,7 @@ Deno.test("spec", async (t) => {
       s1(1);
       t2();
       t3()();
-      expect(order).toStrictEqual("c1c2t1c2_1");
+      assertEquals(order, "c1c2t1c2_1");
     }
     { // with changing dependencies
       let i: Getter<boolean> & Setter<boolean>;
@@ -1879,14 +1885,14 @@ Deno.test("spec", async (t) => {
       { // updates on active dependencies
         init();
         t!(5);
-        expect(f!()).toStrictEqual(5);
-        expect(fevals!).toStrictEqual(1);
+        assertEquals(f!(), 5);
+        assertEquals(fevals!, 1);
       }
       { // does not update on inactive dependencies
         init();
         e!(5);
-        expect(f!()).toStrictEqual(1);
-        expect(fevals!).toStrictEqual(0);
+        assertEquals(f!(), 1);
+        assertEquals(fevals!, 0);
       }
       { // deactivates obsolete dependencies
         init();
@@ -1895,7 +1901,7 @@ Deno.test("spec", async (t) => {
         fevals = 0;
         t!(5);
         f!();
-        expect(fevals).toStrictEqual(0);
+        assertEquals(fevals, 0);
       }
       { // activates new dependencies
         init();
@@ -1903,7 +1909,7 @@ Deno.test("spec", async (t) => {
         fevals = 0;
         e!(5);
         f!();
-        expect(fevals).toStrictEqual(1);
+        assertEquals(fevals, 1);
       }
       { // ensures that new dependencies are updated before dependee
         let order = "";
@@ -1929,19 +1935,19 @@ Deno.test("spec", async (t) => {
         });
         c();
         e();
-        expect(order).toStrictEqual("cbd");
+        assertEquals(order, "cbd");
         order = "";
         a(-1);
         c();
         e();
-        expect(order).toStrictEqual("bcd");
-        expect(c()).toStrictEqual(9);
+        assertEquals(order, "bcd");
+        assertEquals(c(), 9);
         order = "";
         a(0);
         c();
         e();
-        expect(order).toStrictEqual("bcd");
-        expect(c()).toStrictEqual(1);
+        assertEquals(order, "bcd");
+        assertEquals(c(), 1);
       }
     }
     { // does not update subsequent pending computations after stale invocations
@@ -1973,10 +1979,10 @@ Deno.test("spec", async (t) => {
       c3();
       s2(true);
       c3();
-      expect(count).toStrictEqual(2);
+      assertEquals(count, 2);
       s1(2);
       c3();
-      expect(count).toStrictEqual(3);
+      assertEquals(count, 3);
     }
     { // correctly marks downstream computations as stale on change
       const s1 = signal(1);
@@ -2001,7 +2007,7 @@ Deno.test("spec", async (t) => {
       order = "";
       s1(2);
       c3();
-      expect(order).toStrictEqual("t1c1c2c3");
+      assertEquals(order, "t1c1c2c3");
     }
   });
 });
@@ -2010,12 +2016,12 @@ Deno.test("signal() supports custom equality", () => {
   let count1 = 0;
   effect(() => (never(), ++count1));
   never(never()), never([0]), never([]);
-  expect(count1).toStrictEqual(4);
+  assertEquals(count1, 4);
   const index = signal([0], { is: (prev, next) => prev[0] === next[0] });
   let count2 = 0;
   effect(() => (index(), ++count2));
   index(index()), index([0]), index([]);
-  expect(count2).toStrictEqual(2);
+  assertEquals(count2, 2);
 });
 Deno.test("derive() supports custom equality", () => {
   const never = signal([0], { is: () => false });
@@ -2029,32 +2035,32 @@ Deno.test("derive() supports custom equality", () => {
   let sets = 0, gets = 0;
   effect(() => (never(), ++sets));
   effect(() => (value(), ++gets));
-  expect(sized()).toStrictEqual([2]);
-  expect(value()).toStrictEqual(2);
-  expect(sets).toStrictEqual(1);
-  expect(gets).toStrictEqual(1);
+  assertEquals(sized(), [2]);
+  assertEquals(value(), 2);
+  assertEquals(sets, 1);
+  assertEquals(gets, 1);
   never(never());
-  expect(sized()).toStrictEqual([2]);
-  expect(value()).toStrictEqual(2);
-  expect(sets).toStrictEqual(2);
-  expect(gets).toStrictEqual(1);
+  assertEquals(sized(), [2]);
+  assertEquals(value(), 2);
+  assertEquals(sets, 2);
+  assertEquals(gets, 1);
   never(([$]) => [$ + 1]);
-  expect(sized()).toStrictEqual([3]);
-  expect(value()).toStrictEqual(2);
-  expect(sets).toStrictEqual(3);
-  expect(gets).toStrictEqual(1);
+  assertEquals(sized(), [3]);
+  assertEquals(value(), 2);
+  assertEquals(sets, 3);
+  assertEquals(gets, 1);
 });
 Deno.test("effect() disposes when nested", () => {
   const outer = signal(0);
-  effect(() => effect(() => expect(outer()).not.toStrictEqual(1))());
+  effect(() => effect(() => assertEquals(outer(), 0))());
   outer(1);
 });
 Deno.test("derive() catches inner recursion", () => {
   const inner = signal(0);
   const outer = derive(() => inner(inner() + 1));
-  expect(outer()).toStrictEqual(1);
+  assertEquals(outer(), 1);
   inner(1);
-  expect(outer()).toStrictEqual(2);
+  assertEquals(outer(), 2);
 });
 Deno.test("derive() catches outer recursion", () => {
   let monotonic = 0;
@@ -2066,19 +2072,19 @@ Deno.test("derive() catches outer recursion", () => {
   const each = derive(() => (both(), two(++monotonic)));
   const over = derive(() => (each(), two(++monotonic)));
   effect(() => (each(), over()));
-  expect(over()).toStrictEqual(9);
+  assertEquals(over(), 9);
   one(100);
-  expect(over()).toStrictEqual(9);
+  assertEquals(over(), 9);
 });
 Deno.test("derive() breaks invalid links", () => {
   const set = signal(0);
   const get = derive(() => (set(0), set()));
-  expect(get()).toStrictEqual(0);
+  assertEquals(get(), 0);
   set(1);
-  expect(get()).toStrictEqual(0);
+  assertEquals(get(), 0);
 });
 Deno.test("derive() throws in certain circular cases", () => {
-  expect(() => {
+  assertThrows(() => {
     let monotonic = 0;
     const one = signal(++monotonic);
     const two = signal(++monotonic);
@@ -2087,12 +2093,12 @@ Deno.test("derive() throws in certain circular cases", () => {
     effect(() => oneTwo());
     effect(() => twoOne());
     effect(() => (oneTwo(), twoOne()));
-  }).toThrow();
-  expect(() => {
+  });
+  assertThrows(() => {
     const one = signal(0);
     const two = signal(0);
     const read = derive(() => one(one() + two()));
     effect(() => (one(), two(), read()));
     two(1);
-  }).toThrow();
+  });
 });
