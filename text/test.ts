@@ -20,6 +20,8 @@ import {
 import { createRanges, uncase } from "@libn/text/case";
 import { distance, includes } from "@libn/text/fuzzy";
 import vectors from "./vectors.json" with { type: "json" };
+import { de, en } from "@libn/base";
+import { dePoint, enPoint } from "./lib.ts";
 
 Deno.test("normalize", async (t) => {
   await t.step("uncode() passes reference vectors", () => {
@@ -29,14 +31,12 @@ Deno.test("normalize", async (t) => {
       else for (let z = $[0]; z <= $[1]; ++z) to[z] = z;
     }
     for (let z = 0; z < 0x110000; ++z) {
-      assertEquals(to[uncode(String.fromCodePoint(z)).codePointAt(0)!], to[z]);
+      assertEquals(to[enPoint.call(uncode(dePoint(z)))], to[z]);
     }
   });
   await t.step("unlone() replaces lone surrogates", () => {
     fc.assert(fc.property(
-      fc.uint16Array().map(($) =>
-        $.reduce((to, code) => to + String.fromCharCode(code), "")
-      ),
+      fc.uint16Array().map(($) => $.reduce((to, code) => to + de(code), "")),
       ($) => {
         assertEquals(unlone($), $.toWellFormed());
       },
@@ -54,30 +54,26 @@ Deno.test("normalize", async (t) => {
   });
   await t.step("uncode() replaces all control codes", () => {
     for (let z = 0x00; z <= 0x1f; ++z) {
-      if (z !== 0x9 && z !== 0xa && z !== 0xd) {
-        assertEquals(uncode(String.fromCharCode(z)), "\ufffd");
-      }
+      z === 0x9 || z === 0xa || z === 0xd ||
+        assertEquals(uncode(de(z)), "\ufffd");
     }
-    for (let z = 0x7f; z <= 0x9f; ++z) {
-      assertEquals(uncode(String.fromCharCode(z)), "\ufffd");
-    }
+    for (let z = 0x7f; z <= 0x9f; ++z) assertEquals(uncode(de(z)), "\ufffd");
   });
   await t.step("uncode() replaces all un-paired surrogates", () => {
     for (let z = 0xd800; z <= 0xdfff; ++z) {
-      assertEquals(uncode(String.fromCharCode(z)), "\ufffd");
+      assertEquals(uncode(de(z)), "\ufffd");
     }
     for (let z = 0x10000; z <= 0x10ffff; ++z) {
       assertEquals(
-        String.fromCharCode(0xd800 | z - 0x10000 >> 10) +
-          String.fromCharCode(0xdc00 | z - 0x10000 & 0x3ff),
-        String.fromCodePoint(z),
+        de(0xd800 | z - 0x10000 >> 10) + de(0xdc00 | z - 0x10000 & 0x3ff),
+        dePoint(z),
       );
     }
   });
   await t.step("uncode() replaces all noncharacters", () => {
     for (let z = 0x00; z <= 0x10; ++z) {
-      assertEquals(uncode(String.fromCodePoint(z << 16 | 0xfffe)), "\ufffd");
-      assertEquals(uncode(String.fromCodePoint(z << 16 | 0xffff)), "\ufffd");
+      assertEquals(uncode(dePoint(z << 16 | 0xfffe)), "\ufffd");
+      assertEquals(uncode(dePoint(z << 16 | 0xffff)), "\ufffd");
     }
   });
   await t.step("unline() replaces weird breaks with linefeeds", () => {
@@ -115,7 +111,7 @@ Deno.test("normalize", async (t) => {
     for (
       const $ of Array.from({ length: 11 }, (_, z) => z + 0x2000).concat(
         [0x1680, 0x2028, 0x2029, 0x202f, 0x205f, 0x3000, 0xfeff],
-      ).map(($) => String.fromCharCode($)).concat(
+      ).map(($) => de($)).concat(
         ["\t", "\n", "\v", "\f", "\r", "\r\n", " ", "\xa0"],
       )
     ) {
@@ -130,8 +126,8 @@ Deno.test("normalize", async (t) => {
         character: fc.oneof(
           fc.integer({ min: 0x41, max: 0x5a }),
           fc.integer({ min: 0x61, max: 0x7a }),
-        ).map(String.fromCharCode),
-        mark: fc.integer({ min: 0x300, max: 0x36f }).map(String.fromCharCode),
+        ).map(de),
+        mark: fc.integer({ min: 0x300, max: 0x36f }).map(de),
       }),
       ({ character, mark }) => {
         assertEquals(unmark(character + mark), character);
@@ -150,7 +146,7 @@ Deno.test("normalize", async (t) => {
         const codes = unhtml($).match(/&#[\da-f]{2};/g) ?? [];
         assertEquals(codes.length, $.length);
         for (let z = 0; z < $.length; ++z) {
-          assertEquals(+codes[z].slice(2, -1), $.charCodeAt(z));
+          assertEquals(+codes[z].slice(2, -1), en.call($, z));
         }
       },
     ));
@@ -173,25 +169,19 @@ Deno.test("normalize", async (t) => {
   });
   await t.step("unrexp() escapes all weird characters", () => {
     for (let z = 0; z < 0x08; ++z) {
-      assertEquals(
-        unrexp(String.fromCharCode(z)),
-        `\\x${z.toString(16).padStart(2, "0")}`,
-      );
+      assertEquals(unrexp(de(z)), `\\x${z.toString(16).padStart(2, "0")}`);
     }
     for (let z = 0x0e; z <= 0x23; ++z) {
-      assertEquals(
-        unrexp(String.fromCharCode(z)),
-        `\\x${z.toString(16).padStart(2, "0")}`,
-      );
+      assertEquals(unrexp(de(z)), `\\x${z.toString(16).padStart(2, "0")}`);
     }
     for (const $ of "&',-:;<=>@_`~\x7f\x85\xa0") {
-      assertEquals(unrexp($), `\\x${$.charCodeAt(0).toString(16)}`);
+      assertEquals(unrexp($), `\\x${en.call($).toString(16)}`);
     }
     for (let z = 0x2000; z <= 0x200a; ++z) {
-      assertEquals(unrexp(String.fromCharCode(z)), `\\u${z.toString(16)}`);
+      assertEquals(unrexp(de(z)), `\\u${z.toString(16)}`);
     }
     for (const $ of "\u1680\u2028\u2029\u202f\u205f\u3000\uffef") {
-      assertEquals(unrexp($), `\\u${$.charCodeAt(0).toString(16)}`);
+      assertEquals(unrexp($), `\\u${en.call($).toString(16)}`);
     }
   });
   await t.step("unrexp() escapes the first character if alphanumeric", () => {
@@ -199,13 +189,10 @@ Deno.test("normalize", async (t) => {
       assertEquals(unrexp(`${z}${z}`), `\\x${(z + 0x30).toString(16)}${z}`);
     }
     for (let $ of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
-      assertEquals(
-        unrexp(`${$}${$}`),
-        `\\x${$.charCodeAt(0).toString(16)}${$}`,
-      );
+      assertEquals(unrexp(`${$}${$}`), `\\x${en.call($).toString(16)}${$}`);
       assertEquals(
         unrexp(`${$ = $.toLowerCase()}${$}`),
-        `\\x${$.charCodeAt(0).toString(16)}${$}`,
+        `\\x${en.call($).toString(16)}${$}`,
       );
     }
   });
@@ -343,7 +330,7 @@ Deno.test("distance", async (t) => {
           minLength: 2,
           maxLength: 2,
           comparator: "SameValueZero",
-        }).map((points) => points.map(($) => String.fromCodePoint($))),
+        }).map((points) => points.map(($) => dePoint($))),
         repeat: fc.integer({ min: 1, max: 1e3 }),
       }),
       ({ points: [one, two], repeat }) => {
@@ -375,9 +362,9 @@ import.meta.main && await Promise.all([
   uncase: fold.match(/^[\dA-F]{4,5}; [CF];(?: [\dA-F]{4,5})+/gm)!.map(($) => {
     const [code, _, mapping] = $.split("; ");
     return {
-      source: String.fromCodePoint(parseInt(code, 16)),
+      source: dePoint(parseInt(code, 16)),
       target: mapping.split(" ").reduce(
-        (to, point) => to + String.fromCodePoint(parseInt(point, 16)),
+        (to, point) => to + dePoint(parseInt(point, 16)),
         "",
       ),
     };
