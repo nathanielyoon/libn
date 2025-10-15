@@ -6,7 +6,6 @@
     ".": "./mod.ts",
     "./normalize": "./normalize.ts",
     "./case": "./case.ts",
-    "./includes": "./includes.ts",
-    "./distance": "./distance.ts"
+    "./fuzzy": "./fuzzy.ts"
   }
 }
