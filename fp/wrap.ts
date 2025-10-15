@@ -1,14 +1,14 @@
-import { no, type Ok, ok, type Or } from "./or.ts";
+import { fail, type Ok, type Or, pass } from "./or.ts";
 
 /** Aggregates results. */
 export const join = <const A extends [Or, ...Or[]]>(
   $: A,
 ): Or<A, { [B in keyof A]: Ok<A[B]> }> => {
-  const oks = Array($.length) as { [B in keyof A]: Ok<A[B]> };
+  const ok = Array($.length) as { [B in keyof A]: Ok<A[B]> };
   let z = 0;
-  do if ($[z].is) oks[z] = $[z].of;
-  else return no($); while (++z < $.length);
-  return ok(oks);
+  do if ($[z].state) ok[z] = $[z].value;
+  else return fail($); while (++z < $.length);
+  return pass(ok);
 };
 const sync = <A, B, C = never>(
   $: A | Promise<A>,
@@ -20,13 +20,13 @@ export const safe =
   ((unsafe: ($: any) => any, or?: ($: any, thrown: unknown) => any) =>
   ($: any) => {
     try {
-      return sync(unsafe($), ok, async (cause) => {
-        if (or) return no(await or($, cause));
-        return no(cause instanceof Error ? cause : Error("", { cause }));
+      return sync(unsafe($), pass, async (cause) => {
+        if (or) return fail(await or($, cause));
+        return fail(cause instanceof Error ? cause : Error("", { cause }));
       });
     } catch (cause) {
-      if (or) return sync(or($, cause), no);
-      return no(cause instanceof Error ? cause : Error("", { cause }));
+      if (or) return sync(or($, cause), fail);
+      return fail(cause instanceof Error ? cause : Error("", { cause }));
     }
   }) as {
     <A, B, C = Error>(
@@ -43,8 +43,8 @@ export const exec = ((block: () => Generator<Or> | AsyncGenerator<Or>) => {
   const generator = block();
   const next = ($?: any): Or | Promise<Or> =>
     sync(generator.next($), ({ done, value }): Or | Promise<Or> => {
-      if (done) return ok(value);
-      else if (value.is) return next(value.of);
+      if (done) return pass(value);
+      else if (value.state) return next(value.value);
       return value;
     });
   return next();
