@@ -6,9 +6,8 @@ import vectors from "./vectors.json" with { type: "json" };
 
 const parse = (csv: string) => {
   const rows: string[][] = [];
-  for (let quoted = false, z = 0, y = 0, x = 0; z < csv.length; ++z) {
-    (rows[y] ??= [])[x] ??= "";
-    const char = csv[z];
+  for (let quoted = false, char, z = 0, y = 0, x = 0; z < csv.length; ++z) {
+    (rows[y] ??= [])[x] ??= "", char = csv[z];
     if (char === '"') {
       if (quoted && csv[z + 1] === '"') rows[y][x] += char, ++z;
       else quoted = !quoted;
@@ -146,14 +145,11 @@ import.meta.main && await Promise.all([
     "trailing-space",
     "utf8",
   ].map((name) =>
-    Promise.all([
+    Promise.all(["csv", "json"].map((type) =>
       fetch(
-        `https://raw.githubusercontent.com/sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/${name}.csv`,
-      ).then(($) => $.text()),
-      fetch(
-        `https://raw.githubusercontent.com/sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/${name}.json`,
-      ).then(($) => $.json()),
-    ])
+        `https://raw.githubusercontent.com/sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/${type}/${name}.${type}`,
+      ).then(($) => $.text())
+    ))
   ),
 ]).then(([rfc4180, earthquakes, ...csvTestData]) => ({
   deCsv: [
@@ -177,7 +173,7 @@ import.meta.main && await Promise.all([
       [/For example:\s+(.+?)\n\n/gs, []],
     )[1],
     { csv: earthquakes, json: parse(earthquakes) },
-    ...csvTestData.map(([csv, json]) => ({ csv, json })),
+    ...csvTestData.map(([csv, json]) => ({ csv, json: JSON.parse(json) })),
   ],
 })).then(($) =>
   Deno.writeTextFile(
