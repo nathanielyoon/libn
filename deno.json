@@ -107,7 +107,7 @@
     "all": {
       "description": "Run all check tasks.",
       "dependencies": ["check", "lint"],
-      "command": "cd \"$INIT_CWD\" && (deno task --cwd=. test && deno task --cwd=. cover; deno task --cwd=. pure; deno publish --dry-run --allow-dirty)"
+      "command": "cd \"$INIT_CWD\" && (deno task --cwd=. cover; deno task --cwd=. pure; deno publish --dry-run --allow-dirty)"
     }
   }
 }
