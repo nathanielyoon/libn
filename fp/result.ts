@@ -9,11 +9,11 @@ export type Ok<A extends Result> = Extract<A, { state: true }>["value"];
 function* generate<A, B>(this: Result<A, B>): Generator<Result<A, B>, B, any> {
   return yield this;
 }
-/** Creates a success. */
+/** Creates a failure. */
 export const fail = <const A>($: A): Result<A, never> => (
   { state: false, value: $, [Symbol.iterator]: generate }
 );
-/** Creates a failure. */
+/** Creates a success. */
 export const pass = <const A>($: A): Result<never, A> => (
   { state: true, value: $, [Symbol.iterator]: generate }
 );
