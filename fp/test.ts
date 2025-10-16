@@ -11,19 +11,18 @@ import {
 } from "@libn/fp/result";
 import { exec, join, safe } from "@libn/fp/wrap";
 
-const S0 = Symbol("S0");
-type S0 = typeof S0;
 Deno.test("result", async (t) => {
+  const S0 = Symbol("S0");
   await t.step("fail() creates a failure", () => {
     const no = fail(S0);
-    assertType<IsExact<typeof no, Result<S0, never>>>(true);
+    assertType<IsExact<typeof no, Result<typeof S0, never>>>(true);
     assertEquals(no.state, false);
     assertType<IsExact<typeof no.value, No<typeof no>>>(true);
     assertEquals(no.value, S0);
   });
   await t.step("pass() creates a success", () => {
     const ok = pass(S0);
-    assertType<IsExact<typeof ok, Result<never, S0>>>(true);
+    assertType<IsExact<typeof ok, Result<never, typeof S0>>>(true);
     assertEquals(ok.state, true);
     assertType<IsExact<typeof ok.value, Ok<typeof ok>>>(true);
     assertEquals(ok.value, S0);
@@ -50,11 +49,11 @@ Deno.test("result", async (t) => {
     const no1 = no0.next();
     const ok1 = ok0.next();
     assertType<IsExact<typeof no1, IteratorResult<typeof no, never>>>(true);
-    assertType<IsExact<typeof ok1, IteratorResult<typeof ok, S0>>>(true);
+    assertType<IsExact<typeof ok1, IteratorResult<typeof ok, typeof S0>>>(true);
     assert(!no1.done);
     assert(!ok1.done);
-    assertType<IsExact<typeof no1.value, Result<S0, never>>>(true);
-    assertType<IsExact<typeof ok1.value, Result<never, S0>>>(true);
+    assertType<IsExact<typeof no1.value, Result<typeof S0, never>>>(true);
+    assertType<IsExact<typeof ok1.value, Result<never, typeof S0>>>(true);
     assertStrictEquals(no1.value, no);
     assertStrictEquals(ok1.value, ok);
   });
@@ -62,7 +61,7 @@ Deno.test("result", async (t) => {
     const no2 = no0.next();
     const ok2 = ok0.next(ok.value);
     assertType<IsExact<typeof no2, IteratorResult<typeof no, never>>>(true);
-    assertType<IsExact<typeof ok2, IteratorResult<typeof ok, S0>>>(true);
+    assertType<IsExact<typeof ok2, IteratorResult<typeof ok, typeof S0>>>(true);
     assert(no2.done);
     assert(ok2.done);
     assertType<IsExact<typeof no2.value, Ok<typeof no>>>(true);
@@ -72,19 +71,22 @@ Deno.test("result", async (t) => {
   });
 });
 Deno.test("wrap", async (t) => {
-  const fcResult = fc.boolean().map(some);
   await t.step("join() aggregates", () => {
-    fc.assert(fc.property(fcResult, fcResult, (one, two) => {
-      const result = join([one, two]);
-      if (result.state) {
-        assert(one.state);
-        assert(two.state);
-        assertEquals(result.value, [true, true]);
-      } else if (one.state) {
-        assert(!two.state);
-        assertEquals(result.value, [pass(true), fail(false)]);
-      } else assertEquals(result.value, [fail(false), some(two.state)]);
-    }));
+    fc.assert(fc.property(
+      fc.boolean().map(some),
+      fc.boolean().map(some),
+      (one, two) => {
+        const result = join([one, two]);
+        if (result.state) {
+          assert(one.state);
+          assert(two.state);
+          assertEquals(result.value, [true, true]);
+        } else if (one.state) {
+          assert(!two.state);
+          assertEquals(result.value, [pass(true), fail(false)]);
+        } else assertEquals(result.value, [fail(false), some(two.state)]);
+      },
+    ));
   });
   await t.step("safe() try-catches", async () => {
     fc.assert(fc.property(fc.boolean(), ($) => {
