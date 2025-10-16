@@ -1037,13 +1037,20 @@ Deno.test("system", async (t) => {
       const c = derive(() => a());
       const d = derive(() => c());
       const order: Spy[] = [];
-      const eSpy: Spy<any, [], string> = spy(
-        () => (order.push(eSpy), b() + " " + d()),
-      );
+      const eSpy = spy(() => {
+        order.push(eSpy);
+        return b() + " " + d();
+      });
       const e = derive(eSpy);
-      const fSpy: Spy<any, [], string> = spy(() => (order.push(fSpy), e()));
+      const fSpy = spy(() => {
+        order.push(fSpy);
+        return e();
+      });
       const f = derive(fSpy);
-      const gSpy: Spy<any, [], string> = spy(() => (order.push(gSpy), e()));
+      const gSpy = spy(() => {
+        order.push(gSpy);
+        return e();
+      });
       const g = derive(gSpy);
       assertEquals(f(), "a a");
       assertSpyCalls(fSpy, 1);

@@ -312,8 +312,5 @@ import.meta.main && await Promise.all([
     ),
   ],
 })).then(($) =>
-  Deno.writeTextFile(
-    new URL(import.meta.resolve("./vectors.json")).pathname,
-    JSON.stringify($),
-  )
+  Deno.writeTextFile(`${import.meta.dirname}/vectors.json`, JSON.stringify($))
 );

@@ -554,8 +554,5 @@ import.meta.main && await Promise.all([
     string: /<code>(.)<\/code>/.exec(wikipedia)![1],
   }],
 })).then(($) =>
-  Deno.writeTextFile(
-    new URL(import.meta.resolve("./vectors.json")).pathname,
-    JSON.stringify($),
-  )
+  Deno.writeTextFile(`${import.meta.dirname}/vectors.json`, JSON.stringify($))
 );
