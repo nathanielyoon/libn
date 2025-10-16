@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "@std/assert";
-import fc from "fast-check";
+import fc, { uint32Array } from "fast-check";
 import { chacha, hchacha, xor } from "@libn/aead/chacha";
 import { poly } from "@libn/aead/poly";
 import { polyXchacha, xchachaPoly } from "@libn/aead/aead";
@@ -8,15 +8,15 @@ import vectors from "./vectors.json" with { type: "json" };
 
 const u32 = ($: string) => new Uint32Array(Uint8Array.fromHex($).buffer);
 const fcRight = ($: number) => fc.uint8Array({ minLength: $, maxLength: $ });
-const fcWrong = ($: number) =>
-  fc.oneof(
-    fc.uint8Array({ minLength: $ + 1 }),
-    fc.uint8Array({ maxLength: $ - 1 }),
-  );
 const fcWrongLength = <const A extends number[]>(...lengths: A) =>
   fc.oneof(...Array.from(lengths, (_, index) =>
     fc.tuple(
-      ...lengths.map(($, z) => z !== index ? fcRight($) : fcWrong($)),
+      ...lengths.map(($, z) =>
+        z !== index ? fcRight($) : fc.oneof(
+          fc.uint8Array({ minLength: $ + 1 }),
+          fc.uint8Array({ maxLength: $ - 1 }),
+        )
+      ),
     ) as fc.Arbitrary<{ [_ in keyof A]: Uint8Array<ArrayBuffer> }>));
 Deno.test("chacha", async (t) => {
   await t.step("chacha() passes reference vectors", () => {
@@ -55,6 +55,12 @@ Deno.test("poly", async (t) => {
         Uint8Array.fromHex($.tag),
       );
     }
+  });
+  await t.step("poly() ignores empty key and message", () => {
+    assertEquals(
+      poly(new Uint32Array(8), new Uint8Array()),
+      new Uint8Array(16),
+    );
   });
 });
 Deno.test("aead", async (t) => {
