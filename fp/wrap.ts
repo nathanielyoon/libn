@@ -17,26 +17,26 @@ const sync = <A, B, C = never>(
 ) => $ instanceof Promise ? $.then(use).catch(or) : use($);
 /** Try-catches a possibly-throwing function. */
 export const safe =
-  ((unsafe: ($: any) => any, or?: ($: any, thrown: unknown) => any) =>
-  ($: any) => {
+  ((unsafe: (...$: any[]) => any, or?: (thrown: unknown, ...$: any[]) => any) =>
+  (...$: any[]) => {
     try {
-      return sync(unsafe($), pass, async (cause) => {
-        if (or) return fail(await or($, cause));
+      return sync(unsafe(...$), pass, async (cause) => {
+        if (or) return fail(await or(cause, ...$));
         return fail(cause instanceof Error ? cause : Error("", { cause }));
       });
     } catch (cause) {
-      if (or) return sync(or($, cause), fail);
+      if (or) return sync(or(cause, ...$), fail);
       return fail(cause instanceof Error ? cause : Error("", { cause }));
     }
   }) as {
-    <A, B, C = Error>(
-      unsafe: B extends Promise<any> ? never : ($: A) => B,
-      or?: C extends Promise<any> ? never : ($: A, cause: unknown) => C,
-    ): ($: A) => Result<C, B>;
-    <A, B, C = Error>(
-      unsafe: ($: A) => Promise<B>,
-      or?: ($: A, cause: unknown) => C | Promise<C>,
-    ): ($: A) => Promise<Result<C, B>>;
+    <A extends any[], B, C = Error>(
+      unsafe: B extends Promise<any> ? never : (...$: A) => B,
+      or?: C extends Promise<any> ? never : (cause: unknown, ...$: A) => C,
+    ): (...$: A) => Result<C, B>;
+    <A extends any[], B, C = Error>(
+      unsafe: (...$: A) => Promise<B>,
+      or?: (cause: unknown, ...$: A) => C | Promise<C>,
+    ): (...$: A) => Promise<Result<C, B>>;
   };
 /** Runs an imperative block, returning failures early. */
 export const exec = (($: () => Generator<Result> | AsyncGenerator<Result>) => {
