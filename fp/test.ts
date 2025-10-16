@@ -13,8 +13,6 @@ import { exec, join, safe } from "@libn/fp/wrap";
 
 const S0 = Symbol("S0");
 type S0 = typeof S0;
-const S1 = Symbol("S1");
-type S1 = typeof S1;
 Deno.test("result", async (t) => {
   await t.step("fail() creates a failure", () => {
     const no = fail(S0);
