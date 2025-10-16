@@ -16,8 +16,8 @@ import {
   signal,
 } from "@libn/signal/system";
 
-Deno.test("spec", async (t) => {
-  await t.step("alien-signals computed", () => {
+Deno.test("system", async (t) => {
+  await t.step("derive() passes alien-signals computed tests", () => {
     { // should correctly propagate changes through derive signals
       const src = signal(0);
       const c1 = derive(() => src() % 2);
@@ -69,7 +69,7 @@ Deno.test("spec", async (t) => {
       assertEquals(times, 1);
     }
   });
-  await t.step("alien-signals effect", () => {
+  await t.step("effect() passes alien-signals effect tests", () => {
     { // should clear subscriptions when untracked by all subscribers
       let bRunTimes = 0;
       const a = signal(1);
@@ -261,7 +261,7 @@ Deno.test("spec", async (t) => {
       assertEquals(triggers, 2);
     }
   });
-  await t.step("alien-signals effectScope", () => {
+  await t.step("scoper() passes alien-signals effectScope tests", () => {
     { // should not trigger after stop
       const count = signal(1);
       let triggers = 0;
@@ -312,7 +312,7 @@ Deno.test("spec", async (t) => {
       assertEquals(triggers, 2);
     }
   });
-  await t.step("alien-signals issue_48", () => {
+  await t.step("derive() passes alien-signals issue_48 test", () => {
     const source = signal(0);
     let disposeInner: () => void;
     reaction(
@@ -396,7 +396,7 @@ Deno.test("spec", async (t) => {
       }
     }
   });
-  await t.step("alien-signals untrack", () => {
+  await t.step("derive() passes alien-signals untrack test", () => {
     { // should pause tracking in derive
       const src = signal(0);
       let deriveTriggerTimes = 0;
@@ -413,6 +413,8 @@ Deno.test("spec", async (t) => {
       assertEquals(c(), 0);
       assertEquals(deriveTriggerTimes, 1);
     }
+  });
+  await t.step("effect() passes alien-signals untrack test", () => {
     { // should pause tracking in effect
       const src = signal(0);
       const is = signal(0);
@@ -439,6 +441,8 @@ Deno.test("spec", async (t) => {
       src(7), src(8), src(9);
       assertEquals(effectTriggerTimes, 4);
     }
+  });
+  await t.step("scoper() passes alien-signals untrack test", () => {
     { // should pause tracking in effect scope
       const src = signal(0);
       let effectTriggerTimes = 0;
@@ -455,7 +459,7 @@ Deno.test("spec", async (t) => {
       assertEquals(effectTriggerTimes, 1);
     }
   });
-  await t.step("preact signal", () => {
+  await t.step("signal() passes preact signal tests", () => {
     { // should return value
       const v = [1, 2];
       const s = signal(v);
@@ -485,7 +489,7 @@ Deno.test("spec", async (t) => {
       assertSpyCalls(spy3, 2);
     }
   });
-  await t.step("preact effect", () => {
+  await t.step("effect() passes preact effect tests", () => {
     { // should run the callback immediately
       const s = signal(123);
       const $spy = spy(() => {
@@ -738,7 +742,7 @@ Deno.test("spec", async (t) => {
       assertSpyCalls(childEffect, 3);
     }
   });
-  await t.step("preact computed", () => {
+  await t.step("derive() passes preact computed tests", () => {
     { // should return value
       const a = signal("a");
       const b = signal("b");
@@ -1224,7 +1228,7 @@ Deno.test("spec", async (t) => {
       assertSpyCalls($spy, 0);
     }
   });
-  await t.step("preact batch/transaction", () => {
+  await t.step("batch() passes preact batch/transaction tests", () => {
     { // should return the value from the callback
       assertEquals(batch(() => 1), 1);
     }
@@ -1389,7 +1393,7 @@ Deno.test("spec", async (t) => {
       assertEquals(callCount, 1);
     }
   });
-  await t.step("reactively async", async () => {
+  await t.step("derive() passes reactively async tests", async () => {
     { // async modify
       const a = signal(1);
       const b = derive(() => a() + 10);
@@ -1417,7 +1421,7 @@ Deno.test("spec", async (t) => {
       assertEquals(l(), 102);
     }
   });
-  await t.step("reactively core", () => {
+  await t.step("derive() passes reactively core tests", () => {
     { // two signals
       //  a  b
       //  | /
@@ -1579,7 +1583,7 @@ Deno.test("spec", async (t) => {
       assertEquals(l(), 102);
     }
   });
-  await t.step("reactively dynamic", () => {
+  await t.step("derive() passes reactively dynamic tests", () => {
     { // dynamic sources recalculate correctly
       //  a  b          a
       //  | /     or    |
@@ -1690,7 +1694,7 @@ Deno.test("spec", async (t) => {
       j();
     }
   });
-  await t.step("solidjs graph", () => {
+  await t.step("derive() passes solidjs graph tests", () => {
     { // propagates in topological order
       //
       //     c1
@@ -2011,94 +2015,96 @@ Deno.test("spec", async (t) => {
     }
   });
 });
-Deno.test("signal() supports custom equality", () => {
-  const never = signal([0], { is: () => false });
-  let count1 = 0;
-  effect(() => (never(), ++count1));
-  never(never()), never([0]), never([]);
-  assertEquals(count1, 4);
-  const index = signal([0], { is: (prev, next) => prev[0] === next[0] });
-  let count2 = 0;
-  effect(() => (index(), ++count2));
-  index(index()), index([0]), index([]);
-  assertEquals(count2, 2);
-});
-Deno.test("derive() supports custom equality", () => {
-  const never = signal([0], { is: () => false });
-  const index = derive(() => [never()[0] + 1], {
-    is: (prev, next) => prev?.[0] === next[0],
+Deno.test("mod", async (t) => {
+  await t.step("signal() supports custom equality", () => {
+    const never = signal([0], { is: () => false });
+    let count1 = 0;
+    effect(() => (never(), ++count1));
+    never(never()), never([0]), never([]);
+    assertEquals(count1, 4);
+    const index = signal([0], { is: (prev, next) => prev[0] === next[0] });
+    let count2 = 0;
+    effect(() => (index(), ++count2));
+    index(index()), index([0]), index([]);
+    assertEquals(count2, 2);
   });
-  const sized = derive(() => [index()[0] + 1], {
-    is: (prev, next) => prev?.length === next.length,
+  await t.step("derive() supports custom equality", () => {
+    const never = signal([0], { is: () => false });
+    const index = derive(() => [never()[0] + 1], {
+      is: (prev, next) => prev?.[0] === next[0],
+    });
+    const sized = derive(() => [index()[0] + 1], {
+      is: (prev, next) => prev?.length === next.length,
+    });
+    const value = derive(() => sized()[0]);
+    let sets = 0, gets = 0;
+    effect(() => (never(), ++sets));
+    effect(() => (value(), ++gets));
+    assertEquals(sized(), [2]);
+    assertEquals(value(), 2);
+    assertEquals(sets, 1);
+    assertEquals(gets, 1);
+    never(never());
+    assertEquals(sized(), [2]);
+    assertEquals(value(), 2);
+    assertEquals(sets, 2);
+    assertEquals(gets, 1);
+    never(([$]) => [$ + 1]);
+    assertEquals(sized(), [3]);
+    assertEquals(value(), 2);
+    assertEquals(sets, 3);
+    assertEquals(gets, 1);
   });
-  const value = derive(() => sized()[0]);
-  let sets = 0, gets = 0;
-  effect(() => (never(), ++sets));
-  effect(() => (value(), ++gets));
-  assertEquals(sized(), [2]);
-  assertEquals(value(), 2);
-  assertEquals(sets, 1);
-  assertEquals(gets, 1);
-  never(never());
-  assertEquals(sized(), [2]);
-  assertEquals(value(), 2);
-  assertEquals(sets, 2);
-  assertEquals(gets, 1);
-  never(([$]) => [$ + 1]);
-  assertEquals(sized(), [3]);
-  assertEquals(value(), 2);
-  assertEquals(sets, 3);
-  assertEquals(gets, 1);
-});
-Deno.test("effect() disposes when nested", () => {
-  const outer = signal(0);
-  effect(() => effect(() => assertEquals(outer(), 0))());
-  outer(1);
-});
-Deno.test("derive() catches inner recursion", () => {
-  const inner = signal(0);
-  const outer = derive(() => inner(inner() + 1));
-  assertEquals(outer(), 1);
-  inner(1);
-  assertEquals(outer(), 2);
-});
-Deno.test("derive() catches outer recursion", () => {
-  let monotonic = 0;
-  const one = signal(0);
-  const two = signal(0);
-  const both = derive(() => (two(), one(++monotonic)));
-  const just = derive(() => (one(), one(++monotonic)));
-  effect(() => (both(), just()));
-  const each = derive(() => (both(), two(++monotonic)));
-  const over = derive(() => (each(), two(++monotonic)));
-  effect(() => (each(), over()));
-  assertEquals(over(), 9);
-  one(100);
-  assertEquals(over(), 9);
-});
-Deno.test("derive() breaks invalid links", () => {
-  const set = signal(0);
-  const get = derive(() => (set(0), set()));
-  assertEquals(get(), 0);
-  set(1);
-  assertEquals(get(), 0);
-});
-Deno.test("derive() throws in certain circular cases", () => {
-  assertThrows(() => {
+  await t.step("effect() disposes when nested", () => {
+    const outer = signal(0);
+    effect(() => effect(() => assertEquals(outer(), 0))());
+    outer(1);
+  });
+  await t.step("derive() catches inner recursion", () => {
+    const inner = signal(0);
+    const outer = derive(() => inner(inner() + 1));
+    assertEquals(outer(), 1);
+    inner(1);
+    assertEquals(outer(), 2);
+  });
+  await t.step("derive() catches outer recursion", () => {
     let monotonic = 0;
-    const one = signal(++monotonic);
-    const two = signal(++monotonic);
-    const oneTwo = derive(() => (one(), two(++monotonic)));
-    const twoOne = derive(() => (two(), one(++monotonic)));
-    effect(() => oneTwo());
-    effect(() => twoOne());
-    effect(() => (oneTwo(), twoOne()));
-  });
-  assertThrows(() => {
     const one = signal(0);
     const two = signal(0);
-    const read = derive(() => one(one() + two()));
-    effect(() => (one(), two(), read()));
-    two(1);
+    const both = derive(() => (two(), one(++monotonic)));
+    const just = derive(() => (one(), one(++monotonic)));
+    effect(() => (both(), just()));
+    const each = derive(() => (both(), two(++monotonic)));
+    const over = derive(() => (each(), two(++monotonic)));
+    effect(() => (each(), over()));
+    assertEquals(over(), 9);
+    one(100);
+    assertEquals(over(), 9);
+  });
+  await t.step("derive() breaks invalid links", () => {
+    const set = signal(0);
+    const get = derive(() => (set(0), set()));
+    assertEquals(get(), 0);
+    set(1);
+    assertEquals(get(), 0);
+  });
+  await t.step("derive() throws in certain circular cases", () => {
+    assertThrows(() => {
+      let monotonic = 0;
+      const one = signal(++monotonic);
+      const two = signal(++monotonic);
+      const oneTwo = derive(() => (one(), two(++monotonic)));
+      const twoOne = derive(() => (two(), one(++monotonic)));
+      effect(() => oneTwo());
+      effect(() => twoOne());
+      effect(() => (oneTwo(), twoOne()));
+    });
+    assertThrows(() => {
+      const one = signal(0);
+      const two = signal(0);
+      const read = derive(() => one(one() + two()));
+      effect(() => (one(), two(), read()));
+      two(1);
+    });
   });
 });
