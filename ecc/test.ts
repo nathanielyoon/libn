@@ -29,7 +29,7 @@ const generateExport = async (type: "Ed" | "X") => {
     },
   };
 };
-const PKCS8 = Uint8Array.fromHex("302e020100300506032b65ff04220420");
+const PKCS8 = Uint8Array.fromHex("302e020100300506032b65FF04220420");
 const importSecret = (type: "Ed" | "X", $: Uint8Array) =>
   crypto.subtle.importKey(
     "pkcs8",
