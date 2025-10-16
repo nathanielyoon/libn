@@ -1,12 +1,12 @@
 /** Failure/success discriminated union. */
 export type Result<A = any, B = any> =
   & ({ state: false; value: A } | { state: true; value: B })
-  & { [Symbol.iterator](): Generator<Result<A, B>, B, any> };
+  & { [Symbol.iterator](): Generator<Result<A, B>, B> };
 /** Failure value. */
 export type No<A extends Result> = Extract<A, { state: false }>["value"];
 /** Success value. */
 export type Ok<A extends Result> = Extract<A, { state: true }>["value"];
-function* generate<A, B>(this: Result<A, B>): Generator<Result<A, B>, B, any> {
+function* generate<A, B>(this: Result<A, B>): Generator<Result<A, B>, B> {
   return yield this;
 }
 /** Creates a failure. */
