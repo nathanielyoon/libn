@@ -86,7 +86,7 @@
     },
     "test": {
       "description": "Run tests.",
-      "command": "cd \"$INIT_CWD\" && deno test -P --doc --no-check --parallel"
+      "command": "cd \"$INIT_CWD\" && deno test -P --doc --no-check --parallel --trace-leaks"
     },
     "record": {
       "description": "Collect coverage data.",
