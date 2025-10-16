@@ -201,8 +201,8 @@ Deno.test("case", async (t) => {
   await t.step("createRanges() creates same ranges", async () => {
     const text = await fetch(
       "https://www.unicode.org/Public/UNIDATA/CaseFolding.txt",
-    ).then(($) => $.text()).catch(() =>
-      Deno.readTextFile(new URL(import.meta.resolve("./unicode.txt")).pathname)
+    ).then(($) => $.text()).catch(async () =>
+      (await import("./unicode.txt", { with: { type: "text" } })).default
     );
     assertEquals(
       createRanges(text),
