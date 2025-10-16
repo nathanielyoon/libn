@@ -8,6 +8,8 @@ import {
   assertNotMatch,
 } from "@std/assert";
 import fc from "fast-check";
+import { de, en } from "@libn/base";
+import { dePoint, enPoint } from "./lib.ts";
 import {
   uncode,
   unhtml,
@@ -20,8 +22,6 @@ import {
 import { createRanges, uncase } from "@libn/text/case";
 import { distance, includes } from "@libn/text/fuzzy";
 import vectors from "./vectors.json" with { type: "json" };
-import { de, en } from "@libn/base";
-import { dePoint, enPoint } from "./lib.ts";
 
 Deno.test("normalize", async (t) => {
   await t.step("uncode() passes reference vectors", () => {
@@ -233,7 +233,7 @@ Deno.test("case", async (t) => {
     assertEquals(uncase("\u0130"), "\x69\u0307");
   });
 });
-Deno.test("includes", async (t) => {
+Deno.test("fuzzy", async (t) => {
   await t.step("includes() follows built-in includes", () => {
     fc.assert(fc.property(
       fc.string({ size: "medium", unit: "grapheme" }),
@@ -291,8 +291,6 @@ Deno.test("includes", async (t) => {
       },
     ));
   });
-});
-Deno.test("distance", async (t) => {
   const levenshtein = (one: string, two: string) => {
     const a = [...one], b = [...two], c = [...b.map((_, z) => z), b.length];
     for (let d, e, z = 1, y; z <= a.length; c[b.length] = d, ++z) {
