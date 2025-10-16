@@ -17,3 +17,9 @@ export const fail = <const A>($: A): Result<A, never> => (
 export const pass = <const A>($: A): Result<never, A> => (
   { state: true, value: $, [Symbol.iterator]: generate }
 );
+/** Coerced-to-false values (except `NaN`, which isn't representable here). */
+export type Falsy = undefined | null | false | 0 | 0n | "";
+/** Creates a failure if falsy or a success if truthy. */
+export const some = <A>($: A): Result<Extract<Falsy, A>, Exclude<A, Falsy>> => (
+  { state: Boolean($), value: $ } as Result
+);
