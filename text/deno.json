@@ -10,8 +10,7 @@
   },
   "test": {
     "permissions": {
-      "net": ["unicode.org"],
-      "read": ["unicode.txt"]
+      "net": ["unicode.org"]
     }
   }
 }

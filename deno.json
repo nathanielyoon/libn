@@ -69,45 +69,45 @@
       "command": "deno run --permission-set=esbuild npm:esbuild --bundle --format=esm --external:@libn"
     },
     "write": {
-      "description": "Runs a test-vector-writing script (with file name and arguments passed to `deno task`).",
-      "command": "deno run --permission-set=write-vectors"
+      "description": "Runs a test-vector-writing script.",
+      "command": "echo \"{}\" >./vectors.json && deno run --permission-set=write-vectors --unstable-raw-imports ./test.ts"
     },
     "vectors": {
       "description": "Runs all test-vector-writing scripts.",
-      "command": "rm -f **/vectors.json; echo \"{}\" >./aead/vectors.json && deno task --cwd=./aead write test.ts; echo \"{}\" >./base/vectors.json && deno task --cwd=./base write test.ts; echo \"{}\" >./csv/vectors.json && deno task --cwd=./csv write test.ts; echo \"{}\" >./ecc/vectors.json && deno task --cwd=./ecc write test.ts; echo \"{}\" >./hash/vectors.json && deno task --cwd=./hash write test.ts; echo \"{}\" >./text/vectors.json && deno task --cwd=./text write test.ts"
+      "command": "deno task --cwd=./aead write; deno task --cwd=./base write; deno task --cwd=./csv write; deno task --cwd=./ecc write; deno task --cwd=./hash write; deno task --cwd=./text write;"
     },
     "check": {
       "description": "Type-check files.",
-      "command": "cd \"$INIT_CWD\" && deno check --doc"
+      "command": "deno check --doc"
     },
     "lint": {
       "description": "Lint code and documentation.",
-      "command": "cd \"$INIT_CWD\" && deno lint --compact && deno doc --lint **/*.ts"
+      "command": "deno lint --compact && deno doc --lint **/*.ts"
     },
     "test": {
       "description": "Run tests.",
-      "command": "cd \"$INIT_CWD\" && deno test -P --doc --no-check --parallel --trace-leaks"
+      "command": "deno test -P --unstable-raw-imports --doc --no-check --parallel --trace-leaks"
     },
     "record": {
       "description": "Collect coverage data.",
-      "command": "cd \"$INIT_CWD\" && deno task --cwd=. test --clean --coverage=/tmp/deno-coverage --coverage-raw-data-only"
+      "command": "deno task --cwd=. test --clean --coverage=/tmp/deno-coverage --coverage-raw-data-only"
     },
     "report": {
       "description": "Display coverage data.",
-      "command": "cd \"$INIT_CWD\" && deno coverage --detailed /tmp/deno-coverage --include=\"^file://$(pwd)\""
+      "command": "deno coverage --detailed /tmp/deno-coverage --include=\"^file://$(pwd)\""
     },
     "cover": {
       "description": "Collect and display coverage data.",
-      "dependencies": ["record", "report"]
+      "command": "deno task --cwd=. record && deno task --cwd=. report"
     },
     "pure": {
       "description": "Checks whether the current directory's module has side-effects, which would be included in the generated output.",
-      "command": "cd \"$INIT_CWD\" && echo \"import \\\"./mod.ts\\\";\" >bundle.ts && deno task --cwd=. bundle ./bundle.ts; rm -f ./bundle.ts;"
+      "command": "echo \"import \\\"./mod.ts\\\";\" >bundle.ts && deno task --cwd=. bundle ./bundle.ts; rm -f ./bundle.ts;"
     },
     "all": {
       "description": "Run all check tasks.",
       "dependencies": ["check", "lint"],
-      "command": "cd \"$INIT_CWD\" || exit; deno task --cwd=. test && deno task --cwd=. cover; deno task --cwd=. pure; deno publish --dry-run --allow-dirty"
+      "command": "cd \"$INIT_CWD\" && (deno task --cwd=. test && deno task --cwd=. cover; deno task --cwd=. pure; deno publish --dry-run --allow-dirty)"
     }
   }
 }
