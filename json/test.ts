@@ -1,6 +1,7 @@
 import { assertType, type IsExact } from "@std/testing/types";
 import { expect } from "@std/expect/expect";
 import fc from "fast-check";
+import { enB16, enB32, enB64, enH32, enU64 } from "@libn/base";
 import type {
   Base,
   Data,
@@ -12,7 +13,6 @@ import type {
 import { array, boolean, number, object, string } from "@libn/json/build";
 import { BASES, FORMATS, parser } from "@libn/json/parse";
 import { coder } from "@libn/json/code";
-import { enB16, enB32, enB64, enH32, enU64 } from "@libn/base";
 import { unrexp } from "@libn/text/normalize";
 
 const fcObject = <A>(value: fc.Arbitrary<A>, $?: fc.DictionaryConstraints) =>
