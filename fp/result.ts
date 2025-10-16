@@ -20,5 +20,7 @@ export const pass = <const A>($: A): Result<never, A> => (
 /** Coerced-to-false values (except `NaN`, which isn't representable here). */
 export type Falsy = undefined | null | false | 0 | 0n | "";
 /** Creates a failure if falsy or a success if truthy. */
-export const some = <A>($: A): Result<Extract<Falsy, A>, Exclude<A, Falsy>> =>
-  ($ ? pass($) : fail($)) as Result;
+export const some = <const A>($: A): Result<
+  Extract<Falsy, A>,
+  Exclude<A, Falsy>
+> => $ ? pass($ as Exclude<A, Falsy>) : fail($ as Extract<Falsy, A>);
