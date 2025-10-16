@@ -29,11 +29,11 @@ export const safe =
       return or ? sync(or(error, ...$), fail) : fail(error);
     }
   }) as {
-    <A extends any[], B, C = Error>(
+    <A extends unknown[], B, C = Error>(
       unsafe: B extends Promise<any> ? never : (...$: A) => B,
       or?: C extends Promise<any> ? never : (error: Error, ...$: A) => C,
     ): (...$: A) => Result<C, B>;
-    <A extends any[], B, C = Error>(
+    <A extends unknown[], B, C = Error>(
       unsafe: (...$: A) => Promise<B>,
       or?: (error: Error, ...$: A) => C | Promise<C>,
     ): (...$: A) => Promise<Result<C, B>>;
