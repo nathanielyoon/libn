@@ -45,11 +45,13 @@ const schema = (
   $?: any,
   options?: any,
 ) => ({ type, ...Array.isArray($) ? form1($, options) : form2($, options) });
-type Typer<A extends keyof Meta, B = A> = Meta[A] & { type?: B | [B, "null"] };
+type Typer<A extends keyof Meta, B = A> = Meta[A] & {
+  type?: B | readonly [B, "null"];
+};
 type Typed<A extends keyof Meta, B, C extends Type[A]> = Join<
   & { -readonly [D in keyof B]: B[D] }
-  & (B extends { type: [infer D extends keyof Type, "null"] }
-    ? { type: [D, "null"]; [TYPE]: C | null }
+  & (B extends { type: readonly [infer D extends keyof Type, "null"] }
+    ? { type: readonly [D, "null"]; [TYPE]: C | null }
     : B extends { type: infer D extends keyof Type } ? { type: D; [TYPE]: C }
     : { type: A; [TYPE]: C })
 >;
