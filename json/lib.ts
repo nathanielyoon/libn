@@ -3,7 +3,7 @@ export type Json =
   | (null | boolean | number | string)
   | (Json[] | readonly Json[] | { [_: string]: Json });
 /** Condensed object intersection. */
-export type Join<A> = A extends object ? { -readonly [B in keyof A]: A[B] } : A;
+export type Join<A> = A extends object ? { [B in keyof A]: A[B] } : A;
 type Only<A, B> =
   & A
   & { [C in Exclude<B extends object ? keyof B : never, keyof A>]?: never };
