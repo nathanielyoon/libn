@@ -1,7 +1,7 @@
 /** JSON value. */
-export type Json =
-  | (null | boolean | number | string)
-  | (Json[] | readonly Json[] | { [_: string]: Json });
+export type Json = null | boolean | number | string | readonly Json[] | {
+  [_: string]: Json;
+};
 /** Condensed object intersection. */
 export type Join<A> = A extends object ? { [B in keyof A]: A[B] } : A;
 type Only<A, B> =
