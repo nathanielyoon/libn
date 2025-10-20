@@ -19,7 +19,10 @@ export type Schema =
         [{ format: keyof Format }, { contentEncoding: keyof Encoding }, {}]
       >,
     ]>
-  | { type: "array" | ["array", "null"]; [TYPE]: Json[] | null }
+  | {
+    type: "array" | ["array", "null"];
+    [TYPE]: Json[] | readonly Json[] | null;
+  }
     & Meta["array"]
     & Xor<[{ items: Schema }, { prefixItems: readonly Schema[] }]>
   | {
