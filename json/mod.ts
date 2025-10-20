@@ -48,8 +48,8 @@ export {
   type Tuple,
   type Xor,
 } from "./lib.ts";
-export { ENCODING, type Encoding, FORMAT, type Format } from "./regex.ts";
 export { get, type Pointer } from "./pointer.ts";
+export { ENCODING, type Encoding, FORMAT, type Format } from "./regex.ts";
 export {
   array,
   boolean,
