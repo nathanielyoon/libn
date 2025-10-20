@@ -118,7 +118,7 @@ export const object: {
     const B extends Typey<"object"> = {},
   >(properties: A, meta?: B): Join<
     B & {
-      properties: A;
+      properties: { -readonly [C in keyof A]: A[C] };
       additionalProperties: false;
       required: string extends keyof A ? string[] : Tuple<keyof A>;
     } & Typed<"object", B, { -readonly [C in keyof A]: A[C][typeof TYPE] }>
