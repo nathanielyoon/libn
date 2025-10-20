@@ -2,7 +2,7 @@ import type { Join, Json, Meta, Tuple, Type, Xor } from "./lib.ts";
 import { ENCODING, type Encoding, FORMAT, type Format } from "./regex.ts";
 
 /** Inferred value property, doesn't exist at runtime. */
-export declare const TYPE: unique symbol;
+export const TYPE = /* @__PURE__ */ Symbol("TYPE");
 type Enums<A> = readonly [A, ...A[]] | readonly [A, ...A[], null];
 /** JSON schema subset. */
 export type Schema =
