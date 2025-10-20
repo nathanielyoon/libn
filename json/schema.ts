@@ -19,10 +19,7 @@ export type Schema =
         [{ format: keyof Format }, { contentEncoding: keyof Encoding }, {}]
       >,
     ]>
-  | {
-    type: "array" | ["array", "null"];
-    [TYPE]: Json[] | readonly Json[] | null;
-  }
+  | { type: "array" | ["array", "null"]; [TYPE]: readonly Json[] | null }
     & Meta["array"]
     & Xor<[{ items: Schema }, { prefixItems: readonly Schema[] }]>
   | {
@@ -44,19 +41,21 @@ const schema = (
   $?: any,
   options?: any,
 ) => ({ type, ...Array.isArray($) ? form1($, options) : form2($, options) });
-type Typey<A extends keyof Meta, B = A> = Meta[A] & { type?: B | [B, "null"] };
-type Typed<A extends keyof Type, B, C = Type[A]> = B extends
-  { type: [infer D extends keyof Type, "null"] }
-  ? { type: [D, "null"]; [TYPE]: C | null }
-  : B extends { type: infer D extends keyof Type } ? { type: D; [TYPE]: C }
-  : { type: A; [TYPE]: C };
+type Typer<A extends keyof Meta, B = A> = Meta[A] & { type?: B | [B, "null"] };
+type Typed<A extends keyof Meta, B, C extends Type[A]> = Join<
+  & { -readonly [D in keyof B]: B[D] }
+  & (B extends { type: [infer D extends keyof Type, "null"] }
+    ? { type: [D, "null"]; [TYPE]: C | null }
+    : B extends { type: infer D extends keyof Type } ? { type: D; [TYPE]: C }
+    : { type: A; [TYPE]: C })
+>;
 type Primitive<A extends keyof Meta, B extends keyof Type = A> = {
   <const C extends Enums<Type[B]>>(enums: C): {
     type: C extends readonly [...any[], null] ? [A, "null"] : A;
     enum: C;
     [TYPE]: C[number];
   };
-  <const C extends Typey<A, B> = {}>(meta?: C): Join<C & Typed<A, C>>;
+  <const C extends Typer<A, B> = {}>(meta?: C): Typed<A, C, Type[A]>;
 };
 const enumer = <A extends keyof Meta>(type: A) => ($: (Type[A] | null)[]) => (
   { type: $[$.length - 1] === null ? [type, "null"] : type, enum: $ }
@@ -69,14 +68,14 @@ export const number: Primitive<"number", "integer" | "number"> = /* @__PURE__ */
   schema.bind(null, "number", enumer("number"), ($) => $);
 /** Creates a string schema. */
 export const string: Primitive<"string"> & {
-  <const A extends keyof Format, const B extends Typey<"string"> = {}>(
+  <const A extends keyof Format, const B extends Typer<"string"> = {}>(
     format: A,
     meta?: B,
-  ): Join<B & { format: A } & Typed<"string", B, Format[A]>>;
-  <const A extends keyof Encoding, const B extends Typey<"string"> = {}>(
+  ): Typed<"string", B & { format: A }, Format[A]>;
+  <const A extends keyof Encoding, const B extends Typer<"string"> = {}>(
     encoding: A,
     meta?: B,
-  ): Join<B & { contentEncoding: A } & Typed<"string", B, Encoding[A]>>;
+  ): Typed<"string", B & { contentEncoding: A }, Encoding[A]>;
 } = /* @__PURE__ */ schema.bind(null, "string", enumer("string"), ($, meta) => {
   if (typeof $ !== "string") return $;
   if (Object.hasOwn(FORMAT, $)) return { ...meta, format: $ };
@@ -85,17 +84,17 @@ export const string: Primitive<"string"> & {
 });
 /** Creates an array schema. */
 export const array: {
-  <A extends Schema, const B extends Typey<"array"> = {}>(
+  <A extends Schema, const B extends Typer<"array"> = {}>(
     items: A,
     meta?: B,
-  ): Join<B & { items: A } & Typed<"array", B, readonly A[typeof TYPE][]>>;
-  <const A extends readonly Schema[], const B extends Typey<"array"> = {}>(
+  ): Typed<"array", B & { items: A }, readonly A[typeof TYPE][]>;
+  <const A extends readonly Schema[], const B extends Typer<"array"> = {}>(
     prefixItems: A,
     meta?: B,
-  ): Join<
-    & B
-    & { prefixItems: A; minItems: A["length"]; maxItems: A["length"] }
-    & Typed<"array", B, { [C in keyof A]: A[C][typeof TYPE] }>
+  ): Typed<
+    "array",
+    B & { prefixItems: A; minItems: A["length"]; maxItems: A["length"] },
+    { readonly [C in keyof A]: A[C][typeof TYPE] }
   >;
 } = /* @__PURE__ */ schema.bind(null, "array", (prefixItems, meta) => ({
   ...meta,
@@ -108,21 +107,23 @@ export const object: {
   <
     const A extends string,
     const B extends Schema,
-    const C extends Typey<"object"> = {},
-  >([pattern, property]: [A, B], meta?: C): Join<
-    & C
-    & { patternProperties: { [_ in A]: B }; additionalProperties: false }
-    & Typed<"object", C, { [_: string]: B[typeof TYPE] }>
+    const C extends Typer<"object"> = {},
+  >([pattern, property]: [A, B], meta?: C): Typed<
+    "object",
+    C & { patternProperties: { [_ in A]: B }; additionalProperties: false },
+    { [_: string]: B[typeof TYPE] }
   >;
   <
     const A extends { [_: string]: Schema },
-    const B extends Typey<"object"> = {},
-  >(properties: A, meta?: B): Join<
+    const B extends Typer<"object"> = {},
+  >(properties: A, meta?: B): Typed<
+    "object",
     B & {
       properties: { -readonly [C in keyof A]: A[C] };
       additionalProperties: false;
       required: string extends keyof A ? string[] : Tuple<keyof A>;
-    } & Typed<"object", B, { -readonly [C in keyof A]: A[C][typeof TYPE] }>
+    },
+    { -readonly [C in keyof A]: A[C][typeof TYPE] }
   >;
 } = /* @__PURE__ */ schema.bind(
   null,
