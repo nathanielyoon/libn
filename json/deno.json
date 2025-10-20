@@ -5,9 +5,9 @@
   "exports": {
     ".": "./mod.ts",
     "./lib": "./lib.ts",
-    "./pointer.ts": "./pointer.ts",
+    "./pointer": "./pointer.ts",
     "./regex": "./regex.ts",
-    "./schema.ts": "./schema.ts",
-    "./compile.ts": "./compile.ts"
+    "./schema": "./schema.ts",
+    "./compile": "./compile.ts"
   }
 }
