@@ -28,6 +28,7 @@ export type Schema =
   | {
     type: "object" | ["object", "null"];
     [TYPE]: { [_: string]: Json } | null;
+    additionalProperties: false;
   }
     & Meta["object"]
     & Xor<[
