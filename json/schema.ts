@@ -56,12 +56,12 @@ type Typed<A extends keyof Meta, B, C extends Type[A]> = Join<
   & { -readonly [D in keyof B]: B[D] }
 >;
 type Primitive<A extends keyof Meta, B extends keyof Type = A> = {
+  <const C extends Typer<A, B> = {}>(meta?: C): Typed<A, C, Type[A]>;
   <const C extends Enums<Type[B]>>(enums: C): {
     type: C extends readonly [...any[], null] ? readonly [A, "null"] : A;
     enum: C;
     [TYPE]: C[number];
   };
-  <const C extends Typer<A, B> = {}>(meta?: C): Typed<A, C, Type[A]>;
 };
 const enumer = <A extends keyof Meta>(type: A) => ($: (Type[A] | null)[]) => (
   { type: $[$.length - 1] === null ? [type, "null"] : type, enum: $ }
