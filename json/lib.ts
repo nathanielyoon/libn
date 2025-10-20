@@ -18,7 +18,8 @@ export type And<A> = (A extends never ? never : (_: A) => void) extends
 export type Tuple<A> = And<A extends never ? never : (_: A) => A> extends
   ((_: never) => infer B extends A) ? [...Tuple<Exclude<A, B>>, B] : [];
 /** Array type predicate. */
-export const isArray = Array.isArray as ($: any) => $ is any[] | readonly any[];
+export const isArray = /* @__PURE__ */
+  Array.isArray as ($: any) => $ is any[] | readonly any[];
 /** Non-null JSON types. */
 export interface Type {
   boolean: boolean;

@@ -63,10 +63,10 @@ const enumer = <A extends keyof Meta>(type: A) => ($: (Type[A] | null)[]) => (
 );
 /** Creates a boolean schema. */
 export const boolean: Primitive<"boolean"> = /* @__PURE__ */
-  schema.bind(null, "boolean", enumer("boolean"), ($) => $);
+  schema.bind(null, "boolean", /* @__PURE__ */ enumer("boolean"), ($) => $);
 /** Creates a number schema. */
 export const number: Primitive<"number", "integer" | "number"> = /* @__PURE__ */
-  schema.bind(null, "number", enumer("number"), ($) => $);
+  schema.bind(null, "number", /* @__PURE__ */ enumer("number"), ($) => $);
 /** Creates a string schema. */
 export const string: Primitive<"string"> & {
   <const A extends keyof Format, const B extends Typer<"string"> = {}>(
@@ -77,12 +77,17 @@ export const string: Primitive<"string"> & {
     encoding: A,
     meta?: B,
   ): Typed<"string", B & { contentEncoding: A }, Encoding[A]>;
-} = /* @__PURE__ */ schema.bind(null, "string", enumer("string"), ($, meta) => {
-  if (typeof $ !== "string") return $;
-  if (Object.hasOwn(FORMAT, $)) return { ...meta, format: $ };
-  if (Object.hasOwn(ENCODING, $)) return { ...meta, contentEncoding: $ };
-  return meta;
-});
+} = /* @__PURE__ */ schema.bind(
+  null,
+  "string",
+  /* @__PURE__ */ enumer("string"),
+  ($, meta) => {
+    if (typeof $ !== "string") return $;
+    if (Object.hasOwn(FORMAT, $)) return { ...meta, format: $ };
+    if (Object.hasOwn(ENCODING, $)) return { ...meta, contentEncoding: $ };
+    return meta;
+  },
+);
 /** Creates an array schema. */
 export const array: {
   <A extends Schema, const B extends Typer<"array"> = {}>(

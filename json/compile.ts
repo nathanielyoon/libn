@@ -4,7 +4,14 @@ import { enToken, type Pointer } from "./pointer.ts";
 import { ENCODING, FORMAT } from "./regex.ts";
 import type { Instance, Schema } from "./schema.ts";
 
-const is = ["boolean", "integer", "number", "string", "array", "object"].reduce(
+const is = /* @__PURE__ */ [
+  "boolean",
+  "integer",
+  "number",
+  "string",
+  "array",
+  "object",
+].reduce(
   (to, type) => ({ ...to, [type]: ($: Schema) => $.type[0][0] === type[0] }),
   {} as { [A in keyof Type]: ($: unknown) => $ is { type: A | [A, "null"] } },
 );
