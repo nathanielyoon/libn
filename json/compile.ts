@@ -89,7 +89,7 @@ const body = ($: Schema) => {
     all += "}else";
   } else if (is.object($)) {
     all +=
-      'typeof U==="object"&&U!==null&&!Array.isArray(U)){const s=S,i=I,u=U,k=Object.keys(u);';
+      'typeof U==="object"&&U!==null&&!Array.isArray(U)){const s=S,i=I,u=U,k=Object.keys(u),a=new Set(k);';
     if ($.minProperties && $.minProperties > 0) {
       all += wrap`k.length<${$.minProperties}&&${"minProperties"}`;
     }
@@ -98,24 +98,25 @@ const body = ($: Schema) => {
     }
     if ($.patternProperties) {
       all +=
-        'for(let z=0;z<k.length;++z){const K=k[z],T=,I=`${i}/${k[z].replaceAll("~","~0").replaceAll("/","~1")}`,U=u[K];';
+        'for(let z=0;z<k.length;++z){const K=k[z],I=`${i}/${k[z].replaceAll("~","~0").replaceAll("/","~1")}`,U=u[K];';
       for (const [key, value] of Object.entries($.patternProperties)) {
         all += `if(${regex(key)}.test(K)){const S=\`\${s}/${
           enToken(JSON.stringify(key).slice(1, -1))
-        }\`;${body(value)}}`;
+        }\`;${body(value)}a.delete(K)}`;
       }
+      all += "}";
     } else {
       for (const [key, value] of Object.entries($.properties)) {
         const string = JSON.stringify(key), path = enToken(string.slice(1, -1));
         all +=
           `if(Object.hasOwn(u,${string})){const S=\`\${s}/properties/${path}\`,I=\`\${i}/${path}\`,U=u[${string}];${
             body(value)
-          }}else yield\`\${s}/required/${
+          }a.delete(${string})}else yield\`\${s}/required/${
             $.required.indexOf(key)
           }~\${i}/${path}\`;`;
       }
     }
-    all += "}else";
+    all += wrap`${"a.size"}&&${"additionalProperties"}}else`;
   }
   return all + wrap`${isArray($.type) ? " U===null||" : ""}${"type"}`;
 };
