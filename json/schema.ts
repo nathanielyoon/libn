@@ -95,7 +95,7 @@ export const array: {
   ): Join<
     & B
     & { prefixItems: A; minItems: A["length"]; maxItems: A["length"] }
-    & Typed<"array", B, { -readonly [C in keyof A]: A[C][typeof TYPE] }>
+    & Typed<"array", B, { [C in keyof A]: A[C][typeof TYPE] }>
   >;
 } = /* @__PURE__ */ schema.bind(null, "array", (prefixItems, meta) => ({
   ...meta,
