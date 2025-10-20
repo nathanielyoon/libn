@@ -24,9 +24,12 @@ export const FORMAT: { [_ in keyof Format]: RegExp } = /* @__PURE__ */ (() => {
     uuid: /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/,
   };
 })();
+/** @internal */
 type Split<A extends string, B extends string = never> = A extends
   `${infer C}${infer D}` ? Split<D, B | C> : Uppercase<B> | Lowercase<B>;
+/** @internal */
 type Alpha = Split<"ABCDEFGHIJKLMNOPQRSTUVWXYZ">;
+/** @internal */
 type Digit = `${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`;
 /** Content encoding types. */
 export type Encoding = {

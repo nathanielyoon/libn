@@ -13,7 +13,9 @@ const is = /* @__PURE__ */ [
   "object",
 ].reduce(
   (to, type) => ({ ...to, [type]: ($: Schema) => $.type[0][0] === type[0] }),
-  {} as { [A in keyof Type]: ($: unknown) => $ is { type: A | [A, "null"] } },
+  {} as {
+    [A in keyof Type]: ($: unknown) => $ is { type: A | readonly [A, "null"] };
+  },
 );
 const wrap = (
   $: TemplateStringsArray,

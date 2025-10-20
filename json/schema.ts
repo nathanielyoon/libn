@@ -3,6 +3,7 @@ import { ENCODING, type Encoding, FORMAT, type Format } from "./regex.ts";
 
 /** Inferred value property, doesn't exist at runtime. */
 export const TYPE = /* @__PURE__ */ Symbol("TYPE");
+/** @internal */
 type Enums<A> = readonly [A, ...A[]] | readonly [A, ...A[], null];
 /** JSON schema subset. */
 export type Schema =
@@ -45,9 +46,11 @@ const schema = (
   $?: any,
   options?: any,
 ) => ({ type, ...Array.isArray($) ? form1($, options) : form2($, options) });
+/** @internal */
 type Typer<A extends keyof Meta, B = A> = Meta[A] & {
   type?: B | readonly [B, "null"];
 };
+/** @internal */
 type Typed<A extends keyof Meta, B, C extends Type[A]> = Join<
   & (B extends { type: readonly [infer D extends keyof Type, "null"] }
     ? { type: readonly [D, "null"]; [TYPE]: C | null }
@@ -55,6 +58,7 @@ type Typed<A extends keyof Meta, B, C extends Type[A]> = Join<
     : { type: A; [TYPE]: C })
   & { -readonly [D in keyof B]: B[D] }
 >;
+/** @internal */
 type Primitive<A extends keyof Meta, B extends keyof Type = A> = {
   <const C extends Typer<A, B> = {}>(meta?: C): Typed<A, C, Type[A]>;
   <const C extends Enums<Type[B]>>(enums: C): {
