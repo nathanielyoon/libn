@@ -1,4 +1,4 @@
-import type { Json } from "./lib.ts";
+import { isArray, type Json } from "./lib.ts";
 import type { Schema } from "./schema.ts";
 
 /** @internal */
@@ -50,7 +50,7 @@ export const get = ($: Json, pointer: string) => {
   for (let z = 0; z < tail.length; ++z) {
     if (typeof $ !== "object" || !$) return;
     const token = deToken(tail[z]);
-    if ((Array.isArray as ($: any) => $ is any[] | readonly any[])($)) {
+    if (isArray($)) {
       if (!/^(?:[1-9]\d*|0)$/.test(token)) return;
       $ = $[+token];
     } else $ = $[token];
