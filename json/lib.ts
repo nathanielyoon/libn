@@ -28,8 +28,6 @@ export interface Type {
   array: Json[] | readonly Json[];
   object: { [_: string]: Json };
 }
-/** JSON type names. */
-export type Kind = keyof Type;
 /** Type-specific constraints. */
 export interface Meta {
   boolean: {};

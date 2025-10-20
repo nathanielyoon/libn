@@ -1,70 +1,53 @@
-import type { Join, Json, Kind, Meta, Tuple, Type, Xor } from "./lib.ts";
+import type { Join, Json, Meta, Tuple, Type, Xor } from "./lib.ts";
 import { ENCODING, type Encoding, FORMAT, type Format } from "./regex.ts";
 
 declare const TYPE: unique symbol;
+type Enums<A> = readonly [A, ...A[]] | readonly [A, ...A[], null];
 /** JSON schema subset. */
 export type Schema =
-  & { [TYPE]: Json }
-  & (
-    | { type: "boolean" }
-      & Xor<[{ enum: readonly [boolean, ...boolean[]] }, {}]>
-    | { type: ["boolean", "null"] }
-      & Xor<[{ enum: readonly [boolean, ...boolean[], null] }, {}]>
-    | { type: "integer" }
-      & Xor<[{ enum: readonly [number, ...number[]] }, Meta["number"]]>
-    | { type: ["integer", "null"] }
-      & Xor<[{ enum: readonly [number, ...number[], null] }, Meta["number"]]>
-    | { type: "number" }
-      & Xor<[{ enum: readonly [number, ...number[]] }, Meta["number"]]>
-    | { type: ["number", "null"] }
-      & Xor<[{ enum: readonly [number, ...number[], null] }, Meta["number"]]>
-    | { type: "string" }
-      & Xor<[
-        { enum: readonly [string, ...string[]] },
-        & Meta["string"]
-        & Xor<
-          [{ format: keyof Format }, { contentEncoding: keyof Encoding }, {}]
-        >,
-      ]>
-    | { type: ["string", "null"] }
-      & Xor<[
-        { enum: readonly [string, ...string[], null] },
-        & Meta["string"]
-        & Xor<
-          [{ format: keyof Format }, { contentEncoding: keyof Encoding }, {}]
-        >,
-      ]>
-    | { type: "array" | ["array", "null"] }
-      & Meta["array"]
-      & Xor<[{ items: Schema }, { prefixItems: readonly Schema[] }]>
-    | { type: "object" | ["object", "null"] }
-      & Meta["object"]
-      & Xor<[
-        { patternProperties: { [_: string]: Schema } },
-        { properties: { [_: string]: Schema }; required: readonly string[] },
-      ]>
-  );
+  | { type: "boolean" | ["boolean", "null"]; [TYPE]: boolean | null }
+    & Xor<[{ enum: Enums<boolean> }, {}]>
+  | { type: "integer" | ["integer", "null"]; [TYPE]: number | null }
+    & Xor<[{ enum: Enums<number> }, Meta["number"]]>
+  | { type: "number" | ["number", "null"]; [TYPE]: number | null }
+    & Xor<[{ enum: Enums<number> }, Meta["number"]]>
+  | { type: "string" | ["string", "null"]; [TYPE]: string | null }
+    & Xor<[
+      { enum: Enums<string> },
+      & Meta["string"]
+      & Xor<
+        [{ format: keyof Format }, { contentEncoding: keyof Encoding }, {}]
+      >,
+    ]>
+  | { type: "array" | ["array", "null"]; [TYPE]: Json[] | null }
+    & Meta["array"]
+    & Xor<[{ items: Schema }, { prefixItems: readonly Schema[] }]>
+  | {
+    type: "object" | ["object", "null"];
+    [TYPE]: { [_: string]: Json } | null;
+  }
+    & Meta["object"]
+    & Xor<[
+      { patternProperties: { [_: string]: Schema } },
+      { properties: { [_: string]: Schema }; required: readonly string[] },
+    ]>;
 /** Inferred value type. */
 export type Instance<A> = A extends { [TYPE]: infer B extends Json } ? B : Json;
 const schema = (
-  type: Kind,
+  type: keyof Type,
   form1: ($: any[], options?: any) => any,
   form2: ($?: any, options?: any) => any,
   $?: any,
   options?: any,
 ) => ({ type, ...Array.isArray($) ? form1($, options) : form2($, options) });
 type Typey<A extends keyof Meta, B = A> = Meta[A] & { type?: B | [B, "null"] };
-type Typed<A extends Kind, B, C = Type[A]> = B extends
-  { type: [infer D extends Kind, "null"] }
+type Typed<A extends keyof Type, B, C = Type[A]> = B extends
+  { type: [infer D extends keyof Type, "null"] }
   ? { type: [D, "null"]; [TYPE]: C | null }
-  : B extends { type: infer D extends Kind } ? { type: D; [TYPE]: C }
+  : B extends { type: infer D extends keyof Type } ? { type: D; [TYPE]: C }
   : { type: A; [TYPE]: C };
-type Primitive<A extends keyof Meta, B extends Kind = A> = {
-  <
-    const C extends
-      | readonly [Type[B], ...Type[B][]]
-      | readonly [Type[B], ...Type[B][], null],
-  >(enums: C): {
+type Primitive<A extends keyof Meta, B extends keyof Type = A> = {
+  <const C extends Enums<Type[B]>>(enums: C): {
     type: C extends readonly [...any[], null] ? [A, "null"] : A;
     enum: C;
     [TYPE]: C[number];

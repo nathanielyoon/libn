@@ -1,11 +1,11 @@
 import { unrexp } from "@libn/text/normalize";
-import { isArray, type Json, type Kind } from "./lib.ts";
+import { isArray, type Json, type Type } from "./lib.ts";
 import { enToken, type Pointer } from "./pointer.ts";
 import { ENCODING, FORMAT } from "./regex.ts";
 import type { Instance, Schema } from "./schema.ts";
 
 const isSchema: {
-  [A in Kind]: ($: Schema) => $ is Extract<Schema, { type: A | [A, "null"] }>;
+  [A in keyof Type]: ($: unknown) => $ is { type: A | [A, "null"] };
 } = ["boolean", "integer", "number", "string", "array", "object"].reduce<any>(
   (to, type) => ({ ...to, [type]: ($: Schema) => $.type[0][0] === type[0] }),
   {},
