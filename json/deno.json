@@ -3,10 +3,6 @@
   "version": "0.3.0",
   "license": "GPL-3.0-or-later",
   "exports": {
-    ".": "./mod.ts",
-    "./schema": "./schema.ts",
-    "./build": "./build.ts",
-    "./code": "./code.ts",
-    "./parse": "./parse.ts"
+    ".": "./mod.ts"
   }
 }
