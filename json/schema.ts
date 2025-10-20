@@ -6,13 +6,13 @@ export const TYPE = /* @__PURE__ */ Symbol("TYPE");
 type Enums<A> = readonly [A, ...A[]] | readonly [A, ...A[], null];
 /** JSON schema subset. */
 export type Schema =
-  | { type: "boolean" | ["boolean", "null"]; [TYPE]: boolean | null }
+  | { type: "boolean" | readonly ["boolean", "null"]; [TYPE]: boolean | null }
     & Xor<[{ enum: Enums<boolean> }, {}]>
-  | { type: "integer" | ["integer", "null"]; [TYPE]: number | null }
+  | { type: "integer" | readonly ["integer", "null"]; [TYPE]: number | null }
     & Xor<[{ enum: Enums<number> }, Meta["number"]]>
-  | { type: "number" | ["number", "null"]; [TYPE]: number | null }
+  | { type: "number" | readonly ["number", "null"]; [TYPE]: number | null }
     & Xor<[{ enum: Enums<number> }, Meta["number"]]>
-  | { type: "string" | ["string", "null"]; [TYPE]: string | null }
+  | { type: "string" | readonly ["string", "null"]; [TYPE]: string | null }
     & Xor<[
       { enum: Enums<string> },
       & Meta["string"]
@@ -20,11 +20,14 @@ export type Schema =
         [{ format: keyof Format }, { contentEncoding: keyof Encoding }, {}]
       >,
     ]>
-  | { type: "array" | ["array", "null"]; [TYPE]: readonly Json[] | null }
+  | {
+    type: "array" | readonly ["array", "null"];
+    [TYPE]: readonly Json[] | null;
+  }
     & Meta["array"]
     & Xor<[{ items: Schema }, { prefixItems: readonly Schema[] }]>
   | {
-    type: "object" | ["object", "null"];
+    type: "object" | readonly ["object", "null"];
     [TYPE]: { [_: string]: Json } | null;
     additionalProperties: false;
   }
@@ -52,7 +55,7 @@ type Typed<A extends keyof Meta, B, C extends Type[A]> = Join<
 >;
 type Primitive<A extends keyof Meta, B extends keyof Type = A> = {
   <const C extends Enums<Type[B]>>(enums: C): {
-    type: C extends readonly [...any[], null] ? [A, "null"] : A;
+    type: C extends readonly [...any[], null] ? readonly [A, "null"] : A;
     enum: C;
     [TYPE]: C[number];
   };
