@@ -36,7 +36,9 @@
         "crockford.com",
         "www.ietf.org"
       ],
-      "write": true
+      "write": true,
+      "read": true,
+      "run": ["g++"]
     }
   },
   "lint": {
