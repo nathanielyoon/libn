@@ -1,21 +1,26 @@
 import { assertEquals, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
 import { crypto as std } from "@std/crypto";
+import { deUtf8, enUtf8 } from "@libn/base";
 import { iv, multiply, perm } from "./lib.ts";
+import * as integer from "@libn/hash/integer";
 import { sha224, sha256, sha384, sha512 } from "@libn/hash/sha2";
 import { hkdf, hmac } from "@libn/hash/hmac";
 import { blake2b, blake2s } from "@libn/hash/blake2";
 import { blake3 } from "@libn/hash/blake3";
 import vectors from "./vectors.json" with { type: "json" };
 
+const fcUint = fc.double({
+  min: 0,
+  max: -1 >>> 0,
+  noDefaultInfinity: true,
+  noNaN: true,
+}).map(($) => $ >>> 0);
 Deno.test("lib", async (t) => {
   await t.step("iv() parses base16", () => {
     fc.assert(fc.property(fc.uint32Array({ minLength: 1 }), ($) => {
       assertEquals(
-        iv([...$].reduce(
-          (hex, word) => hex + word.toString(16).padStart(8, "0"),
-          "",
-        )),
+        iv(Array.from($, (int) => int.toString(16).padStart(8, "0")).join("")),
         $,
       );
     }));
@@ -31,20 +36,45 @@ Deno.test("lib", async (t) => {
     }));
   });
   await t.step("multiply() multiplies", () => {
-    const fcUint = fc.double({
-      min: 0,
-      max: -1 >>> 0,
-      noDefaultInfinity: true,
-      noNaN: true,
-    }).map(($) => $ >>> 0);
     fc.assert(fc.property(fcUint, fcUint, (one, two) => {
       const product = BigInt(one) * BigInt(two);
       const { hi, lo } = multiply(one, two);
-      assertEquals(BigInt(hi) * 0x100000000n + BigInt(lo), product);
+      assertEquals(BigInt(hi >>> 0) * 0x100000000n + BigInt(lo >>> 0), product);
       assertEquals(hi >>> 0, Number(product >> 32n));
       assertEquals(lo >>> 0, Number(product & 0xffffffffn));
     }));
   });
+});
+const run = async ($: Deno.ChildProcess, stdin: string) => {
+  const writer = $.stdin.getWriter();
+  await writer.write(enUtf8(stdin));
+  await writer.close();
+  const out = await $.output();
+  if (!out.success) throw Error(deUtf8(out.stderr), { cause: out.code });
+  return out.stdout;
+};
+Deno.test("integer", async (t) => {
+  for (const $ of ["oaat", "a5hash"] as const) {
+    await t.step(`${$}() follows original implementation`, async () => {
+      const path = `${import.meta.dirname}/${$}.out`;
+      await Deno.writeFile(path, Uint8Array.fromHex(vectors[$]), {
+        mode: 0o755,
+      });
+      const out = new Deno.Command(path, {
+        stdin: "piped",
+        stdout: "piped",
+        stderr: "piped",
+      });
+      const hash = integer[$];
+      await fc.assert(fc.asyncProperty(fc.string(), fcUint, async ($, seed) => {
+        assertEquals(
+          hash(enUtf8($), seed),
+          parseInt(deUtf8(await run(out.spawn(), `${$}\n${seed}`))),
+        );
+      }));
+      await Deno.remove(path);
+    });
+  }
 });
 Deno.test("sha2", async (t) => {
   await t.step("sha224() passes reference vectors", () => {
@@ -279,6 +309,68 @@ Deno.test("blake3", async (t) => {
   });
 });
 import.meta.main && await Promise.all([
+  Promise.all([
+    fetch(
+      "https://raw.githubusercontent.com/rurban/smhasher/3931fd6f723f4fb2afab6ef9a628912220e90ce7/Hashes.cpp",
+    ).then(($) => $.text()).then(($) =>
+      `#include <cassert>
+#include <cstdint>
+#include <iostream>
+
+${$.slice(6690, 7787)}
+
+int main(void) {
+  std::string key;
+  assert(std::getline(std::cin, key));
+
+  uint32_t seed;
+  std::cin >> seed;
+
+  uint32_t out;
+  GoodOAAT(key.c_str(), key.size(), seed, &out);
+  std::cout << out << std::endl;
+
+  return 0;
+}
+`
+    ),
+    fetch(
+      "https://raw.githubusercontent.com/avaneev/a5hash/c9ce07aad514ef7073f1436e5bed26310aab8c2c/a5hash.h",
+    ).then(($) => $.text()).then(($) =>
+      `#include <iostream>
+#include <cassert>
+
+${$}
+
+int main(void) {
+	std::string Msg0;
+	assert(std::getline(std::cin, Msg0));
+
+	uint32_t seed;
+	std::cin >> seed;
+
+	std::cout << a5hash32(Msg0.c_str(), Msg0.size(), seed) << std::endl;
+
+	return 0;
+}
+`
+    ),
+  ]).then(($) =>
+    Array.fromAsync($, async (cpp) => {
+      await run(
+        new Deno.Command("g++", {
+          args: ["-x", "c++", "-"],
+          stdin: "piped",
+          stdout: "piped",
+          stderr: "piped",
+        }).spawn(),
+        cpp,
+      );
+      const bin = await Deno.readFile("./a.out");
+      await Deno.remove("./a.out");
+      return bin.toHex();
+    })
+  ),
   Promise.all(Array.from([224, 256, 384, 512], (size) =>
     fetch(
       `https://raw.githubusercontent.com/usnistgov/ACVP-Server/fb44dce5257aba23088256e63c9b950db6967610/gen-val/json-files/SHA2-${size}-1.0/internalProjection.json`,
@@ -336,43 +428,43 @@ import.meta.main && await Promise.all([
       derive_key: string;
     }[];
   }>(($) => $.json()),
-]).then(([nist, hmac, hkdf, blake2, blake3]) => {
-  return {
-    sha224: nist[0],
-    sha256: nist[1],
-    sha384: nist[2],
-    sha512: nist[3],
-    hmac: hmac.testGroups.flatMap((group) =>
-      group.tests.map(($) => ({
-        key: $.key,
-        data: $.msg,
-        tag: $.tag,
-        result: $.result === "valid",
-      }))
-    ),
-    hkdf: hkdf.testGroups.flatMap((group) =>
-      group.tests.map(($) => ({
-        key: $.ikm,
-        info: $.info,
-        salt: $.salt,
-        out: $.size,
-        derived: $.result === "valid" ? $.okm : "",
-      }))
-    ),
-    blake2s: blake2[0],
-    blake2b: blake2[1],
-    blake3: {
-      key: blake3.key,
-      context: blake3.context_string,
-      length: blake3.cases[0].hash.length >> 1,
-      cases: blake3.cases.map(($) => ({
-        input: $.input_len,
-        hash: $.hash,
-        keyed: $.keyed_hash,
-        derive: $.derive_key,
-      })),
-    },
-  };
-}).then(($) =>
+]).then(([cpp, nist, hmac, hkdf, blake2, blake3]) => ({
+  oaat: cpp[0],
+  a5hash: cpp[1],
+  sha224: nist[0],
+  sha256: nist[1],
+  sha384: nist[2],
+  sha512: nist[3],
+  hmac: hmac.testGroups.flatMap((group) =>
+    group.tests.map(($) => ({
+      key: $.key,
+      data: $.msg,
+      tag: $.tag,
+      result: $.result === "valid",
+    }))
+  ),
+  hkdf: hkdf.testGroups.flatMap((group) =>
+    group.tests.map(($) => ({
+      key: $.ikm,
+      info: $.info,
+      salt: $.salt,
+      out: $.size,
+      derived: $.result === "valid" ? $.okm : "",
+    }))
+  ),
+  blake2s: blake2[0],
+  blake2b: blake2[1],
+  blake3: {
+    key: blake3.key,
+    context: blake3.context_string,
+    length: blake3.cases[0].hash.length >> 1,
+    cases: blake3.cases.map(($) => ({
+      input: $.input_len,
+      hash: $.hash,
+      keyed: $.keyed_hash,
+      derive: $.derive_key,
+    })),
+  },
+})).then(($) =>
   Deno.writeTextFile(`${import.meta.dirname}/vectors.json`, JSON.stringify($))
 );

@@ -12,5 +12,8 @@
   },
   "imports": {
     "@std/crypto": "jsr:@std/crypto@^1.0.5"
+  },
+  "test": {
+    "permissions": { "write": true, "run": true }
   }
 }
