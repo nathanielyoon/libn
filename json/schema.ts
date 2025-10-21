@@ -103,12 +103,17 @@ export const array: {
     items: A,
     meta?: B,
   ): Typed<"array", B & { items: A }, readonly A[typeof TYPE][]>;
-  <const A extends readonly Schema[], const B extends Typer<"array"> = {}>(
-    prefixItems: A,
-    meta?: B,
-  ): Typed<
+  <
+    const A extends readonly Schema[],
+    const B extends Typer<"array"> & { minItems?: never; maxItems?: never } =
+      {},
+  >(prefixItems: A, meta?: B): Typed<
     "array",
-    B & { prefixItems: A; minItems: A["length"]; maxItems: A["length"] },
+    Omit<B, "minItems" | "maxItems"> & {
+      prefixItems: A;
+      minItems: A["length"];
+      maxItems: A["length"];
+    },
     { readonly [C in keyof A]: A[C][typeof TYPE] }
   >;
 } = /* @__PURE__ */ schema.bind(null, "array", (prefixItems, meta) => ({
@@ -136,7 +141,8 @@ export const object: {
     B & {
       properties: { -readonly [C in keyof A]: A[C] };
       additionalProperties: false;
-      required: string extends keyof A ? string[] : Tuple<keyof A>;
+      required: (string | number) extends keyof A ? string[]
+        : Tuple<`${Extract<keyof A, string | number>}`>;
     },
     { -readonly [C in keyof A]: A[C][typeof TYPE] }
   >;
