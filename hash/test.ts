@@ -1,12 +1,51 @@
 import { assertEquals, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
 import { crypto as std } from "@std/crypto";
+import { iv, multiply, perm } from "./lib.ts";
 import { sha224, sha256, sha384, sha512 } from "@libn/hash/sha2";
 import { hkdf, hmac } from "@libn/hash/hmac";
 import { blake2b, blake2s } from "@libn/hash/blake2";
 import { blake3 } from "@libn/hash/blake3";
 import vectors from "./vectors.json" with { type: "json" };
 
+Deno.test("lib", async (t) => {
+  await t.step("iv() parses base16", () => {
+    fc.assert(fc.property(fc.uint32Array({ minLength: 1 }), ($) => {
+      assertEquals(
+        iv([...$].reduce(
+          (hex, word) => hex + word.toString(16).padStart(8, "0"),
+          "",
+        )),
+        $,
+      );
+    }));
+  });
+  await t.step("perm() parses base16", () => {
+    fc.assert(fc.property(fc.uint8Array({ max: 15 }), ($) => {
+      const base = $.reduce((hex, byte) => hex + byte.toString(16), "");
+      assertEquals(perm(base), $);
+      assertEquals(perm(base.split("")), $);
+      for (let z = 0; z <= 4; ++z) {
+        assertEquals(perm(base, z), $.map((byte) => byte << z));
+      }
+    }));
+  });
+  await t.step("multiply() multiplies", () => {
+    const fcUint = fc.double({
+      min: 0,
+      max: -1 >>> 0,
+      noDefaultInfinity: true,
+      noNaN: true,
+    }).map(($) => $ >>> 0);
+    fc.assert(fc.property(fcUint, fcUint, (one, two) => {
+      const product = BigInt(one) * BigInt(two);
+      const { hi, lo } = multiply(one, two);
+      assertEquals(BigInt(hi) * 0x100000000n + BigInt(lo), product);
+      assertEquals(hi >>> 0, Number(product >> 32n));
+      assertEquals(lo >>> 0, Number(product & 0xffffffffn));
+    }));
+  });
+});
 Deno.test("sha2", async (t) => {
   await t.step("sha224() passes reference vectors", () => {
     for (const $ of vectors.sha224) {
