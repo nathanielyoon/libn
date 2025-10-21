@@ -95,7 +95,8 @@
  * @module hash
  */
 
-export { a5hash, oaat } from "./integer.ts";
+export { add128, type Hash, mul128, mul64 } from "./lib.ts";
+export { a5hash32, oaat32 } from "./integer.ts";
 export { sha224, sha256, sha384, sha512 } from "./sha2.ts";
 export { hkdf, hmac } from "./hmac.ts";
 export { blake2b, blake2s } from "./blake2.ts";
