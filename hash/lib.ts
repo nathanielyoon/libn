@@ -6,3 +6,9 @@ export const iv = (hex: string): Uint32Array<ArrayBuffer> =>
 /** Parses a base16-encoded permutation table into 8-bit words. */
 export const perm = (hex: string | string[], shift?: number) =>
   Uint8Array.from(hex, ($) => parseInt($, 16) << shift!);
+/** Multiplies two 32-bit numbers into the 32-bit halves of a 64-bit product. */
+export const multiply = (one: number, two: number) => {
+  const a = one & 0xffff, b = one >>> 16, c = two & 0xffff, d = two >>> 16;
+  const e = a * c, f = b * c, g = (e >>> 16) + (f & 0xffff) + a * d;
+  return { hi: (f >>> 16) + (g >>> 16) + b * d, lo: g << 16 | e & 0xffff };
+};
