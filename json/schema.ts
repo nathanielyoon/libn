@@ -119,8 +119,8 @@ export const array: {
 } = /* @__PURE__ */ schema.bind(null, "array", (prefixItems, meta) => ({
   ...meta,
   prefixItems,
-  minLength: prefixItems.length,
-  maxLength: prefixItems.length,
+  minItems: prefixItems.length,
+  maxItems: prefixItems.length,
 }), (items, meta) => ({ ...meta, items }));
 /** Creates an object schema. */
 export const object: {
