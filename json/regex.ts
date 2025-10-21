@@ -2,11 +2,11 @@ import { B16, B32, B64, H32, U64 } from "@libn/base";
 
 /** String format types. */
 export type Format = {
-  "date-time": `${Format["date"]}T${Format["time"]}`;
   date: `${number}-${number}-${number}`;
   time: `${number}:${number}:${number}${`.${number}` | ""}${
     | `${"-" | "+"}${number}:${number}`
     | "Z"}`;
+  "date-time": `${Format["date"]}T${Format["time"]}`;
   email: `${string}@${string}.${string}`;
   uri: `${string}:${string}`;
   uuid: `${string}-${string}-${string}-${string}-${string}`;
