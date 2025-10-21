@@ -2,8 +2,16 @@ import { assertEquals, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
 import { crypto as std } from "@std/crypto";
 import { deUtf8, enUtf8 } from "@libn/base";
-import { iv, multiply, perm } from "./lib.ts";
-import * as integer from "@libn/hash/integer";
+import {
+  add128,
+  deInteger,
+  enInteger,
+  iv,
+  mul128,
+  mul64,
+  perm,
+} from "@libn/hash/lib";
+import { a5hash32, a5hash64, oaat32 } from "@libn/hash/integer";
 import { sha224, sha256, sha384, sha512 } from "@libn/hash/sha2";
 import { hkdf, hmac } from "@libn/hash/hmac";
 import { blake2b, blake2s } from "@libn/hash/blake2";
@@ -16,6 +24,8 @@ const fcUint = fc.double({
   noDefaultInfinity: true,
   noNaN: true,
 }).map(($) => $ >>> 0);
+const U64 = 0xffffffffffffffffn;
+const fcBigUint = fc.bigInt({ min: 0n, max: U64 });
 Deno.test("lib", async (t) => {
   await t.step("iv() parses base16", () => {
     fc.assert(fc.property(fc.uint32Array({ minLength: 1 }), ($) => {
@@ -35,13 +45,39 @@ Deno.test("lib", async (t) => {
       }
     }));
   });
-  await t.step("multiply() multiplies", () => {
+  await t.step("mul64() multiplies 64 bits", () => {
     fc.assert(fc.property(fcUint, fcUint, (one, two) => {
-      const product = BigInt(one) * BigInt(two);
-      const { hi, lo } = multiply(one, two);
-      assertEquals(BigInt(hi >>> 0) * 0x100000000n + BigInt(lo >>> 0), product);
-      assertEquals(hi >>> 0, Number(product >> 32n));
-      assertEquals(lo >>> 0, Number(product & 0xffffffffn));
+      const big = BigInt(one) * BigInt(two) & U64;
+      const pair = mul64(one, two);
+      assertEquals(deInteger(pair), big);
+      assertEquals({ hi: pair.hi >>> 0, lo: pair.lo >>> 0 }, enInteger(big));
+    }));
+  });
+  await t.step("add128() adds 128 bits", () => {
+    fc.assert(fc.property(fcBigUint, fcBigUint, (one, two) => {
+      const big = one + two & U64;
+      const pair = enInteger(one);
+      add128(pair, enInteger(two));
+      assertEquals(deInteger(pair), big);
+      assertEquals({ hi: pair.hi >>> 0, lo: pair.lo >>> 0 }, enInteger(big));
+    }));
+  });
+  await t.step("mul128() multiplies 128 bits", () => {
+    fc.assert(fc.property(fcBigUint, fcBigUint, (one, two) => {
+      const big = one * two;
+      const pair1 = enInteger(one);
+      const pair2 = enInteger(two);
+      mul128(pair1, pair2);
+      assertEquals(deInteger(pair2), big >> 64n);
+      assertEquals(
+        { hi: pair2.hi >>> 0, lo: pair2.lo >>> 0 },
+        enInteger(big >> 64n),
+      );
+      assertEquals(deInteger(pair1), big & U64);
+      assertEquals(
+        { hi: pair1.hi >>> 0, lo: pair1.lo >>> 0 },
+        enInteger(big & U64),
+      );
     }));
   });
 });
@@ -51,34 +87,68 @@ const run = async ($: Deno.ChildProcess, stdin: string) => {
   await writer.close();
   const out = await $.output();
   if (!out.success) throw Error(deUtf8(out.stderr), { cause: out.code });
-  return out.stdout;
+  return deUtf8(out.stdout);
 };
 Deno.test("integer", async (t) => {
-  for (const $ of ["oaat", "a5hash"] as const) {
-    await t.step(`${$}() follows original implementation`, async () => {
-      const path = `${import.meta.dirname}/${$}.out`;
-      await Deno.writeFile(path, Uint8Array.fromHex(vectors[$]), {
-        mode: 0o755,
-      });
-      const out = new Deno.Command(path, {
-        stdin: "piped",
-        stdout: "piped",
-        stderr: "piped",
-      });
-      const hash = integer[$];
-      await fc.assert(fc.asyncProperty(
-        fc.string({ size: "medium" }),
-        fcUint,
-        async ($, seed) => {
-          assertEquals(
-            hash(enUtf8($), seed),
-            parseInt(deUtf8(await run(out.spawn(), `${$}\n${seed}`))),
-          );
-        },
-      ));
-      await Deno.remove(path);
+  await t.step("oaat() follows original implementation", async () => {
+    const path = `${import.meta.dirname}/oaat.out`;
+    await Deno.writeFile(path, Uint8Array.fromHex(vectors.oaat), {
+      mode: 0o755,
     });
-  }
+    const out = new Deno.Command(
+      path,
+      { stdin: "piped", stdout: "piped", stderr: "piped" },
+    );
+    await fc.assert(fc.asyncProperty(
+      fc.string({ size: "medium" }),
+      fcUint,
+      async ($, seed) => {
+        assertEquals(
+          oaat32(enUtf8($), seed),
+          +(await run(out.spawn(), `${$}\n${seed}`)),
+        );
+      },
+    ));
+    await Deno.remove(path);
+  });
+  const path = `${import.meta.dirname}/a5hash.out`;
+  await Deno.writeFile(path, Uint8Array.fromHex(vectors.a5hash), {
+    mode: 0o755,
+  });
+  await t.step("a5hash32() follows original implementation", async () => {
+    const out = new Deno.Command(
+      path,
+      { args: ["\x20"], stdin: "piped", stdout: "piped", stderr: "piped" },
+    );
+    await fc.assert(fc.asyncProperty(
+      fc.string({ size: "medium" }),
+      fcUint,
+      async ($, seed) => {
+        assertEquals(
+          a5hash32(enUtf8($), seed),
+          +(await run(out.spawn(), `${$}\n${seed}`)),
+        );
+      },
+    ));
+  });
+  await t.step("a5hash64() follows original implementation", async () => {
+    const out = new Deno.Command(
+      path,
+      { args: ["\x40"], stdin: "piped", stdout: "piped", stderr: "piped" },
+    );
+    await fc.assert(fc.asyncProperty(
+      fc.string({ size: "medium" }),
+      fcBigUint,
+      async ($, seed) => {
+        const [hi, lo] = (await run(out.spawn(), `${$}\n${seed}`)).split(" ");
+        assertEquals(
+          a5hash64(enUtf8($), enInteger(seed)),
+          { hi: +hi, lo: +lo },
+        );
+      },
+    ));
+  });
+  await Deno.remove(path);
 });
 Deno.test("sha2", async (t) => {
   await t.step("sha224() passes reference vectors", () => {
@@ -346,16 +416,32 @@ int main(void) {
 
 ${$}
 
-int main(void) {
-	std::string Msg0;
-	assert(std::getline(std::cin, Msg0));
+int main(int argc, char **argv) {
+  if (argc != 2)
+    return 1;
 
-	uint32_t seed;
-	std::cin >> seed;
+  std::string Msg0;
+  assert(std::getline(std::cin, Msg0));
 
-	std::cout << a5hash32(Msg0.c_str(), Msg0.size(), seed) << std::endl;
+  uint64_t seed;
+  std::cin >> seed;
 
-	return 0;
+  switch (argv[1][0]) {
+  case '\x20': {
+    uint32_t hash = a5hash32(Msg0.c_str(), Msg0.size(), seed);
+    std::cout << hash << std::endl;
+    break;
+  }
+  case '\x40': {
+    uint64_t hash = a5hash(Msg0.c_str(), Msg0.size(), seed);
+    std::cout << (hash >> 32) << " " << (hash & 0xffffffff) << std::endl;
+    break;
+  }
+  default:
+    return 1;
+  }
+
+  return 0;
 }
 `
     ),
