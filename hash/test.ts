@@ -66,12 +66,16 @@ Deno.test("integer", async (t) => {
         stderr: "piped",
       });
       const hash = integer[$];
-      await fc.assert(fc.asyncProperty(fc.string(), fcUint, async ($, seed) => {
-        assertEquals(
-          hash(enUtf8($), seed),
-          parseInt(deUtf8(await run(out.spawn(), `${$}\n${seed}`))),
-        );
-      }));
+      await fc.assert(fc.asyncProperty(
+        fc.string({ size: "medium" }),
+        fcUint,
+        async ($, seed) => {
+          assertEquals(
+            hash(enUtf8($), seed),
+            parseInt(deUtf8(await run(out.spawn(), `${$}\n${seed}`))),
+          );
+        },
+      ));
       await Deno.remove(path);
     });
   }
