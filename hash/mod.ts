@@ -3,6 +3,7 @@
  *
  * @example SHA-2 hashing
  * ```ts
+ * import { sha224, sha256, sha384, sha512 } from "./sha2.ts";
  * import { assertEquals } from "@std/assert";
  * import { crypto } from "@std/crypto";
  *
@@ -27,6 +28,8 @@
  *
  * @example BLAKE hashing
  * ```ts
+ * import { blake2b, blake2s } from "./blake2.ts";
+ * import { blake3 } from "./blake3.ts";
  * import { assertEquals } from "@std/assert";
  * import { crypto } from "@std/crypto";
  *
@@ -47,6 +50,7 @@
  *
  * @example Signing
  * ```ts
+ * import { hmac } from "./hmac.ts";
  * import { assertEquals } from "@std/assert";
  *
  * const key = crypto.getRandomValues(new Uint8Array(32));
@@ -69,6 +73,7 @@
  *
  * @example Key derivation
  * ```ts
+ * import { hkdf } from "./hmac.ts";
  * import { assertEquals } from "@std/assert";
  *
  * const key = crypto.getRandomValues(new Uint8Array(32));
@@ -90,9 +95,8 @@
  * @module hash
  */
 
-import { sha224, sha256, sha384, sha512 } from "./sha2.ts";
-import { hkdf, hmac } from "./hmac.ts";
-import { blake2b, blake2s } from "./blake2.ts";
-import { blake3 } from "./blake3.ts";
-
-export { blake2b, blake2s, blake3, hkdf, hmac, sha224, sha256, sha384, sha512 };
+export { a5hash, oaat } from "./integer.ts";
+export { sha224, sha256, sha384, sha512 } from "./sha2.ts";
+export { hkdf, hmac } from "./hmac.ts";
+export { blake2b, blake2s } from "./blake2.ts";
+export { blake3 } from "./blake3.ts";
