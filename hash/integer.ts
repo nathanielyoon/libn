@@ -57,7 +57,9 @@ export const a5hash64 = ($: Uint8Array, seed: Integer): Integer => {
   const v10 = { lo: 0xaaaaaaaa, hi: 0xaaaaaaaa };
   let z, y = $.length;
   const lo = y % 0x100000000 | 0, hi = y / 0x100000000 | 0;
-  // Wrong!
+  // Since the 128-bit multiply directly mutates the integers, initialization is
+  // swapped from the source, which reverses the order of arguments in the first
+  // call and not any of the others.
   const s1 = {
     hi: 0x452821e6 ^ hi ^ seed.hi & v10.hi,
     lo: 0x38d01377 ^ lo ^ seed.lo & v10.lo,
