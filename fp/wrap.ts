@@ -1,9 +1,9 @@
-import { fail, type Ok, pass, type Result } from "./result.ts";
+import { fail, type Ok, pass, type Result, type Yieldable } from "./result.ts";
 
 /** Aggregates results. */
 export const join = <const A extends [Result, ...Result[]]>(
   $: A,
-): Result<A, { [B in keyof A]: Ok<A[B]> }> => {
+): Yieldable<A, { [B in keyof A]: Ok<A[B]> }> => {
   const ok = Array($.length) as { [B in keyof A]: Ok<A[B]> };
   let z = 0;
   do if ($[z].state) ok[z] = $[z].value;
@@ -32,29 +32,32 @@ export const safe =
     <A extends unknown[], B, C = Error>(
       unsafe: (...$: A) => B extends Promise<any> ? never : B,
       or?: (error: Error, ...$: A) => C extends Promise<any> ? never : C,
-    ): (...$: A) => Result<C, B>;
+    ): (...$: A) => Yieldable<C, B>;
     <A extends unknown[], B, C = Error>(
       unsafe: (...$: A) => Promise<B>,
       or?: (error: Error, ...$: A) => C | Promise<C>,
-    ): (...$: A) => Promise<Result<C, B>>;
+    ): (...$: A) => Promise<Yieldable<C, B>>;
   };
 /** Wraps an imperative block and returns failures early. */
 export const exec =
-  ((block: (...$: any[]) => Generator<Result> | AsyncGenerator<Result>) =>
+  ((block: (...$: any[]) => Generator<Yieldable> | AsyncGenerator<Yieldable>) =>
   (...$) => {
-    const iterator = block(...$);
-    const next = (prev?: any): Result | Promise<Result> =>
-      sync(iterator.next(prev), ({ done, value }): Result | Promise<Result> => {
-        if (done) return pass(value);
-        else if (value.state) return next(value.value);
-        return value;
-      });
+    const generator = block(...$);
+    const next = (prev?: any): Yieldable | Promise<Yieldable> =>
+      sync(
+        generator.next(prev),
+        ({ done, value }): Yieldable | Promise<Yieldable> => {
+          if (done) return pass(value);
+          else if (value.state) return next(value.value);
+          return value;
+        },
+      );
     return next();
   }) as {
     <A extends unknown[], B, C, D>(
-      block: (...$: A) => Generator<Result<B, C>, D, C>,
-    ): (...$: A) => Result<B, D>;
+      block: (...$: A) => Generator<Yieldable<B, C>, D, C>,
+    ): (...$: A) => Yieldable<B, D>;
     <A extends unknown[], B, C, D>(
-      $: (...$: A) => AsyncGenerator<Result<B, C>, D, C>,
-    ): (...$: A) => Promise<Result<B, D>>;
+      $: (...$: A) => AsyncGenerator<Yieldable<B, C>, D, C>,
+    ): (...$: A) => Promise<Yieldable<B, D>>;
   };

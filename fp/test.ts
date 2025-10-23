@@ -8,6 +8,7 @@ import {
   pass,
   type Result,
   some,
+  type Yieldable,
 } from "@libn/fp/result";
 import { exec, join, safe } from "@libn/fp/wrap";
 
@@ -15,14 +16,14 @@ Deno.test("result", async (t) => {
   const S0 = Symbol("S0");
   await t.step("fail() creates a failure", () => {
     const no = fail(S0);
-    assertType<IsExact<typeof no, Result<typeof S0, never>>>(true);
+    assertType<IsExact<typeof no, Yieldable<typeof S0, never>>>(true);
     assertEquals(no.state, false);
     assertType<IsExact<typeof no.value, No<typeof no>>>(true);
     assertEquals(no.value, S0);
   });
   await t.step("pass() creates a success", () => {
     const ok = pass(S0);
-    assertType<IsExact<typeof ok, Result<never, typeof S0>>>(true);
+    assertType<IsExact<typeof ok, Yieldable<never, typeof S0>>>(true);
     assertEquals(ok.state, true);
     assertType<IsExact<typeof ok.value, Ok<typeof ok>>>(true);
     assertEquals(ok.value, S0);
@@ -52,8 +53,8 @@ Deno.test("result", async (t) => {
     assertType<IsExact<typeof ok1, IteratorResult<typeof ok, typeof S0>>>(true);
     assert(!no1.done);
     assert(!ok1.done);
-    assertType<IsExact<typeof no1.value, Result<typeof S0, never>>>(true);
-    assertType<IsExact<typeof ok1.value, Result<never, typeof S0>>>(true);
+    assertType<IsExact<typeof no1.value, Yieldable<typeof S0, never>>>(true);
+    assertType<IsExact<typeof ok1.value, Yieldable<never, typeof S0>>>(true);
     assertStrictEquals(no1.value, no);
     assertStrictEquals(ok1.value, ok);
   });
