@@ -19,26 +19,6 @@
     "exactOptionalPropertyTypes": true,
     "verbatimModuleSyntax": true
   },
-  "permissions": {
-    "esbuild": {
-      "env": true,
-      "run": true
-    },
-    "write-vectors": {
-      "net": [
-        "www.rfc-editor.org",
-        "raw.githubusercontent.com",
-        "en.wikipedia.org",
-        "earthquake.usgs.gov",
-        "www.unicode.org",
-        "crockford.com",
-        "www.ietf.org"
-      ],
-      "write": true,
-      "read": true,
-      "run": ["g++"]
-    }
-  },
   "lint": {
     "rules": {
       "include": [
@@ -60,6 +40,26 @@
         "no-invalid-regexp"
       ],
       "tags": ["recommended", "jsr"]
+    }
+  },
+  "permissions": {
+    "esbuild": {
+      "env": true,
+      "run": true
+    },
+    "write-vectors": {
+      "net": [
+        "www.rfc-editor.org",
+        "raw.githubusercontent.com",
+        "en.wikipedia.org",
+        "earthquake.usgs.gov",
+        "www.unicode.org",
+        "crockford.com",
+        "www.ietf.org"
+      ],
+      "write": true,
+      "read": true,
+      "run": ["g++"]
     }
   },
   "tasks": {

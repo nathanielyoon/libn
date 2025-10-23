@@ -133,17 +133,17 @@ Deno.test("wrap", async (t) => {
   });
   await t.step("exec() runs a block", async () => {
     fc.assert(fc.property(fc.boolean(), ($) => {
-      const result = exec(function* () {
+      const result = exec(function* ($: boolean) {
         return yield* some($);
-      });
+      })($);
       assertType<IsExact<typeof result, Result<false, true>>>(true);
       assertEquals(result.state, $);
       assertEquals(result.value, $);
     }));
     await fc.assert(fc.asyncProperty(fc.boolean(), async ($) => {
-      const result = exec(async function* () {
+      const result = exec(async function* ($: boolean) {
         return await Promise.resolve(yield* some($));
-      });
+      })($);
       assertType<IsExact<typeof result, Promise<Result<false, true>>>>(true);
       await result.then(({ state, value }) => {
         assertEquals(state, $);

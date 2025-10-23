@@ -1,21 +1,18 @@
 /**
  * Functional result handling.
  *
- * @example Typed do-syntax block
+ * @example Typed do-notation block
  * ```ts
  * import { some } from "@libn/fp/result";
- * import { exec, safe } from "@libn/fp/wrap";
+ * import { exec } from "@libn/fp/wrap";
  * import { assertEquals } from "@std/assert";
  *
- * const ok = Math.random() > 0.5;
+ * const ok = false;
  * assertEquals(
- *   exec(function* () {
- *     return yield* safe(() => {
- *       if (ok) return ok;
- *       throw ok;
- *     }, () => ok)();
- *   }),
- *   some(ok),
+ *   exec(function* ($) {
+ *     return yield* some($);
+ *   })(ok).state,
+ *   ok,
  * );
  * ```
  *

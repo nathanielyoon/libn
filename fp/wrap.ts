@@ -38,17 +38,23 @@ export const safe =
       or?: (error: Error, ...$: A) => C | Promise<C>,
     ): (...$: A) => Promise<Result<C, B>>;
   };
-/** Runs an imperative block, returning failures early. */
-export const exec = (($: () => Generator<Result> | AsyncGenerator<Result>) => {
-  const generator = $();
-  const next = (prev?: any): Result | Promise<Result> =>
-    sync(generator.next(prev), ({ done, value }): Result | Promise<Result> => {
-      if (done) return pass(value);
-      else if (value.state) return next(value.value);
-      return value;
-    });
-  return next();
-}) as {
-  <A, B, C>($: () => Generator<Result<A, B>, C, B>): Result<A, C>;
-  <A, B, C>($: () => AsyncGenerator<Result<A, B>, C, B>): Promise<Result<A, C>>;
-};
+/** Wraps an imperative block and returns failures early. */
+export const exec =
+  ((block: (...$: any[]) => Generator<Result> | AsyncGenerator<Result>) =>
+  (...$) => {
+    const iterator = block(...$);
+    const next = (prev?: any): Result | Promise<Result> =>
+      sync(iterator.next(prev), ({ done, value }): Result | Promise<Result> => {
+        if (done) return pass(value);
+        else if (value.state) return next(value.value);
+        return value;
+      });
+    return next();
+  }) as {
+    <A extends unknown[], B, C, D>(
+      block: (...$: A) => Generator<Result<B, C>, D, C>,
+    ): (...$: A) => Result<B, D>;
+    <A extends unknown[], B, C, D>(
+      $: (...$: A) => AsyncGenerator<Result<B, C>, D, C>,
+    ): (...$: A) => Promise<Result<B, D>>;
+  };
