@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "@std/assert";
-import fc, { uint32Array } from "fast-check";
+import fc from "fast-check";
 import { chacha, hchacha, xor } from "@libn/aead/chacha";
 import { poly } from "@libn/aead/poly";
 import { polyXchacha, xchachaPoly } from "@libn/aead/aead";
