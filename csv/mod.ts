@@ -1,5 +1,5 @@
 /**
- * Comma-separated values.
+ * Parsing and stringifying comma-separated values.
  *
  * @example Stringifying, parsing
  * ```ts

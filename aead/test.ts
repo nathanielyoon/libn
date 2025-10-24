@@ -8,7 +8,7 @@ import vectors from "./vectors.json" with { type: "json" };
 
 const u32 = ($: string) => new Uint32Array(Uint8Array.fromHex($).buffer);
 const fcRight = ($: number) => fc.uint8Array({ minLength: $, maxLength: $ });
-const fcWrongLength = <const A extends number[]>(...lengths: A) =>
+const fcWrong = <const A extends number[]>(...lengths: A) =>
   fc.oneof(...Array.from(lengths, (_, index) =>
     fc.tuple(
       ...lengths.map(($, z) =>
@@ -93,12 +93,12 @@ Deno.test("aead", async (t) => {
     }
   });
   await t.step("xchachaPoly() rejects wrong-size arguments", () => {
-    fc.assert(fc.property(fcWrongLength(32, 24), ($) => {
+    fc.assert(fc.property(fcWrong(32, 24), ($) => {
       assertEquals(xchachaPoly(...$, new Uint8Array(), new Uint8Array()), null);
     }));
   });
   await t.step("polyXchacha() rejects wrong-size arguments", () => {
-    fc.assert(fc.property(fcWrongLength(32, 24, 16), ($) => {
+    fc.assert(fc.property(fcWrong(32, 24, 16), ($) => {
       assertEquals(polyXchacha(...$, new Uint8Array(), new Uint8Array()), null);
     }));
   });
@@ -133,12 +133,12 @@ Deno.test("mod", async (t) => {
     ));
   });
   await t.step("encrypt() rejects wrong-size arguments", () => {
-    fc.assert(fc.property(fcWrongLength(32), ($) => {
+    fc.assert(fc.property(fcWrong(32), ($) => {
       assertEquals(encrypt(...$, new Uint8Array()), null);
     }));
   });
   await t.step("decrypt() rejects wrong-size arguments", () => {
-    fc.assert(fc.property(fcWrongLength(32), ($) => {
+    fc.assert(fc.property(fcWrong(32), ($) => {
       assertEquals(decrypt(...$, new Uint8Array(40)), null);
     }));
     fc.assert(fc.property(
