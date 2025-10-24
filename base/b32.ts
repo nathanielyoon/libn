@@ -1,13 +1,19 @@
 /**
- * @example
+ * [Base32](https://www.rfc-editor.org/rfc/rfc4648#section-6) uses uppercase
+ * letters and digits, excluding "0", "1", "8", and "9". Encoding is always
+ * uppercase, and decoding is case-insensitive.
+ *
+ * @example Usage
  * ```ts
- * import { assertEquals, assertMatch } from "@std/assert";
+ * import { assertEquals } from "@std/assert";
  *
- * const binary = new Uint8Array([72, 101, 108, 108, 111, 32, 58, 41]);
+ * const binary = new TextEncoder().encode("Hello :)");
+ *
+ * // Encode!
  * assertEquals(enB32(binary), "JBSWY3DPEA5CS");
- * assertEquals(deB32("JBSWY3DPEA5CS"), binary);
  *
- * assertMatch(enB32(crypto.getRandomValues(new Uint8Array(100))), B32);
+ * // Decode!
+ * assertEquals(deB32("JBSWY3DPEA5CS"), binary);
  * ```
  *
  * @module b32

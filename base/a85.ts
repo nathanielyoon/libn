@@ -1,13 +1,19 @@
 /**
- * @example
+ * [Ascii85](https://en.wikipedia.org/wiki/Ascii85) uses the first 85 printable,
+ * non-whitespace ASCII characters, as well as "z" to compress sequences of 4
+ * empty bytes.
+ *
+ * @example Usage
  * ```ts
- * import { assertEquals, assertMatch } from "@std/assert";
+ * import { assertEquals } from "@std/assert";
  *
- * const binary = new Uint8Array([72, 101, 108, 108, 111, 32, 58, 41]);
+ * const binary = new TextEncoder().encode("Hello :)");
+ *
+ * // Encode!
  * assertEquals(enA85(binary), "87cURD]h(i");
- * assertEquals(deA85("87cURD]h(i"), binary);
  *
- * assertMatch(enA85(crypto.getRandomValues(new Uint8Array(100))), A85);
+ * // Decode!
+ * assertEquals(deA85("87cURD]h(i"), binary);
  * ```
  *
  * @module a85

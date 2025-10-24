@@ -1,13 +1,21 @@
 /**
- * @example
+ * [Crockford base 32](https://crockford.com/base32) uses digits and uppercase
+ * letters, excluding "I", "L", "O", and "U". Encoding is always uppercase, and
+ * decoding is case-insensitive, and additionally accepts hyphens (which don't
+ * affect the output) and substitutes "I", "L", and "O" characters for their
+ * similar-looking numeric counterparts ("1", "1", and "0", respectively).
+ *
+ * @example Usage
  * ```ts
- * import { assertEquals, assertMatch } from "@std/assert";
+ * import { assertEquals } from "@std/assert";
  *
- * const binary = new Uint8Array([72, 101, 108, 108, 111, 32, 58, 41]);
+ * const binary = new TextEncoder().encode("Hello :)");
+ *
+ * // Encode!
  * assertEquals(enC32(binary), "91JPRV3F40X2J");
- * assertEquals(deC32("91JPRV3F40X2J"), binary);
  *
- * assertMatch(enC32(crypto.getRandomValues(new Uint8Array(100))), C32);
+ * // Decode!
+ * assertEquals(deC32("91JPRV3F40X2J"), binary);
  * ```
  *
  * @module c32

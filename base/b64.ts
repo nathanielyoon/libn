@@ -1,13 +1,18 @@
 /**
- * @example
+ * [Base64](https://www.rfc-editor.org/rfc/rfc4648#section-4) uses alphanumeric
+ * characters and "+" and "/", and "=" for padding.
+ *
+ * @example Usage
  * ```ts
- * import { assertEquals, assertMatch } from "@std/assert";
+ * import { assertEquals } from "@std/assert";
  *
- * const binary = new Uint8Array([72, 101, 108, 108, 111, 32, 58, 41]);
+ * const binary = new TextEncoder().encode("Hello :)");
+ *
+ * // Encode!
  * assertEquals(enB64(binary), "SGVsbG8gOik=");
- * assertEquals(deB64("SGVsbG8gOik="), binary);
  *
- * assertMatch(enB64(crypto.getRandomValues(new Uint8Array(100))), B64);
+ * // Decode!
+ * assertEquals(deB64("SGVsbG8gOik="), binary);
  * ```
  *
  * @module b64

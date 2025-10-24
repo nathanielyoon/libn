@@ -1,13 +1,22 @@
 /**
- * @example
+ * [Base16](https://www.rfc-editor.org/rfc/rfc4648#section-8) uses hexadecimal
+ * characters ("0-9" and "A-F"). Encoding is always uppercase (diverging from
+ * [Number.prototype.toString](https://dev.mozilla.org/Web/JavaScript/Reference/Global_Objects/Number/toString)
+ * and
+ * [Uint8Array.prototype.toHex](https://dev.mozilla.org/Web/JavaScript/Reference/Global_Objects/Uint8Array/toHex),
+ * which use lowercase "a-f"), and decoding is case-insensitive.
+ *
+ * @example Usage
  * ```ts
- * import { assertEquals, assertMatch } from "@std/assert";
+ * import { assertEquals } from "@std/assert";
  *
- * const binary = new Uint8Array([72, 101, 108, 108, 111, 32, 58, 41]);
+ * const binary = new TextEncoder().encode("Hello :)");
+ *
+ * // Encode!
  * assertEquals(enB16(binary), "48656C6C6F203A29");
- * assertEquals(deB16("48656C6C6F203A29"), binary);
  *
- * assertMatch(enB16(crypto.getRandomValues(new Uint8Array(100))), B16);
+ * // Decode!
+ * assertEquals(deB16("48656C6C6F203A29"), binary);
  * ```
  *
  * @module b16

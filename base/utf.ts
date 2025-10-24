@@ -1,9 +1,9 @@
 /**
  * @example
  * ```ts
- * import { assertEquals } from "@std/assert/equals";
+ * import { assertEquals } from "@std/assert";
  *
- * const binary = new Uint8Array([72, 101, 108, 108, 111, 32, 58, 41]);
+ * const binary = new TextEncoder().encode("Hello :)");
  * assertEquals(enUtf8("Hello :)"), binary);
  * assertEquals(deUtf8(binary), "Hello :)");
  *

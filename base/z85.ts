@@ -1,13 +1,18 @@
 /**
- * @example
+ * [Z85](https://rfc.zeromq.org/spec/32) uses printable, non-whitespace ASCII
+ * characters, excluding '"', "'", ",", ";", "\", "_", "`", "|", and "~".
+ *
+ * @example Usage
  * ```ts
  * import { assertEquals, assertMatch } from "@std/assert";
  *
- * const binary = new Uint8Array([72, 101, 108, 108, 111, 32, 58, 41]);
- * assertEquals(enZ85(binary), "nm=QNzY?7&");
- * assertEquals(deZ85("nm=QNzY?7&"), binary);
+ * const binary = new TextEncoder().encode("Hello :)");
  *
- * assertMatch(enZ85(crypto.getRandomValues(new Uint8Array(100))), Z85);
+ * // Encode!
+ * assertEquals(enZ85(binary), "nm=QNzY?7&");
+ *
+ * // Decode!
+ * assertEquals(deZ85("nm=QNzY?7&"), binary);
  * ```
  *
  * @module z85
