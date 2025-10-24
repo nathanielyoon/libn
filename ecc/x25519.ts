@@ -1,3 +1,29 @@
+/**
+ * Elliptic-curve Diffie-Hellman over Curve25519.
+ *
+ * @example Key exchange
+ * ```ts
+ * import { assertEquals } from "@std/assert";
+ *
+ * // Alice has a secret key
+ * const secretKeyA = crypto.getRandomValues(new Uint8Array(32));
+ *
+ * // Bob has a secret key
+ * const secretKeyB = crypto.getRandomValues(new Uint8Array(32));
+ *
+ * // They share their public keys
+ * const publicKeyA = derive(secretKeyA); // A sends to B
+ * const publicKeyB = derive(secretKeyB); // B sends to A
+ *
+ * // And agree on a shared secret
+ * const sharedAB = exchange(secretKeyA, publicKeyB);
+ * const sharedBA = exchange(secretKeyB, publicKeyA);
+ * assertEquals(sharedAB, sharedBA);
+ * ```
+ *
+ * @module x25519
+ */
+
 import { deBig, enBig, exp, inv, mod, P, pow, prune } from "./lib.ts";
 
 const F = /* @__PURE__ */ (() => ~(1n << 255n))(); // clears unused top bit

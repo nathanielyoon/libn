@@ -92,7 +92,7 @@ export const wnaf = ($: bigint): { a: bigint; _: bigint } => {
 };
 /** Encodes a point (derived from scalar) to binary. */
 export const enPoint = ($: bigint): Uint8Array<ArrayBuffer> => {
-  const { a, _ } = wnaf($), b = inv(a >> 512n & MX);
+  const { a, _: _ } = wnaf($), b = inv(a >> 512n & MX);
   const c = deBig(mod((a >> 256n & MX) * b));
   return (a & MX) * b % P & 1n && (c[31] |= 128), c;
 };
