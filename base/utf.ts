@@ -1,5 +1,7 @@
 /**
- * @example
+ * Aliases for built-in UTF-8 and UTF-16 APIs.
+ *
+ * @example Usage
  * ```ts
  * import { assertEquals } from "@std/assert";
  *
