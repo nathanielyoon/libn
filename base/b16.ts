@@ -11,7 +11,7 @@
  * assertMatch(enB16(crypto.getRandomValues(new Uint8Array(100))), B16);
  * ```
  *
- * @module base16
+ * @module b16
  */
 
 import { type Decode, type Encode, map } from "./lib.ts";
