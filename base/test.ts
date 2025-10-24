@@ -5,22 +5,16 @@ import {
   assertThrows,
 } from "@std/assert";
 import fc from "fast-check";
-import { deUtf8, enUtf8 } from "@libn/base";
-import { B16, deB16, enB16 } from "@libn/base/16";
-import {
-  B32,
-  C32,
-  deB32,
-  deC32,
-  deH32,
-  enB32,
-  enC32,
-  enH32,
-  H32,
-} from "@libn/base/32";
-import { B58, deB58, enB58 } from "@libn/base/58";
-import { B64, deB64, deU64, enB64, enU64, U64 } from "@libn/base/64";
-import { A85, deA85, deZ85, enA85, enZ85, Z85 } from "@libn/base/85";
+import { deUtf8, enUtf8 } from "./utf8.ts";
+import { B16, deB16, enB16 } from "./b16.ts";
+import { B32, deB32, enB32 } from "./b32.ts";
+import { deH32, enH32, H32 } from "./h32.ts";
+import { C32, deC32, enC32 } from "./c32.ts";
+import { B58, deB58, enB58 } from "./b58.ts";
+import { B64, deB64, enB64 } from "./b64.ts";
+import { deU64, enU64, U64 } from "./u64.ts";
+import { deZ85, enZ85, Z85 } from "./z85.ts";
+import { A85, deA85, enA85 } from "./a85.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("b16", async (t) => {

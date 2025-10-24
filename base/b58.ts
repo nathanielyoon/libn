@@ -1,4 +1,5 @@
-import { type Decode, en, type Encode, map } from "./lib.ts";
+import { type Decode, type Encode, map } from "./lib.ts";
+import { en } from "./utf8.ts";
 
 const B58_STR = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 const B58_BIN = /* @__PURE__ */ map(B58_STR);

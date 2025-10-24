@@ -1,4 +1,5 @@
-import { type Decode, en, type Encode, map } from "./lib.ts";
+import { type Decode, type Encode, map } from "./lib.ts";
+import { en } from "./utf8.ts";
 
 const B16_STR = /* @__PURE__ */ Array.from(
   { length: 256 },
