@@ -11,3 +11,7 @@ npx jsr add @libn/aead
 bun add @libn/aead
 bunx jsr add @libn/aead
 ```
+
+- [RFC 7748](https://www.rfc-editor.org/rfc/rfc7748)
+- [RFC 8032](https://www.rfc-editor.org/rfc/rfc8032)
+- [noble-ed25519](https://github.com/paulmillr/noble-ed25519)
