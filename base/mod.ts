@@ -27,11 +27,3 @@ export const deUtf8: (
   /* @__PURE__ */ new TextDecoder("utf-8"),
 );
 export { de, type Decode, en, type Encode } from "./lib.ts";
-export { B16, deB16, enB16 } from "./16.ts";
-export { B32, deB32, enB32 } from "./32.ts";
-export { deH32, enH32, H32 } from "./32.ts";
-export { C32, deC32, enC32 } from "./32.ts";
-export { B64, deB64, enB64 } from "./64.ts";
-export { deU64, enU64, U64 } from "./64.ts";
-export { deZ85, enZ85, Z85 } from "./85.ts";
-export { A85, deA85, enA85 } from "./85.ts";
