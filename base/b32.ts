@@ -1,3 +1,18 @@
+/**
+ * @example
+ * ```ts
+ * import { assertEquals, assertMatch } from "@std/assert";
+ *
+ * const binary = new Uint8Array([72, 101, 108, 108, 111, 33]);
+ * assertEquals(enB32(binary), "JBSWY3DPEE");
+ * assertEquals(deB32("JBSWY3DPEE"), binary);
+ *
+ * assertMatch(enB32(crypto.getRandomValues(new Uint8Array(100))), B32);
+ * ```
+ *
+ * @module b32
+ */
+
 import { de32, type Decode, en32, type Encode, map } from "./lib.ts";
 
 const B32_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
