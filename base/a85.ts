@@ -1,3 +1,18 @@
+/**
+ * @example
+ * ```ts
+ * import { assertEquals, assertMatch } from "@std/assert";
+ *
+ * const binary = new Uint8Array([72, 101, 108, 108, 111, 32, 58, 41]);
+ * assertEquals(enA85(binary), "87cURD]h(i");
+ * assertEquals(deA85("87cURD]h(i"), binary);
+ *
+ * assertMatch(enA85(crypto.getRandomValues(new Uint8Array(100))), A85);
+ * ```
+ *
+ * @module a85
+ */
+
 import { de85, type Decode, en85, type Encode, map } from "./lib.ts";
 
 const A85_STR =

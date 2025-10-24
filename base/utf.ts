@@ -1,3 +1,20 @@
+/**
+ * @example
+ * ```ts
+ * import { assertEquals } from "@std/assert/equals";
+ *
+ * const binary = new Uint8Array([72, 101, 108, 108, 111, 32, 58, 41]);
+ * assertEquals(enUtf8("Hello :)"), binary);
+ * assertEquals(deUtf8(binary), "Hello :)");
+ *
+ * assertEquals(en.call("Hello :)"), 72);
+ * assertEquals(en.call("Hello :)", 1), 101);
+ * assertEquals(de(...binary), "Hello :)");
+ * ```
+ *
+ * @module utf8
+ */
+
 /** Character code getter. */
 export const en: (this: string, index?: number) => number =
   /* @__PURE__ */ (() =>

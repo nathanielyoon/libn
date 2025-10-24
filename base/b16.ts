@@ -3,9 +3,9 @@
  * ```ts
  * import { assertEquals, assertMatch } from "@std/assert";
  *
- * const binary = new Uint8Array([72, 101, 108, 108, 111, 33]);
- * assertEquals(enB16(binary), "48656C6C6F21");
- * assertEquals(deB16("48656C6C6F21"), binary);
+ * const binary = new Uint8Array([72, 101, 108, 108, 111, 32, 58, 41]);
+ * assertEquals(enB16(binary), "48656C6C6F203A29");
+ * assertEquals(deB16("48656C6C6F203A29"), binary);
  *
  * assertMatch(enB16(crypto.getRandomValues(new Uint8Array(100))), B16);
  * ```
@@ -14,7 +14,7 @@
  */
 
 import { type Decode, type Encode, map } from "./lib.ts";
-import { en } from "./utf8.ts";
+import { en } from "./utf.ts";
 
 const B16_STR = /* @__PURE__ */ Array.from(
   { length: 256 },

@@ -3,7 +3,7 @@
   "version": "0.3.2",
   "license": "GPL-3.0-or-later",
   "exports": {
-    "./utf8": "./utf8.ts",
+    "./utf": "./utf.ts",
     "./b16": "./b16.ts",
     "./b32": "./b32.ts",
     "./h32": "./h32.ts",

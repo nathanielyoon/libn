@@ -1,5 +1,20 @@
+/**
+ * @example
+ * ```ts
+ * import { assertEquals, assertMatch } from "@std/assert";
+ *
+ * const binary = new Uint8Array([72, 101, 108, 108, 111, 32, 58, 41]);
+ * assertEquals(enB64(binary), "SGVsbG8gOik=");
+ * assertEquals(deB64("SGVsbG8gOik="), binary);
+ *
+ * assertMatch(enB64(crypto.getRandomValues(new Uint8Array(100))), B64);
+ * ```
+ *
+ * @module b64
+ */
+
 import { de64, type Decode, type Encode, map } from "./lib.ts";
-import { de, en } from "./utf8.ts";
+import { de, en } from "./utf.ts";
 
 const B64_BIN = /* @__PURE__ */ map(
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",

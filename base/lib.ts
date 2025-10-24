@@ -1,4 +1,4 @@
-import { en } from "./utf8.ts";
+import { en } from "./utf.ts";
 
 /** Binary-to-string function. */
 export type Encode = (binary: Uint8Array) => string;

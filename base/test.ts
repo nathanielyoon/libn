@@ -5,7 +5,7 @@ import {
   assertThrows,
 } from "@std/assert";
 import fc from "fast-check";
-import { deUtf8, enUtf8 } from "./utf8.ts";
+import { deUtf8, enUtf8 } from "./utf.ts";
 import { B16, deB16, enB16 } from "./b16.ts";
 import { B32, deB32, enB32 } from "./b32.ts";
 import { deH32, enH32, H32 } from "./h32.ts";

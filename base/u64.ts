@@ -1,3 +1,18 @@
+/**
+ * @example
+ * ```ts
+ * import { assertEquals, assertMatch } from "@std/assert";
+ *
+ * const binary = new Uint8Array([72, 101, 108, 108, 111, 32, 58, 41]);
+ * assertEquals(enU64(binary), "SGVsbG8gOik");
+ * assertEquals(deU64("SGVsbG8gOik"), binary);
+ *
+ * assertMatch(enU64(crypto.getRandomValues(new Uint8Array(100))), U64);
+ * ```
+ *
+ * @module u64
+ */
+
 import { de64, type Decode, type Encode, map } from "./lib.ts";
 
 const U64_STR =
