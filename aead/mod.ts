@@ -1,5 +1,7 @@
 /**
- * @example
+ * XChaCha20-Poly1305 authenticated encryption and XChaCha20 stream cipher.
+ *
+ * @example Authenticated encryption
  * ```ts
  * import { assert, assertEquals } from "@std/assert";
  *
@@ -7,10 +9,31 @@
  * const message = crypto.getRandomValues(new Uint8Array(100));
  * const data = crypto.getRandomValues(new Uint8Array(100));
  *
+ * // Encrypt!
  * const secret = encrypt(key, message, data);
  * assert(secret);
+ *
+ * // Decrypt!
  * assertEquals(decrypt(key, secret, data), message);
  * assertEquals(decrypt(key, secret), null);
+ * ```
+ *
+ * @example Stream cipher
+ * ```ts
+ * import { assertEquals, assertNotEquals } from "@std/assert";
+ *
+ * const key = crypto.getRandomValues(new Uint8Array(32));
+ * const iv = crypto.getRandomValues(new Uint8Array(24));
+ * const plaintext = crypto.getRandomValues(new Uint8Array(100));
+ * const ciphertext = new Uint8Array(plaintext);
+ *
+ * // Encrypt!
+ * cipher(key, iv, ciphertext);
+ * assertNotEquals(ciphertext, plaintext);
+ *
+ * // Decrypt!
+ * cipher(key, iv, ciphertext);
+ * assertEquals(ciphertext, plaintext);
  * ```
  *
  * @module aead
