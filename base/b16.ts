@@ -1,3 +1,19 @@
+/**
+ * @example
+ * ```ts
+ * import { assertEquals, assertMatch } from "@std/assert";
+ *
+ * const binary = new Uint8Array([0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]);
+ *
+ * assertEquals(enB16(binary), "0123456789ABCDEF");
+ * assertEquals(deB16("0123456789ABCDEF"), binary);
+ *
+ * assertMatch(enB16(crypto.getRandomValues(new Uint8Array(100))), B16);
+ * ```
+ *
+ * @module base16
+ */
+
 import { type Decode, type Encode, map } from "./lib.ts";
 import { en } from "./utf8.ts";
 
