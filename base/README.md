@@ -13,6 +13,6 @@ bun add @libn/base
 
 - [RFC 4648](https://www.rfc-editor.org/rfc/rfc4648)
 - [Crockford base 32](https://crockford.com/base32)
-- [Base58.h](https://github.com/bitcoin/bitcoin/blob/master/src/base58.h)
+- [base58.h](https://github.com/bitcoin/bitcoin/blob/master/src/base58.h)
 - [Z85](https://rfc.zeromq.org/spec/32)
 - [Ascii85](https://en.wikipedia.org/wiki/Ascii85)
