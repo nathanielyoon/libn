@@ -8,7 +8,7 @@ import {
   assertNotMatch,
 } from "@std/assert";
 import fc from "fast-check";
-import { de, en } from "@libn/base";
+import { de, en } from "@libn/base/utf";
 import { dePoint, enPoint } from "./lib.ts";
 import {
   uncode,
@@ -18,9 +18,9 @@ import {
   unmark,
   unrexp,
   unwide,
-} from "@libn/text/normalize";
-import { createRanges, uncase } from "@libn/text/case";
-import { distance, includes } from "@libn/text/fuzzy";
+} from "./normalize.ts";
+import { createRanges, uncase } from "./fold.ts";
+import { distance, includes } from "./match.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("normalize", async (t) => {
@@ -350,7 +350,10 @@ import.meta.main && await Promise.all([
   ).then(($) => $.text()).then(($) => $.slice(14538, 15597)),
   fetch(
     "https://www.unicode.org/Public/UNIDATA/CaseFolding.txt",
-  ).then(($) => $.text()).then(($) => $.slice(2990, 87528)),
+  ).then(($) => $.text()).then(async ($) => {
+    await Deno.writeTextFile(`${import.meta.dirname}/unicode.txt`, $);
+    return $.slice(2990, 87528);
+  }),
 ]).then(([rfc9839, fold]) => ({
   uncode: rfc9839.match(/(?<=%x)\w+(?:-\w+)?/g)!.map((hex) =>
     hex.length === 1
