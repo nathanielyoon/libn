@@ -1,7 +1,7 @@
 import { add128, type Integer, mul128, mul64 } from "./lib.ts";
 
 /** Hashes to a 32-bit integer with GoodOAAT. */
-export const oaat32 = ($: Uint8Array, seed: number): number => {
+export const oaat32 = ($: Uint8Array, seed = 0): number => {
   let h1 = seed ^ 0x3b00, h2 = seed << 15 | seed >>> 17, z = 0;
   while (z < $.length) {
     h2 += h1 = (h1 + $[z++]) * 9 | 0, h2 = (h2 << 7 | h2 >>> 25) * 5 | 0;
@@ -12,7 +12,7 @@ export const oaat32 = ($: Uint8Array, seed: number): number => {
   return h2 += (h1 >>> 8 | h1 << 24) >>> 0, h2 >>> 0;
 };
 /** Hashes to a 32-bit integer with a5hash32, always little-endian. */
-export const a5hash32 = ($: Uint8Array, seed: number): number => {
+export const a5hash32 = ($: Uint8Array, seed = 0): number => {
   let v01 = 0x55555555, v10 = 0xaaaaaaaa, z, y = $.length;
   let { lo: s1, hi: s2 } = mul64(
     0x85a308d3 ^ y ^ seed & v10,
@@ -52,7 +52,7 @@ export const a5hash32 = ($: Uint8Array, seed: number): number => {
   return ({ lo: s1, hi: s2 } = mul64(v01 ^ s1, s2)), (s1 ^ s2) >>> 0;
 };
 /** Hashes to a 64-bit integer with a5hash64, always little-endian. */
-export const a5hash64 = ($: Uint8Array, seed: Integer): Integer => {
+export const a5hash64 = ($: Uint8Array, seed = { hi: 0, lo: 0 }): Integer => {
   const v01 = { lo: 0x55555555, hi: 0x55555555 };
   const v10 = { lo: 0xaaaaaaaa, hi: 0xaaaaaaaa };
   let z, y = $.length;
