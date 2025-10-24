@@ -3,8 +3,7 @@
  *
  * @example Stringifying, parsing
  * ```ts
- * import { enCsv } from "@libn/csv/stringify";
- * import { deCsv } from "@libn/csv/parse";
+ * import { deCsv, enCsv } from "@libn/csv";
  * import { assertEquals } from "@std/assert";
  *
  * const data = [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]];
