@@ -1,7 +1,7 @@
 /**
  * Unicode case folding.
  *
- * @example
+ * @example Usage
  * ```ts
  * import { assertEquals, assertNotEquals } from "@std/assert";
  *
