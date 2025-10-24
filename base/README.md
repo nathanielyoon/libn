@@ -9,6 +9,7 @@ npm install @libn/base
 npx jsr add @libn/base
 
 bun add @libn/base
+bunx jsr add @libn/base
 ```
 
 - [RFC 4648](https://www.rfc-editor.org/rfc/rfc4648)
