@@ -11,11 +11,11 @@ import {
   mul64,
   perm,
 } from "./lib.ts";
-import { a5hash32, a5hash64, oaat32 } from "@libn/hash/integer";
-import { sha224, sha256, sha384, sha512 } from "@libn/hash/sha2";
-import { hkdf, hmac } from "@libn/hash/hmac";
-import { blake2b, blake2s } from "@libn/hash/blake2";
-import { blake3 } from "@libn/hash/blake3";
+import { a5hash32, a5hash64, oaat32 } from "./integer.ts";
+import { sha224, sha256, sha384, sha512 } from "./sha2.ts";
+import { hkdf, hmac } from "./hmac.ts";
+import { blake2b, blake2s } from "./blake2.ts";
+import { blake3 } from "./blake3.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 const fcUint = fc.double({
