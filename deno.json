@@ -64,11 +64,17 @@
     }
   },
   "tasks": {
+    "cwd": {
+      "description": "Changes to the task's initial directory.",
+      "command": "cd \"$INIT_CWD\" || exit 1;"
+    },
     "bundle": {
-      "description": "Bundle files (with flags and file names passed to `deno task`).",
+      "dependencies": ["cwd"],
+      "description": "Bundles files (with flags and file names passed to `deno task`).",
       "command": "deno run --permission-set=esbuild npm:esbuild --bundle --format=esm --external:@libn"
     },
     "write": {
+      "dependencies": ["cwd"],
       "description": "Runs a test-vector-writing script.",
       "command": "echo \"{}\" >./vectors.json && deno run --permission-set=write-vectors --unstable-raw-imports ./test.ts"
     },
@@ -77,41 +83,48 @@
       "command": "deno task --cwd=./aead write; deno task --cwd=./base write; deno task --cwd=./csv write; deno task --cwd=./ecc write; deno task --cwd=./hash write; deno task --cwd=./text write;"
     },
     "check": {
-      "description": "Type-check files.",
+      "description": "Type-checks files.",
       "command": "deno check --doc"
     },
     "lint": {
-      "description": "Lint code and documentation.",
+      "description": "Lints code and documentation.",
       "command": "deno lint --compact && deno doc --lint **/*.ts"
     },
     "test": {
-      "description": "Run tests.",
+      "description": "Runs tests.",
       "command": "deno test -P --unstable-raw-imports --doc --no-check --parallel --trace-leaks"
     },
     "record": {
-      "description": "Collect coverage data.",
+      "description": "Collects coverage data.",
       "command": "deno task --cwd=. test --clean --coverage=/tmp/deno-coverage --coverage-raw-data-only"
     },
     "report": {
-      "description": "Display coverage data.",
+      "description": "Displays coverage data.",
       "command": "deno coverage --detailed /tmp/deno-coverage --include=\"^file://$(pwd)\""
     },
     "cover": {
-      "description": "Collect and display coverage data.",
+      "description": "Collects and displays coverage data.",
       "command": "deno task --cwd=. record && deno task --cwd=. report"
     },
     "pure": {
+      "dependencies": ["cwd"],
       "description": "Checks whether the current directory's modules have side-effects, which would be included in the generated output.",
       "command": "sh -c 'for path in $(jaq -r \".exports[]\" deno.json); do echo \"import \\\"${path}\\\";\" >bundle.ts && deno task --cwd=. bundle bundle.ts; rm -f bundle.ts; done'"
     },
     "all": {
-      "description": "Run all check tasks.",
-      "dependencies": ["check", "lint"],
-      "command": "cd \"$INIT_CWD\" && (deno task --cwd=. cover; deno task --cwd=. pure; deno publish --dry-run --allow-dirty)"
+      "description": "Runs all check tasks.",
+      "dependencies": ["cwd"],
+      "command": "deno task --cwd=. check; deno task --cwd=. lint; deno task --cwd=. cover; deno task --cwd=. pure; deno publish --dry-run --allow-dirty"
     },
     "npm": {
-      "description": "Publish package to NPM.",
-      "command": "deno eval 'import{build,emptyDir}from\"@deno/dnt\";const{name,version,exports}=JSON.parse(await Deno.readTextFile(\"./deno.json\"));await Deno.mkdir(\"./npm\",{recursive:true});await emptyDir(\"./npm\");await build({entryPoints:Object.entries(exports).map(([name,path])=>({name,path})),outDir:\"./npm\",package:{name,version,license:\"GPL-3.0-or-later\",repository:{type:\"git\",url:\"git+https://github.com/nathanielyoon/libn.git\"}},shims:{},typeCheck:false,test:false,scriptModule:false,skipNpmInstall:true})' && cd ./npm && npm publish --access=public && cd ..; rm -rf ./npm"
+      "dependencies": ["cwd"],
+      "description": "Prepares an NPM-compatible subdirectory.",
+      "command": "deno eval 'import{build,emptyDir}from\"@deno/dnt\";const{name,version,exports}=JSON.parse(await Deno.readTextFile(\"./deno.json\"));await Deno.mkdir(\"./npm\",{recursive:true});await emptyDir(\"./npm\");await build({entryPoints:Object.entries(exports).map(([name,path])=>({name,path})),outDir:\"./npm\",package:{name,version,license:\"GPL-3.0-or-later\",repository:{type:\"git\",url:\"git+https://github.com/nathanielyoon/libn.git\"}},shims:{},typeCheck:false,test:false,scriptModule:false,skipNpmInstall:true})'"
+    },
+    "publish": {
+      "dependencies": ["cwd"],
+      "description": "Publishes to JSR and NPM.",
+      "command": "deno publish --allow-dirty; cd npm && npm publish --access=public && cd .. && rm -r npm;"
     }
   }
 }
