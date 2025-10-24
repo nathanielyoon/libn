@@ -119,7 +119,7 @@
     "npm": {
       "dependencies": ["cwd"],
       "description": "Prepares an NPM-compatible subdirectory.",
-      "command": "deno eval 'import{build,emptyDir}from\"@deno/dnt\";const{name,version,exports}=JSON.parse(await Deno.readTextFile(\"./deno.json\"));await Deno.mkdir(\"./npm\",{recursive:true});await emptyDir(\"./npm\");await build({entryPoints:typeof exports===\"string\"?[exports]:Object.entries(exports).map(([name,path])=>({name,path})),outDir:\"./npm\",package:{name,version,license:\"GPL-3.0-or-later\",repository:{type:\"git\",url:\"git+https://github.com/nathanielyoon/libn.git\"}},shims:{},typeCheck:false,test:false,scriptModule:false,skipNpmInstall:true})'"
+      "command": "deno eval 'import{build,emptyDir}from\"@deno/dnt\";const{name,version,exports}=JSON.parse(await Deno.readTextFile(\"./deno.json\"));await Deno.mkdir(\"./npm\",{recursive:true});await emptyDir(\"./npm\");await build({entryPoints:typeof exports===\"string\"?[exports]:Object.entries(exports).map(([name,path])=>({name,path})),outDir:\"./npm\",package:{name,version,license:\"GPL-3.0-or-later\",repository:{type:\"git\",url:\"git+https://github.com/nathanielyoon/libn.git\"}},shims:{},typeCheck:false,test:false,scriptModule:false,skipNpmInstall:true,postBuild:()=>Deno.copyFile(\"./README.md\",\"./npm/README.md\")});'"
     },
     "publish": {
       "dependencies": ["cwd"],
