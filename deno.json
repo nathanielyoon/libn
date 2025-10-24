@@ -101,8 +101,8 @@
       "command": "deno task --cwd=. record && deno task --cwd=. report"
     },
     "pure": {
-      "description": "Checks whether the current directory's module has side-effects, which would be included in the generated output.",
-      "command": "echo \"import \\\"./mod.ts\\\";\" >bundle.ts && deno task --cwd=. bundle ./bundle.ts; rm -f ./bundle.ts;"
+      "description": "Checks whether the current directory's modules have side-effects, which would be included in the generated output.",
+      "command": "sh -c 'for path in $(jaq -r \".exports[]\" deno.json); do echo \"import \\\"${path}\\\";\" >bundle.ts && deno task --cwd=. bundle bundle.ts; rm -f bundle.ts; done'"
     },
     "all": {
       "description": "Run all check tasks.",
