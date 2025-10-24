@@ -3,8 +3,8 @@ import { assertType, type Has, type IsExact } from "@std/testing/types";
 import fc from "fast-check";
 import { Document, Element as DenoDomElement } from "@b-fuze/deno-dom";
 import { unhtml } from "@libn/text/normalize";
-import { ce } from "@libn/query/create";
-import { qa, qs } from "@libn/query/select";
+import { ce } from "./create.ts";
+import { qa, qs } from "./select.ts";
 
 Deno.test.beforeAll(() => {
   globalThis.document = new Document() as any;
