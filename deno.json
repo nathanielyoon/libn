@@ -109,7 +109,7 @@
     "pure": {
       "dependencies": ["cwd"],
       "description": "Checks whether the current directory's modules have side-effects, which would be included in the generated output.",
-      "command": "sh -c 'for path in $(jaq -r \".exports[]\" deno.json); do echo \"import \\\"${path}\\\";\" >bundle.ts && deno task --cwd=. bundle bundle.ts; rm -f bundle.ts; done'"
+      "command": "sh -c 'for path in $(jq -r \"if (.exports | type) == \\\"object\\\" then .exports[] else .exports end\" deno.json); do echo \"import \\\"${path}\\\";\" >bundle.ts && deno task --cwd=. bundle bundle.ts; rm -f bundle.ts; done'"
     },
     "all": {
       "description": "Runs all check tasks.",
