@@ -3,8 +3,7 @@
  *
  * @example Typed do-notation block
  * ```ts
- * import { some } from "@libn/fp/result";
- * import { exec } from "@libn/fp/wrap";
+ * import { exec, some } from "@libn/fp"
  * import { assertEquals } from "@std/assert";
  *
  * const ok = false;

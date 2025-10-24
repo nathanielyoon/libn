@@ -1,10 +1,6 @@
 {
   "name": "@libn/fp",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "license": "GPL-3.0-or-later",
-  "exports": {
-    ".": "./mod.ts",
-    "./result": "./result.ts",
-    "./wrap": "./wrap.ts"
-  }
+  "exports": "./mod.ts"
 }

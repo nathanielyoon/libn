@@ -6,11 +6,10 @@ import {
   type No,
   type Ok,
   pass,
-  type Result,
   some,
   type Yieldable,
-} from "@libn/fp/result";
-import { exec, join, safe } from "@libn/fp/wrap";
+} from "./result.ts";
+import { exec, join, safe } from "./wrap.ts";
 
 Deno.test("result", async (t) => {
   const S0 = Symbol("S0");
@@ -96,11 +95,11 @@ Deno.test("wrap", async (t) => {
         throw ok;
       };
       const result1 = safe(unsafe)($);
-      assertType<IsExact<typeof result1, Result<Error, true>>>(true);
+      assertType<IsExact<typeof result1, Yieldable<Error, true>>>(true);
       if ($) assert(result1.state), assertEquals(result1.value, $);
       else assert(!result1.state), assertEquals(result1.value.cause, $);
       const result2 = safe(unsafe, (error) => error.cause)($);
-      assertType<IsExact<typeof result2, Result<unknown, true>>>(true);
+      assertType<IsExact<typeof result2, Yieldable<unknown, true>>>(true);
       assertEquals(result2.state, result2.value);
       assertEquals(result2.value, $);
     }));
@@ -110,7 +109,9 @@ Deno.test("wrap", async (t) => {
         throw ok;
       };
       const result1 = safe(unsafe)($);
-      assertType<IsExact<typeof result1, Promise<Result<Error, true>>>>(true);
+      assertType<IsExact<typeof result1, Promise<Yieldable<Error, true>>>>(
+        true,
+      );
       await result1.then(({ state, value }) => {
         if ($) assert(state), assertEquals(value, $);
         else assert(!state), assertEquals(value.cause, $);
@@ -122,7 +123,7 @@ Deno.test("wrap", async (t) => {
         ]
       ) {
         const result2 = safe(unsafe, or)($);
-        assertType<IsExact<typeof result2, Promise<Result<unknown, true>>>>(
+        assertType<IsExact<typeof result2, Promise<Yieldable<unknown, true>>>>(
           true,
         );
         await result2.then(({ state, value }) => {
@@ -137,7 +138,7 @@ Deno.test("wrap", async (t) => {
       const result = exec(function* ($: boolean) {
         return yield* some($);
       })($);
-      assertType<IsExact<typeof result, Result<false, true>>>(true);
+      assertType<IsExact<typeof result, Yieldable<false, true>>>(true);
       assertEquals(result.state, $);
       assertEquals(result.value, $);
     }));
@@ -145,7 +146,7 @@ Deno.test("wrap", async (t) => {
       const result = exec(async function* ($: boolean) {
         return await Promise.resolve(yield* some($));
       })($);
-      assertType<IsExact<typeof result, Promise<Result<false, true>>>>(true);
+      assertType<IsExact<typeof result, Promise<Yieldable<false, true>>>>(true);
       await result.then(({ state, value }) => {
         assertEquals(state, $);
         assertEquals(value, $);
