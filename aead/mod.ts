@@ -1,9 +1,6 @@
 /**
- * Authenticated encryption (RFC 8439 and draft-irtf-cfrg-xchacha-03).
- *
- * @example Associated data
+ * @example
  * ```ts
- * import { decrypt, encrypt } from "@libn/aead";
  * import { assert, assertEquals } from "@std/assert";
  *
  * const key = crypto.getRandomValues(new Uint8Array(32));
@@ -43,16 +40,9 @@ export const decrypt = (
   associated_data: Uint8Array = new Uint8Array(),
 ): null | Uint8Array<ArrayBuffer> => {
   if (message.length < 40) return null;
-  const plaintext = new Uint8Array(message.subarray(40));
-  return polyXchacha(
-      key,
-      message.subarray(0, 24),
-      message.subarray(24, 40),
-      plaintext,
-      associated_data,
-    )
-    ? plaintext
-    : null;
+  const iv = message.subarray(0, 24), tag = message.subarray(24, 40);
+  const text = new Uint8Array(message.subarray(40));
+  return polyXchacha(key, iv, tag, text, associated_data) ? text : null;
 };
 /** XORs the text in-place (without checking parameters). */
 export const cipher = (key: Uint8Array, iv: Uint8Array, $: Uint8Array): void =>
