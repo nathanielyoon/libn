@@ -9,6 +9,7 @@ npm install @libn/aead
 npx jsr add @libn/aead
 
 bun add @libn/aead
+bunx jsr add @libn/aead
 ```
 
 - [RFC 8439](https://www.rfc-editor.org/rfc/rfc8439)
