@@ -1,10 +1,8 @@
 {
   "name": "@libn/hash",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "GPL-3.0-or-later",
   "exports": {
-    ".": "./mod.ts",
-    "./lib": "./lib.ts",
     "./integer": "./integer.ts",
     "./sha2": "./sha2.ts",
     "./hmac": "./hmac.ts",

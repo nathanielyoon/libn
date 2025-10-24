@@ -1,3 +1,19 @@
+/**
+ * Non-cryptographic integer hashing.
+ *
+ * @example Usage
+ * ```ts
+ * import { assertNotEquals } from "@std/assert";
+ *
+ * const upper = a5hash32(new TextEncoder().encode("Hello")); // 0x8de32ed8
+ * const lower = a5hash32(new TextEncoder().encode("hello")); // 0xf9172684
+ *
+ * assertNotEquals(upper, lower);
+ * ```
+ *
+ * @module integer
+ */
+
 import { add128, type Integer, mul128, mul64 } from "./lib.ts";
 
 /** Hashes to a 32-bit integer with GoodOAAT. */

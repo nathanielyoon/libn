@@ -1,3 +1,26 @@
+/**
+ * [BLAKE2](https://www.rfc-editor.org/rfc/rfc7693) hash function (2b and 2s).
+ *
+ * @example Usage
+ * ```ts
+ * import { assertEquals } from "@std/assert";
+ * import { crypto } from "@std/crypto";
+ *
+ * const data = crypto.getRandomValues(new Uint8Array(100));
+ *
+ * assertEquals(
+ *   blake2s(data),
+ *   new Uint8Array(await crypto.subtle.digest("BLAKE2S", data)),
+ * );
+ * assertEquals(
+ *   blake2b(data),
+ *   new Uint8Array(await crypto.subtle.digest("BLAKE2B", data)),
+ * );
+ * ```
+ *
+ * @module blake2
+ */
+
 import { type Hash, iv, perm } from "./lib.ts";
 
 const STATE = /* @__PURE__ */ new Uint32Array(16);

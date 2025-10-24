@@ -1,7 +1,7 @@
 import { assertEquals, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
 import { crypto as std } from "@std/crypto";
-import { deUtf8, enUtf8 } from "@libn/base";
+import { deUtf8, enUtf8 } from "@libn/base/utf";
 import {
   add128,
   deInteger,
@@ -10,7 +10,7 @@ import {
   mul128,
   mul64,
   perm,
-} from "@libn/hash/lib";
+} from "./lib.ts";
 import { a5hash32, a5hash64, oaat32 } from "@libn/hash/integer";
 import { sha224, sha256, sha384, sha512 } from "@libn/hash/sha2";
 import { hkdf, hmac } from "@libn/hash/hmac";
