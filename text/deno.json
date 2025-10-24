@@ -1,12 +1,11 @@
 {
   "name": "@libn/text",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "GPL-3.0-or-later",
   "exports": {
-    ".": "./mod.ts",
     "./normalize": "./normalize.ts",
-    "./case": "./case.ts",
-    "./fuzzy": "./fuzzy.ts"
+    "./fold": "./fold.ts",
+    "./match": "./match.ts"
   },
   "test": {
     "permissions": {

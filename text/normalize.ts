@@ -1,4 +1,4 @@
-import { en } from "@libn/base";
+import { en } from "@libn/base/utf";
 
 /** Replaces lone surrogates. */
 export const unlone = ($: string): string => $.replace(/\p{Cs}/gu, "\ufffd");

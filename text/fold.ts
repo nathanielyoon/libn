@@ -1,3 +1,22 @@
+/**
+ * Unicode case folding.
+ *
+ * @example
+ * ```ts
+ * import { assertEquals, assertNotEquals } from "@std/assert";
+ *
+ * const one = "FUSS", two = "Fu\xdf";
+ *
+ * // These strings differ
+ * assertNotEquals(one, two);
+ *
+ * // But match case-insensitively
+ * assertEquals(uncase(one), uncase(two));
+ * ```
+ *
+ * @module fold
+ */
+
 import { dePoint, enPoint } from "./lib.ts";
 import ranges from "./ranges.json" with { type: "json" };
 
