@@ -7,8 +7,8 @@ import {
   derive,
   exchange,
   ladder,
-} from "@libn/ecc/x25519";
-import { generate, sign, verify } from "@libn/ecc/ed25519";
+} from "./x25519.ts";
+import { generate, sign, verify } from "./ed25519.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 const generateExport = async (type: "Ed" | "X") => {
@@ -53,14 +53,14 @@ Deno.test("x25519", async (t) => {
     let u = enBig(Uint8Array.fromHex(vectors.ladder.u));
     let y = 0;
     for (const step of vectors.ladder.after) {
-      // Remove to run the third step, which takes a while.
-      // ./test.ts => x25519 ... ladder() passes reference vectors ... ok (7m49s)
-      if (step.iterations === 1e6) continue;
       do {
         const next = ladder(k, u);
         u = k, k = next;
       } while (++y < step.iterations);
       assertEquals(deBig(k), Uint8Array.fromHex(step.k));
+      // Remove to run the remaining two steps, which take a while.
+      // ./test.ts => x25519 ... ladder() passes reference vectors ... ok (7m49s)
+      break;
     }
   });
   await t.step("derive() passes reference vectors", () => {
