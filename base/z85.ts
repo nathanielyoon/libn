@@ -23,4 +23,4 @@ export const enZ85: Encode = /* @__PURE__ */ en85.bind(null, Z85_STR);
 export const deZ85: Decode = /* @__PURE__ */
   de85.bind(null, /* @__PURE__ */ map(Z85_STR));
 /** Decodable Z85. */
-export const Z85 = /^[!#-&(-+--:<-[\]^a-}]*$/;
+export const Z85 = /^[!#-&(-+--:<-[\]^a-{}]*$/;
