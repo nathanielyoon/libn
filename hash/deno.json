@@ -1,6 +1,6 @@
 {
   "name": "@libn/hash",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "license": "0BSD",
   "exports": {
     "./integer": "./integer.ts",

@@ -1,6 +1,6 @@
 {
   "name": "@libn/query",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "license": "0BSD",
   "exports": {
     "./create": "./create.ts",
