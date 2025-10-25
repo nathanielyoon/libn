@@ -57,11 +57,6 @@ Deno.test("b16", async (t) => {
       },
     ));
   });
-  Uint8Array.prototype.toHex ??= function (this) {
-    return this.reduce((hex, $) => hex + $.toString(16).padStart(2, "0"), "");
-  };
-  Uint8Array.fromHex ??= ($) =>
-    Uint8Array.from($.match(/../g) ?? [], ($) => parseInt($, 16));
   await t.step("enB16() follows built-in toHex (but uppercase)", () => {
     fc.assert(fc.property(fc.uint8Array(), ($) => {
       assertEquals(enB16($), $.toHex().toUpperCase());
@@ -301,23 +296,6 @@ Deno.test("b64", async (t) => {
       },
     ));
   });
-  Uint8Array.prototype.toBase64 ??= function (this, options) {
-    let base64 = btoa(this.reduce((to, $) => to + String.fromCharCode($), ""));
-    if (options?.omitPadding) base64 = base64.replace(/=+$/, "");
-    if (options?.alphabet === "base64url") {
-      base64 = base64.replaceAll("+", "-").replaceAll("/", "_");
-    }
-    return base64;
-  };
-  Uint8Array.fromBase64 ??= ($, options) =>
-    Uint8Array.from(
-      atob(
-        options?.alphabet === "base64"
-          ? $
-          : $.replaceAll("-", "+").replaceAll("_", "/"),
-      ),
-      ($) => $.charCodeAt(0),
-    );
   await t.step("enB64() follows built-in toBase64", () => {
     fc.assert(fc.property(fc.uint8Array(), ($) => {
       assertEquals(enB64($), $.toBase64());
