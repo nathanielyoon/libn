@@ -42,7 +42,8 @@
         "no-invalid-regexp"
       ],
       "tags": ["recommended", "jsr"]
-    }
+    },
+    "plugins": ["./lib/lint.ts"]
   },
   "permissions": {
     "write-vectors": {
