@@ -1,0 +1,5 @@
+/**
+ * Internal library.
+ *
+ * @module lib
+ */

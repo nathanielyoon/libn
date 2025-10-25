@@ -12,7 +12,6 @@
     "./text"
   ],
   "imports": {
-    "@deno/dnt": "jsr:@deno/dnt@^0.42.3",
     "@std/assert": "jsr:@std/assert@^1.0.15",
     "@std/testing": "jsr:@std/testing@^1.0.16",
     "fast-check": "npm:fast-check@^4.3.0"
@@ -69,8 +68,8 @@
       "command": "deno run --allow-env --allow-run npm:esbuild --bundle --format=esm --external:@libn"
     },
     "write": {
-      "dependencies": ["cwd"],
       "description": "Runs a test-vector-writing script.",
+      "dependencies": ["cwd"],
       "command": "echo \"{}\" >./vectors.json && deno run --permission-set=write-vectors --unstable-raw-imports ./test.ts;"
     },
     "vectors": {
@@ -84,8 +83,8 @@
     "report": "deno coverage --detailed /tmp/deno-coverage --include=\"^file://$(pwd)\"",
     "cover": "deno task --cwd=. record && deno task --cwd=. report",
     "pure": {
-      "dependencies": ["cwd"],
       "description": "Checks whether the current directory's modules have side-effects, which would be included in the generated output. Requires a shell and jq.",
+      "dependencies": ["cwd"],
       "command": "sh -c 'for path in $(jq -r \"if (.exports | type) == \\\"object\\\" then .exports[] else .exports end\" deno.json); do echo \"import \\\"${path}\\\";\" >bundle.ts && deno task --cwd=. bundle bundle.ts; rm -f bundle.ts; done'"
     },
     "all": {
@@ -94,13 +93,13 @@
       "command": "deno task --cwd=. check; deno task --cwd=. lint; deno task --cwd=. cover; deno task --cwd=. pure; deno publish --dry-run --allow-dirty"
     },
     "npm": {
-      "dependencies": ["cwd"],
       "description": "Prepares an NPM-compatible subdirectory.",
-      "command": "deno eval 'import{build,emptyDir}from\"@deno/dnt\";const{name,version,exports}=JSON.parse(await Deno.readTextFile(\"./deno.json\"));await Deno.mkdir(\"./npm\",{recursive:true});await emptyDir(\"./npm\");await build({entryPoints:typeof exports===\"string\"?[exports]:Object.entries(exports).map(([name,path])=>({name,path})),outDir:\"./npm\",package:{name,version,license:\"GPL-3.0-or-later\",repository:{type:\"git\",url:\"git+https://github.com/nathanielyoon/libn.git\"}},shims:{},typeCheck:false,test:false,scriptModule:false,skipNpmInstall:true,postBuild:()=>Deno.copyFile(\"./README.md\",\"./npm/README.md\")});'"
+      "dependencies": ["cwd"],
+      "command": "deno run ../lib/npm.ts;"
     },
     "publish": {
-      "dependencies": ["cwd"],
       "description": "Publishes to JSR and NPM.",
+      "dependencies": ["cwd"],
       "command": "deno publish --allow-dirty; cd npm && npm publish --access=public && cd .. && rm -r npm;"
     }
   }
