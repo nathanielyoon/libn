@@ -1,7 +1,7 @@
 {
   "name": "@libn/base",
   "version": "0.3.4",
-  "license": "GPL-3.0-or-later",
+  "license": "0BSD",
   "exports": {
     "./utf": "./utf.ts",
     "./b16": "./b16.ts",

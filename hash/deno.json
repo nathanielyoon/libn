@@ -1,7 +1,7 @@
 {
   "name": "@libn/hash",
   "version": "0.3.1",
-  "license": "GPL-3.0-or-later",
+  "license": "0BSD",
   "exports": {
     "./integer": "./integer.ts",
     "./sha2": "./sha2.ts",
