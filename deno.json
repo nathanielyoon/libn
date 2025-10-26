@@ -96,7 +96,7 @@
     "npm": {
       "description": "Prepares an NPM-compatible subdirectory.",
       "dependencies": ["cwd"],
-      "command": "deno run ../lib/npm.ts;"
+      "command": "deno run --allow-env --allow-read --allow-write ../lib/npm.ts;"
     },
     "publish": {
       "description": "Publishes to JSR and NPM.",
