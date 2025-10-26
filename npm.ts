@@ -23,7 +23,7 @@ await build({
     homepage: `https://jsr.io/${name}`,
     repository: {
       type: "git",
-      url: "https://github.com/nathanielyoon/libn.git",
+      url: "git+https://github.com/nathanielyoon/libn.git",
     },
   },
   postBuild: async () => {
