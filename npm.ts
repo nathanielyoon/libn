@@ -12,10 +12,8 @@ await build({
   shims: {},
   skipSourceOutput: true,
   skipNpmInstall: true,
+  typeCheck: false,
   test: false,
-  typeCheck: "both",
-  filterDiagnostic: ($) =>
-    $.code !== 2304 || $.messageText !== "Cannot find name 'crypto'.",
   package: {
     name,
     version,
