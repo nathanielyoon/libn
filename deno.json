@@ -18,7 +18,6 @@
   },
   "compilerOptions": {
     "exactOptionalPropertyTypes": true,
-    "noFallthroughCasesInSwitch": true,
     "verbatimModuleSyntax": true
   },
   "lint": {
