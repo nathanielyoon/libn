@@ -40,7 +40,7 @@
  */
 
 import { hchacha, xor } from "./chacha.ts";
-import { polyXchacha, xchachaPoly } from "./aead.ts";
+import { polyXchacha, xchachaPoly } from "./xchachapoly.ts";
 
 /** Encrypts with XChaCha20-Poly1305. */
 export const encrypt = (

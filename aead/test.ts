@@ -2,7 +2,7 @@ import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { chacha, hchacha, xor } from "./chacha.ts";
 import { poly } from "./poly.ts";
-import { polyXchacha, xchachaPoly } from "./aead.ts";
+import { polyXchacha, xchachaPoly } from "./xchachapoly.ts";
 import { cipher, decrypt, encrypt } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 

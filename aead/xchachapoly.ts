@@ -4,9 +4,8 @@ import { poly } from "./poly.ts";
 const construct = (ciphertext: Uint8Array, ad: Uint8Array) => {
   const a = ad.length + 15 & ~15, b = ciphertext.length + a + 15 & ~15;
   const full = new Uint8Array(b + 16), view = new DataView(full.buffer);
-  full.set(ad), view.setUint32(b, ad.length, true);
-  full.set(ciphertext, a), view.setUint32(b + 8, ciphertext.length, true);
-  return full;
+  full.set(ad), view.setUint32(b, ad.length, true), full.set(ciphertext, a);
+  return view.setUint32(b + 8, ciphertext.length, true), full;
 };
 const ZERO = /* @__PURE__ */ new Uint32Array(16);
 /** If parameters are valid, XORs the plaintext in-place, then returns a tag. */
