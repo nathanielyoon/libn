@@ -1,0 +1,6 @@
+{
+  "name": "@libn/json",
+  "version": "0.3.0",
+  "license": "0BSD",
+  "exports": "./mod.ts"
+}
