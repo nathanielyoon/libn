@@ -128,8 +128,8 @@ export type Check<A extends Schema> = ($: unknown) => Generator<
 /** Compiles a schema to a validator. */
 export const compile = <const A extends Schema>($: A): Check<A> =>
   Function(`return function*(I){const S="",V="";let O;${body($)}return O}`)();
-/** Extracts an instance or errors from a validator. */
-export const unwrap = <A extends Schema>(
+/** Uses a validator as a type parser. */
+export const parse = <A extends Schema>(
   check: Check<A>,
   unknown: unknown,
 ): Result<Pointer<A>[], Instance<A>> => {
