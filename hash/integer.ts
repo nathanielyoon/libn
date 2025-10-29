@@ -14,7 +14,7 @@
  * @module integer
  */
 
-import { add128, type Integer, mul128, mul64 } from "./lib.ts";
+import { add128, enInteger, type I64, mul128, mul64 } from "./lib.ts";
 
 /** Hashes to a 32-bit integer with GoodOAAT. */
 export const oaat32 = ($: Uint8Array, seed = 0): number => {
@@ -68,23 +68,23 @@ export const a5hash32 = ($: Uint8Array, seed = 0): number => {
   return ({ lo: s1, hi: s2 } = mul64(v01 ^ s1, s2)), (s1 ^ s2) >>> 0;
 };
 /** Hashes to a 64-bit integer with a5hash64, always little-endian. */
-export const a5hash64 = ($: Uint8Array, seed = { hi: 0, lo: 0 }): Integer => {
-  const v01 = { lo: 0x55555555, hi: 0x55555555 };
-  const v10 = { lo: 0xaaaaaaaa, hi: 0xaaaaaaaa };
+export const a5hash64 = ($: Uint8Array, seed = 0n): I64 => {
+  const v01 = { hi: 0x55555555, lo: 0x55555555 } satisfies I64;
+  const v10 = { hi: 0xaaaaaaaa, lo: 0xaaaaaaaa } satisfies I64;
   let z, y = $.length;
-  const lo = y % 0x100000000 | 0, hi = y / 0x100000000 | 0;
+  const size = enInteger(BigInt(y)), { hi, lo } = enInteger(seed);
   // Since the 128-bit multiply directly mutates the integers, initialization is
   // swapped from the source, which reverses the order of arguments in the first
   // call and not any of the others.
   const s1 = {
-    hi: 0x452821e6 ^ hi ^ seed.hi & v10.hi,
-    lo: 0x38d01377 ^ lo ^ seed.lo & v10.lo,
-  };
+    hi: 0x452821e6 ^ size.hi ^ hi & v10.hi,
+    lo: 0x38d01377 ^ size.lo ^ lo & v10.lo,
+  } satisfies I64;
   const s2 = {
-    hi: 0x243f6a88 ^ hi ^ seed.hi & v01.hi,
-    lo: 0x85a308d3 ^ lo ^ seed.lo & v01.lo,
-  };
-  const a = { lo: 0, hi: 0 }, b = { lo: 0, hi: 0 };
+    hi: 0x243f6a88 ^ size.hi ^ hi & v01.hi,
+    lo: 0x85a308d3 ^ size.lo ^ lo & v01.lo,
+  } satisfies I64;
+  const a = { hi: 0, lo: 0 } satisfies I64, b = { hi: 0, lo: 0 } satisfies I64;
   mul128(s1, s2), v10.lo ^= s2.lo, v10.hi ^= s2.hi;
   if (y > 16) {
     v01.lo ^= s1.lo, v01.hi ^= s1.hi, z = 0, y -= 16;

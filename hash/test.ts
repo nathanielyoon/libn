@@ -142,7 +142,7 @@ Deno.test("integer", async (t) => {
       async ($, seed) => {
         const [hi, lo] = (await run(out.spawn(), `${$}\n${seed}`)).split(" ");
         assertEquals(
-          a5hash64(enUtf8($), enInteger(seed)),
+          a5hash64(enUtf8($), seed),
           { hi: +hi, lo: +lo },
         );
       },
