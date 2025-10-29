@@ -1,4 +1,4 @@
-import { assertEquals, assertNotEquals } from "@std/assert";
+import { assert, assertEquals, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
 import { crypto as std } from "@std/crypto";
 import { deUtf8, enUtf8 } from "@libn/base/utf";
@@ -446,20 +446,94 @@ int main(int argc, char **argv) {
 `
     ),
   ]).then(($) =>
-    Array.fromAsync($, async (cpp) => {
-      await run(
-        new Deno.Command("g++", {
-          args: ["-x", "c++", "-"],
-          stdin: "piped",
-          stdout: "piped",
-          stderr: "piped",
-        }).spawn(),
-        cpp,
-      );
-      const bin = await Deno.readFile("./a.out");
-      await Deno.remove("./a.out");
-      return bin.toHex();
+    Array.fromAsync($, async (cpp, z) => {
+      try {
+        await run(
+          new Deno.Command("g++", {
+            args: ["-x", "c++", "-"],
+            stdin: "piped",
+            stdout: "piped",
+            stderr: "piped",
+          }).spawn(),
+          cpp,
+        );
+        const bin = await Deno.readFile("./a.out");
+        await Deno.remove("./a.out");
+        return bin.toHex();
+      } catch {
+        return (await Deno.readFile(
+          `${import.meta.dirname}/${["oaat", "a5hash"][z]}`,
+        )).toHex();
+      }
     })
+  ),
+  fetch(
+    "https://hg.sr.ht/~icefox/oorandom/raw/src/lib.rs?rev=69053548c8352ac59ec5bf682def2ffa06cfab9c",
+  ).then(($) => $.text()).then(($) => `use std${$.slice(887, 6254)}`).then(
+    async (oorandom) => {
+      try {
+        await Deno.mkdir("./rs/src", { recursive: true });
+        await Promise.all([
+          Deno.writeTextFile(
+            "./rs/Cargo.toml",
+            '[package]\nname = "oorandom"\n',
+          ),
+          Deno.writeTextFile("./rs/src/oorandom.rs", oorandom),
+          Deno.writeTextFile(
+            "./rs/src/main.rs",
+            `#[allow(dead_code)]
+mod oorandom;
+
+fn read() -> Option<String> {
+    let mut input = String::new();
+    match std::io::stdin().read_line(&mut input) {
+        Ok(_) => Some(input),
+        Err(_) => None,
+    }
+}
+
+fn main() {
+    let mut rng = oorandom::Rand32::new_inc(
+        read().unwrap().trim().parse().unwrap(),
+        read().unwrap().trim().parse().unwrap(),
+    );
+    loop {
+        match read().map(|line| {
+            line.split_whitespace()
+                .map(|s| s.parse().unwrap())
+                .collect::<Vec<u32>>()
+        }) {
+            Some(vec) if vec.len() == 2 => {
+                println!(
+                    "{} {} {} {}",
+                    rng.rand_i32(),
+                    rng.rand_u32(),
+                    rng.rand_float(),
+                    rng.rand_range(std::ops::Range {
+                        start: vec[0],
+                        end: vec[1]
+                    })
+                );
+            }
+            _ => break,
+        }
+    }
+}
+`,
+          ),
+        ]);
+        const { success, stderr } = await new Deno.Command("cargo", {
+          args: ["build", "--release"],
+          cwd: "./rs",
+        }).output();
+        assert(success, new TextDecoder().decode(stderr));
+        const bin = await Deno.readFile("./rs/target/release/oorandom");
+        await Deno.remove("./rs", { recursive: true });
+        return bin.toHex();
+      } catch {
+        return (await Deno.readFile(`${import.meta.dirname}/oorandom`)).toHex();
+      }
+    },
   ),
   Promise.all(Array.from([224, 256, 384, 512], (size) =>
     fetch(
@@ -518,9 +592,10 @@ int main(int argc, char **argv) {
       derive_key: string;
     }[];
   }>(($) => $.json()),
-]).then(([cpp, nist, hmac, hkdf, blake2, blake3]) => ({
+]).then(([cpp, oorandom, nist, hmac, hkdf, blake2, blake3]) => ({
   oaat: cpp[0],
   a5hash: cpp[1],
+  oorandom,
   sha224: nist[0],
   sha256: nist[1],
   sha384: nist[2],
