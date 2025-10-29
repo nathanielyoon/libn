@@ -12,10 +12,12 @@ import {
   perm,
 } from "./lib.ts";
 import { a5hash32, a5hash64, oaat32 } from "./integer.ts";
+import { Rng } from "./rng.ts";
 import { sha224, sha256, sha384, sha512 } from "./sha2.ts";
 import { hkdf, hmac } from "./hmac.ts";
 import { blake2b, blake2s } from "./blake2.ts";
 import { blake3 } from "./blake3.ts";
+import compiled from "./compiled.json" with { type: "json" };
 import vectors from "./vectors.json" with { type: "json" };
 
 const fcUint = fc.double({
@@ -81,74 +83,108 @@ Deno.test("lib", async (t) => {
     }));
   });
 });
+const bin = async (
+  name: "oaat" | "a5hash" | "oorandom",
+  run: (
+    spawn: (stdin: string, args?: string[]) => Promise<string>,
+  ) => Promise<void>,
+) => {
+  const path = `${import.meta.dirname}/${name}`;
+  await Deno.writeFile(path, Uint8Array.fromBase64(vectors[name]), {
+    mode: 0o755,
+  });
+  await run(async (stdin, args = []) => {
+    const child = new Deno.Command(
+      path,
+      { args, stdin: "piped", stdout: "piped", stderr: "piped" },
+    ).spawn();
+    const writer = child.stdin.getWriter();
+    await writer.write(enUtf8(stdin));
+    await writer.close();
+    const out = await child.output();
+    if (!out.success) throw Error(deUtf8(out.stderr), { cause: out.code });
+    return deUtf8(out.stdout);
+  });
+  await Deno.remove(path);
+};
 const run = async ($: Deno.ChildProcess, stdin: string) => {
   const writer = $.stdin.getWriter();
   await writer.write(enUtf8(stdin));
   await writer.close();
   const out = await $.output();
   if (!out.success) throw Error(deUtf8(out.stderr), { cause: out.code });
-  return deUtf8(out.stdout);
+  return deUtf8(out.stdout).trim();
 };
 Deno.test("integer", async (t) => {
   await t.step("oaat() follows original implementation", async () => {
-    const path = `${import.meta.dirname}/oaat.out`;
-    await Deno.writeFile(path, Uint8Array.fromHex(vectors.oaat), {
-      mode: 0o755,
+    await bin("oaat", (spawn) =>
+      fc.assert(fc.asyncProperty(
+        fc.string({ size: "medium" }),
+        fcUint,
+        async ($, seed) => {
+          assertEquals(
+            oaat32(enUtf8($), seed),
+            +(await spawn(`${$}\n${seed}`)),
+          );
+        },
+      )));
+  });
+  await bin("a5hash", async (spawn) => {
+    await t.step("a5hash32() follows original implementation", async () => {
+      await fc.assert(fc.asyncProperty(
+        fc.string({ size: "medium" }),
+        fcUint,
+        async ($, seed) => {
+          assertEquals(
+            a5hash32(enUtf8($), seed),
+            +(await spawn(`${$}\n${seed}`, ["\x20"])),
+          );
+        },
+      ));
     });
-    const out = new Deno.Command(
-      path,
-      { stdin: "piped", stdout: "piped", stderr: "piped" },
-    );
-    await fc.assert(fc.asyncProperty(
-      fc.string({ size: "medium" }),
-      fcUint,
-      async ($, seed) => {
-        assertEquals(
-          oaat32(enUtf8($), seed),
-          +(await run(out.spawn(), `${$}\n${seed}`)),
-        );
-      },
-    ));
-    await Deno.remove(path);
+    await t.step("a5hash64() follows original implementation", async () => {
+      await fc.assert(fc.asyncProperty(
+        fc.string({ size: "medium" }),
+        fcBigUint,
+        async ($, seed) => {
+          const [hi, lo] = (await spawn(`${$}\n${seed}`, ["\x40"])).split(" ");
+          assertEquals(a5hash64(enUtf8($), seed), { hi: +hi, lo: +lo });
+        },
+      ));
+    });
   });
-  const path = `${import.meta.dirname}/a5hash.out`;
-  await Deno.writeFile(path, Uint8Array.fromHex(vectors.a5hash), {
-    mode: 0o755,
+});
+Deno.test("rng", async (t) => {
+  await t.step("Rng.make() follows original implementation", async () => {
+    await bin("oorandom", (spawn) =>
+      fc.assert(fc.asyncProperty(
+        fc.bigInt({ min: 0n, max: 0xffffffffffffffffn }),
+        fc.bigInt({ min: 0n, max: 0xffffffffffffffffn }),
+        fc.array(
+          fc.tuple(fcUint, fcUint).map(($) => $.sort((one, two) => one - two)),
+          { minLength: 1 },
+        ),
+        async (seed, increment, ranges) => {
+          const rng = Rng.make(seed, increment);
+          assertEquals(
+            ranges.map(($) => [
+              rng.i32(),
+              rng.u32(),
+              rng.f32(),
+              rng.bounded($[1], $[0]),
+            ]),
+            (await spawn(
+              `${seed}\n${increment}\n${
+                ranges.map(($) => $.join(" ")).join("\n")
+              }`,
+            )).trim().split("\n").map((line) => {
+              const [i32, u32, f32, bounded] = line.split(/\s+/);
+              return [+i32, +u32, Math.fround(+f32), +bounded];
+            }),
+          );
+        },
+      )));
   });
-  await t.step("a5hash32() follows original implementation", async () => {
-    const out = new Deno.Command(
-      path,
-      { args: ["\x20"], stdin: "piped", stdout: "piped", stderr: "piped" },
-    );
-    await fc.assert(fc.asyncProperty(
-      fc.string({ size: "medium" }),
-      fcUint,
-      async ($, seed) => {
-        assertEquals(
-          a5hash32(enUtf8($), seed),
-          +(await run(out.spawn(), `${$}\n${seed}`)),
-        );
-      },
-    ));
-  });
-  await t.step("a5hash64() follows original implementation", async () => {
-    const out = new Deno.Command(
-      path,
-      { args: ["\x40"], stdin: "piped", stdout: "piped", stderr: "piped" },
-    );
-    await fc.assert(fc.asyncProperty(
-      fc.string({ size: "medium" }),
-      fcBigUint,
-      async ($, seed) => {
-        const [hi, lo] = (await run(out.spawn(), `${$}\n${seed}`)).split(" ");
-        assertEquals(
-          a5hash64(enUtf8($), seed),
-          { hi: +hi, lo: +lo },
-        );
-      },
-    ));
-  });
-  await Deno.remove(path);
 });
 Deno.test("sha2", async (t) => {
   await t.step("sha224() passes reference vectors", () => {
@@ -459,12 +495,8 @@ int main(int argc, char **argv) {
         );
         const bin = await Deno.readFile("./a.out");
         await Deno.remove("./a.out");
-        return bin.toHex();
-      } catch {
-        return (await Deno.readFile(
-          `${import.meta.dirname}/${["oaat", "a5hash"][z]}`,
-        )).toHex();
-      }
+        return bin.toBase64();
+      } catch { /* empty */ }
     })
   ),
   fetch(
@@ -529,9 +561,9 @@ fn main() {
         assert(success, new TextDecoder().decode(stderr));
         const bin = await Deno.readFile("./rs/target/release/oorandom");
         await Deno.remove("./rs", { recursive: true });
-        return bin.toHex();
+        return bin.toBase64();
       } catch {
-        return (await Deno.readFile(`${import.meta.dirname}/oorandom`)).toHex();
+        return compiled.oorandom;
       }
     },
   ),
@@ -593,8 +625,8 @@ fn main() {
     }[];
   }>(($) => $.json()),
 ]).then(([cpp, oorandom, nist, hmac, hkdf, blake2, blake3]) => ({
-  oaat: cpp[0],
-  a5hash: cpp[1],
+  oaat: cpp[0] ?? compiled.oaat,
+  a5hash: cpp[1] ?? compiled.a5hash,
   oorandom,
   sha224: nist[0],
   sha256: nist[1],

@@ -7,8 +7,12 @@ export class Rng {
     const rng = new Rng({ hi: 0, lo: 0 }, enInteger(inc << 1n | 1n));
     return rng.i32(), add128(rng.state, enInteger(seed)), rng.i32(), rng;
   }
+  /** Initializes from a saved state and increment. */
+  static load(state: I64, increment: I64): Rng {
+    return new Rng(state, increment);
+  }
   /** Instantiates a new generator. */
-  constructor(private state: I64, private increment: I64) {}
+  private constructor(private state: I64, private increment: I64) {}
   /** Saves the internal state to re-construct later. */
   save(): { state: I64; increment: I64 } {
     return { state: this.state, increment: this.increment };
