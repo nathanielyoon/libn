@@ -155,11 +155,12 @@ Deno.test("integer", async (t) => {
   });
 });
 Deno.test("rng", async (t) => {
+  const fcBigint = fc.bigInt({ min: 0n, max: 0xffffffffffffffffn });
   await t.step("Rng.make() follows original implementation", async () => {
     await bin("oorandom", (spawn) =>
       fc.assert(fc.asyncProperty(
-        fc.bigInt({ min: 0n, max: 0xffffffffffffffffn }),
-        fc.bigInt({ min: 0n, max: 0xffffffffffffffffn }),
+        fcBigint,
+        fcBigint,
         fc.array(
           fc.tuple(fcUint, fcUint).map(($) => $.sort((one, two) => one - two)),
           { minLength: 1 },
@@ -184,6 +185,12 @@ Deno.test("rng", async (t) => {
           );
         },
       )));
+  });
+  await t.step("Rng.load() recreates state", () => {
+    fc.assert(fc.property(fcBigint, fcBigint, (seed, increment) => {
+      const rng = Rng.make(seed, increment);
+      assertEquals(Rng.load(rng.save()).i32(), rng.i32());
+    }));
   });
 });
 Deno.test("sha2", async (t) => {
