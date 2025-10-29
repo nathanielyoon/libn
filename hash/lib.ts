@@ -41,5 +41,5 @@ export const mul128 = (one: I64, two: I64): void => {
   const e = mul64(a, c), f = mul64(b, c), g = mul64(a, d), h = mul64(b, d);
   add128(g, { hi: 0, lo: f.lo }), add128(g, { hi: 0, lo: e.hi });
   add128(h, { hi: 0, lo: f.hi }), add128(h, { hi: 0, lo: g.hi });
-  two.hi = h.hi, two.lo = h.lo, one.hi = g.lo, one.lo = e.lo;
+  one.hi = g.lo, one.lo = e.lo, two.hi = h.hi, two.lo = h.lo;
 };
