@@ -1,28 +1,38 @@
 import { add128, enInteger, type I64, mul128, mul64 } from "./lib.ts";
 
 /** Permuted congruential generator. */
-export class Rng {
+export class Rng implements I64 {
   /** Initializes with a 64-bit seed and an optional 64-bit increment. */
   static make(seed: bigint, inc = 721347520444481703n): Rng {
     const rng = new Rng({ hi: 0, lo: 0 }, enInteger(inc << 1n | 1n));
-    return rng.i32(), add128(rng.state, enInteger(seed)), rng.i32(), rng;
+    return rng.i32(), add128(rng, enInteger(seed)), rng.i32(), rng;
   }
   /** Initializes from a saved state and increment. */
-  static load(state: I64, increment: I64): Rng {
-    return new Rng(state, increment);
+  static load(saved: { state: I64; increment: I64 }): Rng {
+    return new Rng(saved.state, saved.increment);
   }
+  /** Upper 32 bits of state. */
+  hi;
+  /** Lower 32 bits of state. */
+  lo;
   /** Instantiates a new generator. */
-  private constructor(private state: I64, private increment: I64) {}
-  /** Saves the internal state to re-construct later. */
+  private constructor(state: I64, private increment: I64) {
+    this.hi = state.hi, this.lo = state.lo;
+  }
+  /** Saves a copy of the state and increment. */
   save(): { state: I64; increment: I64 } {
-    return { state: this.state, increment: this.increment };
+    return {
+      state: { hi: this.hi, lo: this.lo },
+      increment: { hi: this.increment.hi, lo: this.increment.lo },
+    };
   }
   /** Generates a signed 32-bit integer. */
   i32(): number {
-    const { hi, lo } = this.state;
-    mul128(this.state, { hi: 1481765933, lo: 1284865837 });
-    add128(this.state, this.increment);
-    const state = (hi >>> 18 ^ hi) << 5 | ((hi << 14 | lo >>> 18) ^ lo) >>> 27;
+    const hi = this.hi;
+    const state = (hi >>> 18 ^ hi) << 5 |
+      ((hi << 14 | this.lo >>> 18) ^ this.lo) >>> 27;
+    mul128(this, { hi: 1481765933, lo: 1284865837 });
+    add128(this, this.increment);
     return state >>> (hi >>> 27) | state << 32 - (hi >>> 27);
   }
   /** Generates an unsigned 32-bit integer. */
