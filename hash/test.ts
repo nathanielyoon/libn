@@ -495,7 +495,7 @@ int main(int argc, char **argv) {
 `
     ),
   ]).then(($) =>
-    Array.fromAsync($, async (cpp, z) => {
+    Array.fromAsync($, async (cpp) => {
       try {
         await run(
           new Deno.Command("g++", {
