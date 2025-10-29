@@ -158,34 +158,40 @@ Deno.test("rng", async (t) => {
   const fcBigint = fc.bigInt({ min: 0n, max: 0xffffffffffffffffn });
   await t.step("Rng.make() follows original implementation", async () => {
     await bin("oorandom", (spawn) =>
-      fc.assert(fc.asyncProperty(
-        fcBigint,
-        fcBigint,
-        fc.array(
-          fc.tuple(fcUint, fcUint).map(($) => $.sort((one, two) => one - two)),
-          { minLength: 1 },
+      fc.assert(
+        fc.asyncProperty(
+          fcBigint,
+          fcBigint,
+          fc.array(
+            fc.tuple(fcUint, fcUint).map(($) =>
+              $.sort((one, two) => one - two)
+            ),
+            { minLength: 1 },
+          ),
+          async (seed, increment, ranges) => {
+            const rng = Rng.make(seed, increment);
+            assertEquals(
+              ranges.map(($) => [
+                rng.i32(),
+                rng.u32(),
+                rng.f32(),
+                rng.bounded($[1], $[0]),
+              ]),
+              (await spawn(
+                `${seed}\n${increment}\n${
+                  ranges.map(($) => $.join(" ")).join("\n")
+                }`,
+              )).trim().split("\n").map((line) => {
+                const [i32, u32, f32, bounded] = line.split(/\s+/);
+                return [+i32, +u32, Math.fround(+f32), +bounded];
+              }),
+            );
+          },
         ),
-        async (seed, increment, ranges) => {
-          const rng = Rng.make(seed, increment);
-          assertEquals(
-            ranges.map(($) => [
-              rng.i32(),
-              rng.u32(),
-              rng.f32(),
-              rng.bounded($[1], $[0]),
-            ]),
-            (await spawn(
-              `${seed}\n${increment}\n${
-                ranges.map(($) => $.join(" ")).join("\n")
-              }`,
-            )).trim().split("\n").map((line) => {
-              const [i32, u32, f32, bounded] = line.split(/\s+/);
-              return [+i32, +u32, Math.fround(+f32), +bounded];
-            }),
-          );
-        },
-      )));
+        { examples: [[0n, 0n, [[0, 2147733257]]]] }, // triggers float rejection
+      ));
   });
+
   await t.step("Rng.load() recreates state", () => {
     fc.assert(fc.property(fcBigint, fcBigint, (seed, increment) => {
       const rng = Rng.make(seed, increment);
