@@ -12,9 +12,9 @@ export class Rng implements I64 {
     return new Rng(saved.state, saved.increment);
   }
   /** Upper 32 bits of state. */
-  hi;
+  hi: number;
   /** Lower 32 bits of state. */
-  lo;
+  lo: number;
   /** Instantiates a new generator. */
   private constructor(state: I64, private increment: I64) {
     this.hi = state.hi, this.lo = state.lo;
