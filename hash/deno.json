@@ -4,6 +4,7 @@
   "license": "0BSD",
   "exports": {
     "./integer": "./integer.ts",
+    "./rng": "./rng.ts",
     "./sha2": "./sha2.ts",
     "./hmac": "./hmac.ts",
     "./blake2": "./blake2.ts",
