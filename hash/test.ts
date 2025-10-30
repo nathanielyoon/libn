@@ -191,12 +191,27 @@ Deno.test("rng", async (t) => {
         { examples: [[0n, 0n, [[0, 2147733257]]]] }, // triggers float rejection
       ));
   });
-
   await t.step("Rng.load() recreates state", () => {
     fc.assert(fc.property(fcBigint, fcBigint, (seed, increment) => {
       const rng = Rng.make(seed, increment);
       assertEquals(Rng.load(rng.save()).i32(), rng.i32());
     }));
+  });
+  await t.step("Rng() implements IterableIterator", () => {
+    fc.assert(fc.property(
+      fcBigint,
+      fcBigint,
+      fc.nat({ max: 1e3 }),
+      (seed, increment, length) => {
+        const one = Rng.make(seed, increment), two = Rng.make(seed, increment);
+        assert(one[Symbol.iterator]() === one);
+        assertEquals(one.next(), { value: two.i32(), done: false });
+        assertEquals(
+          one.take(length).toArray(),
+          Array.from({ length: length }, () => two.i32()),
+        );
+      },
+    ));
   });
 });
 Deno.test("sha2", async (t) => {

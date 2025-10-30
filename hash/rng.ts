@@ -1,38 +1,35 @@
 import { add128, enInteger, type I64, mul128, mul64 } from "./lib.ts";
 
 /** Permuted congruential generator. */
-export class Rng implements I64 {
+export class Rng extends Iterator<number, never> {
   /** Initializes with a 64-bit seed and an optional 64-bit increment. */
-  static make(seed: bigint, inc = 721347520444481703n): Rng {
-    const rng = new Rng({ hi: 0, lo: 0 }, enInteger(inc << 1n | 1n));
-    return rng.i32(), add128(rng, enInteger(seed)), rng.i32(), rng;
+  static make(seed: bigint, inc?: bigint): Rng {
+    const rng = new Rng();
+    if (inc !== undefined) rng.increment = enInteger(inc << 1n | 1n);
+    return rng.i32(), add128(rng.state, enInteger(seed)), rng.i32(), rng;
   }
   /** Initializes from a saved state and increment. */
   static load(saved: { state: I64; increment: I64 }): Rng {
-    return new Rng(saved.state, saved.increment);
+    const rng = new Rng();
+    return rng.state = saved.state, rng.increment = saved.increment, rng;
   }
-  /** Upper 32 bits of state. */
-  hi: number;
-  /** Lower 32 bits of state. */
-  lo: number;
-  /** Instantiates a new generator. */
-  private constructor(state: I64, private increment: I64) {
-    this.hi = state.hi, this.lo = state.lo;
-  }
+  /** Inner state, should be initialized to the generator's starting point. */
+  private state: I64 = { hi: 0, lo: 0 };
+  /** Step taken on each iteration, with an arbitrary default value. */
+  private increment: I64 = { hi: 335903614, lo: 4150755663 };
   /** Saves a copy of the state and increment. */
   save(): { state: I64; increment: I64 } {
     return {
-      state: { hi: this.hi, lo: this.lo },
+      state: { hi: this.state.hi, lo: this.state.lo },
       increment: { hi: this.increment.hi, lo: this.increment.lo },
     };
   }
   /** Generates a signed 32-bit integer. */
   i32(): number {
-    const hi = this.hi;
-    const state = (hi >>> 18 ^ hi) << 5 |
-      ((hi << 14 | this.lo >>> 18) ^ this.lo) >>> 27;
-    mul128(this, { hi: 1481765933, lo: 1284865837 });
-    add128(this, this.increment);
+    const { hi, lo } = this.state;
+    mul128(this.state, { hi: 1481765933, lo: 1284865837 });
+    add128(this.state, this.increment);
+    const state = (hi >>> 18 ^ hi) << 5 | ((hi << 14 | lo >>> 18) ^ lo) >>> 27;
     return state >>> (hi >>> 27) | state << 32 - (hi >>> 27);
   }
   /** Generates an unsigned 32-bit integer. */
@@ -52,5 +49,9 @@ export class Rng implements I64 {
       while (map.lo >>> 0 < threshold) map = mul64(this.i32(), end);
     }
     return (map.hi >>> 0) + inclusiveMinimum;
+  }
+  /** Yields the next signed 32-bit integer. */
+  next(): IteratorResult<number, never> {
+    return { value: this.i32(), done: false };
   }
 }
