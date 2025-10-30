@@ -79,11 +79,11 @@ export const obj = (($: Schema | { [_: string]: Schema }, meta?: {}) => ({
 })) as {
   <
     const A extends Schema,
-    const B extends ObjMeta<{ additionalProperties: Schema }> = {},
+    const B extends Exact<ObjMeta<{ additionalProperties: Schema }>, B> = {},
   >($: A, meta?: B): Writable<{ type: "object"; additionalProperties: A } & B>;
   <
     const A extends { [_: string]: Schema },
-    const B extends Partial<ObjMeta<{ properties: {} }>> = {},
+    const B extends Exact<Partial<ObjMeta<{ properties: {} }>>, B> = {},
   >($: A, meta?: B): Writable<
     {
       type: "object";
