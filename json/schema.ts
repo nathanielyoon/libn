@@ -52,6 +52,7 @@ export type Obj = Merge<
 /** Discriminated union schema. */
 export type One = {
   type: "object";
+  properties: { [_: string]: Extract<Str, { enum: {} }> };
   required: readonly [string];
   oneOf: readonly [
     Omit<Extract<Obj, { properties: {} }>, "type">,
@@ -103,6 +104,8 @@ export type Instance<A extends Schema> = A extends { const: infer B } ? B
         & { [D in Exclude<keyof B, C>]?: Instance<B[D]> }
       >
     : never
-  : A extends { oneOf: readonly (infer B)[] }
-    ? B extends Schema ? Instance<B> : never
-  : {};
+  : A extends One
+    ? A["oneOf"][number] extends infer B
+      ? B extends Schema ? Instance<B> : never
+    : never
+  : never;
