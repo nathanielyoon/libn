@@ -1,4 +1,10 @@
-import { type Exact, isArray, type Keys, type Writable } from "./lib.ts";
+import {
+  type Exact,
+  isArray,
+  type Keys,
+  type Tuple,
+  type Writable,
+} from "./lib.ts";
 import type { Arr, Bit, Int, Nil, Num, Obj, Schema, Str } from "./schema.ts";
 
 /** Creates a null schema. */
@@ -102,11 +108,13 @@ export const one = <
   type: "object";
   properties: { [_ in A]: { type: "string"; enum: Keys<B> } };
   required: [A];
-  oneOf: Keys<B> extends infer C extends (keyof B)[] ? {
+  oneOf: Tuple<keyof B> extends infer C extends (keyof B)[] ? {
       [D in keyof C]: Writable<
         Omit<B[C[D]], "properties"> & {
           properties:
-            & { [_ in A]: { type: "string"; const: C[D] } }
+            & {
+              [_ in A]: { type: "string"; const: `${Exclude<C[D], symbol>}` };
+            }
             & Omit<B[C[D]]["properties"], A>;
         }
       >;
