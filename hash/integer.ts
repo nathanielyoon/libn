@@ -22,10 +22,9 @@ export const oaat32 = ($: Uint8Array, seed = 0): number => {
   while (z < $.length) {
     h2 += h1 = (h1 + $[z++]) * 9 | 0, h2 = (h2 << 7 | h2 >>> 25) * 5 | 0;
   }
-  h2 ^= h1 = (h1 ^ h2) + (h2 << 14 | h2 >>> 18) >>> 0;
-  h1 ^= h2 += (h1 >>> 6 | h1 << 26) >>> 0;
-  h2 ^= h1 += (h2 << 5 | h2 >>> 27) >>> 0;
-  return h2 += (h1 >>> 8 | h1 << 24) >>> 0, h2 >>> 0;
+  h2 ^= h1 = (h1 ^ h2) + (h2 << 14 | h2 >>> 18);
+  h1 ^= h2 += h1 >>> 6 | h1 << 26, h2 ^= h1 += h2 << 5 | h2 >>> 27;
+  return h2 += h1 >>> 8 | h1 << 24, h2 >>> 0;
 };
 /** Hashes to a 32-bit integer with a5hash32, always little-endian. */
 export const a5hash32 = ($: Uint8Array, seed = 0): number => {
