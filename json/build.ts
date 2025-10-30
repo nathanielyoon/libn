@@ -1,4 +1,4 @@
-import { type Exact, isArray, type Tuple, type Writable } from "./lib.ts";
+import { type Exact, isArray, type Keys, type Writable } from "./lib.ts";
 import type { Arr, Bit, Int, Nil, Num, Obj, Schema, Str } from "./schema.ts";
 
 /** Creates a null schema. */
@@ -90,7 +90,7 @@ export const obj = (($: Schema | { [_: string]: Schema }, meta?: {}) => ({
       properties: A;
       additionalProperties: false;
       required: B["required"] extends infer C extends readonly string[] ? C
-        : Tuple<keyof A>;
+        : Keys<A>;
     } & Omit<B, "required">
   >;
 };
@@ -100,9 +100,9 @@ export const one = <
   const B extends { [_: string]: Extract<Obj, { properties: {} }> },
 >(key: A, mapping: B): {
   type: "object";
-  properties: { [_ in A]: { type: "string"; enum: Tuple<keyof B> } };
+  properties: { [_ in A]: { type: "string"; enum: Keys<B> } };
   required: [A];
-  oneOf: Tuple<keyof B> extends infer C extends (keyof B)[] ? {
+  oneOf: Keys<B> extends infer C extends (keyof B)[] ? {
       [D in keyof C]: Writable<
         Omit<B[C[D]], "properties"> & {
           properties:
