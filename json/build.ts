@@ -106,7 +106,6 @@ export const one = <
   const B extends { [_: string]: Extract<Obj, { properties: {} }> },
 >(key: A, mapping: keyof B extends never ? never : B): {
   type: "object";
-  properties: { [_ in A]: { type: "string"; enum: Keys<B> } };
   required: [A];
   oneOf: Tuple<keyof B> extends infer C extends (keyof B)[] ? {
       [D in keyof C]: Writable<
@@ -122,7 +121,6 @@ export const one = <
     : never;
 } => ({
   type: "object",
-  properties: { [key]: str<any>(Object.keys(mapping)) } as any,
   required: [key],
   oneOf: Object.entries(mapping).map(([$, source]) => {
     const target: Parameters<typeof obj>[1] = {};

@@ -256,7 +256,6 @@ Deno.test("build", async (t) => {
     assertBuild(one("0", { 1: obj({}) }))({
       type: "object",
       required: ["0"],
-      properties: { 0: str(["1"]) },
       oneOf: [obj({ 0: str("1") }, { required: [] })],
     });
     assertBuild(one("0", {
@@ -265,7 +264,6 @@ Deno.test("build", async (t) => {
     }))({
       type: "object",
       required: ["0"],
-      properties: { 0: str(["1", "2"]) },
       oneOf: [
         obj({ 0: str("1"), 1: int(1) }, { required: ["1"], minProperties: 1 }),
         obj({ 0: str("2"), 2: int(2) }, { required: ["2"], maxProperties: 2 }),

@@ -52,7 +52,6 @@ export type Obj = Merge<
 /** Discriminated union schema. */
 export type One = {
   type: "object";
-  properties: { [_: string]: Extract<Str, { enum: {} }> };
   required: readonly [string];
   oneOf: readonly [
     Extract<Obj, { properties: {} }>,
