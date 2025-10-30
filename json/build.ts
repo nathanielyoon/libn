@@ -98,7 +98,7 @@ export const obj = (($: Schema | { [_: string]: Schema }, meta?: {}) => ({
 export const one = <
   const A extends string,
   const B extends { [_: string]: Extract<Obj, { properties: {} }> },
->(key: A, mapping: B): {
+>(key: A, mapping: keyof B extends never ? never : B): {
   type: "object";
   properties: { [_ in A]: { type: "string"; enum: Keys<B> } };
   required: [A];
