@@ -259,13 +259,16 @@ Deno.test("build", async (t) => {
       properties: { 0: str(["1"]) },
       oneOf: [obj({ 0: str("1") }, { required: [] })],
     });
-    assertBuild(one("0", { 1: obj({ 1: int(1) }), 2: obj({ 2: int(2) }) }))({
+    assertBuild(one("0", {
+      1: obj({ 1: int(1) }, { minProperties: 1 }),
+      2: obj({ 2: int(2) }, { maxProperties: 2 }),
+    }))({
       type: "object",
       required: ["0"],
       properties: { 0: str(["1", "2"]) },
       oneOf: [
-        obj({ 0: str("1"), 1: int(1) }, { required: ["1"] }),
-        obj({ 0: str("2"), 2: int(2) }, { required: ["2"] }),
+        obj({ 0: str("1"), 1: int(1) }, { required: ["1"], minProperties: 1 }),
+        obj({ 0: str("2"), 2: int(2) }, { required: ["2"], maxProperties: 2 }),
       ],
     });
   });
