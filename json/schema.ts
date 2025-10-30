@@ -47,19 +47,16 @@ export type Obj = Merge<
     properties: { [_: string]: Schema };
     additionalProperties: false;
     required: readonly string[];
+  }, {
+    required: readonly [string];
+    oneOf: readonly [
+      Extract<Obj, { properties: {} }>,
+      ...Extract<Obj, { properties: {} }>[],
+    ];
   }]>
 >;
-/** Discriminated union schema. */
-export type One = {
-  type: "object";
-  required: readonly [string];
-  oneOf: readonly [
-    Extract<Obj, { properties: {} }>,
-    ...Extract<Obj, { properties: {} }>[],
-  ];
-};
 /** JSON schema subset. */
-export type Schema = Nil | Bit | Int | Num | Str | Arr | Obj | One;
+export type Schema = Nil | Bit | Int | Num | Str | Arr | Obj;
 /** @internal */
 type Prefix<
   A extends readonly Schema[],
@@ -102,9 +99,7 @@ export type Instance<A extends Schema> = A extends { const: infer B } ? B
         & { [D in Extract<keyof B, C>]: Instance<B[D]> }
         & { [D in Exclude<keyof B, C>]?: Instance<B[D]> }
       >
-    : never
-  : A extends One
-    ? A["oneOf"][number] extends infer B
+    : A extends { oneOf: readonly (infer B)[] }
       ? B extends Schema ? Instance<B> : never
     : never
   : never;

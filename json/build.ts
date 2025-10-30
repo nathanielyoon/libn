@@ -72,8 +72,23 @@ type ObjMeta<A> = Omit<
   "type" | "properties" | "additionalProperties"
 >;
 /** Creates an object schema. */
-export const obj = (($: Schema | { [_: string]: Schema }, meta?: {}) => ({
-  ...typeof $.type !== "string"
+export const obj = (($: any, meta?: any) => ({
+  ...typeof $ === "string"
+    ? {
+      required: [$],
+      oneOf: Object.entries<Obj>(meta).map(([key, source]) => {
+        const target: Partial<ObjMeta<{ properties: {} }>> = {};
+        if (source.minProperties !== undefined) {
+          target.minProperties = source.minProperties;
+        }
+        if (source.maxProperties !== undefined) {
+          target.maxProperties = source.maxProperties;
+        }
+        if (source.required) target.required = source.required;
+        return obj({ ...source.properties, [$]: str(key) }, target);
+      }),
+    }
+    : typeof $.type !== "string"
     ? {
       required: Object.keys($),
       ...meta,
@@ -99,38 +114,23 @@ export const obj = (($: Schema | { [_: string]: Schema }, meta?: {}) => ({
         : Keys<A>;
     } & Omit<B, "required">
   >;
+  <
+    const A extends string,
+    const B extends { [_: string]: Extract<Obj, { properties: {} }> },
+  >(key: A, mapping: keyof B extends never ? never : B): {
+    type: "object";
+    required: [A];
+    oneOf: Tuple<keyof B> extends infer C extends (keyof B)[] ? {
+        [D in keyof C]: Writable<
+          Omit<B[C[D]], "properties"> & {
+            properties:
+              & {
+                [_ in A]: { type: "string"; const: `${Exclude<C[D], symbol>}` };
+              }
+              & Omit<B[C[D]]["properties"], A>;
+          }
+        >;
+      }
+      : never;
+  };
 };
-/** Creates a union schema. */
-export const one = <
-  const A extends string,
-  const B extends { [_: string]: Extract<Obj, { properties: {} }> },
->(key: A, mapping: keyof B extends never ? never : B): {
-  type: "object";
-  required: [A];
-  oneOf: Tuple<keyof B> extends infer C extends (keyof B)[] ? {
-      [D in keyof C]: Writable<
-        Omit<B[C[D]], "properties"> & {
-          properties:
-            & {
-              [_ in A]: { type: "string"; const: `${Exclude<C[D], symbol>}` };
-            }
-            & Omit<B[C[D]]["properties"], A>;
-        }
-      >;
-    }
-    : never;
-} => ({
-  type: "object",
-  required: [key],
-  oneOf: Object.entries(mapping).map(([$, source]) => {
-    const target: Parameters<typeof obj>[1] = {};
-    if (source.minProperties !== undefined) {
-      target.minProperties = source.minProperties;
-    }
-    if (source.maxProperties !== undefined) {
-      target.maxProperties = source.maxProperties;
-    }
-    if (source.required) target.required = source.required;
-    return obj({ ...source.properties, [key]: str($) }, target);
-  }) as any,
-});
