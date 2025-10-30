@@ -12,7 +12,6 @@ import {
   perm,
 } from "./lib.ts";
 import { a5hash32, a5hash64, oaat32 } from "./integer.ts";
-import { Rng } from "./rng.ts";
 import { sha224, sha256, sha384, sha512 } from "./sha2.ts";
 import { hkdf, hmac } from "./hmac.ts";
 import { blake2b, blake2s } from "./blake2.ts";
@@ -84,15 +83,13 @@ Deno.test("lib", async (t) => {
   });
 });
 const bin = async (
-  name: "oaat" | "a5hash" | "oorandom",
+  bin: string,
   run: (
     spawn: (stdin: string, args?: string[]) => Promise<string>,
   ) => Promise<void>,
 ) => {
-  const path = `${import.meta.dirname}/${name}`;
-  await Deno.writeFile(path, Uint8Array.fromBase64(vectors[name]), {
-    mode: 0o755,
-  });
+  const path = await Deno.makeTempFile();
+  await Deno.writeFile(path, Uint8Array.fromBase64(bin), { mode: 0o755 });
   await run(async (stdin, args = []) => {
     const child = new Deno.Command(
       path,
@@ -107,17 +104,9 @@ const bin = async (
   });
   await Deno.remove(path);
 };
-const run = async ($: Deno.ChildProcess, stdin: string) => {
-  const writer = $.stdin.getWriter();
-  await writer.write(enUtf8(stdin));
-  await writer.close();
-  const out = await $.output();
-  if (!out.success) throw Error(deUtf8(out.stderr), { cause: out.code });
-  return deUtf8(out.stdout).trim();
-};
 Deno.test("integer", async (t) => {
   await t.step("oaat() follows original implementation", async () => {
-    await bin("oaat", (spawn) =>
+    await bin(vectors.oaat, (spawn) =>
       fc.assert(fc.asyncProperty(
         fc.string({ size: "medium" }),
         fcUint,
@@ -129,9 +118,9 @@ Deno.test("integer", async (t) => {
         },
       )));
   });
-  await bin("a5hash", async (spawn) => {
-    await t.step("a5hash32() follows original implementation", async () => {
-      await fc.assert(fc.asyncProperty(
+  await t.step("a5hash32() follows original implementation", async () => {
+    await bin(vectors.a5hash, (spawn) =>
+      fc.assert(fc.asyncProperty(
         fc.string({ size: "medium" }),
         fcUint,
         async ($, seed) => {
@@ -140,78 +129,18 @@ Deno.test("integer", async (t) => {
             +(await spawn(`${$}\n${seed}`, ["\x20"])),
           );
         },
-      ));
-    });
-    await t.step("a5hash64() follows original implementation", async () => {
-      await fc.assert(fc.asyncProperty(
+      )));
+  });
+  await t.step("a5hash64() follows original implementation", async () => {
+    await bin(vectors.a5hash, (spawn) =>
+      fc.assert(fc.asyncProperty(
         fc.string({ size: "medium" }),
         fcBigUint,
         async ($, seed) => {
           const [hi, lo] = (await spawn(`${$}\n${seed}`, ["\x40"])).split(" ");
           assertEquals(a5hash64(enUtf8($), seed), { hi: +hi, lo: +lo });
         },
-      ));
-    });
-  });
-});
-Deno.test("rng", async (t) => {
-  const fcBigint = fc.bigInt({ min: 0n, max: 0xffffffffffffffffn });
-  await t.step("Rng.make() follows original implementation", async () => {
-    await bin("oorandom", (spawn) =>
-      fc.assert(
-        fc.asyncProperty(
-          fcBigint,
-          fcBigint,
-          fc.array(
-            fc.tuple(fcUint, fcUint).map(($) =>
-              $.sort((one, two) => one - two)
-            ),
-            { minLength: 1 },
-          ),
-          async (seed, increment, ranges) => {
-            const rng = Rng.make(seed, increment);
-            assertEquals(
-              ranges.map(($) => [
-                rng.i32(),
-                rng.u32(),
-                rng.f32(),
-                rng.bounded($[1], $[0]),
-              ]),
-              (await spawn(
-                `${seed}\n${increment}\n${
-                  ranges.map(($) => $.join(" ")).join("\n")
-                }`,
-              )).trim().split("\n").map((line) => {
-                const [i32, u32, f32, bounded] = line.split(/\s+/);
-                return [+i32, +u32, Math.fround(+f32), +bounded];
-              }),
-            );
-          },
-        ),
-        { examples: [[0n, 0n, [[0, 2147733257]]]] }, // triggers float rejection
-      ));
-  });
-  await t.step("Rng.load() recreates state", () => {
-    fc.assert(fc.property(fcBigint, fcBigint, (seed, increment) => {
-      const rng = Rng.make(seed, increment);
-      assertEquals(Rng.load(rng.save()).i32(), rng.i32());
-    }));
-  });
-  await t.step("Rng() implements IterableIterator", () => {
-    fc.assert(fc.property(
-      fcBigint,
-      fcBigint,
-      fc.nat({ max: 1e3 }),
-      (seed, increment, length) => {
-        const one = Rng.make(seed, increment), two = Rng.make(seed, increment);
-        assert(one[Symbol.iterator]() === one);
-        assertEquals(one.next(), { value: two.i32(), done: false });
-        assertEquals(
-          one.take(length).toArray(),
-          Array.from({ length: length }, () => two.i32()),
-        );
-      },
-    ));
+      )));
   });
 });
 Deno.test("sha2", async (t) => {
@@ -512,88 +441,17 @@ int main(int argc, char **argv) {
   ]).then(($) =>
     Array.fromAsync($, async (cpp) => {
       try {
-        await run(
-          new Deno.Command("g++", {
-            args: ["-x", "c++", "-"],
-            stdin: "piped",
-            stdout: "piped",
-            stderr: "piped",
-          }).spawn(),
-          cpp,
-        );
-        const bin = await Deno.readFile("./a.out");
-        await Deno.remove("./a.out");
-        return bin.toBase64();
-      } catch { /* empty */ }
-    })
-  ),
-  fetch(
-    "https://hg.sr.ht/~icefox/oorandom/raw/src/lib.rs?rev=69053548c8352ac59ec5bf682def2ffa06cfab9c",
-  ).then(($) => $.text()).then(($) => `use std${$.slice(887, 6254)}`).then(
-    async (oorandom) => {
-      try {
-        await Deno.mkdir("./rs/src", { recursive: true });
-        await Promise.all([
-          Deno.writeTextFile(
-            "./rs/Cargo.toml",
-            '[package]\nname = "oorandom"\n',
-          ),
-          Deno.writeTextFile("./rs/src/oorandom.rs", oorandom),
-          Deno.writeTextFile(
-            "./rs/src/main.rs",
-            `#[allow(dead_code)]
-mod oorandom;
-
-fn read() -> Option<String> {
-    let mut input = String::new();
-    match std::io::stdin().read_line(&mut input) {
-        Ok(_) => Some(input),
-        Err(_) => None,
-    }
-}
-
-fn main() {
-    let mut rng = oorandom::Rand32::new_inc(
-        read().unwrap().trim().parse().unwrap(),
-        read().unwrap().trim().parse().unwrap(),
-    );
-    loop {
-        match read().map(|line| {
-            line.split_whitespace()
-                .map(|s| s.parse().unwrap())
-                .collect::<Vec<u32>>()
-        }) {
-            Some(vec) if vec.len() == 2 => {
-                println!(
-                    "{} {} {} {}",
-                    rng.rand_i32(),
-                    rng.rand_u32(),
-                    rng.rand_float(),
-                    rng.rand_range(std::ops::Range {
-                        start: vec[0],
-                        end: vec[1]
-                    })
-                );
-            }
-            _ => break,
-        }
-    }
-}
-`,
-          ),
-        ]);
-        const { success, stderr } = await new Deno.Command("cargo", {
-          args: ["build", "--release"],
-          cwd: "./rs",
+        const path = await Deno.makeTempDir();
+        await Deno.writeTextFile(`${path}/main.cpp`, cpp);
+        const { success, stderr } = await new Deno.Command("g++", {
+          args: ["main.cpp"],
+          cwd: path,
         }).output();
         assert(success, new TextDecoder().decode(stderr));
-        const bin = await Deno.readFile("./rs/target/release/oorandom");
-        await Deno.remove("./rs", { recursive: true });
-        return bin.toBase64();
-      } catch {
-        return compiled.oorandom;
-      }
-    },
+        const bin = await Deno.readFile(`${path}/a.out`);
+        return await Deno.remove(path, { recursive: true }), bin.toBase64();
+      } catch { /* empty */ }
+    })
   ),
   Promise.all(Array.from([224, 256, 384, 512], (size) =>
     fetch(
@@ -652,10 +510,9 @@ fn main() {
       derive_key: string;
     }[];
   }>(($) => $.json()),
-]).then(([cpp, oorandom, nist, hmac, hkdf, blake2, blake3]) => ({
+]).then(([cpp, nist, hmac, hkdf, blake2, blake3]) => ({
   oaat: cpp[0] ?? compiled.oaat,
   a5hash: cpp[1] ?? compiled.a5hash,
-  oorandom,
   sha224: nist[0],
   sha256: nist[1],
   sha384: nist[2],
