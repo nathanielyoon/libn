@@ -55,8 +55,8 @@ export type One = {
   properties: { [_: string]: Extract<Str, { enum: {} }> };
   required: readonly [string];
   oneOf: readonly [
-    Omit<Extract<Obj, { properties: {} }>, "type">,
-    ...Omit<Extract<Obj, { properties: {} }>, "type">[],
+    Extract<Obj, { properties: {} }>,
+    ...Extract<Obj, { properties: {} }>[],
   ];
 };
 /** JSON schema subset. */
