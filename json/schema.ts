@@ -1,4 +1,4 @@
-import type { Merge, Xor } from "./lib.ts";
+import type { Merge, Writable, Xor } from "./lib.ts";
 
 /** Null schema. */
 export type Nil = { type: "null" };
@@ -84,7 +84,8 @@ export type Instance<A extends Schema> = A extends { const: infer B } ? B
   : A extends Bit ? boolean
   : A extends Num ? number
   : A extends Str ? string
-  : A extends Arr ? A extends { items: infer B extends Schema } ? Instance<B>[]
+  : A extends Arr
+    ? A extends { items: infer B extends Schema } ? readonly Instance<B>[]
     : A extends {
       prefixItems: infer B extends readonly Schema[];
       minItems: infer C extends number;
@@ -97,7 +98,7 @@ export type Instance<A extends Schema> = A extends { const: infer B } ? B
     : A extends {
       properties: infer B extends { [_: string]: Schema };
       required: readonly (infer C extends string)[];
-    } ? Merge<
+    } ? Writable<
         & { [D in Extract<keyof B, C>]: Instance<B[D]> }
         & { [D in Exclude<keyof B, C>]?: Instance<B[D]> }
       >
