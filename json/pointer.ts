@@ -18,6 +18,16 @@ export const deToken = <A extends string>($: A) =>
 export type Pointer<A extends Schema, B extends [string, string] = ["", ""]> = {
   [C in keyof A]: [C, A[C]] extends ["items", infer D extends Schema]
     ? Pointer<D, [`${B[0]}/items`, `${B[1]}/${number}`]>
+    : [C, A[C]] extends ["prefixItems", infer D extends readonly Schema[]] ? {
+        [E in keyof D]: Pointer<
+          D[E],
+          [`${B[0]}/prefixItems/${E}`, `${B[1]}/${E}`]
+        >;
+      }[keyof D]
+    : [C, A[C]] extends [
+      infer E extends "additionalProperties" | "propertyNames",
+      infer D extends Schema,
+    ] ? Pointer<D, [`${B[0]}/${E}`, `${B[1]}/${string}`]>
     : [C, A[C]] extends ["properties", infer D extends { [_: string]: Schema }]
       ? {
         [E in keyof D]: Pointer<
