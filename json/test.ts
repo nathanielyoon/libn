@@ -12,7 +12,7 @@ import {
   type Writable,
   type Xor,
 } from "./lib.ts";
-import { arr, bit, int, nil, num, obj, one, str } from "./build.ts";
+import { arr, bit, int, nil, num, obj, str } from "./build.ts";
 
 Deno.test("lib", async (t) => {
   await t.step("Merge<> combines intersections", () => {
@@ -251,14 +251,12 @@ Deno.test("build", async (t) => {
       maxProperties: 1,
       required: ["2"],
     });
-  });
-  await t.step("one() creates a One schema", () => {
-    assertBuild(one("0", { 1: obj({}) }))({
+    assertBuild(obj("0", { 1: obj({}) }))({
       type: "object",
       required: ["0"],
       oneOf: [obj({ 0: str("1") }, { required: [] })],
     });
-    assertBuild(one("0", {
+    assertBuild(obj("0", {
       1: obj({ 1: int(1) }, { minProperties: 1 }),
       2: obj({ 2: int(2) }, { maxProperties: 2 }),
     }))({
