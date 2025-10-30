@@ -60,7 +60,7 @@ export type One = {
   ];
 };
 /** JSON schema subset. */
-export type Schema = Nil | Bit | Num | Str | Arr | Obj | One;
+export type Schema = Nil | Bit | Int | Num | Str | Arr | Obj | One;
 /** @internal */
 type Prefix<
   A extends readonly Schema[],
