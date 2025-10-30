@@ -133,6 +133,6 @@ export const one = <
       target.maxProperties = source.maxProperties;
     }
     if (source.required) target.required = source.required;
-    return [obj({ ...source.properties, [key]: str($) }, target)];
+    return obj({ ...source.properties, [key]: str($) }, target);
   }) as any,
 });
