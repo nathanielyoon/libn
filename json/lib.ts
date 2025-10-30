@@ -26,6 +26,8 @@ export type And<A> = (A extends never ? never : (_: A) => void) extends
 /** Union to tuple. */
 export type Tuple<A> = And<A extends never ? never : (_: A) => A> extends
   ((_: never) => infer B extends A) ? [...Tuple<Exclude<A, B>>, B] : [];
+/** Object keys. */
+export type Keys<A> = Tuple<`${Exclude<keyof A, symbol>}`>;
 /** Fixed-length array. */
 export type Sequence<A, B extends number, C extends A[] = []> = B extends B
   ? C["length"] extends B ? C : Sequence<A, B, [...C, A]>
