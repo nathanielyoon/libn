@@ -1,7 +1,14 @@
 import type { Json, Writable, Xor } from "./lib.ts";
 
 /** Null schema. */
-export type Nil = { type: "null" };
+export type Nil =
+  | { type: "null" }
+  | { type: ["null", "boolean"]; oneOf: [{ type: "null" }, Bit] }
+  | { type: ["null", "integer"]; oneOf: [{ type: "null" }, Int] }
+  | { type: ["null", "number"]; oneOf: [{ type: "null" }, Num] }
+  | { type: ["null", "string"]; oneOf: [{ type: "null" }, Str] }
+  | { type: ["null", "array"]; oneOf: [{ type: "null" }, Arr] }
+  | { type: ["null", "object"]; oneOf: [{ type: "null" }, Obj] };
 /** Boolean schema. */
 export type Bit =
   & { type: "boolean" }
@@ -74,6 +81,7 @@ type Natural<A extends number> = `${A}` extends `-${string}` ? 0 : A;
 export type Instance<A extends Schema> = Schema extends A ? Json
   : A extends { const: infer B } ? B
   : A extends { enum: readonly (infer B)[] } ? B
+  : A extends { oneOf: [Nil, infer B extends Schema] } ? null | Instance<B>
   : A["type"] extends "null" ? null
   : A["type"] extends "boolean" ? boolean
   : A["type"] extends "integer" | "number" ? number

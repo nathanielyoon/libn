@@ -5,10 +5,20 @@ import {
   type Tuple,
   type Writable,
 } from "./lib.ts";
-import type { Arr, Bit, Int, Nil, Num, Obj, Schema, Str } from "./schema.ts";
+import type { Arr, Bit, Int, Num, Obj, Schema, Str } from "./schema.ts";
 
 /** Creates a null schema. */
-export const nil = (): Nil => ({ type: "null" });
+export const nil = (($?: Schema) => (
+  $
+    ? { type: ["null", $.type], oneOf: [{ type: "null" }, $] }
+    : { type: "null" }
+)) as {
+  (): { type: "null" };
+  <const A extends Schema>($: A): {
+    type: ["null", A["type"]];
+    oneOf: [{ type: "null" }, Writable<A>];
+  };
+};
 const typer = (type: string, $?: any) => ($ === undefined ? { type } : {
   ...typeof $ !== "object" ? { const: $ } : isArray($) ? { enum: $ } : $,
   type,
