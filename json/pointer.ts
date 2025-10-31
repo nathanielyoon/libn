@@ -22,6 +22,8 @@ export type Pointer<
 > = Schema extends A ? `${string}~${string}`
   : A extends { const: Json } ? `${B}/const~${C}`
   : A extends { enum: readonly Json[] } ? `${B}/enum~${C}`
+  : A extends { oneOf: [{ type: "null" }, infer D extends Schema] }
+    ? Pointer<D, `${B}/oneOf/1`, C>
   : A["type"] extends "null" | "boolean" | "integer" | "number" | "string"
     ? `${B}/${Extract<keyof A, string>}~${C}`
   : A["type"] extends "array" ?
@@ -29,10 +31,10 @@ export type Pointer<
       | (A extends { maxItems: true } ? `${B}/maxItems~${C}` : never)
       | (A extends { uniqueItems: true } ? `${B}/uniqueItems~${C}` : never)
       | ((A extends { prefixItems: infer D extends readonly Schema[] } ?
+          | `${B}/items~${C}`
           | {
             [E in keyof D]: Pointer<D[E], `${B}/prefixItems/${E}`, `${C}/${E}`>;
           }[keyof D]
-          | `${B}/items~${C}`
         : A extends { items: infer D extends Schema }
           ? Pointer<D, `${B}/items`, `${C}/number`>
         : never) extends infer D ? D extends string ? D : never : never)
