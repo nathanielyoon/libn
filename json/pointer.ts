@@ -38,6 +38,11 @@ export type Pointer<A extends Schema, B extends [string, string] = ["", ""]> = {
     : [C, A[C]] extends ["required", infer D extends readonly string[]] ? {
         [E in keyof D]: `${B[0]}/required/${E}~${B[1]}/${EnToken<D[E]>}`;
       }[keyof D]
+    : [C, A[C]] extends ["oneOf", infer D extends readonly Schema[]] ?
+        | {
+          [E in keyof D]: Pointer<D[E], [`${B[0]}/oneOf/${E}`, B[1]]>;
+        }[keyof D]
+        | `${B[0]}/oneOf~${B[1]}`
     : `${B[0]}/${C & string}~${B[1]}`;
 }[keyof A] extends infer C ? C extends string ? C : never : never;
 /** Resolves a JSON pointer. */
