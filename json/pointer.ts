@@ -2,12 +2,16 @@ import { isArray, type Json } from "./lib.ts";
 import type { Schema } from "./schema.ts";
 
 /** @internal */
-type Replace<A, B extends string, C extends string> = A extends
-  `${infer D}${B}${infer E}` ? `${D}${C}${Replace<E, B, C>}` : A & string;
+type Replace<A extends string, B extends string, C extends string> = A extends
+  `${infer D}${B}${infer E}` ? `${D}${C}${Replace<E, B, C>}` : A;
 /** @internal */
-type EnToken<A> = Replace<Replace<A, "~", "~0">, "/", "~1">;
+type EnToken<A extends PropertyKey> = Replace<
+  Replace<`${Exclude<A, symbol>}`, "~", "~0">,
+  "/",
+  "~1"
+>;
 /** @internal */
-type DeToken<A> = Replace<Replace<A, "~1", "/">, "~0", "~">;
+type DeToken<A extends string> = Replace<Replace<A, "~1", "/">, "~0", "~">;
 /** Encodes a reference token. */
 export const enToken = <A extends string>($: A) =>
   $.replaceAll("~", "~0").replaceAll("/", "~1") as EnToken<A>;
