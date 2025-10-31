@@ -1,5 +1,10 @@
-import { assertEquals, assertMatch, assertStrictEquals } from "@std/assert";
-import { assertType, type IsExact } from "@std/testing/types";
+import {
+  assertEquals,
+  assertMatch,
+  assertStrictEquals,
+  assertThrows,
+} from "@std/assert";
+import { assertType, type Has, type IsExact } from "@std/testing/types";
 import fc from "fast-check";
 import {
   type And,
@@ -13,9 +18,20 @@ import {
   type Writable,
   type Xor,
 } from "./lib.ts";
-import type { Instance, Schema } from "./schema.ts";
+import type {
+  Arr,
+  Bit,
+  Instance,
+  Int,
+  Nil,
+  Num,
+  Obj,
+  Schema,
+  Str,
+} from "./schema.ts";
 import { dereference, deToken, enToken, type Pointer } from "./pointer.ts";
 import { arr, bit, int, nil, num, obj, str } from "./build.ts";
+import { assert, compile, is, parse } from "./check.ts";
 
 const fcJson = fc.jsonValue() as fc.Arbitrary<Json>;
 Deno.test("lib", async (t) => {
@@ -177,25 +193,39 @@ Deno.test("pointer", async (t) => {
     }));
   });
 });
+type DeepWritable<A> = A extends object
+  ? { -readonly [B in keyof A]: DeepWritable<A[B]> }
+  : A;
 Deno.test("build", async (t) => {
+  const step = <A extends Schema>(
+    type: string,
+    tests: (
+      test: <B extends A>(actual: B) => <const C extends A>(
+        expected: IsExact<B, DeepWritable<C>> extends true ? C : never,
+      ) => void,
+    ) => void,
+  ) =>
+    t.step(`${type}() creates a ${type} schema`, () => {
+      tests((actual) => (expected) => assertEquals<A>(actual, expected));
+    });
   const assertBuild =
     <A>(actual: A) =>
     <B extends A>(expected: IsExact<A, B> extends true ? B : never) =>
       assertEquals(actual, expected);
-  await t.step("nil() creates a Nil schema", () => {
-    assertBuild(nil())({ type: "null" });
+  await step<Nil>("nil", (test) => {
+    test(nil())({ type: "null" });
   });
-  await t.step("bit() creates a Bit schema", () => {
-    assertBuild(bit())({ type: "boolean" });
-    assertBuild(bit(false))({ type: "boolean", const: false });
-    assertBuild(bit([true]))({ type: "boolean", enum: [true] });
-    assertBuild(bit({}))({ type: "boolean" });
+  await step<Bit>("bit", (test) => {
+    test(bit())({ type: "boolean" });
+    test(bit(false))({ type: "boolean", const: false });
+    test(bit([true]))({ type: "boolean", enum: [true] });
+    test(bit({}))({ type: "boolean" });
   });
-  await t.step("int() creates an Int schema", () => {
-    assertBuild(int())({ type: "integer" });
-    assertBuild(int(0))({ type: "integer", const: 0 });
-    assertBuild(int([1]))({ type: "integer", enum: [1] });
-    assertBuild(int({
+  await step<Int>("int", (test) => {
+    test(int())({ type: "integer" });
+    test(int(0))({ type: "integer", const: 0 });
+    test(int([1]))({ type: "integer", enum: [1] });
+    test(int({
       minimum: 2,
       maximum: 3,
       exclusiveMinimum: 4,
@@ -210,11 +240,11 @@ Deno.test("build", async (t) => {
       multipleOf: 6,
     });
   });
-  await t.step("num() creates an Num schema", () => {
-    assertBuild(num())({ type: "number" });
-    assertBuild(num(0))({ type: "number", const: 0 });
-    assertBuild(num([1]))({ type: "number", enum: [1] });
-    assertBuild(num({
+  await step<Num>("num", (test) => {
+    test(num())({ type: "number" });
+    test(num(0))({ type: "number", const: 0 });
+    test(num([1]))({ type: "number", enum: [1] });
+    test(num({
       minimum: 2,
       maximum: 3,
       exclusiveMinimum: 4,
@@ -229,11 +259,11 @@ Deno.test("build", async (t) => {
       multipleOf: 6,
     });
   });
-  await t.step("str() creates a Str schema", () => {
-    assertBuild(str())({ type: "string" });
-    assertBuild(str("0"))({ type: "string", const: "0" });
-    assertBuild(str(["1"]))({ type: "string", enum: ["1"] });
-    assertBuild(str({
+  await step<Str>("str", (test) => {
+    test(str())({ type: "string" });
+    test(str("0"))({ type: "string", const: "0" });
+    test(str(["1"]))({ type: "string", enum: ["1"] });
+    test(str({
       minLength: 2,
       maxLength: 3,
       pattern: "4",
@@ -248,30 +278,30 @@ Deno.test("build", async (t) => {
       contentEncoding: "base16",
     });
   });
-  await t.step("arr() creates an Arr schema", () => {
-    assertBuild(arr(nil()))({ type: "array", items: { type: "null" } });
-    assertBuild(arr(nil(), { minItems: 0, maxItems: 1, uniqueItems: false }))({
+  await step<Arr>("arr", (test) => {
+    test(arr(nil()))({ type: "array", items: { type: "null" } });
+    test(arr(nil(), { minItems: 0, maxItems: 1, uniqueItems: false }))({
       type: "array",
       items: { type: "null" },
       minItems: 0,
       maxItems: 1,
       uniqueItems: false,
     });
-    assertBuild(arr([]))({
+    test(arr([]))({
       type: "array",
       prefixItems: [],
       items: false,
       minItems: 0,
       maxItems: 0,
     });
-    assertBuild(arr([nil()]))({
+    test(arr([nil()]))({
       type: "array",
       prefixItems: [{ type: "null" }],
       items: false,
       minItems: 1,
       maxItems: 1,
     });
-    assertBuild(arr([nil()], { minItems: 1, maxItems: 2, uniqueItems: true }))({
+    test(arr([nil()], { minItems: 1, maxItems: 2, uniqueItems: true }))({
       type: "array",
       prefixItems: [{ type: "null" }],
       items: false,
@@ -280,12 +310,12 @@ Deno.test("build", async (t) => {
       uniqueItems: true,
     });
   });
-  await t.step("obj() creates an Obj schema", () => {
-    assertBuild(obj(nil()))({
+  await step<Obj>("obj", (test) => {
+    test(obj(nil()))({
       type: "object",
       additionalProperties: { type: "null" },
     });
-    assertBuild(obj(nil(), {
+    test(obj(nil(), {
       propertyKeys: str(),
       minProperties: 0,
       maxProperties: 1,
@@ -296,17 +326,13 @@ Deno.test("build", async (t) => {
       maxProperties: 1,
       propertyKeys: { type: "string" },
     });
-    assertBuild(obj({}))({
+    test(obj({}))({
       type: "object",
       properties: {},
       additionalProperties: false,
       required: [],
     });
-    assertBuild(obj({}, {
-      minProperties: 0,
-      maxProperties: 1,
-      required: ["2"],
-    }))({
+    test(obj({}, { minProperties: 0, maxProperties: 1, required: ["2"] }))({
       type: "object",
       properties: {},
       additionalProperties: false,
@@ -314,13 +340,13 @@ Deno.test("build", async (t) => {
       maxProperties: 1,
       required: ["2"],
     });
-    assertBuild(obj({ 0: nil() }))({
+    test(obj({ 0: nil() }))({
       type: "object",
       properties: { 0: { type: "null" } },
       additionalProperties: false,
       required: ["0"],
     });
-    assertBuild(obj({ 0: nil(), 1: nil() }, {
+    test(obj({ 0: nil(), 1: nil() }, {
       minProperties: 0,
       maxProperties: 1,
       required: ["2"],
@@ -332,12 +358,12 @@ Deno.test("build", async (t) => {
       maxProperties: 1,
       required: ["2"],
     });
-    assertBuild(obj("0", { 1: obj({}) }))({
+    test(obj("0", { 1: obj({}) }))({
       type: "object",
       required: ["0"],
       oneOf: [obj({ 0: str("1") }, { required: [] })],
     });
-    assertBuild(obj("0", {
+    test(obj("0", {
       1: obj({ 1: int(1) }, { minProperties: 1 }),
       2: obj({ 2: int(2) }, { maxProperties: 2 }),
     }))({
