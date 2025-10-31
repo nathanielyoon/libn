@@ -160,7 +160,6 @@ Deno.test("normalize", async (t) => {
     for (const $ of "/^$\\*+?{}()[]|") assertEquals(unrexp($), `\\${$}`);
   });
   await t.step("unrexp() escapes all directly-escapable characters", () => {
-    assertEquals(unrexp("\b"), "\\b");
     assertEquals(unrexp("\t"), "\\t");
     assertEquals(unrexp("\n"), "\\n");
     assertEquals(unrexp("\v"), "\\v");

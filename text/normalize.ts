@@ -21,11 +21,11 @@ export const unmark = ($: string): string =>
 export const unhtml = ($: string): string =>
   $.replaceAll("&", "&#38;").replaceAll('"', "&#34;").replaceAll("'", "&#39;")
     .replaceAll("<", "&#60;").replaceAll(">", "&#62;");
-const b1 = ($: string) => `\\${"btnvfr"[en.call($) - 8]}`; // \x08-\x0d
+const b1 = ($: string) => `\\${"tnvfr"[en.call($) - 9]}`; // \x09-\x0d
 const h2 = ($: string) => `\\x${en.call($).toString(16).padStart(2, "0")}`;
 const u4 = ($: string) => `\\u${en.call($).toString(16).padStart(4, "0")}`;
 /** Escapes a string as a regular expression literal. */
 export const unrexp = ($: string): string =>
-  $.replace(/[$(-+./?[-^{|}]/g, "\\$&").replace(/[\b\t\n\v\f\r]/g, b1)
+  $.replace(/[$(-+./?[-^{|}]/g, "\\$&").replace(/[\t\n\v\f\r]/g, b1)
     .replace(/[\0-#%&',\-:->@_`~\x7f\x85\xa0]|^[\dA-Za-z]/g, h2)
     .replace(/[\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\uffef]/g, u4);
