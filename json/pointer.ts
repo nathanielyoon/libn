@@ -25,6 +25,7 @@ export type Pointer<
   : A["type"] extends "null" | "boolean" | "integer" | "number" | "string"
     ? `${B}/${Extract<keyof A, string>}~${C}`
   : A["type"] extends "array" ?
+      | `${B}/type~${C}`
       | (A extends { minItems: true } ? `${B}/minItems~${C}` : never)
       | (A extends { maxItems: true } ? `${B}/maxItems~${C}` : never)
       | (A extends { uniqueItems: true } ? `${B}/uniqueItems~${C}` : never)
@@ -34,9 +35,10 @@ export type Pointer<
             [E in keyof D]: Pointer<D[E], `${B}/prefixItems/${E}`, `${C}/${E}`>;
           }[keyof D]
         : A extends { items: infer D extends Schema }
-          ? Pointer<D, `${B}/items`, `${C}/number`>
+          ? Pointer<D, `${B}/items`, `${C}/${number}`>
         : never) extends infer D ? D extends string ? D : never : never)
   :
+    | `${B}/type~${C}`
     | (A extends { minProperties: number } ? `${B}/minProperties~${C}` : never)
     | (A extends { maxProperties: number } ? `${B}/maxProperties~${C}` : never)
     | ((A extends { oneOf: infer D extends readonly Schema[] } ?
