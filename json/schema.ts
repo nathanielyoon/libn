@@ -1,4 +1,4 @@
-import type { Merge, Writable, Xor } from "./lib.ts";
+import type { Json, Merge, Writable, Xor } from "./lib.ts";
 
 /** Null schema. */
 export type Nil = { type: "null" };
@@ -75,7 +75,8 @@ type Prefix<
 /** @internal */
 type Natural<A extends number> = `${A}` extends `-${string}` ? 0 : A;
 /** Typed JSON value. */
-export type Instance<A extends Schema> = A extends { const: infer B } ? B
+export type Instance<A extends Schema> = Schema extends A ? Json
+  : A extends { const: infer B } ? B
   : A extends { enum: readonly (infer B)[] } ? B
   : A extends Nil ? null
   : A extends Bit ? boolean
