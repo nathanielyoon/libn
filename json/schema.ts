@@ -94,8 +94,8 @@ export type Instance<A extends Schema> = Schema extends A ? Json
     properties: infer B extends { [_: string]: Schema };
     required: readonly (infer C extends string)[];
   } ? Writable<
-      & { [D in Extract<keyof B, C>]: Instance<B[D]> }
-      & { [D in Exclude<keyof B, C>]?: Instance<B[D]> }
+      & { [D in Extract<`${Exclude<keyof B, symbol>}`, C>]: Instance<B[D]> }
+      & { [D in Exclude<`${Exclude<keyof B, symbol>}`, C>]?: Instance<B[D]> }
     >
   : A extends
     { required: readonly [infer B extends string]; oneOf: readonly (infer C)[] }
