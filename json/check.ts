@@ -36,6 +36,15 @@ export const BASES: Patterns<Str["contentEncoding"]> = {
 const no = (
   $: `${Schema extends infer A ? A extends A ? keyof A : never : never}${any}`,
 ) => `(yield\`\${S}/${$}~\${V}\`);`;
+const TYPE = {
+  null: "I===null",
+  boolean: 'typeof I==="boolean"',
+  integer: "Number.isInteger(I)",
+  number: "Number.isFinite(I)",
+  string: 'typeof I==="string"',
+  array: "Array.isArray(I)",
+  object: 'if(typeof I==="object"&&I&&!Array.isArray(I)',
+} satisfies { [_ in Schema["type"]]: string };
 const body = ($: Schema) => {
   if (hasOwn($, "const")) {
     return `if(I===${JSON.stringify($.const)})O=I;else${no("const")}`;
@@ -44,18 +53,14 @@ const body = ($: Schema) => {
     do to += `case ${JSON.stringify($.enum[z])}:`; while (++z < $.enum.length);
     return `${to}O=I;break;default:${no("enum")}}`;
   }
-  let to;
+  let to = `if(${TYPE[$.type]}){`;
   switch ($.type) {
     case "null":
-      to = "if(I===null){O=I";
-      break;
     case "boolean":
-      to = 'if(typeof I==="boolean"){O=I';
+      to += "O=I";
       break;
     case "integer":
-      to = "Integer";
     case "number":
-      to = `if(Number.is${to || "Finite"}(I)){`;
       if ($.minimum !== undefined) to += `I<${$.minimum}&&${no("minimum")}`;
       if ($.maximum !== undefined) to += `I>${$.maximum}&&${no("maximum")}`;
       if ($.exclusiveMinimum !== undefined) {
@@ -68,7 +73,6 @@ const body = ($: Schema) => {
       to += "O=I";
       break;
     case "string":
-      to = 'if(typeof I!=="string"){';
       if ($.minLength! > 0) to += `I.length<${$.minLength}&&${no("minLength")}`;
       if ($.maxLength !== undefined) {
         to += `I.length<${$.maxLength}&&${no("maxLength")}`;
@@ -85,7 +89,6 @@ const body = ($: Schema) => {
       to += "O=I";
       break;
     case "array": {
-      to = "if(Array.isArray(I)){";
       if ($.minItems! > 0) to += `I.length<${$.minItems}&&${no("minItems")}`;
       if ($.maxItems !== undefined) {
         to += `I.length>${$.maxItems}&&${no("maxItems")}`;
@@ -114,7 +117,6 @@ const body = ($: Schema) => {
       break;
     }
     case "object":
-      to = 'if(typeof I==="object"&&I&&!Array.isArray(I)){';
       if ($.oneOf) {
         if ($.minProperties! > 0 || $.maxProperties !== undefined) {
           to += `const k=Object.keys(I);`;
