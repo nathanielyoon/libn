@@ -34,9 +34,8 @@ export type Sequence<A, B extends number, C extends A[] = []> = B extends B
   : never;
 /** Array type predicate. */
 export const isArray = /* @__PURE__ */
-  Array.isArray as ($: any) => $ is any[] | readonly any[];
+  (() => Array.isArray)() as ($: any) => $ is any[] | readonly any[];
 /** Object key type predicate. */
-export const hasOwn = /* @__PURE__ */ Object.hasOwn as <A extends PropertyKey>(
-  $: object,
-  key: A,
-) => $ is { [_ in A]: unknown };
+export const hasOwn = /* @__PURE__ */ (() => Object.hasOwn)() as <
+  A extends PropertyKey,
+>($: object, key: A) => $ is { [_ in A]: unknown };
