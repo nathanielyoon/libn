@@ -35,7 +35,7 @@ export const BASES: Patterns<Str["contentEncoding"]> = {
 };
 const no = (
   $: `${Schema extends infer A ? A extends A ? keyof A : never : never}${any}`,
-) => `(yield[\`\${S}/${$}\`,I]);`;
+) => `(yield\`\${S}/${$}~\${V}\`);`;
 const body = ($: Schema) => {
   if (hasOwn($, "const")) {
     return `if(I===${JSON.stringify($.const)})O=I;else${no("const")}`;
