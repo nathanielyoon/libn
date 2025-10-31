@@ -59,7 +59,7 @@ export const arr = (($: Schema | Schema[], meta?: {}) => ({
   >($: A, meta?: B): Writable<
     {
       type: "array";
-      prefixItems: A;
+      prefixItems: Writable<A>;
       items: false;
       minItems: B["minItems"] extends infer C extends number ? C : A["length"];
       maxItems: B["maxItems"] extends infer C extends number ? C : A["length"];
