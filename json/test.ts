@@ -384,12 +384,13 @@ Deno.test("build", async (t) => {
   });
 });
 Deno.test("check", async (t) => {
-  const assertCheck = <A extends Schema>(
-    $: fc.Arbitrary<{
-      schema: A;
-      ok: readonly Instance<A>[];
-      no: { [_ in Pointer<A>]: readonly Json[] };
-    }>,
+  const assertCheck = <const A>(
+    $: A extends Schema ? fc.Arbitrary<{
+        schema: A;
+        ok: readonly Instance<A>[];
+        no: { [_ in Pointer<A>]: readonly Json[] };
+      }>
+      : never,
   ) =>
     fc.assert(fc.property($, ({ schema, ok, no }) => {
       const check = compile(schema);
@@ -398,7 +399,7 @@ Deno.test("check", async (t) => {
         assertEquals(is(check, $), true);
         assert(check, $);
       }
-      for (const key of Object.keys(no) as Pointer<A>[]) {
+      for (const key of Object.keys(no) as (keyof typeof no)[]) {
         for (const $ of no[key]) {
           assertEquals(parse(check, $), { state: false, value: [key] });
           assertEquals(is(check, $), false);
