@@ -46,139 +46,148 @@ const TYPE = {
   object: 'if(typeof I==="object"&&I&&!Array.isArray(I)',
 } satisfies { [_ in Schema["type"]]: string };
 const body = ($: Schema) => {
-  if (hasOwn($, "const")) {
-    return `if(I===${JSON.stringify($.const)})O=I;else${no("const")}`;
-  } else if (hasOwn($, "enum")) {
-    let to = "switch(I){", z = 0;
-    do to += `case ${JSON.stringify($.enum[z])}:`; while (++z < $.enum.length);
-    return `${to}O=I;break;default:${no("enum")}}`;
-  }
   let to = `if(${TYPE[$.type]}){`;
-  switch ($.type) {
-    case "null":
-    case "boolean":
-      to += "O=I";
-      break;
-    case "integer":
-    case "number":
-      if ($.minimum !== undefined) to += `I<${$.minimum}&&${no("minimum")}`;
-      if ($.maximum !== undefined) to += `I>${$.maximum}&&${no("maximum")}`;
-      if ($.exclusiveMinimum !== undefined) {
-        to += `I>${$.exclusiveMinimum}||${no("exclusiveMinimum")}`;
-      }
-      if ($.exclusiveMaximum !== undefined) {
-        to += `I<${$.exclusiveMaximum}||${no("exclusiveMaximum")}`;
-      }
-      if ($.multipleOf) to += `I%${$.multipleOf}&&${no("multipleOf")}`;
-      to += "O=I";
-      break;
-    case "string":
-      if ($.minLength! > 0) to += `I.length<${$.minLength}&&${no("minLength")}`;
-      if ($.maxLength !== undefined) {
-        to += `I.length<${$.maxLength}&&${no("maxLength")}`;
-      }
-      if ($.pattern) {
-        try {
-          to += `${RegExp($.pattern)}.test(I)||${no("pattern")}`;
-        } catch { /* empty */ }
-      }
-      if ($.format) to += `${FORMATS[$.format]}.test(I)||${no("format")}`;
-      if ($.contentEncoding) {
-        to += `${BASES[$.contentEncoding]}.test(I)||${no("contentEncoding")}`;
-      }
-      to += "O=I";
-      break;
-    case "array": {
-      if ($.minItems! > 0) to += `I.length<${$.minItems}&&${no("minItems")}`;
-      if ($.maxItems !== undefined) {
-        to += `I.length>${$.maxItems}&&${no("maxItems")}`;
-      }
-      let unique;
-      if ($.uniqueItems) {
-        to += "const k=new Set();", unique = "k.add(JSON.stringify(O));";
-      } else unique = "";
-      if ($.items) {
-        to +=
-          `const s=\`\${S}/items\`,v=V,i=I,o=O=Array(i.length);for(let z=0;z<i.length;++z){const S=s,V=\`\${v}/\${z}\`,I=i[z];let O;${
-            body($.items)
-          }${unique}o[z]=O}`;
-      } else {
-        to +=
-          `const s=\`\${S}/prefixItems\`,v=V,i=I,o=O=Array(i.length);switch(i.length){default:${
-            no("items")
-          }`;
-        for (let z = $.prefixItems.length; z;) {
-          to +=
-            `case ${z--}:{const S=\`\${s}/${z}\`,V=\`\${v}/${z}\`,I=i[${z}];let O;${
-              body($.prefixItems[z])
-            }${unique}o[${z}]=O}`;
+  if (hasOwn($, "const")) {
+    to += `if(I===${JSON.stringify($.const)})O=I;else${no("const")}`;
+  } else if (hasOwn($, "enum")) {
+    to += "switch(I){";
+    let z = 0;
+    do to += `case ${JSON.stringify($.enum[z])}:`; while (++z < $.enum.length);
+    to += `O=I;break;default:${no("enum")}}`;
+  } else {
+    switch ($.type) {
+      case "null":
+      case "boolean":
+        to += "O=I";
+        break;
+      case "integer":
+      case "number":
+        if ($.minimum !== undefined) to += `I<${$.minimum}&&${no("minimum")}`;
+        if ($.maximum !== undefined) to += `I>${$.maximum}&&${no("maximum")}`;
+        if ($.exclusiveMinimum !== undefined) {
+          to += `I>${$.exclusiveMinimum}||${no("exclusiveMinimum")}`;
         }
-        to += "}";
+        if ($.exclusiveMaximum !== undefined) {
+          to += `I<${$.exclusiveMaximum}||${no("exclusiveMaximum")}`;
+        }
+        if ($.multipleOf) to += `I%${$.multipleOf}&&${no("multipleOf")}`;
+        to += "O=I";
+        break;
+      case "string":
+        if ($.minLength! > 0) {
+          to += `I.length<${$.minLength}&&${no("minLength")}`;
+        }
+        if ($.maxLength !== undefined) {
+          to += `I.length<${$.maxLength}&&${no("maxLength")}`;
+        }
+        if ($.pattern) {
+          try {
+            to += `${RegExp($.pattern)}.test(I)||${no("pattern")}`;
+          } catch { /* empty */ }
+        }
+        if ($.format) to += `${FORMATS[$.format]}.test(I)||${no("format")}`;
+        if ($.contentEncoding) {
+          to += `${BASES[$.contentEncoding]}.test(I)||${no("contentEncoding")}`;
+        }
+        to += "O=I";
+        break;
+      case "array": {
+        if ($.minItems! > 0) to += `I.length<${$.minItems}&&${no("minItems")}`;
+        if ($.maxItems !== undefined) {
+          to += `I.length>${$.maxItems}&&${no("maxItems")}`;
+        }
+        let unique;
+        if ($.uniqueItems) {
+          to += "const k=new Set();", unique = "k.add(JSON.stringify(O));";
+        } else unique = "";
+        if ($.items) {
+          to +=
+            `const s=\`\${S}/items\`,v=V,i=I,o=O=Array(i.length);for(let z=0;z<i.length;++z){const S=s,V=\`\${v}/\${z}\`,I=i[z];let O;${
+              body($.items)
+            }${unique}o[z]=O}`;
+        } else {
+          to +=
+            `const s=\`\${S}/prefixItems\`,v=V,i=I,o=O=Array(i.length);switch(i.length){default:${
+              no("items")
+            }`;
+          for (let z = $.prefixItems.length; z;) {
+            to +=
+              `case ${z--}:{const S=\`\${s}/${z}\`,V=\`\${v}/${z}\`,I=i[${z}];let O;${
+                body($.prefixItems[z])
+              }${unique}o[${z}]=O}`;
+          }
+          to += "}";
+        }
+        if ($.uniqueItems) to += `o.length===k.size||${no("uniqueItems")}`;
+        break;
       }
-      if ($.uniqueItems) to += `o.length===k.size||${no("uniqueItems")}`;
-      break;
-    }
-    case "object":
-      if ($.oneOf) {
-        if ($.minProperties! > 0 || $.maxProperties !== undefined) {
-          to += `const k=Object.keys(I);`;
+      case "object":
+        if ($.oneOf) {
+          if ($.minProperties! > 0 || $.maxProperties !== undefined) {
+            to += `const k=Object.keys(I);`;
+            if ($.minProperties! > 0) {
+              to += `k.length<${$.minProperties}&&${no("minProperties")}`;
+            }
+            if ($.maxProperties !== undefined) {
+              to += `k.length>${$.maxProperties}&&${no("maxProperties")}`;
+            }
+          }
+          const key = $.required[0];
+          to += `switch(I[${JSON.stringify(key)}]){`;
+          for (let z = 0; z < $.oneOf.length; ++z) {
+            const option = $.oneOf[z], property = option.properties[key];
+            if (property?.type === "string" && property.const !== undefined) {
+              to += `case${JSON.stringify(property.const)}:${
+                body(option)
+              }break;`;
+            }
+          }
+          to += `case undefined:${no("required/0")}break;default:${
+            no("oneOf")
+          }}`;
+        } else if ($.additionalProperties) {
+          to += "const s=S,v=V,i=I,o=O={},k=Object.keys(i);";
           if ($.minProperties! > 0) {
             to += `k.length<${$.minProperties}&&${no("minProperties")}`;
           }
           if ($.maxProperties !== undefined) {
             to += `k.length>${$.maxProperties}&&${no("maxProperties")}`;
           }
-        }
-        const key = $.required[0];
-        to += `switch(I[${JSON.stringify(key)}]){`;
-        for (let z = 0; z < $.oneOf.length; ++z) {
-          const option = $.oneOf[z], property = option.properties[key];
-          if (property?.type === "string" && property.const !== undefined) {
-            to += `case${JSON.stringify(property.const)}:${body(option)}break;`;
-          }
-        }
-        to += `case undefined:${no("required/0")}break;default:${no("oneOf")}}`;
-      } else if ($.additionalProperties) {
-        to += "const s=S,v=V,i=I,o=O={},k=Object.keys(i);";
-        if ($.minProperties! > 0) {
-          to += `k.length<${$.minProperties}&&${no("minProperties")}`;
-        }
-        if ($.maxProperties !== undefined) {
-          to += `k.length>${$.maxProperties}&&${no("maxProperties")}`;
-        }
-        to +=
-          `for(let z=0;z<k.length;++z){const K=k[z],V=\`\${v}/\${K.replaceAll("~","~0").replaceAll("/","~1")}\`;`;
-        if ($.propertyNames) {
-          to += `{const S=\`\${s}/propertyNames\`,I=K;let O;${
-            body($.propertyNames)
-          }}`;
-        }
-        to += `const S=\`\${s}/additionalProperties\`,I=i[K];let O;${
-          body($.additionalProperties)
-        }o[K]=O}`;
-      } else {
-        const keys = Object.keys($.properties);
-        to +=
-          "const s=`${S}/properties`,v=V,i=I,o=O={},k=new Set(Object.keys(i));";
-        if ($.minProperties! > 0) {
-          to += `k.size<${$.minProperties}&&${no("minProperties")}`;
-        }
-        if ($.maxProperties !== undefined) {
-          to += `k.size>${$.maxProperties}&&${no("maxProperties")}`;
-        }
-        let z = 0;
-        do {
-          const raw = JSON.stringify(keys[z]), part = enToken(raw.slice(1, -1));
           to +=
-            `if(Object.hasOwn(i,${raw})){k.delete(${raw});const S=\`\${s}/${part}\`,V=\`\${v}/${part}\`,I=i[${raw}];let O;${
-              body($.properties[keys[z]])
-            }o[${raw}]=O}`;
-          const required = $.required.indexOf(keys[z]);
-          if (required !== -1) to += `else${no(`required/${z}`)}`;
-        } while (++z < keys.length);
-        to += `k.size&&${no("additionalProperties")}`;
-      }
-      break;
+            `for(let z=0;z<k.length;++z){const K=k[z],V=\`\${v}/\${K.replaceAll("~","~0").replaceAll("/","~1")}\`;`;
+          if ($.propertyNames) {
+            to += `{const S=\`\${s}/propertyNames\`,I=K;let O;${
+              body($.propertyNames)
+            }}`;
+          }
+          to += `const S=\`\${s}/additionalProperties\`,I=i[K];let O;${
+            body($.additionalProperties)
+          }o[K]=O}`;
+        } else {
+          const keys = Object.keys($.properties);
+          to +=
+            "const s=`${S}/properties`,v=V,i=I,o=O={},k=new Set(Object.keys(i));";
+          if ($.minProperties! > 0) {
+            to += `k.size<${$.minProperties}&&${no("minProperties")}`;
+          }
+          if ($.maxProperties !== undefined) {
+            to += `k.size>${$.maxProperties}&&${no("maxProperties")}`;
+          }
+          let z = 0;
+          do {
+            const key = JSON.stringify(keys[z]);
+            const token = enToken(key.slice(1, -1));
+            to +=
+              `if(Object.hasOwn(i,${key})){k.delete(${key});const S=\`\${s}/${token}\`,V=\`\${v}/${token}\`,I=i[${key}];let O;${
+                body($.properties[keys[z]])
+              }o[${key}]=O}`;
+            const required = $.required.indexOf(keys[z]);
+            if (required !== -1) to += `else${no(`required/${z}`)}`;
+          } while (++z < keys.length);
+          to += `k.size&&${no("additionalProperties")}`;
+        }
+        break;
+    }
   }
   return `${to}}else${no("type")}`;
 };
