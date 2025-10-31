@@ -336,13 +336,11 @@ Deno.test("build", async (t) => {
       additionalProperties: false,
       required: [],
     });
-    test(obj({}, { minProperties: 0, maxProperties: 1, required: ["2"] }))({
+    test(obj({}, { required: [""] }))({
       type: "object",
       properties: {},
       additionalProperties: false,
-      minProperties: 0,
-      maxProperties: 1,
-      required: ["2"],
+      required: [""],
     });
     test(obj({ 0: nil() }))({
       type: "object",
@@ -350,33 +348,16 @@ Deno.test("build", async (t) => {
       additionalProperties: false,
       required: ["0"],
     });
-    test(obj({ 0: nil(), 1: nil() }, {
-      minProperties: 0,
-      maxProperties: 1,
-      required: ["2"],
-    }))({
+    test(obj({ 0: nil(), 1: nil() }, { required: [""] }))({
       type: "object",
       properties: { 0: { type: "null" }, 1: { type: "null" } },
       additionalProperties: false,
-      minProperties: 0,
-      maxProperties: 1,
-      required: ["2"],
+      required: [""],
     });
     test(obj("0", { 1: obj({}) }))({
       type: "object",
       required: ["0"],
       oneOf: [obj({ 0: str("1") }, { required: [] })],
-    });
-    test(obj("0", {
-      1: obj({ 1: int(1) }, { minProperties: 1 }),
-      2: obj({ 2: int(2) }, { maxProperties: 2 }),
-    }))({
-      type: "object",
-      required: ["0"],
-      oneOf: [
-        obj({ 0: str("1"), 1: int(1) }, { required: ["1"], minProperties: 1 }),
-        obj({ 0: str("2"), 2: int(2) }, { required: ["2"], maxProperties: 2 }),
-      ],
     });
   });
 });
