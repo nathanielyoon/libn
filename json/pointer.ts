@@ -23,7 +23,7 @@ export type Pointer<
   : A extends { oneOf: [{ type: "null" }, infer D extends Schema] }
     ? Pointer<D, `${B}/oneOf/1`, C>
   : A["type"] extends "null" | "boolean" | "integer" | "number" | "string"
-    ? `${B}/${Extract<keyof A, string>}~${C}`
+    ? `${B}/${Exclude<keyof A, symbol>}~${C}`
   : A["type"] extends "array" ?
       | `${B}/type~${C}`
       | (A extends { minItems: number } ? `${B}/minItems~${C}` : never)
@@ -48,7 +48,7 @@ export type Pointer<
         properties: infer D extends { [_: string]: Schema };
         required: infer E extends readonly string[];
       } ?
-          | `${B}/required/${Extract<keyof E, number>}~${C}`
+          | `${B}/required/${Exclude<keyof E, symbol | keyof []>}~${C}`
           | {
             [F in keyof D]: Pointer<
               D[F],
