@@ -1,8 +1,10 @@
 import {
   assertEquals,
+  assertInstanceOf,
   assertMatch,
   assertStrictEquals,
   assertThrows,
+  fail,
 } from "@std/assert";
 import { assertType, type IsExact } from "@std/testing/types";
 import fc from "fast-check";
@@ -33,7 +35,6 @@ import { dereference, deToken, enToken, type Pointer } from "./pointer.ts";
 import { arr, bit, int, nil, num, obj, str } from "./build.ts";
 import { assert, compile, is, parse } from "./check.ts";
 
-const fcJson = fc.jsonValue() as fc.Arbitrary<Json>;
 Deno.test("lib", async (t) => {
   await t.step("Merge<> combines intersections", () => {
     assertType<IsExact<Merge<{} & {}>, {}>>(true);
@@ -114,6 +115,7 @@ Deno.test("lib", async (t) => {
   });
 });
 Deno.test("pointer", async (t) => {
+  const fcJson = fc.jsonValue() as fc.Arbitrary<Json>;
   await t.step("enToken() encodes a reference token", () => {
     fc.assert(fc.property(fc.string(), ($) => {
       const encoded = enToken($);
@@ -193,10 +195,10 @@ Deno.test("pointer", async (t) => {
     }));
   });
 });
-type DeepWritable<A> = A extends object
-  ? { -readonly [B in keyof A]: DeepWritable<A[B]> }
-  : A;
 Deno.test("build", async (t) => {
+  type DeepWritable<A> = A extends object
+    ? { -readonly [B in keyof A]: DeepWritable<A[B]> }
+    : A;
   const step = <A extends Schema>(
     type: string,
     tests: (
@@ -205,12 +207,9 @@ Deno.test("build", async (t) => {
       ) => void,
     ) => void,
   ) =>
-    t.step(
-      `${type}() creates a${/^[aeiou]/.test(type) ? "n" : ""} ${type} schema`,
-      () => {
-        tests((actual) => (expected) => assertEquals<A>(actual, expected));
-      },
-    );
+    t.step(`${type}() creates ${type} schemas`, () => {
+      tests((actual) => (expected) => assertEquals<A>(actual, expected));
+    });
   await step<Nil>("nil", (test) => {
     test(nil())({ type: "null" });
     test(nil(bit()))({
@@ -377,5 +376,88 @@ Deno.test("build", async (t) => {
         obj({ 0: str("2"), 2: int(2) }, { required: ["2"], maxProperties: 2 }),
       ],
     });
+  });
+});
+Deno.test("check", async (t) => {
+  const assertCheck = <A extends Schema>(
+    $: fc.Arbitrary<{
+      schema: A;
+      ok: readonly Instance<A>[];
+      no: { [_ in Pointer<A>]: readonly Json[] };
+    }>,
+  ) =>
+    fc.assert(fc.property($, ({ schema, ok, no }) => {
+      const check = compile(schema);
+      for (const $ of ok) {
+        assertEquals(parse(check, $), { state: true, value: $ });
+        assertEquals(is(check, $), true);
+        assert(check, $);
+      }
+      for (const [key, value] of Object.entries(no) as [Pointer<A>, Json[]][]) {
+        for (const $ of value) {
+          assertEquals(parse(check, $), { state: false, value: [key] });
+          assertEquals(is(check, $), false);
+          try {
+            assert(check, $);
+          } catch (thrown) {
+            assertInstanceOf(thrown, Error);
+            assertEquals(thrown.message, "1");
+            assertEquals(thrown.cause, [key]);
+            continue;
+          }
+          fail();
+        }
+      }
+    }));
+  const not = (...value: Extract<Schema["type"], string>[]): Json[] =>
+    ([
+      ["null", null],
+      ["boolean", false],
+      ["integer", 0],
+      ["number", Number.MIN_VALUE],
+      ["string", ""],
+      ["array", []],
+      ["object", {}],
+    ] as const).filter(($) => !value.includes($[0])).map(($) => $[1]);
+  await t.step("compile() checks nil schemas", () => {
+    assertCheck(fc.constant({
+      schema: nil(),
+      ok: [null],
+      no: { "/type~": not("null") },
+    }));
+    assertCheck(fc.constant({
+      schema: nil(bit(false)),
+      ok: [null, false],
+      no: {
+        "/oneOf/1/type~": not("null", "boolean"),
+        "/oneOf/1/const~": [true],
+      },
+    }));
+  });
+  await t.step("compile() checks bit schemas", () => {
+    assertCheck(fc.constant({
+      schema: bit(),
+      ok: [false, true],
+      no: { "/type~": not("boolean") },
+    }));
+    assertCheck(
+      fc.boolean().map(($) => ({
+        schema: bit($),
+        ok: [$],
+        no: { "/type~": not("boolean"), "/const~": [!$] },
+      })),
+    );
+    assertCheck(
+      fc.boolean().map(($) => ({
+        schema: bit([$]),
+        ok: [$],
+        no: { "/type~": not("boolean"), "/enum~": [!$] },
+      })),
+    );
+    assertCheck(fc.constant({
+      schema: bit([false, true]),
+      ok: [false, true],
+      no: { "/type~": not("boolean"), "/enum~": [] },
+    }));
   });
 });
