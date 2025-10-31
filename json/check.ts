@@ -140,13 +140,13 @@ const body = ($: Schema): string => {
             }
           }
           const key = $.required[0];
-          to += `switch(I[${JSON.stringify(key)}]){`;
+          to += `const s=S;switch(I[${JSON.stringify(key)}]){`;
           for (let z = 0; z < $.oneOf.length; ++z) {
             const option = $.oneOf[z], property = option.properties[key];
             if (property?.type === "string" && property.const !== undefined) {
-              to += `case${JSON.stringify(property.const)}:${
-                body(option)
-              }break;`;
+              to += `case${
+                JSON.stringify(property.const)
+              }:{const S=\`\${s}/oneOf/${z}\`;${body(option)}break}`;
             }
           }
           to += `case undefined:${no("required/0")}break;default:${
