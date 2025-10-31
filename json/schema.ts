@@ -74,11 +74,11 @@ type Natural<A extends number> = `${A}` extends `-${string}` ? 0 : A;
 export type Instance<A extends Schema> = Schema extends A ? Json
   : A extends { const: infer B } ? B
   : A extends { enum: readonly (infer B)[] } ? B
-  : A extends Nil ? null
-  : A extends Bit ? boolean
-  : A extends Num ? number
-  : A extends Str ? string
-  : A extends Arr
+  : A["type"] extends "null" ? null
+  : A["type"] extends "boolean" ? boolean
+  : A["type"] extends "integer" | "number" ? number
+  : A["type"] extends "string" ? string
+  : A["type"] extends "array"
     ? A extends { items: infer B extends Schema } ? readonly Instance<B>[]
     : A extends {
       prefixItems: infer B extends readonly Schema[];
@@ -86,17 +86,15 @@ export type Instance<A extends Schema> = Schema extends A ? Json
       maxItems: infer D extends number;
     } ? Prefix<B, Natural<C>, Natural<D>>
     : never
-  : A extends Obj
-    ? A extends { additionalProperties: infer B extends Schema }
-      ? { [_: string]: Instance<B> }
-    : A extends {
-      properties: infer B extends { [_: string]: Schema };
-      required: readonly (infer C extends string)[];
-    } ? Writable<
-        & { [D in Extract<keyof B, C>]: Instance<B[D]> }
-        & { [D in Exclude<keyof B, C>]?: Instance<B[D]> }
-      >
-    : A extends { oneOf: readonly (infer B)[] }
-      ? B extends Schema ? Instance<B> : never
-    : never
+  : A extends { additionalProperties: infer B extends Schema }
+    ? { [_: string]: Instance<B> }
+  : A extends {
+    properties: infer B extends { [_: string]: Schema };
+    required: readonly (infer C extends string)[];
+  } ? Writable<
+      & { [D in Extract<keyof B, C>]: Instance<B[D]> }
+      & { [D in Exclude<keyof B, C>]?: Instance<B[D]> }
+    >
+  : A extends { oneOf: readonly (infer B)[] }
+    ? B extends Schema ? Instance<B> : never
   : never;
