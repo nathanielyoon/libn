@@ -4,8 +4,8 @@
   "license": "0BSD",
   "exports": {
     "./lib": "./lib.ts",
-    "./build": "./build.ts",
     "./pointer": "./pointer.ts",
+    "./build": "./build.ts",
     "./check.ts": "./check.ts"
   }
 }
