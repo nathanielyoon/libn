@@ -44,8 +44,13 @@ const TYPE = {
   string: 'typeof I==="string"',
   array: "Array.isArray(I)",
   object: 'if(typeof I==="object"&&I&&!Array.isArray(I)',
-} satisfies { [_ in Schema["type"]]: string };
-const body = ($: Schema) => {
+} satisfies { [_ in Extract<Schema["type"], string>]: string };
+const body = ($: Schema): string => {
+  if (typeof $.type !== "string") {
+    return `{const s=S;if(I===null)O=I;else{const S=\`\${s}/oneOf/1\`;${
+      body($.oneOf[1])
+    }}}`;
+  }
   let to = `if(${TYPE[$.type]}){`;
   if (hasOwn($, "const")) {
     to += `if(I===${JSON.stringify($.const)})O=I;else${no("const")}`;
