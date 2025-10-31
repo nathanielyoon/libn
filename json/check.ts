@@ -123,7 +123,7 @@ const body = ($: Schema): string => {
                 body($.prefixItems[z])
               }${unique}o[${z}]=O}`;
           }
-          to += "}";
+          to += "case 0:}";
         }
         if ($.uniqueItems) to += `o.length===k.size||${no("uniqueItems")}`;
         break;
