@@ -153,7 +153,7 @@ const body = ($: Schema): string => {
             no("oneOf")
           }}`;
         } else if ($.additionalProperties) {
-          to += "const s=S,v=V,i=I,o=O={},k=Object.keys(i);";
+          to += "const s=S,v=V,i=I,o=O={},k=Object.keys(i).sort();";
           if ($.minProperties! > 0) {
             to += `k.length<${$.minProperties}&&${no("minProperties")}`;
           }
@@ -171,7 +171,7 @@ const body = ($: Schema): string => {
             body($.additionalProperties)
           }o[K]=O}`;
         } else {
-          const keys = Object.keys($.properties);
+          const keys = Object.keys($.properties).sort();
           to +=
             "const s=`${S}/properties`,v=V,i=I,o=O={},k=new Set(Object.keys(i));";
           if ($.minProperties! > 0) {
