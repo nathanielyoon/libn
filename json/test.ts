@@ -4,7 +4,7 @@ import {
   assertStrictEquals,
   assertThrows,
 } from "@std/assert";
-import { assertType, type Has, type IsExact } from "@std/testing/types";
+import { assertType, type IsExact } from "@std/testing/types";
 import fc from "fast-check";
 import {
   type And,
@@ -205,13 +205,12 @@ Deno.test("build", async (t) => {
       ) => void,
     ) => void,
   ) =>
-    t.step(`${type}() creates a ${type} schema`, () => {
-      tests((actual) => (expected) => assertEquals<A>(actual, expected));
-    });
-  const assertBuild =
-    <A>(actual: A) =>
-    <B extends A>(expected: IsExact<A, B> extends true ? B : never) =>
-      assertEquals(actual, expected);
+    t.step(
+      `${type}() creates a${/^[aeiou]/.test(type) ? "n" : ""} ${type} schema`,
+      () => {
+        tests((actual) => (expected) => assertEquals<A>(actual, expected));
+      },
+    );
   await step<Nil>("nil", (test) => {
     test(nil())({ type: "null" });
   });
