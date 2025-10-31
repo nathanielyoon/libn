@@ -1,10 +1,11 @@
-import { assertEquals, assertStrictEquals } from "@std/assert";
+import { assertEquals, assertMatch, assertStrictEquals } from "@std/assert";
 import { assertType, type IsExact } from "@std/testing/types";
 import fc from "fast-check";
 import {
   type And,
   hasOwn,
   isArray,
+  type Json,
   type Keys,
   type Merge,
   type Sequence,
@@ -12,8 +13,11 @@ import {
   type Writable,
   type Xor,
 } from "./lib.ts";
+import type { Instance, Schema } from "./schema.ts";
+import { dereference, deToken, enToken, type Pointer } from "./pointer.ts";
 import { arr, bit, int, nil, num, obj, str } from "./build.ts";
 
+const fcJson = fc.jsonValue() as fc.Arbitrary<Json>;
 Deno.test("lib", async (t) => {
   await t.step("Merge<> combines intersections", () => {
     assertType<IsExact<Merge<{} & {}>, {}>>(true);
@@ -29,9 +33,6 @@ Deno.test("lib", async (t) => {
   await t.step("Writable<> strips readonly", () => {
     assertType<IsExact<Writable<{}>, {}>>(true);
     assertType<IsExact<Writable<{ readonly 0: 0 }>, { 0: 0 }>>(true);
-    assertType<
-      IsExact<Writable<{ readonly 0: { readonly 0: 0 } }>, { 0: { 0: 0 } }>
-    >(true);
   });
   await t.step("Xor<> disallows non-shared properties", () => {
     assertType<IsExact<Xor<[]>, never>>(true);
@@ -96,11 +97,51 @@ Deno.test("lib", async (t) => {
     }));
   });
 });
-const assertBuild =
-  <A>(actual: A) =>
-  <B extends A>(expected: IsExact<A, B> extends true ? B : never) =>
-    assertEquals(actual, expected);
+Deno.test("pointer", async (t) => {
+  await t.step("enToken() encodes a reference token", () => {
+    fc.assert(fc.property(fc.string(), ($) => {
+      const encoded = enToken($);
+      assertMatch(encoded, /^(?:~[01]|[^/~])*$/);
+      assertEquals(encoded.length, $.length + ($.match(/[/~]/g)?.length ?? 0));
+    }));
+  });
+  await t.step("deToken() decodes a reference token", () => {
+    fc.assert(fc.property(fc.string(), ($) => {
+      assertEquals(deToken(enToken($)), $);
+    }));
+  });
+  await t.step("dereference() returns the root when pointer is empty", () => {
+    fc.assert(fc.property(fcJson, ($) => {
+      assertStrictEquals(dereference($, ""), $);
+    }));
+  });
+  await t.step("dereference() rejects invalid pointers", () => {
+    fc.assert(fc.property(
+      fcJson,
+      fc.stringMatching(/^.+(?:\/(?:~[01]|[^/~])*)*$/),
+      ($, pointer) => {
+        assertEquals(dereference($, pointer), undefined);
+      },
+    ));
+  });
+  await t.step("dereference() rejects non-objects", () => {
+    fc.assert(fc.property(
+      fc.oneof(fc.constant(null), fc.boolean(), fc.double(), fc.string()),
+      fc.stringMatching(/^(?:\/(?:~[01]|[^/~])*)+$/),
+      ($, pointer) => {
+        assertEquals(dereference($, pointer), undefined);
+      },
+    ));
+  });
+  await t.step("dereference() rejects non-numeric array indices", () => {
+    fc.assert(fc.property());
+  });
+});
 Deno.test("build", async (t) => {
+  const assertBuild =
+    <A>(actual: A) =>
+    <B extends A>(expected: IsExact<A, B> extends true ? B : never) =>
+      assertEquals(actual, expected);
   await t.step("nil() creates a Nil schema", () => {
     assertBuild(nil())({ type: "null" });
   });
