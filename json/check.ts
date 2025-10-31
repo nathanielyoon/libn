@@ -45,7 +45,7 @@ const TYPE = {
   number: "Number.isFinite(I)",
   string: 'typeof I==="string"',
   array: "Array.isArray(I)",
-  object: 'if(typeof I==="object"&&I&&!Array.isArray(I)',
+  object: 'typeof I==="object"&&I&&!Array.isArray(I)',
 } satisfies { [_ in Extract<Schema["type"], string>]: string };
 const body = ($: Schema): string => {
   if (typeof $.type !== "string") {
