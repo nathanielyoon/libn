@@ -4,12 +4,14 @@ import { H32 } from "@libn/base/h32";
 import { B64 } from "@libn/base/b64";
 import { U64 } from "@libn/base/u64";
 import type { Result } from "@libn/fp";
-import { hasOwn } from "./lib.ts";
+import { hasOwn, type Merge } from "./lib.ts";
 import { enToken, type Pointer } from "./pointer.ts";
 import type { Instance, Schema, Str } from "./schema.ts";
 
 /** @internal */
-type Patterns<A extends string | undefined> = { [_ in NonNullable<A>]: RegExp };
+type Patterns<A extends string | undefined> = Merge<
+  { [_ in A as A extends undefined ? never : A]: RegExp }
+>;
 /** String format patterns. */
 export const FORMATS: Patterns<Str["format"]> = /* @__PURE__ */ (() => {
   const date =
