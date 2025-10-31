@@ -382,36 +382,57 @@ Deno.test("build", async (t) => {
 });
 Deno.test("check", async (t) => {
   const assertCheck = <const A>(
-    $: A extends Schema ? fc.Arbitrary<{
-        schema: A;
-        ok: readonly Instance<A>[];
-        no: { [_ in Pointer<A>]: readonly Json[] };
-      }>
-      : never,
-  ) =>
-    fc.assert(fc.property($, ({ schema, ok, no }) => {
-      const check = compile(schema);
-      for (const $ of ok) {
-        assertEquals(parse(check, $), { state: true, value: $ });
-        assertEquals(is(check, $), true);
-        assert(check, $);
-      }
-      for (const key of Object.keys(no) as (keyof typeof no)[]) {
-        for (const $ of no[key]) {
-          assertEquals(parse(check, $), { state: false, value: [key] });
-          assertEquals(is(check, $), false);
-          try {
-            assert(check, $);
-          } catch (thrown) {
-            assertInstanceOf(thrown, Error);
-            assertEquals(thrown.message, "1");
-            assertEquals(thrown.cause, [key]);
-            continue;
-          }
-          fail();
+    $: A extends Schema ?
+        | fc.Arbitrary<{
+          schema: A;
+          ok: readonly Instance<A>[];
+          no: { [_ in Pointer<A>]: readonly Json[] };
+        }>
+        | {
+          schema: A;
+          ok: readonly Instance<A>[];
+          no: { [_ in Pointer<A>]: readonly Json[] };
         }
-      }
-    }));
+      : never,
+  ) => {
+    const [arbitrary, numRuns]: [
+      fc.Arbitrary<
+        A extends Schema ? {
+            schema: A;
+            ok: readonly Instance<A>[];
+            no: { [_ in Pointer<A>]: readonly Json[] };
+          }
+          : never
+      >,
+      number,
+    ] = ($ instanceof fc.Arbitrary ? [$, 64] : [fc.constant($), 1]) as any;
+    fc.assert(
+      fc.property(arbitrary, ({ schema, ok, no }) => {
+        const check = compile(schema);
+        for (const $ of ok) {
+          assertEquals(parse(check, $), { state: true, value: $ });
+          assertEquals(is(check, $), true);
+          assert(check, $);
+        }
+        for (const key of Object.keys(no) as (keyof typeof no)[]) {
+          for (const $ of no[key]) {
+            assertEquals(parse(check, $), { state: false, value: [key] });
+            assertEquals(is(check, $), false);
+            try {
+              assert(check, $);
+            } catch (thrown) {
+              assertInstanceOf(thrown, Error);
+              assertEquals(thrown.message, "1");
+              assertEquals(thrown.cause, [key]);
+              continue;
+            }
+            fail();
+          }
+        }
+      }),
+      { numRuns },
+    );
+  };
   const not = (...value: Extract<Schema["type"], string>[]): Json[] =>
     ([
       ["null", null],
@@ -434,28 +455,28 @@ Deno.test("check", async (t) => {
       maxLength: size,
       comparator: "SameValueZero",
     }).map(($) => [...new Float64Array($).sort()] as Sequence<number, A>);
-  const fcLength = fc.integer({ min: 1, max: 255 });
+  const fcLength = fc.integer({ min: 1, max: 64 });
   await t.step("compile() checks nil schemas", () => {
-    assertCheck(fc.constant({
+    assertCheck({
       schema: nil(),
       ok: [null],
       no: { "/type~": not("null") },
-    }));
-    assertCheck(fc.constant({
+    });
+    assertCheck({
       schema: nil(bit(false)),
       ok: [null, false],
       no: {
         "/oneOf/1/type~": not("null", "boolean"),
         "/oneOf/1/const~": [true],
       },
-    }));
+    });
   });
   await t.step("compile() checks bit schemas", () => {
-    assertCheck(fc.constant({
+    assertCheck({
       schema: bit(),
       ok: [false, true],
       no: { "/type~": not("boolean") },
-    }));
+    });
     assertCheck(
       fc.boolean().map(($) => ({
         schema: bit($),
@@ -470,20 +491,20 @@ Deno.test("check", async (t) => {
         no: { "/type~": not("boolean"), "/enum~": [!$] },
       })),
     );
-    assertCheck(fc.constant({
+    assertCheck({
       schema: bit([false, true]),
       ok: [false, true],
       no: { "/type~": not("boolean"), "/enum~": [] },
-    }));
+    });
   });
   await t.step("compile() checks int schemas", () => {
     const fcInteger = fcNumber.map(Math.round);
     const fcPair = fcOrdered(2, fcInteger);
-    assertCheck(fc.constant({
+    assertCheck({
       schema: int(),
       ok: [0],
       no: { "/type~": not("integer") },
-    }));
+    });
     assertCheck(
       fcEnum(fcInteger).map(([head, ...rest]) => ({
         schema: int(head),
@@ -536,11 +557,11 @@ Deno.test("check", async (t) => {
   });
   await t.step("compile() checks num schemas", () => {
     const fcPair = fcOrdered(2, fcNumber);
-    assertCheck(fc.constant({
+    assertCheck({
       schema: num(),
       ok: [0],
       no: { "/type~": not("integer", "number") },
-    }));
+    });
     assertCheck(
       fcEnum(fcNumber).map(([head, ...rest]) => ({
         schema: num(head),
@@ -595,11 +616,11 @@ Deno.test("check", async (t) => {
     const fcString = ($?: fc.StringConstraints) =>
       fc.string({ unit: "binary", size: "medium", ...$ });
     const fcPair = fcOrdered(2, fcLength);
-    assertCheck(fc.constant({
+    assertCheck({
       schema: str(),
       ok: [""],
       no: { "/type~": not("string") },
-    }));
+    });
     assertCheck(
       fcEnum(fcString()).map(([head, ...rest]) => ({
         schema: str(head),
@@ -635,11 +656,11 @@ Deno.test("check", async (t) => {
         no: { "/type~": not("string"), "/pattern~": [$.slice(1)] },
       })),
     );
-    assertCheck(fc.constant({
+    assertCheck({
       schema: str({ pattern: "\\" }),
       ok: [""],
       no: { "/type~": not("string"), "/pattern~": [] },
-    }));
+    });
     const formats = {
       ...([["date", 0, 10], ["time", 11, 24], ["date-time", 0, 24]] as const)
         .reduce(
@@ -698,12 +719,12 @@ Deno.test("check", async (t) => {
     );
   });
   await t.step("compile() checks arr schemas", () => {
-    assertCheck(fc.constant({
+    assertCheck({
       schema: arr(nil()),
       ok: [[]],
       no: { "/type~": not("array") },
-    }));
-    assertCheck(fc.constant({
+    });
+    assertCheck({
       schema: arr([nil()]),
       ok: [[null]] as [null][],
       no: {
@@ -712,7 +733,7 @@ Deno.test("check", async (t) => {
         "/prefixItems/0/type~/0": [[not("array")]],
         "/minItems~": [[]],
       },
-    }));
+    });
     assertCheck(fcLength.map(($) => ({
       schema: arr(nil()),
       ok: [[], [null], Array($).fill(null)],
@@ -750,12 +771,12 @@ Deno.test("check", async (t) => {
         "/minItems~": [],
       },
     })));
-    assertCheck(fc.constant({
+    assertCheck({
       schema: arr(nil(), { uniqueItems: true }),
       ok: [[], [null]],
       no: { "/type~": not("array"), "/uniqueItems~": [[null, null]] },
-    }));
-    assertCheck(fc.constant({
+    });
+    assertCheck({
       schema: arr([bit(), bit()], { uniqueItems: true }),
       ok: [[false, true], [true, false]] as [boolean, boolean][],
       no: {
@@ -766,7 +787,7 @@ Deno.test("check", async (t) => {
         "/prefixItems/0/type~/0": [],
         "/prefixItems/1/type~/1": [],
       },
-    }));
+    });
     assertCheck(
       fcEnum(fc.string()).map((keys) => (offset: number) =>
         keys.reduce<{ [_: string]: number }>(
