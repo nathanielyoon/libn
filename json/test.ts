@@ -444,7 +444,7 @@ Deno.test("check", async (t) => {
       ["object", {}],
     ] as const).filter(($) => !value.includes($[0])).map(($) => $[1]);
   const fcNumber = fc.double({ noDefaultInfinity: true, noNaN: true });
-  const fcEnum = <A>($: fc.Arbitrary<A>) =>
+  const fcUnique = <A>($: fc.Arbitrary<A>) =>
     fc.uniqueArray($, {
       minLength: 2,
       comparator: "SameValueZero",
@@ -499,54 +499,43 @@ Deno.test("check", async (t) => {
   });
   await t.step("compile() checks int schemas", () => {
     const fcInteger = fcNumber.map(Math.round);
-    const fcPair = fcOrdered(2, fcInteger);
     assertCheck({
       schema: int(),
       ok: [0],
       no: { "/type~": not("integer") },
     });
-    assertCheck(
-      fcEnum(fcInteger).map(([head, ...rest]) => ({
-        schema: int(head),
-        ok: [head],
-        no: { "/type~": [], "/const~": rest },
-      })),
-    );
-    assertCheck(
-      fcEnum(fcInteger).map(([head, ...rest]) => ({
-        schema: int(rest),
-        ok: rest,
-        no: { "/type~": [], "/enum~": [head] },
-      })),
-    );
-    assertCheck(
-      fcPair.map(([min, max]) => ({
-        schema: int({ minimum: max }),
-        ok: [max],
-        no: { "/type~": [], "/minimum~": [min] },
-      })),
-    );
-    assertCheck(
-      fcPair.map(([min, max]) => ({
-        schema: int({ maximum: min }),
-        ok: [min],
-        no: { "/type~": [], "/maximum~": [max] },
-      })),
-    );
-    assertCheck(
-      fcPair.map(([min, max]) => ({
-        schema: int({ exclusiveMinimum: min }),
-        ok: [max],
-        no: { "/type~": [], "/exclusiveMinimum~": [min] },
-      })),
-    );
-    assertCheck(
-      fcPair.map(([min, max]) => ({
-        schema: int({ exclusiveMaximum: max }),
-        ok: [min],
-        no: { "/type~": [], "/exclusiveMaximum~": [max] },
-      })),
-    );
+    const fcEnum = fcUnique(fcInteger);
+    assertCheck(fcEnum.map(([head, ...rest]) => ({
+      schema: int(head),
+      ok: [head],
+      no: { "/type~": [], "/const~": rest },
+    })));
+    assertCheck(fcEnum.map(([head, ...rest]) => ({
+      schema: int(rest),
+      ok: rest,
+      no: { "/type~": [], "/enum~": [head] },
+    })));
+    const fcPair = fcOrdered(2, fcInteger);
+    assertCheck(fcPair.map(([min, max]) => ({
+      schema: int({ minimum: max }),
+      ok: [max],
+      no: { "/type~": [], "/minimum~": [min] },
+    })));
+    assertCheck(fcPair.map(([min, max]) => ({
+      schema: int({ maximum: min }),
+      ok: [min],
+      no: { "/type~": [], "/maximum~": [max] },
+    })));
+    assertCheck(fcPair.map(([min, max]) => ({
+      schema: int({ exclusiveMinimum: min }),
+      ok: [max],
+      no: { "/type~": [], "/exclusiveMinimum~": [min] },
+    })));
+    assertCheck(fcPair.map(([min, max]) => ({
+      schema: int({ exclusiveMaximum: max }),
+      ok: [min],
+      no: { "/type~": [], "/exclusiveMaximum~": [max] },
+    })));
     assertCheck(
       fcPair.filter(($) => !!$[0] && !!($[1] % $[0])).map(([min, max]) => ({
         schema: int({ multipleOf: min }),
@@ -556,54 +545,43 @@ Deno.test("check", async (t) => {
     );
   });
   await t.step("compile() checks num schemas", () => {
-    const fcPair = fcOrdered(2, fcNumber);
     assertCheck({
       schema: num(),
       ok: [0],
       no: { "/type~": not("integer", "number") },
     });
-    assertCheck(
-      fcEnum(fcNumber).map(([head, ...rest]) => ({
-        schema: num(head),
-        ok: [head],
-        no: { "/type~": [], "/const~": rest },
-      })),
-    );
-    assertCheck(
-      fcEnum(fcNumber).map(([head, ...rest]) => ({
-        schema: num(rest),
-        ok: rest,
-        no: { "/type~": [], "/enum~": [head] },
-      })),
-    );
-    assertCheck(
-      fcPair.map(([min, max]) => ({
-        schema: num({ minimum: max }),
-        ok: [max],
-        no: { "/type~": [], "/minimum~": [min] },
-      })),
-    );
-    assertCheck(
-      fcPair.map(([min, max]) => ({
-        schema: num({ maximum: min }),
-        ok: [min],
-        no: { "/type~": [], "/maximum~": [max] },
-      })),
-    );
-    assertCheck(
-      fcPair.map(([min, max]) => ({
-        schema: num({ exclusiveMinimum: min }),
-        ok: [max],
-        no: { "/type~": [], "/exclusiveMinimum~": [min] },
-      })),
-    );
-    assertCheck(
-      fcPair.map(([min, max]) => ({
-        schema: num({ exclusiveMaximum: max }),
-        ok: [min],
-        no: { "/type~": [], "/exclusiveMaximum~": [max] },
-      })),
-    );
+    const fcEnum = fcUnique(fcNumber);
+    assertCheck(fcEnum.map(([head, ...rest]) => ({
+      schema: num(head),
+      ok: [head],
+      no: { "/type~": [], "/const~": rest },
+    })));
+    assertCheck(fcEnum.map(([head, ...rest]) => ({
+      schema: num(rest),
+      ok: rest,
+      no: { "/type~": [], "/enum~": [head] },
+    })));
+    const fcPair = fcOrdered(2, fcNumber);
+    assertCheck(fcPair.map(([min, max]) => ({
+      schema: num({ minimum: max }),
+      ok: [max],
+      no: { "/type~": [], "/minimum~": [min] },
+    })));
+    assertCheck(fcPair.map(([min, max]) => ({
+      schema: num({ maximum: min }),
+      ok: [min],
+      no: { "/type~": [], "/maximum~": [max] },
+    })));
+    assertCheck(fcPair.map(([min, max]) => ({
+      schema: num({ exclusiveMinimum: min }),
+      ok: [max],
+      no: { "/type~": [], "/exclusiveMinimum~": [min] },
+    })));
+    assertCheck(fcPair.map(([min, max]) => ({
+      schema: num({ exclusiveMaximum: max }),
+      ok: [min],
+      no: { "/type~": [], "/exclusiveMaximum~": [max] },
+    })));
     assertCheck(
       fcPair.filter(($) => !!$[0] && !!($[1] % $[0])).map(([min, max]) => ({
         schema: num({ multipleOf: min }),
@@ -613,49 +591,39 @@ Deno.test("check", async (t) => {
     );
   });
   await t.step("compile() checks str schemas()", () => {
-    const fcString = ($?: fc.StringConstraints) =>
-      fc.string({ unit: "grapheme", size: "medium", ...$ });
-    const fcPair = fcOrdered(2, fcLength);
+    const fcString = fc.string({ unit: "grapheme", size: "medium" });
     assertCheck({
       schema: str(),
       ok: [""],
       no: { "/type~": not("string") },
     });
-    assertCheck(
-      fcEnum(fcString()).map(([head, ...rest]) => ({
-        schema: str(head),
-        ok: [head],
-        no: { "/type~": [], "/const~": rest },
-      })),
-    );
-    assertCheck(
-      fcEnum(fcString()).map(([head, ...rest]) => ({
-        schema: str(rest),
-        ok: rest,
-        no: { "/type~": [], "/enum~": [head] },
-      })),
-    );
-    assertCheck(
-      fcPair.map(([min, max]) => ({
-        schema: str({ minLength: max }),
-        ok: ["\0".repeat(max)],
-        no: { "/type~": [], "/minLength~": ["\0".repeat(min)] },
-      })),
-    );
-    assertCheck(
-      fcPair.map(([min, max]) => ({
-        schema: str({ maxLength: min }),
-        ok: ["\0".repeat(min)],
-        no: { "/type~": [], "/maxLength~": ["\0".repeat(max)] },
-      })),
-    );
-    assertCheck(
-      fcString({ minLength: 1 }).map(($) => ({
-        schema: str({ pattern: `^${unrexp($)}$` }),
-        ok: [$],
-        no: { "/type~": [], "/pattern~": [$.slice(1)] },
-      })),
-    );
+    const fcEnum = fcUnique(fcString);
+    assertCheck(fcEnum.map(([head, ...rest]) => ({
+      schema: str(head),
+      ok: [head],
+      no: { "/type~": [], "/const~": rest },
+    })));
+    assertCheck(fcEnum.map(([head, ...rest]) => ({
+      schema: str(rest),
+      ok: rest,
+      no: { "/type~": [], "/enum~": [head] },
+    })));
+    const fcPair = fcOrdered(2, fcLength);
+    assertCheck(fcPair.map(([min, max]) => ({
+      schema: str({ minLength: max }),
+      ok: ["\0".repeat(max)],
+      no: { "/type~": [], "/minLength~": ["\0".repeat(min)] },
+    })));
+    assertCheck(fcPair.map(([min, max]) => ({
+      schema: str({ maxLength: min }),
+      ok: ["\0".repeat(min)],
+      no: { "/type~": [], "/maxLength~": ["\0".repeat(max)] },
+    })));
+    assertCheck(fcString.map(($) => ({
+      schema: str({ pattern: `^${unrexp($)}$` }),
+      ok: [$],
+      no: { "/type~": [], "/pattern~": [$ + "\0"] },
+    })));
     assertCheck({
       schema: str({ pattern: "\\" }),
       ok: [""],
@@ -789,7 +757,7 @@ Deno.test("check", async (t) => {
       },
     });
     assertCheck(
-      fcEnum(fc.string()).map((keys) => (offset: number) =>
+      fcUnique(fc.string()).map((keys) => (offset: number) =>
         keys.reduce<{ [_: string]: number }>(
           (to, $, z) => ({ ...to, [$]: z + offset }),
           {},
