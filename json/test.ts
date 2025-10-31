@@ -3,11 +3,16 @@ import {
   assertInstanceOf,
   assertMatch,
   assertStrictEquals,
-  assertThrows,
   fail,
 } from "@std/assert";
 import { assertType, type IsExact } from "@std/testing/types";
 import fc from "fast-check";
+import { unrexp } from "@libn/text/normalize";
+import { enB16 } from "@libn/base/b16";
+import { enB32 } from "@libn/base/b32";
+import { enB64 } from "@libn/base/b64";
+import { enH32 } from "@libn/base/h32";
+import { enU64 } from "@libn/base/u64";
 import {
   type And,
   hasOwn,
@@ -33,7 +38,7 @@ import type {
 } from "./schema.ts";
 import { dereference, deToken, enToken, type Pointer } from "./pointer.ts";
 import { arr, bit, int, nil, num, obj, str } from "./build.ts";
-import { assert, compile, is, parse } from "./check.ts";
+import { assert, BASES, compile, FORMATS, is, parse } from "./check.ts";
 
 Deno.test("lib", async (t) => {
   await t.step("Merge<> combines intersections", () => {
@@ -586,6 +591,112 @@ Deno.test("check", async (t) => {
         ok: [min],
         no: { "/type~": not("integer", "number"), "/multipleOf~": [max] },
       })),
+    );
+  });
+  await t.step("compile() checks str schemas()", () => {
+    const fcString = ($?: fc.StringConstraints) =>
+      fc.string({ unit: "binary", size: "medium", ...$ });
+    const fcPair = fcOrdered(2, fcMax);
+    assertCheck(fc.constant({
+      schema: str(),
+      ok: [""],
+      no: { "/type~": not("string") },
+    }));
+    assertCheck(
+      fcEnum(fcString()).map(([head, ...rest]) => ({
+        schema: str(head),
+        ok: [head],
+        no: { "/type~": not("string"), "/const~": rest },
+      })),
+    );
+    assertCheck(
+      fcEnum(fcString()).map(([head, ...rest]) => ({
+        schema: str(rest),
+        ok: rest,
+        no: { "/type~": not("string"), "/enum~": [head] },
+      })),
+    );
+    assertCheck(
+      fcPair.map(([min, max]) => ({
+        schema: str({ minLength: max }),
+        ok: ["\0".repeat(max)],
+        no: { "/type~": not("string"), "/minLength~": ["\0".repeat(min)] },
+      })),
+    );
+    assertCheck(
+      fcPair.map(([min, max]) => ({
+        schema: str({ maxLength: min }),
+        ok: ["\0".repeat(min)],
+        no: { "/type~": not("string"), "/maxLength~": ["\0".repeat(max)] },
+      })),
+    );
+    assertCheck(
+      fcString({ minLength: 1 }).map(($) => ({
+        schema: str({ pattern: `^${unrexp($)}$` }),
+        ok: [$],
+        no: { "/type~": not("string"), "/pattern~": [$.slice(1)] },
+      })),
+    );
+    assertCheck(fc.constant({
+      schema: str({ pattern: "\\" }),
+      ok: [""],
+      no: { "/type~": not("string"), "/pattern~": [] },
+    }));
+    const formats = {
+      ...([["date", 0, 10], ["time", 11, 24], ["date-time", 0, 24]] as const)
+        .reduce(
+          (to, [key, min, max]) => ({
+            ...to,
+            [key]: fc.date({
+              noInvalidDate: true,
+              min: new Date("0000"),
+              max: new Date("9999-12-31T23:59:59.999Z"),
+            }).map(($) => $.toISOString().slice(min, max)),
+          }),
+          {} as { [_ in "date" | "time" | "date-time"]: fc.Arbitrary<string> },
+        ),
+      ...(["email", "uri", "uuid"] as const).reduce((to, key) => ({
+        ...to,
+        [key]: fc.stringMatching(FORMATS[key]).map(($) => $.trim().normalize())
+          .filter(RegExp.prototype.test.bind(FORMATS[key])),
+      }), {} as { [_ in "email" | "uri" | "uuid"]: fc.Arbitrary<string> }),
+    };
+    assertCheck(
+      fc.constantFrom(...Object.keys(FORMATS) as (keyof typeof FORMATS)[])
+        .chain((format) =>
+          fc.record({
+            schema: fc.constant(str({ format })),
+            ok: fc.tuple(formats[format]),
+            no: fc.record({
+              "/type~": fc.constant(not("string")),
+              "/format~": fc.tuple(
+                fc.string().filter(($) => !FORMATS[format].test($)),
+              ),
+            }),
+          })
+        ),
+    );
+    const bases = {
+      "base16": enB16,
+      "base32": enB32,
+      "base32hex": enH32,
+      "base64": enB64,
+      "base64url": enU64,
+    };
+    assertCheck(
+      fc.constantFrom(...Object.keys(BASES) as (keyof typeof BASES)[])
+        .chain((base) =>
+          fc.record({
+            schema: fc.constant(str({ contentEncoding: base })),
+            ok: fc.tuple(fc.uint8Array().map(bases[base])),
+            no: fc.record({
+              "/type~": fc.constant(not("string")),
+              "/contentEncoding~": fc.tuple(
+                fc.string().filter(($) => !BASES[base].test($)),
+              ),
+            }),
+          })
+        ),
     );
   });
 });
