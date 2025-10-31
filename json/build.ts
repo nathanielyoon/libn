@@ -84,17 +84,9 @@ export const obj = (($: any, meta?: any) => ({
   ...typeof $ === "string"
     ? {
       required: [$],
-      oneOf: Object.entries<Obj>(meta).map(([key, source]) => {
-        const target: Partial<ObjMeta<{ properties: {} }>> = {};
-        if (source.minProperties !== undefined) {
-          target.minProperties = source.minProperties;
-        }
-        if (source.maxProperties !== undefined) {
-          target.maxProperties = source.maxProperties;
-        }
-        if (source.required) target.required = source.required;
-        return obj({ ...source.properties, [$]: str(key) }, target);
-      }),
+      oneOf: Object.entries<Extract<Obj, { properties: {} }>>(meta).map((
+        [key, { properties, required }],
+      ) => obj({ ...properties, [$]: str(key) }, { required: required })),
     }
     : typeof $.type !== "string"
     ? {
