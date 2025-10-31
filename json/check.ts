@@ -221,7 +221,7 @@ export const parse = <A extends Schema>(
 export const is = <A extends Schema>(
   check: Check<A>,
   unknown: unknown,
-): unknown is Instance<A> => check(unknown).next().done ?? false;
+): unknown is Instance<A> => check(unknown).next().done!;
 /** Uses a validator as a type asserter. */
 export function assert<A extends Schema>(
   check: Check<A>,
