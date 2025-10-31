@@ -26,8 +26,8 @@ export type Pointer<
     ? `${B}/${Extract<keyof A, string>}~${C}`
   : A["type"] extends "array" ?
       | `${B}/type~${C}`
-      | (A extends { minItems: true } ? `${B}/minItems~${C}` : never)
-      | (A extends { maxItems: true } ? `${B}/maxItems~${C}` : never)
+      | (A extends { minItems: number } ? `${B}/minItems~${C}` : never)
+      | (A extends { maxItems: number } ? `${B}/maxItems~${C}` : never)
       | (A extends { uniqueItems: true } ? `${B}/uniqueItems~${C}` : never)
       | ((A extends { prefixItems: infer D extends readonly Schema[] } ?
           | `${B}/items~${C}`
