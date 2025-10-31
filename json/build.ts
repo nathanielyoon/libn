@@ -52,7 +52,7 @@ export const arr = (($: Schema | Schema[], meta?: {}) => ({
   <
     const A extends Schema,
     const B extends Exact<ArrMeta<{ items: Schema }>, B> = {},
-  >($: A, meta?: B): Writable<{ type: "array"; items: Writable<A> } & B>;
+  >($: A, meta?: B): Writable<{ type: "array"; items: A } & B>;
   <
     const A extends readonly Schema[],
     const B extends Exact<Partial<ArrMeta<{ items: false }>>, B> = {},
@@ -108,9 +108,10 @@ export const obj = (($: any, meta?: any) => ({
   >($: A, meta?: B): Writable<
     {
       type: "object";
-      properties: A;
+      properties: Writable<A>;
       additionalProperties: false;
-      required: B["required"] extends infer C extends readonly string[] ? C
+      required: B["required"] extends infer C extends readonly string[]
+        ? Writable<C>
         : Keys<A>;
     } & Omit<B, "required">
   >;
@@ -123,11 +124,12 @@ export const obj = (($: any, meta?: any) => ({
     oneOf: Tuple<keyof B> extends infer C extends (keyof B)[] ? {
         [D in keyof C]: Writable<
           Omit<B[C[D]], "properties"> & {
-            properties:
+            properties: Writable<
               & {
                 [_ in A]: { type: "string"; const: `${Exclude<C[D], symbol>}` };
               }
-              & Omit<B[C[D]]["properties"], A>;
+              & Omit<B[C[D]]["properties"], A>
+            >;
           }
         >;
       }

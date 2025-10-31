@@ -4,9 +4,8 @@ export type Json = null | boolean | number | string | readonly Json[] | {
 };
 /** Condensed object intersection. */
 export type Merge<A> = A extends object ? { [B in keyof A]: A[B] } : A;
-/** Deep non-readonly. */
-export type Writable<A> = A extends object
-  ? { -readonly [B in keyof A]: Writable<A[B]> }
+/** Non-readonly. */
+export type Writable<A> = A extends object ? { -readonly [B in keyof A]: A[B] }
   : A;
 /** Generic constraint against excess properties. */
 export type Exact<A, B extends A> =
