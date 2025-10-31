@@ -1,4 +1,4 @@
-import type { Json, Writable, Xor } from "./lib.ts";
+import type { Json, Merge, Writable, Xor } from "./lib.ts";
 
 /** Null schema. */
 export type Nil =
@@ -97,6 +97,11 @@ export type Instance<A extends Schema> = Schema extends A ? Json
       & { [D in Extract<keyof B, C>]: Instance<B[D]> }
       & { [D in Exclude<keyof B, C>]?: Instance<B[D]> }
     >
-  : A extends { oneOf: readonly (infer B)[] }
-    ? B extends Schema ? Instance<B> : never
+  : A extends
+    { required: readonly [infer B extends string]; oneOf: readonly (infer C)[] }
+    ? C extends Schema
+      ? Instance<C> extends infer D extends { [_ in B]?: Json }
+        ? Merge<Omit<D, B> & { [E in B]: Exclude<D[E], undefined> }>
+      : never
+    : never
   : never;
