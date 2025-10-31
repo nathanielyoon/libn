@@ -481,20 +481,20 @@ Deno.test("check", async (t) => {
       fc.boolean().map(($) => ({
         schema: bit($),
         ok: [$],
-        no: { "/type~": not("boolean"), "/const~": [!$] },
+        no: { "/type~": [], "/const~": [!$] },
       })),
     );
     assertCheck(
       fc.boolean().map(($) => ({
         schema: bit([$]),
         ok: [$],
-        no: { "/type~": not("boolean"), "/enum~": [!$] },
+        no: { "/type~": [], "/enum~": [!$] },
       })),
     );
     assertCheck({
       schema: bit([false, true]),
       ok: [false, true],
-      no: { "/type~": not("boolean"), "/enum~": [] },
+      no: { "/type~": [], "/enum~": [] },
     });
   });
   await t.step("compile() checks int schemas", () => {
@@ -509,49 +509,49 @@ Deno.test("check", async (t) => {
       fcEnum(fcInteger).map(([head, ...rest]) => ({
         schema: int(head),
         ok: [head],
-        no: { "/type~": not("integer"), "/const~": rest },
+        no: { "/type~": [], "/const~": rest },
       })),
     );
     assertCheck(
       fcEnum(fcInteger).map(([head, ...rest]) => ({
         schema: int(rest),
         ok: rest,
-        no: { "/type~": not("integer"), "/enum~": [head] },
+        no: { "/type~": [], "/enum~": [head] },
       })),
     );
     assertCheck(
       fcPair.map(([min, max]) => ({
         schema: int({ minimum: max }),
         ok: [max],
-        no: { "/type~": not("integer"), "/minimum~": [min] },
+        no: { "/type~": [], "/minimum~": [min] },
       })),
     );
     assertCheck(
       fcPair.map(([min, max]) => ({
         schema: int({ maximum: min }),
         ok: [min],
-        no: { "/type~": not("integer"), "/maximum~": [max] },
+        no: { "/type~": [], "/maximum~": [max] },
       })),
     );
     assertCheck(
       fcPair.map(([min, max]) => ({
         schema: int({ exclusiveMinimum: min }),
         ok: [max],
-        no: { "/type~": not("integer"), "/exclusiveMinimum~": [min] },
+        no: { "/type~": [], "/exclusiveMinimum~": [min] },
       })),
     );
     assertCheck(
       fcPair.map(([min, max]) => ({
         schema: int({ exclusiveMaximum: max }),
         ok: [min],
-        no: { "/type~": not("integer"), "/exclusiveMaximum~": [max] },
+        no: { "/type~": [], "/exclusiveMaximum~": [max] },
       })),
     );
     assertCheck(
       fcPair.filter(($) => !!$[0] && !!($[1] % $[0])).map(([min, max]) => ({
         schema: int({ multipleOf: min }),
         ok: [min],
-        no: { "/type~": not("integer"), "/multipleOf~": [max] },
+        no: { "/type~": [], "/multipleOf~": [max] },
       })),
     );
   });
@@ -566,49 +566,49 @@ Deno.test("check", async (t) => {
       fcEnum(fcNumber).map(([head, ...rest]) => ({
         schema: num(head),
         ok: [head],
-        no: { "/type~": not("integer", "number"), "/const~": rest },
+        no: { "/type~": [], "/const~": rest },
       })),
     );
     assertCheck(
       fcEnum(fcNumber).map(([head, ...rest]) => ({
         schema: num(rest),
         ok: rest,
-        no: { "/type~": not("integer", "number"), "/enum~": [head] },
+        no: { "/type~": [], "/enum~": [head] },
       })),
     );
     assertCheck(
       fcPair.map(([min, max]) => ({
         schema: num({ minimum: max }),
         ok: [max],
-        no: { "/type~": not("integer", "number"), "/minimum~": [min] },
+        no: { "/type~": [], "/minimum~": [min] },
       })),
     );
     assertCheck(
       fcPair.map(([min, max]) => ({
         schema: num({ maximum: min }),
         ok: [min],
-        no: { "/type~": not("integer", "number"), "/maximum~": [max] },
+        no: { "/type~": [], "/maximum~": [max] },
       })),
     );
     assertCheck(
       fcPair.map(([min, max]) => ({
         schema: num({ exclusiveMinimum: min }),
         ok: [max],
-        no: { "/type~": not("integer", "number"), "/exclusiveMinimum~": [min] },
+        no: { "/type~": [], "/exclusiveMinimum~": [min] },
       })),
     );
     assertCheck(
       fcPair.map(([min, max]) => ({
         schema: num({ exclusiveMaximum: max }),
         ok: [min],
-        no: { "/type~": not("integer", "number"), "/exclusiveMaximum~": [max] },
+        no: { "/type~": [], "/exclusiveMaximum~": [max] },
       })),
     );
     assertCheck(
       fcPair.filter(($) => !!$[0] && !!($[1] % $[0])).map(([min, max]) => ({
         schema: num({ multipleOf: min }),
         ok: [min],
-        no: { "/type~": not("integer", "number"), "/multipleOf~": [max] },
+        no: { "/type~": [], "/multipleOf~": [max] },
       })),
     );
   });
@@ -625,41 +625,41 @@ Deno.test("check", async (t) => {
       fcEnum(fcString()).map(([head, ...rest]) => ({
         schema: str(head),
         ok: [head],
-        no: { "/type~": not("string"), "/const~": rest },
+        no: { "/type~": [], "/const~": rest },
       })),
     );
     assertCheck(
       fcEnum(fcString()).map(([head, ...rest]) => ({
         schema: str(rest),
         ok: rest,
-        no: { "/type~": not("string"), "/enum~": [head] },
+        no: { "/type~": [], "/enum~": [head] },
       })),
     );
     assertCheck(
       fcPair.map(([min, max]) => ({
         schema: str({ minLength: max }),
         ok: ["\0".repeat(max)],
-        no: { "/type~": not("string"), "/minLength~": ["\0".repeat(min)] },
+        no: { "/type~": [], "/minLength~": ["\0".repeat(min)] },
       })),
     );
     assertCheck(
       fcPair.map(([min, max]) => ({
         schema: str({ maxLength: min }),
         ok: ["\0".repeat(min)],
-        no: { "/type~": not("string"), "/maxLength~": ["\0".repeat(max)] },
+        no: { "/type~": [], "/maxLength~": ["\0".repeat(max)] },
       })),
     );
     assertCheck(
       fcString({ minLength: 1 }).map(($) => ({
         schema: str({ pattern: `^${unrexp($)}$` }),
         ok: [$],
-        no: { "/type~": not("string"), "/pattern~": [$.slice(1)] },
+        no: { "/type~": [], "/pattern~": [$.slice(1)] },
       })),
     );
     assertCheck({
       schema: str({ pattern: "\\" }),
       ok: [""],
-      no: { "/type~": not("string"), "/pattern~": [] },
+      no: { "/type~": [], "/pattern~": [] },
     });
     const formats = {
       ...([["date", 0, 10], ["time", 11, 24], ["date-time", 0, 24]] as const)
@@ -728,7 +728,7 @@ Deno.test("check", async (t) => {
       schema: arr([nil()]),
       ok: [[null]] as [null][],
       no: {
-        "/type~": not("array"),
+        "/type~": [],
         "/items~": [],
         "/prefixItems/0/type~/0": [[not("array")]],
         "/minItems~": [[]],
@@ -738,7 +738,7 @@ Deno.test("check", async (t) => {
       schema: arr(nil()),
       ok: [[], [null], Array($).fill(null)],
       no: {
-        "/type~": not("array"),
+        "/type~": [],
         ...Array($).keys().reduce((to, z) => ({
           ...to,
           [`/items/type~/${z}`]: [Array(z + 1).fill(null).with(z, not("null"))],
@@ -748,25 +748,25 @@ Deno.test("check", async (t) => {
     assertCheck(fcLength.map(($) => ({
       schema: arr(nil(), { minItems: $ + 1 }),
       ok: [Array($ + 1).fill(null)],
-      no: { "/type~": not("array"), "/minItems~": [[], Array($).fill(null)] },
+      no: { "/type~": [], "/minItems~": [[], Array($).fill(null)] },
     })));
     assertCheck(fcLength.map(($) => ({
       schema: arr([nil(), ...Array<{ type: "null" }>($).fill(nil())], {
         minItems: $,
       }),
       ok: [Array($).fill(null) as [null]],
-      no: { "/type~": not("array"), "/minItems~": [[]], "/items~": [] },
+      no: { "/type~": [], "/minItems~": [[]], "/items~": [] },
     })));
     assertCheck(fcLength.map(($) => ({
       schema: arr(nil(), { maxItems: $ }),
       ok: [[], Array($).fill(null)],
-      no: { "/type~": not("array"), "/maxItems~": [Array($ + 1).fill(null)] },
+      no: { "/type~": [], "/maxItems~": [Array($ + 1).fill(null)] },
     })));
     assertCheck(fcLength.map(($) => ({
       schema: arr(Array<{ type: "null" }>($).fill(nil())),
       ok: [],
       no: {
-        "/type~": not("array"),
+        "/type~": [],
         "/items~": [Array($ + 1).fill(null)],
         "/minItems~": [],
       },
@@ -774,13 +774,13 @@ Deno.test("check", async (t) => {
     assertCheck({
       schema: arr(nil(), { uniqueItems: true }),
       ok: [[], [null]],
-      no: { "/type~": not("array"), "/uniqueItems~": [[null, null]] },
+      no: { "/type~": [], "/uniqueItems~": [[null, null]] },
     });
     assertCheck({
       schema: arr([bit(), bit()], { uniqueItems: true }),
       ok: [[false, true], [true, false]] as [boolean, boolean][],
       no: {
-        "/type~": not("array"),
+        "/type~": [],
         "/items~": [],
         "/minItems~": [],
         "/uniqueItems~": [[true, true], [false, false]],
@@ -798,7 +798,7 @@ Deno.test("check", async (t) => {
         schema: arr(obj(int()), { uniqueItems: true }),
         ok: [[], [object(0)], [object(0), object(1), object(2)]],
         no: {
-          "/type~": not("array"),
+          "/type~": [],
           "/uniqueItems~": [[object(0), object(0)], [
             object(0),
             object(1),
