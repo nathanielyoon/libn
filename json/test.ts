@@ -213,6 +213,10 @@ Deno.test("build", async (t) => {
     );
   await step<Nil>("nil", (test) => {
     test(nil())({ type: "null" });
+    test(nil(bit()))({
+      type: ["null", "boolean"],
+      oneOf: [{ type: "null" }, { type: "boolean" }],
+    });
   });
   await step<Bit>("bit", (test) => {
     test(bit())({ type: "boolean" });
