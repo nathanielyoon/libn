@@ -299,21 +299,18 @@ Deno.test("build", async (t) => {
       prefixItems: [],
       items: false,
       minItems: 0,
-      maxItems: 0,
     });
     test(arr([nil()]))({
       type: "array",
       prefixItems: [{ type: "null" }],
       items: false,
       minItems: 1,
-      maxItems: 1,
     });
-    test(arr([nil()], { minItems: 1, maxItems: 2, uniqueItems: true }))({
+    test(arr([nil()], { minItems: 1, uniqueItems: true }))({
       type: "array",
       prefixItems: [{ type: "null" }],
       items: false,
       minItems: 1,
-      maxItems: 2,
       uniqueItems: true,
     });
   });
@@ -437,7 +434,7 @@ Deno.test("check", async (t) => {
       maxLength: size,
       comparator: "SameValueZero",
     }).map(($) => [...new Float64Array($).sort()] as Sequence<number, A>);
-  const fcMax = fc.nat({ max: 255 });
+  const fcLength = fc.integer({ min: 1, max: 255 });
   await t.step("compile() checks nil schemas", () => {
     assertCheck(fc.constant({
       schema: nil(),
@@ -597,7 +594,7 @@ Deno.test("check", async (t) => {
   await t.step("compile() checks str schemas()", () => {
     const fcString = ($?: fc.StringConstraints) =>
       fc.string({ unit: "binary", size: "medium", ...$ });
-    const fcPair = fcOrdered(2, fcMax);
+    const fcPair = fcOrdered(2, fcLength);
     assertCheck(fc.constant({
       schema: str(),
       ok: [""],
@@ -698,6 +695,100 @@ Deno.test("check", async (t) => {
             }),
           })
         ),
+    );
+  });
+  await t.step("compile() checks arr schemas", () => {
+    assertCheck(fc.constant({
+      schema: arr(nil()),
+      ok: [[]],
+      no: { "/type~": not("array") },
+    }));
+    assertCheck(fc.constant({
+      schema: arr([nil()]),
+      ok: [[null]] as [null][],
+      no: {
+        "/type~": not("array"),
+        "/items~": [],
+        "/prefixItems/0/type~/0": [[not("array")]],
+        "/minItems~": [[]],
+      },
+    }));
+    assertCheck(fcLength.map(($) => ({
+      schema: arr(nil()),
+      ok: [[], [null], Array($).fill(null)],
+      no: {
+        "/type~": not("array"),
+        ...Array($).keys().reduce((to, z) => ({
+          ...to,
+          [`/items/type~/${z}`]: [Array(z + 1).fill(null).with(z, not("null"))],
+        }), {}),
+      },
+    })));
+    assertCheck(fcLength.map(($) => ({
+      schema: arr(nil(), { minItems: $ + 1 }),
+      ok: [Array($ + 1).fill(null)],
+      no: { "/type~": not("array"), "/minItems~": [[], Array($).fill(null)] },
+    })));
+    assertCheck(fcLength.map(($) => ({
+      schema: arr([nil(), ...Array<{ type: "null" }>($).fill(nil())], {
+        minItems: $,
+      }),
+      ok: [Array($).fill(null) as [null]],
+      no: { "/type~": not("array"), "/minItems~": [[]], "/items~": [] },
+    })));
+    assertCheck(fcLength.map(($) => ({
+      schema: arr(nil(), { maxItems: $ }),
+      ok: [[], Array($).fill(null)],
+      no: { "/type~": not("array"), "/maxItems~": [Array($ + 1).fill(null)] },
+    })));
+    assertCheck(fcLength.map(($) => ({
+      schema: arr(Array<{ type: "null" }>($).fill(nil())),
+      ok: [],
+      no: {
+        "/type~": not("array"),
+        "/items~": [Array($ + 1).fill(null)],
+        "/minItems~": [],
+      },
+    })));
+    assertCheck(fc.constant({
+      schema: arr(nil(), { uniqueItems: true }),
+      ok: [[], [null]],
+      no: { "/type~": not("array"), "/uniqueItems~": [[null, null]] },
+    }));
+    assertCheck(fc.constant({
+      schema: arr([bit(), bit()], { uniqueItems: true }),
+      ok: [[false, true], [true, false]] as [boolean, boolean][],
+      no: {
+        "/type~": not("array"),
+        "/items~": [],
+        "/minItems~": [],
+        "/uniqueItems~": [[true, true], [false, false]],
+        "/prefixItems/0/type~/0": [],
+        "/prefixItems/1/type~/1": [],
+      },
+    }));
+    assertCheck(
+      fcEnum(fc.string()).map((keys) => (offset: number) =>
+        keys.reduce<{ [_: string]: number }>(
+          (to, $, z) => ({ ...to, [$]: z + offset }),
+          {},
+        )
+      ).map((object) => ({
+        schema: arr(obj(int()), { uniqueItems: true }),
+        ok: [[], [object(0)], [object(0), object(1), object(2)]],
+        no: {
+          "/type~": not("array"),
+          "/uniqueItems~": [[object(0), object(0)], [
+            object(0),
+            object(1),
+            Object.fromEntries(Object.entries(object(0)).reverse()),
+          ], [
+            object(0),
+            object(1),
+            Object.fromEntries(Object.entries(object(1)).reverse()),
+          ]],
+        },
+      })),
     );
   });
 });
