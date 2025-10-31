@@ -86,7 +86,7 @@
     "pure": {
       "description": "Checks whether the current directory's modules have side-effects, which would be included in the generated output. Requires sh and jq.",
       "dependencies": ["cwd"],
-      "command": "sh -c 'for path in $(jq -r \"if (.exports | type) == \\\"object\\\" then .exports[] else .exports end\" deno.json); do echo \"import \\\"${path}\\\";\" >bundle.ts && deno task --cwd=. bundle bundle.ts; rm -f bundle.ts; done'"
+      "command": "sh -c 'for path in $(jq -r \"if (.exports | type) == \\\"object\\\" then .exports[] else .exports end\" deno.json); do echo \"# $path\"; echo \"import \\\"${path}\\\";\" >bundle.ts && deno task --cwd=. bundle bundle.ts; rm -f bundle.ts; echo; done'"
     },
     "all": {
       "dependencies": ["cwd"],
