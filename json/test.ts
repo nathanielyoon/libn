@@ -488,14 +488,14 @@ Deno.test("check", async (t) => {
       no: { "/type~": not("integer") },
     });
     const fcEnum = fcUnique(fcInteger);
-    assertCheck(fcEnum.map(([head, ...rest]) => ({
+    assertCheck(fcEnum.map(([head, ...tail]) => ({
       schema: int(head),
       ok: [head],
-      no: { "/type~": [], "/const~": rest },
+      no: { "/type~": [], "/const~": tail },
     })));
-    assertCheck(fcEnum.map(([head, ...rest]) => ({
-      schema: int(rest),
-      ok: rest,
+    assertCheck(fcEnum.map(([head, ...tail]) => ({
+      schema: int(tail),
+      ok: tail,
       no: { "/type~": [], "/enum~": [head] },
     })));
     const fcPair = fcOrdered(2, fcInteger);
@@ -534,14 +534,14 @@ Deno.test("check", async (t) => {
       no: { "/type~": not("integer", "number") },
     });
     const fcEnum = fcUnique(fcNumber);
-    assertCheck(fcEnum.map(([head, ...rest]) => ({
+    assertCheck(fcEnum.map(([head, ...tail]) => ({
       schema: num(head),
       ok: [head],
-      no: { "/type~": [], "/const~": rest },
+      no: { "/type~": [], "/const~": tail },
     })));
-    assertCheck(fcEnum.map(([head, ...rest]) => ({
-      schema: num(rest),
-      ok: rest,
+    assertCheck(fcEnum.map(([head, ...tail]) => ({
+      schema: num(tail),
+      ok: tail,
       no: { "/type~": [], "/enum~": [head] },
     })));
     const fcPair = fcOrdered(2, fcNumber);
@@ -581,14 +581,14 @@ Deno.test("check", async (t) => {
       no: { "/type~": not("string") },
     });
     const fcEnum = fcUnique(fcString);
-    assertCheck(fcEnum.map(([head, ...rest]) => ({
+    assertCheck(fcEnum.map(([head, ...tail]) => ({
       schema: str(head),
       ok: [head],
-      no: { "/type~": [], "/const~": rest },
+      no: { "/type~": [], "/const~": tail },
     })));
-    assertCheck(fcEnum.map(([head, ...rest]) => ({
-      schema: str(rest),
-      ok: rest,
+    assertCheck(fcEnum.map(([head, ...tail]) => ({
+      schema: str(tail),
+      ok: tail,
       no: { "/type~": [], "/enum~": [head] },
     })));
     const fcPair = fcOrdered(2, fcLength);
@@ -762,5 +762,62 @@ Deno.test("check", async (t) => {
         },
       })),
     );
+  });
+  await t.step("compile() checks obj schemas", () => {
+    assertCheck({
+      schema: obj(nil()),
+      ok: [{}, { "": null }],
+      no: {
+        "/type~": not("object"),
+        "/additionalProperties/type~/": [{ "": not("null") }],
+      },
+    });
+    assertCheck({
+      schema: obj({ "": nil() }),
+      ok: [{ "": null }],
+      no: {
+        "/type~": not("object"),
+        "/properties//type~/": [{ "": not("null") }],
+        "/required/0~": [{}],
+      },
+    });
+    assertCheck({
+      schema: obj("", { 0: obj({ 0: nil() }), 1: obj({ 1: nil() }) }),
+      ok: [{ "": "0", 0: null }, { "": "1", 1: null }],
+      no: {
+        "/type~": not("object"),
+        "/required/0~": [{}, { 0: null }, { 1: null }],
+        "/oneOf~": [{ "": "" }, { "": not("string") }],
+        "/oneOf/0/properties/0/type~/0": [{ "": "0", 0: not("null") }],
+        "/oneOf/1/properties/1/type~/1": [{ "": "1", 1: not("null") }],
+        "/oneOf/0/required/0~": [{ "": "0" }],
+        "/oneOf/1/required/0~": [{ "": "1" }],
+      },
+    });
+    assertCheck(
+      fcUnique(fc.string()).map(([head, ...tail]) => ({
+        schema: obj(nil(), { propertyNames: str(head) }),
+        ok: [{}, { [head]: null }],
+        no: {
+          "/type~": [],
+          ...tail.reduce((to, key) => ({
+            ...to,
+            [`/propertyNames/const~/${enToken(key)}`]: [{ [key]: null }],
+          }), {}),
+        },
+      })),
+    );
+    const object = (size: number) =>
+      Array(size).keys().reduce((to, key) => ({ ...to, [key]: null }), {});
+    assertCheck(fcLength.map(($) => ({
+      schema: obj(nil(), { minProperties: $ }),
+      ok: [object($)],
+      no: { "/type~": [], "/minProperties~": [{}, object($ - 1)] },
+    })));
+    assertCheck(fcLength.map(($) => ({
+      schema: obj(nil(), { maxProperties: $ }),
+      ok: [{}],
+      no: { "/type~": [], "/maxProperties~": [object($ + 1)] },
+    })));
   });
 });
