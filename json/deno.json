@@ -6,6 +6,6 @@
     "./lib": "./lib.ts",
     "./pointer": "./pointer.ts",
     "./build": "./build.ts",
-    "./check.ts": "./check.ts"
+    "./check": "./check.ts"
   }
 }
