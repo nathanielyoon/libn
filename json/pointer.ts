@@ -73,8 +73,10 @@ export type Pointer<
             >;
           }[keyof D]
       : A extends { additionalProperties: infer D extends Schema } ?
-          | (A extends { propertyNames: infer E extends Schema }
-            ? Pointer<E, `${B}/propertyNames`, `${C}/${string}`>
+          | (A extends { propertyNames: infer E extends Schema } ? Exclude<
+              Pointer<E, `${B}/propertyNames`, `${C}/${string}`>,
+              `${B}/propertyNames/type~${C}/${string}`
+            >
             : never)
           | Pointer<D, `${B}/additionalProperties`, `${C}/${string}`>
       : never) extends infer D ? D extends string ? D : never : never);
