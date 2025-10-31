@@ -51,7 +51,6 @@ export const arr = (($: Schema | Schema[], meta?: {}) => ({
   ...isArray($)
     ? {
       minItems: $.length,
-      maxItems: $.length,
       ...meta,
       prefixItems: $,
       items: false,
@@ -72,8 +71,7 @@ export const arr = (($: Schema | Schema[], meta?: {}) => ({
       prefixItems: Writable<A>;
       items: false;
       minItems: B["minItems"] extends infer C extends number ? C : A["length"];
-      maxItems: B["maxItems"] extends infer C extends number ? C : A["length"];
-    } & Omit<B, "minItems" | "maxItems">
+    } & Omit<B, "minItems">
   >;
 };
 /** @internal */

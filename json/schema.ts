@@ -38,12 +38,10 @@ export type Str =
 /** Array schema. */
 export type Arr =
   & { type: "array"; uniqueItems?: boolean }
-  & Xor<[{ items: Schema; minItems?: number; maxItems?: number }, {
-    prefixItems: readonly Schema[];
-    items: false;
-    minItems: number;
-    maxItems: number;
-  }]>;
+  & Xor<[
+    { items: Schema; minItems?: number; maxItems?: number },
+    { prefixItems: readonly Schema[]; items: false; minItems: number },
+  ]>;
 /** Object schema. */
 export type Obj =
   & { type: "object"; minProperties?: number; maxProperties?: number }
@@ -64,16 +62,13 @@ export type Schema = Nil | Bit | Int | Num | Str | Arr | Obj;
 type Prefix<
   A extends readonly Schema[],
   B extends number,
-  C extends number,
   D extends unknown[] = [],
-> = C extends D["length"] ? D
-  : A extends readonly [infer E extends Schema, ...infer F extends Schema[]]
-    ? Prefix<
-      F,
-      B,
-      C,
-      B extends D["length"] ? [...D, Instance<E>?] : [...D, Instance<E>]
-    >
+> = A extends readonly [infer E extends Schema, ...infer F extends Schema[]]
+  ? Prefix<
+    F,
+    B,
+    B extends D["length"] ? [...D, Instance<E>?] : [...D, Instance<E>]
+  >
   : D;
 /** @internal */
 type Natural<A extends number> = `${A}` extends `-${string}` ? 0 : A;
@@ -91,8 +86,7 @@ export type Instance<A extends Schema> = Schema extends A ? Json
     : A extends {
       prefixItems: infer B extends readonly Schema[];
       minItems: infer C extends number;
-      maxItems: infer D extends number;
-    } ? Prefix<B, Natural<C>, Natural<D>>
+    } ? Prefix<B, Natural<C>>
     : never
   : A extends { additionalProperties: infer B extends Schema }
     ? { [_: string]: Instance<B> }
