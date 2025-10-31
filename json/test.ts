@@ -315,7 +315,7 @@ Deno.test("build", async (t) => {
       additionalProperties: { type: "null" },
     });
     test(obj(nil(), {
-      propertyKeys: str(),
+      propertyNames: str(),
       minProperties: 0,
       maxProperties: 1,
     }))({
@@ -323,7 +323,7 @@ Deno.test("build", async (t) => {
       additionalProperties: { type: "null" },
       minProperties: 0,
       maxProperties: 1,
-      propertyKeys: { type: "string" },
+      propertyNames: { type: "string" },
     });
     test(obj({}))({
       type: "object",

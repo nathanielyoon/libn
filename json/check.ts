@@ -148,9 +148,9 @@ const body = ($: Schema) => {
         }
         to +=
           `for(let z=0;z<k.length;++z){const K=k[z],V=\`\${v}/\${K.replaceAll("~","~0").replaceAll("/","~1")}\`;`;
-        if ($.propertyKeys) {
-          to += `{const S=\`\${s}/propertyKeys\`,I=K;let O;${
-            body($.propertyKeys)
+        if ($.propertyNames) {
+          to += `{const S=\`\${s}/propertyNames\`,I=K;let O;${
+            body($.propertyNames)
           }}`;
         }
         to += `const S=\`\${s}/additionalProperties\`,I=i[K];let O;${

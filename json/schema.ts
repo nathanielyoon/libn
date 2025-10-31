@@ -40,7 +40,7 @@ export type Arr =
 /** Object schema. */
 export type Obj =
   & { type: "object"; minProperties?: number; maxProperties?: number }
-  & Xor<[{ additionalProperties: Schema; propertyKeys?: Str }, {
+  & Xor<[{ additionalProperties: Schema; propertyNames?: Str }, {
     properties: { [_: string]: Schema };
     additionalProperties: false;
     required: readonly string[];
