@@ -174,7 +174,7 @@ const body = ($: Schema): string => {
                 body($.properties[keys[z]])
               }o[${key}]=O}`;
             const required = $.required.indexOf(keys[z]);
-            if (required !== -1) to += `else${no(`required/${z}`)}`;
+            if (required !== -1) to += `else${no(`required/${required}`)}`;
           } while (++z < keys.length);
           to += `k.size&&${no("additionalProperties")}`;
         }
