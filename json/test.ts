@@ -190,7 +190,9 @@ Deno.test("pointer", async (t) => {
   });
   await t.step("dereference() rejects missing indices/keys", () => {
     fc.assert(fc.property(
-      fc.stringMatching(/^(?:\/(?:~[01]|[^/~])*)+$/),
+      fc.stringMatching(/^(?:\/(?:~[01]|[^/~])*)+$/).filter(($) =>
+        !(deToken($.slice(1)) in {})
+      ),
       (pointer) => {
         assertEquals(dereference({}, pointer), undefined);
       },
