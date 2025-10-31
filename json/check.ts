@@ -104,7 +104,9 @@ const body = ($: Schema) => {
           }${unique}o[z]=O}`;
       } else {
         to +=
-          "const s=`${S}/prefixItems`,v=V,i=I,o=O=Array(i.length);switch(i.length){";
+          `const s=\`\${S}/prefixItems\`,v=V,i=I,o=O=Array(i.length);switch(i.length){default:${
+            no("items")
+          }`;
         for (let z = $.prefixItems.length; z;) {
           to +=
             `case ${z--}:{const S=\`\${s}/${z}\`,V=\`\${v}/${z}\`,I=i[${z}];let O;${
@@ -193,7 +195,7 @@ export const parse = <A extends Schema>(
   check: Check<A>,
   unknown: unknown,
 ): Result<Pointer<A>[], Instance<A>> => {
-  const iterator = check(unknown), cause = [];
+  const iterator = check(unknown), cause: Pointer<A>[] = [];
   let next = iterator.next();
   while (!next.done) cause.push(next.value), next = iterator.next();
   if (cause.length) return { state: false, value: cause };
