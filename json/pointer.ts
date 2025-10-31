@@ -43,7 +43,12 @@ export type Pointer<
     | (A extends { maxProperties: number } ? `${B}/maxProperties~${C}` : never)
     | ((A extends { oneOf: infer D extends readonly Schema[] } ?
         | `${B}/required/0~${C}`
-        | { [E in keyof D]: Pointer<D[E], `${B}/oneOf/${E}`, C> }[keyof D]
+        | {
+          [E in keyof D]: Exclude<
+            Pointer<D[E], `${B}/oneOf/${E}`, C>,
+            `${B}/oneOf/${E}/type~${C}`
+          >;
+        }[keyof D]
       : A extends {
         properties: infer D extends { [_: string]: Schema };
         required: infer E extends readonly string[];
