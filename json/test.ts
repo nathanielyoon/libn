@@ -110,6 +110,29 @@ Deno.test("pointer", async (t) => {
       assertEquals(deToken(enToken($)), $);
     }));
   });
+  await t.step("dereference() accesses keys/indices", () => {
+    fc.assert(fc.property(
+      fc.string(),
+      fc.nat({ max: 1e2 }),
+      fcJson,
+      (key, index, value) => {
+        assertEquals(
+          dereference(
+            Array(index + 1).with(index, { [key]: value }),
+            `/${index}/${enToken(key)}`,
+          ),
+          value,
+        );
+        assertEquals(
+          dereference(
+            { [key]: Array(index + 1).with(index, value) },
+            `/${enToken(key)}/${index}`,
+          ),
+          value,
+        );
+      },
+    ));
+  });
   await t.step("dereference() returns the root when pointer is empty", () => {
     fc.assert(fc.property(fcJson, ($) => {
       assertStrictEquals(dereference($, ""), $);
@@ -134,7 +157,24 @@ Deno.test("pointer", async (t) => {
     ));
   });
   await t.step("dereference() rejects non-numeric array indices", () => {
-    fc.assert(fc.property());
+    fc.assert(fc.property(
+      fc.array(fcJson),
+      fc.stringMatching(/^\/(?:\d*\D\d*|0\d=)(?:\/(?:~[01]|[^/~])*)*$/),
+      ($, pointer) => {
+        assertEquals(dereference($, pointer), undefined);
+      },
+    ));
+  });
+  await t.step("dereference() rejects missing indices/keys", () => {
+    fc.assert(fc.property(
+      fc.stringMatching(/^(?:\/(?:~[01]|[^/~])*)+$/),
+      (pointer) => {
+        assertEquals(dereference({}, pointer), undefined);
+      },
+    ));
+    fc.assert(fc.property(fc.array(fcJson), ($) => {
+      assertEquals(dereference($, `/${$.length || 1}`), undefined);
+    }));
   });
 });
 Deno.test("build", async (t) => {
