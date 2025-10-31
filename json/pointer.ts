@@ -46,7 +46,7 @@ export type Pointer<A extends Schema, B extends [string, string] = ["", ""]> = {
     : `${B[0]}/${C & string}~${B[1]}`;
 }[keyof A] extends infer C ? C extends string ? C : never : never;
 /** Resolves a JSON pointer. */
-export const get = ($: Json, pointer: string): Json | undefined => {
+export const dereference = ($: Json, pointer: string): Json | undefined => {
   if (!pointer) return $;
   const [head, ...tail] = pointer.split("/");
   if (head) return;
