@@ -614,7 +614,7 @@ Deno.test("check", async (t) => {
   });
   await t.step("compile() checks str schemas()", () => {
     const fcString = ($?: fc.StringConstraints) =>
-      fc.string({ unit: "binary", size: "medium", ...$ });
+      fc.string({ unit: "grapheme", size: "medium", ...$ });
     const fcPair = fcOrdered(2, fcLength);
     assertCheck({
       schema: str(),
