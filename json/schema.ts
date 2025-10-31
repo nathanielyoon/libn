@@ -1,12 +1,11 @@
-import type { Json, Merge, Writable, Xor } from "./lib.ts";
+import type { Json, Writable, Xor } from "./lib.ts";
 
 /** Null schema. */
 export type Nil = { type: "null" };
 /** Boolean schema. */
-export type Bit = Merge<
+export type Bit =
   & { type: "boolean" }
-  & Xor<[{ const: boolean }, { enum: readonly [boolean, ...boolean[]] }, {}]>
->;
+  & Xor<[{ const: boolean }, { enum: readonly [boolean, ...boolean[]] }, {}]>;
 /** @internal */
 type Numer = Xor<[{ const: number }, { enum: readonly [number, ...number[]] }, {
   minimum?: number;
@@ -16,11 +15,11 @@ type Numer = Xor<[{ const: number }, { enum: readonly [number, ...number[]] }, {
   multipleOf?: number;
 }]>;
 /** Integer schema. */
-export type Int = Merge<{ type: "integer" } & Numer>;
+export type Int = { type: "integer" } & Numer;
 /** Number schema. */
-export type Num = Merge<{ type: "number" } & Numer>;
+export type Num = { type: "number" } & Numer;
 /** String schema. */
-export type Str = Merge<
+export type Str =
   & { type: "string" }
   & Xor<[{ const: string }, { enum: readonly [string, ...string[]] }, {
     minLength?: number;
@@ -28,20 +27,18 @@ export type Str = Merge<
     pattern?: string;
     format?: "date" | "time" | "date-time" | "email" | "uri" | "uuid";
     contentEncoding?: `base${"16" | "32" | "32hex" | "64" | "64url"}`;
-  }]>
->;
+  }]>;
 /** Array schema. */
-export type Arr = Merge<
+export type Arr =
   & { type: "array"; uniqueItems?: boolean }
   & Xor<[{ items: Schema; minItems?: number; maxItems?: number }, {
     prefixItems: readonly Schema[];
     items: false;
     minItems: number;
     maxItems: number;
-  }]>
->;
+  }]>;
 /** Object schema. */
-export type Obj = Merge<
+export type Obj =
   & { type: "object"; minProperties?: number; maxProperties?: number }
   & Xor<[{ additionalProperties: Schema; propertyKeys?: Str }, {
     properties: { [_: string]: Schema };
@@ -53,8 +50,7 @@ export type Obj = Merge<
       Extract<Obj, { properties: {} }>,
       ...Extract<Obj, { properties: {} }>[],
     ];
-  }]>
->;
+  }]>;
 /** JSON schema subset. */
 export type Schema = Nil | Bit | Int | Num | Str | Arr | Obj;
 /** @internal */

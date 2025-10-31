@@ -3,7 +3,7 @@ export type Json = null | boolean | number | string | readonly Json[] | {
   [_: string]: Json;
 };
 /** Condensed object intersection. */
-export type Merge<A> = A extends object ? { [B in keyof A]: Merge<A[B]> } : A;
+export type Merge<A> = A extends object ? { [B in keyof A]: A[B] } : A;
 /** Deep non-readonly. */
 export type Writable<A> = A extends object
   ? { -readonly [B in keyof A]: Writable<A[B]> }
@@ -13,12 +13,13 @@ export type Exact<A, B extends A> =
   & A
   & { [C in keyof B]: C extends keyof A ? B[C] : never };
 /** @internal */
-type Only<A, B> =
+type Only<A, B> = Merge<
   & A
-  & { [C in Exclude<B extends object ? keyof B : never, keyof A>]?: never };
+  & { [C in Exclude<B extends object ? keyof B : never, keyof A>]?: never }
+>;
 /** Exclusive-or between a list of types. */
 export type Xor<A extends unknown[]> = {
-  [B in keyof A]: A[B] extends object ? Merge<Only<A[B], A[number]>> : A[B];
+  [B in keyof A]: A[B] extends object ? Only<A[B], A[number]> : A[B];
 }[number];
 /** Union to intersection. */
 export type And<A> = (A extends never ? never : (_: A) => void) extends
