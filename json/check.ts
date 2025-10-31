@@ -83,7 +83,7 @@ const body = ($: Schema): string => {
           to += `I.length<${$.minLength}&&${no("minLength")}`;
         }
         if ($.maxLength !== undefined) {
-          to += `I.length<${$.maxLength}&&${no("maxLength")}`;
+          to += `I.length>${$.maxLength}&&${no("maxLength")}`;
         }
         if ($.pattern) {
           try {
