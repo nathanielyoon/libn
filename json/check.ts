@@ -8,117 +8,175 @@ import { hasOwn } from "./lib.ts";
 import { enToken, type Pointer } from "./pointer.ts";
 import type { Instance, Schema, Str } from "./schema.ts";
 
+/** @internal */
+type Patterns<A extends string | undefined> = { [_ in NonNullable<A>]: RegExp };
+/** String format patterns. */
+export const FORMATS: Patterns<Str["format"]> = /* @__PURE__ */ (() => {
+  const date =
+    /^(?:(?:(?:(?:(?:[02468][048])|(?:[13579][26]))00)|(?:[0-9][0-9](?:(?:0[48])|(?:[2468][048])|(?:[13579][26]))))[-]02[-]29)|(?:\d{4}[-](?:(?:(?:0[13578]|1[02])[-](?:0[1-9]|[12]\d|3[01]))|(?:(?:0[469]|11)[-](?:0[1-9]|[12]\d|30))|(?:02[-](?:0[1-9]|1[0-9]|2[0-8]))))$/;
+  const time =
+    /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{3}(?:Z|[+-](?:[01]\d|2[0-3]):[0-5][0-9])$/;
+  return {
+    date,
+    time,
+    "date-time": RegExp(`${date.source.slice(0, -1)}T${time.source.slice(1)}$`),
+    email: /^[\w'+-](?:\.?[\w'+-])*@(?:[\dA-Za-z][\dA-Za-z-]*\.)+[A-Za-z]{2,}$/,
+    uri: /^[^\s#/:?]+:(?:\/\/[^\s\/?#]*)?[^\s#?]*(?:\?[^\s#]*)?(?:#\S*)?$/,
+    uuid: /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/,
+  };
+})();
+/** Binary encoding patterns. */
+export const BASES: Patterns<Str["contentEncoding"]> = {
+  base16: B16,
+  base32: B32,
+  base32hex: H32,
+  base64: B64,
+  base64url: U64,
+};
 const no = (
   $: `${Schema extends infer A ? A extends A ? keyof A : never : never}${any}`,
 ) => `(yield[\`\${S}/${$}\`,I]);`;
-/** String format patterns. */
-export const FORMAT: { [_ in NonNullable<Str["format"]>]: RegExp } =
-  /* @__PURE__ */ (() => {
-    const date =
-      /^(?:(?:(?:(?:(?:[02468][048])|(?:[13579][26]))00)|(?:[0-9][0-9](?:(?:0[48])|(?:[2468][048])|(?:[13579][26]))))[-]02[-]29)|(?:\d{4}[-](?:(?:(?:0[13578]|1[02])[-](?:0[1-9]|[12]\d|3[01]))|(?:(?:0[469]|11)[-](?:0[1-9]|[12]\d|30))|(?:02[-](?:0[1-9]|1[0-9]|2[0-8]))))$/;
-    const time =
-      /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{3}(?:Z|[+-](?:[01]\d|2[0-3]):[0-5][0-9])$/;
-    return {
-      date,
-      time,
-      "date-time": RegExp(
-        `${date.source.slice(0, -1)}T${time.source.slice(1)}$`,
-      ),
-      email:
-        /^[\w'+-](?:\.?[\w'+-])*@(?:[\dA-Za-z][\dA-Za-z-]*\.)+[A-Za-z]{2,}$/,
-      uri: /^[^\s#/:?]+:(?:\/\/[^\s\/?#]*)?[^\s#?]*(?:\?[^\s#]*)?(?:#\S*)?$/,
-      uuid: /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/,
-    };
-  })();
-/** Binary encoding patterns. */
-export const ENCODING: { [_ in NonNullable<Str["contentEncoding"]>]: RegExp } =
-  { base16: B16, base32: B32, base32hex: H32, base64: B64, base64url: U64 };
 const body = ($: Schema) => {
-  if (hasOwn($, "oneOf")) {
-    let to = "const s=`${S}/oneOf`;switch(typeof I){", z = 0;
-    do {
-      const at = $.oneOf[z];
-      to += `case "${
-        at.type === "integer" ? "number" : at.type
-      }":{const S=\`\${S}/${z}\`;${body(at)}break;}`;
-    } while (++z < $.oneOf.length);
-    return `${to}default:${no("oneOf")}}`;
-  } else if ($.type === "object") {
-    const keys = Object.keys($.properties);
-    let to =
-      'if(typeof I==="object"&&I&&!Array.isArray(I)){const s=`${S}/properties`,v=V,i=I,o=O={},k=new Set(Object.keys(i));';
-    if ($.minProperties !== undefined && $.minProperties > 0) {
-      to += `k.size<${$.minProperties}&&${no("minProperties")}`;
-    }
-    if ($.maxProperties !== undefined && $.maxProperties > 0) {
-      to += `k.size>${$.maxProperties}&&${no("maxProperties")}`;
-    }
-    let z = 0;
-    do {
-      const raw = JSON.stringify(keys[z]), inline = enToken(raw.slice(1, -1));
-      to +=
-        `if(Object.hasOwn(i,${raw})){k.delete(${raw});const S=\`\${s}/${inline}\`,V=\`\${v}/${inline}\`,I=i[${raw}];let O;${
-          body($.properties[keys[z]])
-        }o[${raw}]=O}`;
-      const required = $.required.indexOf(keys[z]);
-      if (required !== -1) to += `else${no(`required/${z}`)}`;
-    } while (++z < keys.length);
-    return `${to}k.size&&${no("additionalProperties")}}else${no("type")}`;
-  } else if ($.type === "array") {
-    let to = "if(Array.isArray(I)){";
-    if ($.minItems !== undefined && $.minItems > 0) {
-      to += `I.length<${$.minItems}&&${no("minItems")}`;
-    }
-    if ($.maxItems !== undefined && $.maxItems > 0) {
-      to += `I.length>${$.maxItems}&&${no("maxItems")}`;
-    }
-    if ($.uniqueItems) to += `const k=new Set();`;
-    to +=
-      `for(let s=\`\${S}/items\`,v=V,i=I,o=O=Array(i.length),z=0;z<i.length;++z){const S=s,V=\`\${v}/\${z}\`,I=i[z];let O;${
-        body($.items)
-      }${$.uniqueItems ? "k.add(JSON.stringify(o[z]=O))" : "o[z]=O"}}`;
-    if ($.uniqueItems) to += `o.length===k.size||${no("uniqueItems")}`;
-    return `${to}}else${no("type")}`;
-  } else if ($.type === "null") return `if(I===null)O=I;else${no("type")}`;
-  else if ($.const !== undefined) {
+  if (hasOwn($, "const")) {
     return `if(I===${JSON.stringify($.const)})O=I;else${no("const")}`;
-  } else if ($.enum) {
+  } else if (hasOwn($, "enum")) {
     let to = "switch(I){", z = 0;
     do to += `case ${JSON.stringify($.enum[z])}:`; while (++z < $.enum.length);
     return `${to}O=I;break;default:${no("enum")}}`;
-  } else if ($.type === "boolean") {
-    return `if(typeof I==="boolean")O=I;else${no("type")}`;
-  } else if ($.type === "string") {
-    let to = 'if(typeof I==="string"){';
-    if ($.minLength !== undefined && $.minLength > 0) {
-      to += `I.length<${$.minLength}&&${no("minLength")}`;
-    }
-    if ($.maxLength !== undefined) {
-      to += `I.length<${$.maxLength}&&${no("maxLength")}`;
-    }
-    if ($.pattern) {
-      try {
-        to += `${RegExp($.pattern)}.test(I)||${no("pattern")}`;
-      } catch { /* empty */ }
-    }
-    if ($.format) to += `${FORMAT[$.format]}.test(I)||${no("format")}`;
-    if ($.contentEncoding) {
-      to += `${ENCODING[$.contentEncoding]}.test(I)||${no("contentEncoding")}`;
-    }
-    return `${to}O=I}else${no("type")}`;
-  } else {
-    let to = `if(Number.is${$.type === "integer" ? "Integer" : "Finite"}(I)){`;
-    if ($.minimum !== undefined) to += `I<${$.minimum}&&${no("minimum")}`;
-    if ($.maximum !== undefined) to += `I>${$.maximum}&&${no("maximum")}`;
-    if ($.exclusiveMinimum !== undefined) {
-      to += `I>${$.exclusiveMinimum}||${no("exclusiveMinimum")}`;
-    }
-    if ($.exclusiveMaximum !== undefined) {
-      to += `I<${$.exclusiveMaximum}||${no("exclusiveMaximum")}`;
-    }
-    if ($.multipleOf) to += `I%${$.multipleOf}&&${no("multipleOf")}`;
-    return `${to}O=I}else${no("type")}`;
   }
+  let to;
+  switch ($.type) {
+    case "null":
+      to = "if(I===null){O=I";
+      break;
+    case "boolean":
+      to = 'if(typeof I==="boolean"){O=I';
+      break;
+    case "integer":
+      to = "Integer";
+    case "number":
+      to = `if(Number.is${to || "Finite"}(I)){`;
+      if ($.minimum !== undefined) to += `I<${$.minimum}&&${no("minimum")}`;
+      if ($.maximum !== undefined) to += `I>${$.maximum}&&${no("maximum")}`;
+      if ($.exclusiveMinimum !== undefined) {
+        to += `I>${$.exclusiveMinimum}||${no("exclusiveMinimum")}`;
+      }
+      if ($.exclusiveMaximum !== undefined) {
+        to += `I<${$.exclusiveMaximum}||${no("exclusiveMaximum")}`;
+      }
+      if ($.multipleOf) to += `I%${$.multipleOf}&&${no("multipleOf")}`;
+      to += "O=I";
+      break;
+    case "string":
+      to = 'if(typeof I!=="string"){';
+      if ($.minLength! > 0) to += `I.length<${$.minLength}&&${no("minLength")}`;
+      if ($.maxLength !== undefined) {
+        to += `I.length<${$.maxLength}&&${no("maxLength")}`;
+      }
+      if ($.pattern) {
+        try {
+          to += `${RegExp($.pattern)}.test(I)||${no("pattern")}`;
+        } catch { /* empty */ }
+      }
+      if ($.format) to += `${FORMATS[$.format]}.test(I)||${no("format")}`;
+      if ($.contentEncoding) {
+        to += `${BASES[$.contentEncoding]}.test(I)||${no("contentEncoding")}`;
+      }
+      to += "O=I";
+      break;
+    case "array": {
+      to = "if(Array.isArray(I)){";
+      if ($.minItems! > 0) to += `I.length<${$.minItems}&&${no("minItems")}`;
+      if ($.maxItems !== undefined) {
+        to += `I.length>${$.maxItems}&&${no("maxItems")}`;
+      }
+      let unique;
+      if ($.uniqueItems) {
+        to += "const k=new Set();", unique = "k.add(JSON.stringify(O));";
+      } else unique = "";
+      if ($.items) {
+        to +=
+          `const s=\`\${S}/items\`,v=V,i=I,o=O=Array(i.length);for(let z=0;z<i.length;++z){const S=s,V=\`\${v}/\${z}\`,I=i[z];let O;${
+            body($.items)
+          }${unique}o[z]=O}`;
+      } else {
+        to +=
+          "const s=`${S}/prefixItems`,v=V,i=I,o=O=Array(i.length);switch(i.length){";
+        for (let z = $.prefixItems.length; z;) {
+          to +=
+            `case ${z--}:{const S=\`\${s}/${z}\`,V=\`\${v}/${z}\`,I=i[${z}];let O;${
+              body($.prefixItems[z])
+            }${unique}o[${z}]=O}`;
+        }
+        to += "}";
+      }
+      if ($.uniqueItems) to += `o.length===k.size||${no("uniqueItems")}`;
+      break;
+    }
+    case "object":
+      to = 'if(typeof I==="object"&&I&&!Array.isArray(I)){';
+      if ($.oneOf) {
+        if ($.minProperties! > 0 || $.maxProperties !== undefined) {
+          to += `const k=Object.keys(I);`;
+          if ($.minProperties! > 0) {
+            to += `k.length<${$.minProperties}&&${no("minProperties")}`;
+          }
+          if ($.maxProperties !== undefined) {
+            to += `k.length>${$.maxProperties}&&${no("maxProperties")}`;
+          }
+        }
+        const key = $.required[0];
+        to += `switch(I[${JSON.stringify(key)}]){`;
+        for (let z = 0; z < $.oneOf.length; ++z) {
+          const option = $.oneOf[z], property = option.properties[key];
+          if (property?.type === "string" && property.const !== undefined) {
+            to += `case${JSON.stringify(property.const)}:${body(option)}break;`;
+          }
+        }
+        to += `case undefined:${no("required/0")}break;default:${no("oneOf")}}`;
+      } else if ($.additionalProperties) {
+        to += "const s=S,v=V,i=I,o=O={},k=Object.keys(i);";
+        if ($.minProperties! > 0) {
+          to += `k.length<${$.minProperties}&&${no("minProperties")}`;
+        }
+        if ($.maxProperties !== undefined) {
+          to += `k.length>${$.maxProperties}&&${no("maxProperties")}`;
+        }
+        to +=
+          `for(let z=0;z<k.length;++z){const K=k[z],V=\`\${v}/\${K.replaceAll("~","~0").replaceAll("/","~1")}\`;`;
+        if ($.propertyKeys) {
+          to += `{const S=\`\${s}/propertyKeys\`,I=K;let O;${
+            body($.propertyKeys)
+          }}`;
+        }
+        to += `const S=\`\${s}/additionalProperties\`,I=i[K];let O;${
+          body($.additionalProperties)
+        }o[K]=O}`;
+      } else {
+        const keys = Object.keys($.properties);
+        to +=
+          "const s=`${S}/properties`,v=V,i=I,o=O={},k=new Set(Object.keys(i));";
+        if ($.minProperties! > 0) {
+          to += `k.size<${$.minProperties}&&${no("minProperties")}`;
+        }
+        if ($.maxProperties !== undefined) {
+          to += `k.size>${$.maxProperties}&&${no("maxProperties")}`;
+        }
+        let z = 0;
+        do {
+          const raw = JSON.stringify(keys[z]), part = enToken(raw.slice(1, -1));
+          to +=
+            `if(Object.hasOwn(i,${raw})){k.delete(${raw});const S=\`\${s}/${part}\`,V=\`\${v}/${part}\`,I=i[${raw}];let O;${
+              body($.properties[keys[z]])
+            }o[${raw}]=O}`;
+          const required = $.required.indexOf(keys[z]);
+          if (required !== -1) to += `else${no(`required/${z}`)}`;
+        } while (++z < keys.length);
+        to += `k.size&&${no("additionalProperties")}`;
+      }
+      break;
+  }
+  return `${to}}else${no("type")}`;
 };
 /** Pointer-generating validator. */
 export type Check<A extends Schema> = ($: unknown) => Generator<
@@ -136,9 +194,8 @@ export const parse = <A extends Schema>(
   const iterator = check(unknown), cause = [];
   let next = iterator.next();
   while (!next.done) cause.push(next.value), next = iterator.next();
-  return cause.length
-    ? { state: false, value: cause }
-    : { state: true, value: next.value };
+  if (cause.length) return { state: false, value: cause };
+  else return { state: true, value: next.value };
 };
 /** Uses a validator as a type predicate. */
 export const is = <A extends Schema>(
