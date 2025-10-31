@@ -130,15 +130,6 @@ const body = ($: Schema): string => {
       }
       case "object":
         if ($.oneOf) {
-          if ($.minProperties! > 0 || $.maxProperties !== undefined) {
-            to += `const k=Object.keys(I);`;
-            if ($.minProperties! > 0) {
-              to += `k.length<${$.minProperties}&&${no("minProperties")}`;
-            }
-            if ($.maxProperties !== undefined) {
-              to += `k.length>${$.maxProperties}&&${no("maxProperties")}`;
-            }
-          }
           const key = $.required[0];
           to += `const s=S;switch(I[${JSON.stringify(key)}]){`;
           for (let z = 0; z < $.oneOf.length; ++z) {
@@ -174,12 +165,6 @@ const body = ($: Schema): string => {
           const keys = Object.keys($.properties).sort();
           to +=
             "const s=`${S}/properties`,v=V,i=I,o=O={},k=new Set(Object.keys(i));";
-          if ($.minProperties! > 0) {
-            to += `k.size<${$.minProperties}&&${no("minProperties")}`;
-          }
-          if ($.maxProperties !== undefined) {
-            to += `k.size>${$.maxProperties}&&${no("maxProperties")}`;
-          }
           let z = 0;
           do {
             const key = JSON.stringify(keys[z]);
