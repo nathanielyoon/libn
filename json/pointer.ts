@@ -20,8 +20,6 @@ export type Pointer<
   B extends string = "",
   C extends string = "",
 > = Schema extends A ? `${string}~${string}`
-  : A extends { const: Json } ? `${B}/const~${C}`
-  : A extends { enum: readonly Json[] } ? `${B}/enum~${C}`
   : A extends { oneOf: [{ type: "null" }, infer D extends Schema] }
     ? Pointer<D, `${B}/oneOf/1`, C>
   : A["type"] extends "null" | "boolean" | "integer" | "number" | "string"
