@@ -18,7 +18,7 @@
  * @module convert
  */
 
-const WORD = /\p{Lu}?\p{Ll}+|\p{N}+|\p{Lu}+(?!\p{Ll})|\p{L}+/gu;
+const WORD = /\p{Lu}?\p{Ll}+|\p{N}+|\p{Lu}+(?!\p{Ll})|\p{Lt}\p{Ll}*|\p{L}+/gu;
 const capitalize = ($: string) =>
   $ && `${$[0].toUpperCase()}${$.slice(1).toLowerCase()}`;
 /** Capitalizes the first letter of all but the first word and concatenates. */
