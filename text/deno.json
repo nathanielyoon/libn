@@ -1,8 +1,9 @@
 {
   "name": "@libn/text",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "license": "0BSD",
   "exports": {
+    "./convert": "./convert.ts",
     "./normalize": "./normalize.ts",
     "./fold": "./fold.ts",
     "./match": "./match.ts"
