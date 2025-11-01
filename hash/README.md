@@ -5,11 +5,11 @@ Cryptographic and non-cryptographic hash functions.
 ```sh
 deno add jsr:@libn/hash
 
-npm install @libn/hash
 npx jsr add @libn/hash
+npm install @libn/hash
 
-bun add @libn/hash
 bunx jsr add @libn/hash
+bun add @libn/hash
 ```
 
 - [RFC 6234](https://www.rfc-editor.org/rfc/rfc6234)

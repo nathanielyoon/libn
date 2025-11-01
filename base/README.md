@@ -5,11 +5,11 @@ Binary-to-text encoding.
 ```sh
 deno add jsr:@libn/base
 
-npm install @libn/base
 npx jsr add @libn/base
+npm install @libn/base
 
-bun add @libn/base
 bunx jsr add @libn/base
+bun add @libn/base
 ```
 
 - [RFC 4648](https://www.rfc-editor.org/rfc/rfc4648)

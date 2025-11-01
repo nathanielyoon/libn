@@ -5,11 +5,11 @@ Functional result handling.
 ```sh
 deno add jsr:@libn/fp
 
-npm install @libn/fp
 npx jsr add @libn/fp
+npm install @libn/fp
 
-bun add @libn/fp
 bunx jsr add @libn/fp
+bun add @libn/fp
 ```
 
 - [Purifree](https://github.com/nythrox/purifree)

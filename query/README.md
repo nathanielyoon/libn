@@ -5,11 +5,11 @@ Wrappers for `document.createElement` and `querySelector`/`querySelectorAll`.
 ```sh
 deno add jsr:@libn/query
 
-npm install @libn/query
 npx jsr add @libn/query
+npm install @libn/query
 
-bun add @libn/query
 bunx jsr add @libn/query
+bun add @libn/query
 ```
 
 - [createElement](https://developer.mozilla.org/en-US/docs/Web/API/Document/createElement)

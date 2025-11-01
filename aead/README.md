@@ -5,11 +5,11 @@ Authenticated encryption with associated data.
 ```sh
 deno add jsr:@libn/aead
 
-npm install @libn/aead
 npx jsr add @libn/aead
+npm install @libn/aead
 
-bun add @libn/aead
 bunx jsr add @libn/aead
+bun add @libn/aead
 ```
 
 - [RFC 8439](https://www.rfc-editor.org/rfc/rfc8439)

@@ -5,11 +5,11 @@ String utilities.
 ```sh
 deno add jsr:@libn/text
 
-npm install @libn/text
 npx jsr add @libn/text
+npm install @libn/text
 
-bun add @libn/text
 bunx jsr add @libn/text
+bun add @libn/text
 ```
 
 - [Multiple-word identifier formats](https://en.wikipedia.org/wiki/Naming_convention_(programming)#Examples_of_multiple-word_identifier_formats)
