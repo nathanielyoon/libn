@@ -201,7 +201,7 @@ Deno.test("case", async (t) => {
     const text = await fetch(
       "https://www.unicode.org/Public/UNIDATA/CaseFolding.txt",
     ).then(($) => $.text()).catch(async () =>
-      (await import("./unicode.txt", { with: { type: "text" } })).default
+      (await import("./CaseFolding.txt", { with: { type: "text" } })).default
     );
     assertEquals(
       createRanges(text),
@@ -350,7 +350,7 @@ import.meta.main && await Promise.all([
   fetch(
     "https://www.unicode.org/Public/UNIDATA/CaseFolding.txt",
   ).then(($) => $.text()).then(async ($) => {
-    await Deno.writeTextFile(`${import.meta.dirname}/unicode.txt`, $);
+    await Deno.writeTextFile(`${import.meta.dirname}/CaseFolding.txt`, $);
     return $.slice(2990, 87528);
   }),
 ]).then(([rfc9839, fold]) => ({
