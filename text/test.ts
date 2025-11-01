@@ -11,6 +11,14 @@ import fc from "fast-check";
 import { de, en } from "@libn/base/utf";
 import { dePoint, enPoint } from "./lib.ts";
 import {
+  lowerCamel,
+  lowerKebab,
+  lowerSnake,
+  upperCamel,
+  upperKebab,
+  upperSnake,
+} from "./convert.ts";
+import {
   uncode,
   unhtml,
   unline,
@@ -23,6 +31,78 @@ import { createRanges, uncase } from "./fold.ts";
 import { distance, includes } from "./match.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
+Deno.test("convert", async (t) => {
+  const { Lu, Ll, Lt, L, N } =
+    (Object.keys(vectors.convert) as (keyof typeof vectors.convert)[]).reduce(
+      (to, key) => ({
+        ...to,
+        [key]: fc.constantFrom(...vectors.convert[key].map(($) => dePoint($))),
+      }),
+      {} as { [_ in keyof typeof vectors.convert]: fc.Arbitrary<string> },
+    );
+  const fcWords = fc.array(
+    fc.oneof(
+      fc.tuple(Lu, fc.array(Ll, { minLength: 1 })).map(($) => $.flat()),
+      fc.array(Ll, { minLength: 1 }),
+      fc.array(N, { minLength: 1 }),
+      fc.array(Lu, { minLength: 1 }),
+      fc.tuple(Lt, fc.array(Ll)).map(($) => $.flat()),
+      fc.array(L, { minLength: 1 }),
+    ).map(($) => $.join("")),
+    { minLength: 1 },
+  ).map(($) => ({
+    separate: $,
+    together: $.reduce(
+      (to, word, z) => to + " -._"[z & 3] + word,
+    ).padStart($.length + 1).padEnd($.length + 2),
+  }));
+  const capitalize = (delimiter: string) => (to: string, next: string) => {
+    const [head = "", ...tail] = next;
+    return to + delimiter + head.toUpperCase() + tail.join("").toLowerCase();
+  };
+  await t.step("lowerCamel() converts to lower camel case", () => {
+    assertEquals(lowerCamel(""), "");
+    fc.assert(fc.property(fcWords, ({ separate, together }) => {
+      assertEquals(
+        lowerCamel(together),
+        separate.slice(1).reduce(capitalize(""), separate[0].toLowerCase()),
+      );
+    }));
+  });
+  await t.step("upperCamel() converts to upper camel case", () => {
+    assertEquals(upperCamel(""), "");
+    fc.assert(fc.property(fcWords, ({ separate, together }) => {
+      assertEquals(upperCamel(together), separate.reduce(capitalize(""), ""));
+    }));
+  });
+  await t.step("lowerKebab() converts to lower kebab case", () => {
+    assertEquals(lowerKebab(""), "");
+    fc.assert(fc.property(fcWords, ({ separate, together }) => {
+      assertEquals(lowerKebab(together), separate.join("-").toLowerCase());
+    }));
+  });
+  await t.step("upperKebab() converts to upper kebab case", () => {
+    assertEquals(upperKebab(""), "");
+    fc.assert(fc.property(fcWords, ({ separate, together }) => {
+      assertEquals(
+        upperKebab(together),
+        separate.reduce(capitalize("-"), "").slice(1),
+      );
+    }));
+  });
+  await t.step("lowerSnake() converts to lower snake case", () => {
+    assertEquals(lowerSnake(""), "");
+    fc.assert(fc.property(fcWords, ({ separate, together }) => {
+      assertEquals(lowerSnake(together), separate.join("_").toLowerCase());
+    }));
+  });
+  await t.step("upperSnake() converts to upper snake case", () => {
+    assertEquals(upperSnake(""), "");
+    fc.assert(fc.property(fcWords, ({ separate, together }) => {
+      assertEquals(upperSnake(together), separate.join("_").toUpperCase());
+    }));
+  });
+});
 Deno.test("normalize", async (t) => {
   await t.step("uncode() passes reference vectors", () => {
     const to = new Uint32Array(0x110000).fill(0xfffd);
@@ -345,6 +425,12 @@ Deno.test("fuzzy", async (t) => {
 });
 import.meta.main && await Promise.all([
   fetch(
+    "https://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt",
+  ).then(($) => $.text()).then(async ($) => {
+    await Deno.writeTextFile(`${import.meta.dirname}/UnicodeData.txt`, $);
+    return $;
+  }),
+  fetch(
     "https://www.rfc-editor.org/rfc/rfc9839.txt",
   ).then(($) => $.text()).then(($) => $.slice(14538, 15597)),
   fetch(
@@ -353,7 +439,17 @@ import.meta.main && await Promise.all([
     await Deno.writeTextFile(`${import.meta.dirname}/CaseFolding.txt`, $);
     return $.slice(2990, 87528);
   }),
-]).then(([rfc9839, fold]) => ({
+]).then(([data, rfc9839, fold]) => ({
+  convert: data.matchAll(
+    /^([\dA-F]{4,6});[^;]*;(L[ult](?=;)|L(?=[mo];)|N(?=[dlo];))/gm,
+  ).reduce<{ [_ in `L${"u" | "l" | "t" | ""}` | "N"]: number[] }>(
+    (categories, [_, hex, category]) => {
+      RegExp(`^\\p{${category}}$`, "u").test(dePoint(parseInt(hex, 16))) &&
+        categories[category as keyof typeof categories].push(parseInt(hex, 16));
+      return categories;
+    },
+    { Lu: [], Ll: [], Lt: [], L: [], N: [] },
+  ),
   uncode: rfc9839.match(/(?<=%x)\w+(?:-\w+)?/g)!.map((hex) =>
     hex.length === 1
       ? parseInt(hex, 16)
