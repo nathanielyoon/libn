@@ -76,37 +76,28 @@ const mul = (one: I64, two: I64) => {
 };
 /** Hashes to a 64-bit integer with a5hash64, always little-endian. */
 export const a5hash64 = ($: Uint8Array, seed = 0n): I64 => {
-  const v01 = { hi: 0x55555555, lo: 0x55555555 } satisfies I64;
-  const v10 = { hi: 0xaaaaaaaa, lo: 0xaaaaaaaa } satisfies I64;
-  const a = { hi: 0, lo: 0 } satisfies I64, b = { hi: 0, lo: 0 } satisfies I64;
-  let z, y = $.length;
-  const c = Number(seed >> 32n), d = Number(seed & 0xffffffffn);
-  const e = y / 0x100000000 >>> 0, f = y >>> 0;
+  let h01 = 0x55555555, l01 = h01, h10 = 0xaaaaaaaa, l10 = h10, z, y = $.length;
+  const a = { hi: 0, lo: 0 }, b = { hi: 0, lo: 0 }, c = y / 0x100000000 >>> 0;
+  const d = y >>> 0, e = Number(seed >> 32n), f = Number(seed & 0xffffffffn);
   // Since the 128-bit multiply directly mutates the integers, initialization is
   // swapped from the source, which reverses the order of arguments in the first
   // call and not any of the others.
-  const s1 = {
-    hi: 0x452821e6 ^ e ^ c & v10.hi,
-    lo: 0x38d01377 ^ f ^ d & v10.lo,
-  } satisfies I64;
-  const s2 = {
-    hi: 0x243f6a88 ^ e ^ c & v01.hi,
-    lo: 0x85a308d3 ^ f ^ d & v01.lo,
-  } satisfies I64;
-  mul(s1, s2), v10.lo = (v10.lo ^ s2.lo) >>> 0, v10.hi = (v10.hi ^ s2.hi) >>> 0;
+  const s1 = { hi: 0x452821e6 ^ c ^ e & h10, lo: 0x38d01377 ^ d ^ f & h10 };
+  const s2 = { hi: 0x243f6a88 ^ c ^ e & h01, lo: 0x85a308d3 ^ d ^ f & h01 };
+  mul(s1, s2), l10 = (l10 ^ s2.lo) >>> 0, h10 = (h10 ^ s2.hi) >>> 0;
   if (y > 16) {
-    v01.lo ^= s1.lo, v01.hi ^= s1.hi, z = 0, y -= 16;
+    l01 = (l01 ^ s1.lo) >>> 0, h01 = (h01 ^ s1.hi) >>> 0, z = 0, y -= 16;
     do s1.lo ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
       s1.hi ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
       s2.lo ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
       s2.hi ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
       mul(s1, s2),
-      s1.lo = (s1.lo >>> 0) + v01.lo >>> 0,
-      s1.hi += v01.hi,
-      s1.lo < v01.lo && ++s1.hi,
-      s2.lo = (s2.lo >>> 0) + v10.lo >>> 0,
-      s2.hi += v10.hi,
-      s2.lo < v10.lo && ++s2.hi; while (z < y);
+      s1.lo = (s1.lo >>> 0) + l01 >>> 0,
+      s1.hi += h01,
+      s1.lo < l01 && ++s1.hi,
+      s2.lo = (s2.lo >>> 0) + l10 >>> 0,
+      s2.hi += h10,
+      s2.lo < l10 && ++s2.hi; while (z < y);
     a.lo = $[y] | $[y + 1] << 8 | $[y + 2] << 16 | $[y + 3] << 24;
     a.hi = $[y + 4] | $[y + 5] << 8 | $[y + 6] << 16 | $[y + 7] << 24;
     b.lo = $[y + 8] | $[y + 9] << 8 | $[y + 10] << 16 | $[y + 11] << 24;
@@ -118,6 +109,6 @@ export const a5hash64 = ($: Uint8Array, seed = 0n): I64 => {
     b.lo = $[z = y - z - 1] | $[++z] << 8 | $[++z] << 16 | $[++z] << 24;
   } else a.lo = $[0] | $[1] << 8 | $[2] << 16 | $[3] << 24;
   s1.lo ^= a.lo, s1.hi ^= a.hi, s2.lo ^= b.lo, s2.hi ^= b.hi, mul(s1, s2);
-  s1.lo ^= v01.lo, s1.hi ^= v01.hi, mul(s1, s2);
+  s1.lo ^= l01, s1.hi ^= h01, mul(s1, s2);
   return s1.lo = (s1.lo ^ s2.lo) >>> 0, s1.hi = (s1.hi ^ s2.hi) >>> 0, s1;
 };
