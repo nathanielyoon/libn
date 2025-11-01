@@ -14,7 +14,7 @@
  * @module integer
  */
 
-import { add128, enInteger, type I64, mul128, mul64 } from "./lib.ts";
+import { type I64, mul64 } from "./lib.ts";
 
 /** Hashes to a 32-bit integer with GoodOAAT. */
 export const oaat32 = ($: Uint8Array, seed = 0): number => {
@@ -66,24 +66,37 @@ export const a5hash32 = ($: Uint8Array, seed = 0): number => {
   ({ lo: s1, hi: s2 } = mul64(a + (s1 ^ s3), b + (s2 ^ s4)));
   return ({ lo: s1, hi: s2 } = mul64(v01 ^ s1, s2)), (s1 ^ s2) >>> 0;
 };
+const add128 = (one: I64, two: I64) => {
+  one.lo = (one.lo >>> 0) + (two.lo >>>= 0) >>> 0, one.hi += two.hi;
+  one.lo < two.lo && ++one.hi;
+};
+const mul128 = (one: I64, two: I64) => {
+  const a = mul64(one.lo, two.lo), b = mul64(one.hi, two.lo);
+  const c = mul64(one.lo, two.hi), d = mul64(one.hi, two.hi);
+  one.lo = a.lo, one.hi = c.lo + b.lo >>> 0, one.hi < b.lo && ++c.hi;
+  one.hi = one.hi + a.hi >>> 0, one.hi < a.hi && ++c.hi, two.hi = d.hi;
+  two.lo = d.lo + b.hi >>> 0, two.lo < b.hi && ++two.hi;
+  two.lo = two.lo + c.hi >>> 0, two.lo < c.hi && ++two.hi;
+};
 /** Hashes to a 64-bit integer with a5hash64, always little-endian. */
 export const a5hash64 = ($: Uint8Array, seed = 0n): I64 => {
   const v01 = { hi: 0x55555555, lo: 0x55555555 } satisfies I64;
   const v10 = { hi: 0xaaaaaaaa, lo: 0xaaaaaaaa } satisfies I64;
+  const a = { hi: 0, lo: 0 } satisfies I64, b = { hi: 0, lo: 0 } satisfies I64;
   let z, y = $.length;
-  const size = enInteger(BigInt(y)), { hi, lo } = enInteger(seed);
+  const c = Number(seed >> 32n), d = Number(seed & 0xffffffffn);
+  const e = y / 0x100000000 >>> 0, f = y >>> 0;
   // Since the 128-bit multiply directly mutates the integers, initialization is
   // swapped from the source, which reverses the order of arguments in the first
   // call and not any of the others.
   const s1 = {
-    hi: 0x452821e6 ^ size.hi ^ hi & v10.hi,
-    lo: 0x38d01377 ^ size.lo ^ lo & v10.lo,
+    hi: 0x452821e6 ^ e ^ c & v10.hi,
+    lo: 0x38d01377 ^ f ^ d & v10.lo,
   } satisfies I64;
   const s2 = {
-    hi: 0x243f6a88 ^ size.hi ^ hi & v01.hi,
-    lo: 0x85a308d3 ^ size.lo ^ lo & v01.lo,
+    hi: 0x243f6a88 ^ e ^ c & v01.hi,
+    lo: 0x85a308d3 ^ f ^ d & v01.lo,
   } satisfies I64;
-  const a = { hi: 0, lo: 0 } satisfies I64, b = { hi: 0, lo: 0 } satisfies I64;
   mul128(s1, s2), v10.lo ^= s2.lo, v10.hi ^= s2.hi;
   if (y > 16) {
     v01.lo ^= s1.lo, v01.hi ^= s1.hi, z = 0, y -= 16;

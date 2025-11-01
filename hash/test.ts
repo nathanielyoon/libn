@@ -2,15 +2,7 @@ import { assert, assertEquals, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
 import { crypto as std } from "@std/crypto";
 import { deUtf8, enUtf8 } from "@libn/base/utf";
-import {
-  add128,
-  deInteger,
-  enInteger,
-  iv,
-  mul128,
-  mul64,
-  perm,
-} from "./lib.ts";
+import { deInteger, enInteger, iv, mul64, perm } from "./lib.ts";
 import { a5hash32, a5hash64, oaat32 } from "./integer.ts";
 import { sha224, sha256, sha384, sha512 } from "./sha2.ts";
 import { hkdf, hmac } from "./hmac.ts";
@@ -25,8 +17,6 @@ const fcUint = fc.double({
   noDefaultInfinity: true,
   noNaN: true,
 }).map(($) => $ >>> 0);
-const U64 = 0xffffffffffffffffn;
-const fcBigUint = fc.bigInt({ min: 0n, max: U64 });
 Deno.test("lib", async (t) => {
   await t.step("iv() parses base16", () => {
     fc.assert(fc.property(fc.uint32Array({ minLength: 1 }), ($) => {
@@ -52,33 +42,6 @@ Deno.test("lib", async (t) => {
       const pair = mul64(one, two);
       assertEquals(deInteger(pair), big);
       assertEquals({ hi: pair.hi >>> 0, lo: pair.lo >>> 0 }, enInteger(big));
-    }));
-  });
-  await t.step("add128() adds 128 bits", () => {
-    fc.assert(fc.property(fcBigUint, fcBigUint, (one, two) => {
-      const big = one + two & U64;
-      const pair = enInteger(one);
-      add128(pair, enInteger(two));
-      assertEquals(deInteger(pair), big);
-      assertEquals({ hi: pair.hi >>> 0, lo: pair.lo >>> 0 }, enInteger(big));
-    }));
-  });
-  await t.step("mul128() multiplies 128 bits", () => {
-    fc.assert(fc.property(fcBigUint, fcBigUint, (one, two) => {
-      const big = one * two;
-      const pair1 = enInteger(one);
-      const pair2 = enInteger(two);
-      mul128(pair1, pair2);
-      assertEquals(deInteger(pair2), big >> 64n);
-      assertEquals(
-        { hi: pair2.hi >>> 0, lo: pair2.lo >>> 0 },
-        enInteger(big >> 64n),
-      );
-      assertEquals(deInteger(pair1), big & U64);
-      assertEquals(
-        { hi: pair1.hi >>> 0, lo: pair1.lo >>> 0 },
-        enInteger(big & U64),
-      );
     }));
   });
 });
@@ -135,7 +98,7 @@ Deno.test("integer", async (t) => {
     await bin(vectors.a5hash, (spawn) =>
       fc.assert(fc.asyncProperty(
         fc.string({ size: "medium" }),
-        fcBigUint,
+        fc.bigInt({ min: 0n, max: 0xffffffffffffffffn }),
         async ($, seed) => {
           const [hi, lo] = (await spawn(`${$}\n${seed}`, ["\x40"])).split(" ");
           assertEquals(a5hash64(enUtf8($), seed), { hi: +hi, lo: +lo });

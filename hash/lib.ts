@@ -9,13 +9,8 @@ export const perm = (
   shift?: number,
 ): Uint8Array<ArrayBuffer> =>
   Uint8Array.from(hex, ($) => parseInt($, 16) << shift!);
-/** @internal */
-interface Pair<A> {
-  hi: A;
-  lo: A;
-}
 /** 64-bit integer represented as its 32-bit halves. */
-export interface I64 extends Pair<number> {}
+export type I64 = { hi: number; lo: number };
 /** Converts a bigint to an integer. */
 export const enInteger = ($: bigint): I64 => (
   { hi: Number($ >> 32n) >>> 0, lo: Number($ & 0xffffffffn) >>> 0 }
@@ -31,17 +26,4 @@ export const mul64 = (one: number, two: number): I64 => {
     hi: (f >>> 16) + (g >>> 16) + b * d,
     lo: (g << 16 | e & 0xffff) >>> 0,
   };
-};
-/** Adds two 64-bit integers and updates the first in place. */
-export const add128 = (one: I64, two: I64): void => {
-  one.lo = one.lo + two.lo >>> 0, one.hi += two.hi, one.lo < two.lo && ++one.hi;
-};
-/** Multiplies two 64-bit integers to a 128-bit product and updates in place. */
-export const mul128 = (one: I64, two: I64): void => {
-  const a = mul64(one.lo, two.lo), b = mul64(one.hi, two.lo);
-  const c = mul64(one.lo, two.hi), d = mul64(one.hi, two.hi);
-  one.lo = a.lo, one.hi = c.lo + b.lo >>> 0, one.hi < b.lo && ++c.hi;
-  one.hi = one.hi + a.hi >>> 0, one.hi < a.hi && ++c.hi, two.hi = d.hi;
-  two.lo = d.lo + b.hi >>> 0, two.lo < b.hi && ++two.hi;
-  two.lo = two.lo + c.hi >>> 0, two.lo < c.hi && ++two.hi;
 };
