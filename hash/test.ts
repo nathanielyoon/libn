@@ -38,7 +38,7 @@ Deno.test("lib", async (t) => {
   });
   await t.step("mul64() multiplies 64 bits", () => {
     fc.assert(fc.property(fcUint, fcUint, (one, two) => {
-      const big = BigInt(one) * BigInt(two) & U64;
+      const big = BigInt(one) * BigInt(two);
       const pair = mul64(one, two);
       assertEquals(deInteger(pair), big);
       assertEquals({ hi: pair.hi >>> 0, lo: pair.lo >>> 0 }, enInteger(big));
