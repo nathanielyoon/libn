@@ -426,10 +426,7 @@ Deno.test("fuzzy", async (t) => {
 import.meta.main && await Promise.all([
   fetch(
     "https://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt",
-  ).then(($) => $.text()).then(async ($) => {
-    await Deno.writeTextFile(`${import.meta.dirname}/UnicodeData.txt`, $);
-    return $;
-  }),
+  ).then(($) => $.text()),
   fetch(
     "https://www.rfc-editor.org/rfc/rfc9839.txt",
   ).then(($) => $.text()).then(($) => $.slice(14538, 15597)),
