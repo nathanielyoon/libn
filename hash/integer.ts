@@ -14,7 +14,7 @@
  * @module integer
  */
 
-import { type I64, mul64 } from "./lib.ts";
+import { type I64, umul } from "./lib.ts";
 
 /** Hashes to a 32-bit integer with GoodOAAT. */
 export const oaat32 = ($: Uint8Array, seed = 0): number => {
@@ -29,7 +29,7 @@ export const oaat32 = ($: Uint8Array, seed = 0): number => {
 /** Hashes to a 32-bit integer with a5hash32, always little-endian. */
 export const a5hash32 = ($: Uint8Array, seed = 0): number => {
   let v01 = 0x55555555, v10 = 0xaaaaaaaa, z, y = $.length;
-  let { lo: s1, hi: s2 } = mul64(
+  let { lo: s1, hi: s2 } = umul(
     0x85a308d3 ^ y ^ seed & v10,
     0x243f6a88 ^ y ^ seed & v01,
   );
@@ -38,11 +38,11 @@ export const a5hash32 = ($: Uint8Array, seed = 0): number => {
     v01 ^= s1, v10 ^= s2, z = 0, y -= 16;
     do a = s1,
       b = s4,
-      { lo: s1, hi: s2 } = mul64(
+      { lo: s1, hi: s2 } = umul(
         ($[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24) + s1,
         ($[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24) + s2,
       ),
-      { lo: s3, hi: s4 } = mul64(
+      { lo: s3, hi: s4 } = umul(
         ($[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24) + s3,
         ($[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24) + s4,
       ),
@@ -52,27 +52,23 @@ export const a5hash32 = ($: Uint8Array, seed = 0): number => {
       s4 += v10; while (z < y);
     a = $[y + 8] | $[y + 9] << 8 | $[y + 10] << 16 | $[y + 11] << 24;
     b = $[y + 12] | $[y + 13] << 8 | $[y + 14] << 16 | $[y + 15] << 24;
-    y + 8 > z && ({ lo: s3, hi: s4 } = mul64(
+    y + 8 > z && ({ lo: s3, hi: s4 } = umul(
       ($[y] | $[y + 1] << 8 | $[y + 2] << 16 | $[y + 3] << 24) + s3,
       ($[y + 4] | $[y + 5] << 8 | $[y + 6] << 16 | $[y + 7] << 24) + s4,
     ));
   } else if (a = $[0] | $[1] << 8 | $[2] << 16 | $[3] << 24, y > 3) {
     b = $[y - 4] | $[y - 3] << 8 | $[y - 2] << 16 | $[y - 1] << 24;
-    y > 8 && ({ lo: s3, hi: s4 } = mul64(
+    y > 8 && ({ lo: s3, hi: s4 } = umul(
       ($[z = y >>> 1 & ~3] | $[++z] << 8 | $[++z] << 16 | $[++z] << 24) + s3,
       ($[z = y - z - 1] | $[++z] << 8 | $[++z] << 16 | $[++z] << 24) + s4,
     ));
   }
-  ({ lo: s1, hi: s2 } = mul64(a + (s1 ^ s3), b + (s2 ^ s4)));
-  return ({ lo: s1, hi: s2 } = mul64(v01 ^ s1, s2)), (s1 ^ s2) >>> 0;
+  ({ lo: s1, hi: s2 } = umul(a + (s1 ^ s3), b + (s2 ^ s4)));
+  return ({ lo: s1, hi: s2 } = umul(v01 ^ s1, s2)), (s1 ^ s2) >>> 0;
 };
-const add128 = (one: I64, two: I64) => {
-  one.lo = (one.lo >>> 0) + (two.lo >>>= 0) >>> 0, one.hi += two.hi;
-  one.lo < two.lo && ++one.hi;
-};
-const mul128 = (one: I64, two: I64) => {
-  const a = mul64(one.lo, two.lo), b = mul64(one.hi, two.lo);
-  const c = mul64(one.lo, two.hi), d = mul64(one.hi, two.hi);
+const mul = (one: I64, two: I64) => {
+  const a = umul(one.lo, two.lo), b = umul(one.hi, two.lo);
+  const c = umul(one.lo, two.hi), d = umul(one.hi, two.hi);
   one.lo = a.lo, one.hi = c.lo + b.lo >>> 0, one.hi < b.lo && ++c.hi;
   one.hi = one.hi + a.hi >>> 0, one.hi < a.hi && ++c.hi, two.hi = d.hi;
   two.lo = d.lo + b.hi >>> 0, two.lo < b.hi && ++two.hi;
@@ -97,16 +93,20 @@ export const a5hash64 = ($: Uint8Array, seed = 0n): I64 => {
     hi: 0x243f6a88 ^ e ^ c & v01.hi,
     lo: 0x85a308d3 ^ f ^ d & v01.lo,
   } satisfies I64;
-  mul128(s1, s2), v10.lo ^= s2.lo, v10.hi ^= s2.hi;
+  mul(s1, s2), v10.lo = (v10.lo ^ s2.lo) >>> 0, v10.hi = (v10.hi ^ s2.hi) >>> 0;
   if (y > 16) {
     v01.lo ^= s1.lo, v01.hi ^= s1.hi, z = 0, y -= 16;
     do s1.lo ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
       s1.hi ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
       s2.lo ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
       s2.hi ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
-      mul128(s1, s2),
-      add128(s1, v01),
-      add128(s2, v10); while (z < y);
+      mul(s1, s2),
+      s1.lo = (s1.lo >>> 0) + v01.lo >>> 0,
+      s1.hi += v01.hi,
+      s1.lo < v01.lo && ++s1.hi,
+      s2.lo = (s2.lo >>> 0) + v10.lo >>> 0,
+      s2.hi += v10.hi,
+      s2.lo < v10.lo && ++s2.hi; while (z < y);
     a.lo = $[y] | $[y + 1] << 8 | $[y + 2] << 16 | $[y + 3] << 24;
     a.hi = $[y + 4] | $[y + 5] << 8 | $[y + 6] << 16 | $[y + 7] << 24;
     b.lo = $[y + 8] | $[y + 9] << 8 | $[y + 10] << 16 | $[y + 11] << 24;
@@ -117,7 +117,7 @@ export const a5hash64 = ($: Uint8Array, seed = 0n): I64 => {
     b.hi = $[z = y / 8 << 2] | $[++z] << 8 | $[++z] << 16 | $[++z] << 24;
     b.lo = $[z = y - z - 1] | $[++z] << 8 | $[++z] << 16 | $[++z] << 24;
   } else a.lo = $[0] | $[1] << 8 | $[2] << 16 | $[3] << 24;
-  s1.lo ^= a.lo, s1.hi ^= a.hi, s2.lo ^= b.lo, s2.hi ^= b.hi, mul128(s1, s2);
-  s1.lo ^= v01.lo, s1.hi ^= v01.hi, mul128(s1, s2);
+  s1.lo ^= a.lo, s1.hi ^= a.hi, s2.lo ^= b.lo, s2.hi ^= b.hi, mul(s1, s2);
+  s1.lo ^= v01.lo, s1.hi ^= v01.hi, mul(s1, s2);
   return s1.lo = (s1.lo ^ s2.lo) >>> 0, s1.hi = (s1.hi ^ s2.hi) >>> 0, s1;
 };
