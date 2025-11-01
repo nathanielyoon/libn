@@ -18,8 +18,8 @@ export const enInteger = ($: bigint): I64 => (
 /** Converts an integer to a bigint. */
 export const deInteger = ($: I64): bigint =>
   BigInt($.hi >>> 0) << 32n | BigInt($.lo >>> 0);
-/** Multiplies two 32-bit integers to a 64-bit product. */
-export const mul64 = (one: number, two: number): I64 => {
+/** Multiplies two 32-bit integers to an unsigned 64-bit product. */
+export const umul = (one: number, two: number): I64 => {
   const a = one & 0xffff, b = one >>> 16, c = two & 0xffff, d = two >>> 16;
   const e = a * c, f = b * c, g = (e >>> 16) + (f & 0xffff) + a * d;
   return {

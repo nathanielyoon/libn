@@ -2,7 +2,7 @@ import { assert, assertEquals, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
 import { crypto as std } from "@std/crypto";
 import { deUtf8, enUtf8 } from "@libn/base/utf";
-import { deInteger, enInteger, iv, mul64, perm } from "./lib.ts";
+import { deInteger, enInteger, iv, perm, umul } from "./lib.ts";
 import { a5hash32, a5hash64, oaat32 } from "./integer.ts";
 import { sha224, sha256, sha384, sha512 } from "./sha2.ts";
 import { hkdf, hmac } from "./hmac.ts";
@@ -39,7 +39,7 @@ Deno.test("lib", async (t) => {
   await t.step("mul64() multiplies 64 bits", () => {
     fc.assert(fc.property(fcUint, fcUint, (one, two) => {
       const big = BigInt(one) * BigInt(two);
-      const pair = mul64(one, two);
+      const pair = umul(one, two);
       assertEquals(deInteger(pair), big);
       assertEquals({ hi: pair.hi >>> 0, lo: pair.lo >>> 0 }, enInteger(big));
     }));
