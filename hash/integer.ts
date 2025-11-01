@@ -75,7 +75,7 @@ const mul = (one: I64, two: I64) => {
   two.lo = two.lo + c.hi >>> 0, two.lo < c.hi && ++two.hi;
 };
 /** Hashes to a 64-bit integer with a5hash64, always little-endian. */
-export const a5hash64 = ($: Uint8Array, seed = 0n): I64 => {
+export const a5hash64 = ($: Uint8Array, seed = 0n): bigint => {
   let h01 = 0x55555555, l01 = h01, h10 = 0xaaaaaaaa, l10 = h10, z, y = $.length;
   const a = { hi: 0, lo: 0 }, b = { hi: 0, lo: 0 }, c = y / 0x100000000 >>> 0;
   const d = y >>> 0, e = Number(seed >> 32n), f = Number(seed & 0xffffffffn);
@@ -110,5 +110,5 @@ export const a5hash64 = ($: Uint8Array, seed = 0n): I64 => {
   } else a.lo = $[0] | $[1] << 8 | $[2] << 16 | $[3] << 24;
   s1.lo ^= a.lo, s1.hi ^= a.hi, s2.lo ^= b.lo, s2.hi ^= b.hi, mul(s1, s2);
   s1.lo ^= l01, s1.hi ^= h01, mul(s1, s2);
-  return s1.lo = (s1.lo ^ s2.lo) >>> 0, s1.hi = (s1.hi ^ s2.hi) >>> 0, s1;
+  return BigInt((s1.lo ^ s2.lo) >>> 0) | BigInt((s1.hi ^ s2.hi) >>> 0) << 32n;
 };

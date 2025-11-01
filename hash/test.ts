@@ -2,7 +2,7 @@ import { assert, assertEquals, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
 import { crypto as std } from "@std/crypto";
 import { deUtf8, enUtf8 } from "@libn/base/utf";
-import { deInteger, enInteger, iv, perm, umul } from "./lib.ts";
+import { type I64, iv, perm, umul } from "./lib.ts";
 import { a5hash32, a5hash64, oaat32 } from "./integer.ts";
 import { sha224, sha256, sha384, sha512 } from "./sha2.ts";
 import { hkdf, hmac } from "./hmac.ts";
@@ -11,6 +11,10 @@ import { blake3 } from "./blake3.ts";
 import compiled from "./compiled.json" with { type: "json" };
 import vectors from "./vectors.json" with { type: "json" };
 
+const enI64 = ($: bigint) => (
+  { hi: Number($ >> 32n) >>> 0, lo: Number($ & 0xffffffffn) >>> 0 }
+);
+const deI64 = ($: I64) => BigInt($.hi >>> 0) << 32n | BigInt($.lo >>> 0);
 const fcUint = fc.double({
   min: 0,
   max: -1 >>> 0,
@@ -40,8 +44,8 @@ Deno.test("lib", async (t) => {
     fc.assert(fc.property(fcUint, fcUint, (one, two) => {
       const big = BigInt(one) * BigInt(two);
       const pair = umul(one, two);
-      assertEquals(deInteger(pair), big);
-      assertEquals({ hi: pair.hi >>> 0, lo: pair.lo >>> 0 }, enInteger(big));
+      assertEquals(deI64(pair), big);
+      assertEquals({ hi: pair.hi >>> 0, lo: pair.lo >>> 0 }, enI64(big));
     }));
   });
 });
@@ -101,7 +105,7 @@ Deno.test("integer", async (t) => {
         fc.bigInt({ min: 0n, max: 0xffffffffffffffffn }),
         async ($, seed) => {
           const [hi, lo] = (await spawn(`${$}\n${seed}`, ["\x40"])).split(" ");
-          assertEquals(a5hash64(enUtf8($), seed), { hi: +hi, lo: +lo });
+          assertEquals(a5hash64(enUtf8($), seed), deI64({ hi: +hi, lo: +lo }));
         },
       )));
   });
