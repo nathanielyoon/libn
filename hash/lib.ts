@@ -27,19 +27,21 @@ export const deInteger = ($: I64): bigint =>
 export const mul64 = (one: number, two: number): I64 => {
   const a = one & 0xffff, b = one >>> 16, c = two & 0xffff, d = two >>> 16;
   const e = a * c, f = b * c, g = (e >>> 16) + (f & 0xffff) + a * d;
-  return { hi: (f >>> 16) + (g >>> 16) + b * d, lo: g << 16 | e & 0xffff };
+  return {
+    hi: (f >>> 16) + (g >>> 16) + b * d,
+    lo: (g << 16 | e & 0xffff) >>> 0,
+  };
 };
 /** Adds two 64-bit integers and updates the first in place. */
 export const add128 = (one: I64, two: I64): void => {
-  const temp = (one.lo >>> 0) + (two.lo >>> 0);
-  one.hi = (one.hi >>> 0) + (two.hi >>> 0) + (temp / 0x100000000 | 0) | 0;
-  one.lo = temp | 0;
+  one.lo = one.lo + two.lo >>> 0, one.hi += two.hi, one.lo < two.lo && ++one.hi;
 };
 /** Multiplies two 64-bit integers to a 128-bit product and updates in place. */
 export const mul128 = (one: I64, two: I64): void => {
-  const a = one.lo >>> 0, b = one.hi >>> 0, c = two.lo >>> 0, d = two.hi >>> 0;
-  const e = mul64(a, c), f = mul64(b, c), g = mul64(a, d), h = mul64(b, d);
-  add128(g, { hi: 0, lo: f.lo }), add128(g, { hi: 0, lo: e.hi });
-  add128(h, { hi: 0, lo: f.hi }), add128(h, { hi: 0, lo: g.hi });
-  one.hi = g.lo, one.lo = e.lo, two.hi = h.hi, two.lo = h.lo;
+  const a = mul64(one.lo, two.lo), b = mul64(one.hi, two.lo);
+  const c = mul64(one.lo, two.hi), d = mul64(one.hi, two.hi);
+  one.lo = a.lo, one.hi = c.lo + b.lo >>> 0, one.hi < b.lo && ++c.hi;
+  one.hi = one.hi + a.hi >>> 0, one.hi < a.hi && ++c.hi, two.hi = d.hi;
+  two.lo = d.lo + b.hi >>> 0, two.lo < b.hi && ++two.hi;
+  two.lo = two.lo + c.hi >>> 0, two.lo < c.hi && ++two.hi;
 };
