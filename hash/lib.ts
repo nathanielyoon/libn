@@ -11,13 +11,6 @@ export const perm = (
   Uint8Array.from(hex, ($) => parseInt($, 16) << shift!);
 /** 64-bit integer represented as its 32-bit halves. */
 export type I64 = { hi: number; lo: number };
-/** Converts a bigint to an integer. */
-export const enInteger = ($: bigint): I64 => (
-  { hi: Number($ >> 32n) >>> 0, lo: Number($ & 0xffffffffn) >>> 0 }
-);
-/** Converts an integer to a bigint. */
-export const deInteger = ($: I64): bigint =>
-  BigInt($.hi >>> 0) << 32n | BigInt($.lo >>> 0);
 /** Multiplies two 32-bit integers to an unsigned 64-bit product. */
 export const umul = (one: number, two: number): I64 => {
   const a = one & 0xffff, b = one >>> 16, c = two & 0xffff, d = two >>> 16;
