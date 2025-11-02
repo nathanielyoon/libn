@@ -46,11 +46,11 @@ import { polyXchacha, xchachaPoly } from "./xchachapoly.ts";
 export const encrypt = (
   key: Uint8Array,
   plaintext: Uint8Array,
-  associated_data: Uint8Array = new Uint8Array(),
+  associatedData: Uint8Array = new Uint8Array(),
 ): null | Uint8Array<ArrayBuffer> => {
   const iv = crypto.getRandomValues(new Uint8Array(24));
   const ciphertext = new Uint8Array(plaintext);
-  const result = xchachaPoly(key, iv, ciphertext, associated_data);
+  const result = xchachaPoly(key, iv, ciphertext, associatedData);
   if (!result) return null;
   const out = new Uint8Array(ciphertext.length + 40);
   out.set(iv), out.set(result, 24), out.set(ciphertext, 40);
@@ -60,12 +60,12 @@ export const encrypt = (
 export const decrypt = (
   key: Uint8Array,
   message: Uint8Array,
-  associated_data: Uint8Array = new Uint8Array(),
+  associatedData: Uint8Array = new Uint8Array(),
 ): null | Uint8Array<ArrayBuffer> => {
   if (message.length < 40) return null;
   const iv = message.subarray(0, 24), tag = message.subarray(24, 40);
   const text = new Uint8Array(message.subarray(40));
-  return polyXchacha(key, iv, tag, text, associated_data) ? text : null;
+  return polyXchacha(key, iv, tag, text, associatedData) ? text : null;
 };
 /** XORs the text in-place (without checking parameters). */
 export const cipher = (key: Uint8Array, iv: Uint8Array, $: Uint8Array): void =>

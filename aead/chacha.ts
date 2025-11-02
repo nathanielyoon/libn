@@ -116,12 +116,12 @@ export const xor = (
   iv1: number,
   iv2: number,
   text: Uint8Array,
-  start_block: number,
+  startBlock: number,
 ): void => {
   const max = text.length & ~63;
   let view = new DataView(text.buffer, text.byteOffset), offset, z = 0, y;
   while (z < max) {
-    chacha(key, start_block++, iv0, iv1, iv2, STATE), offset = z, y = z += 64;
+    chacha(key, startBlock++, iv0, iv1, iv2, STATE), offset = z, y = z += 64;
     do view.setUint32(
       y -= 4,
       view.getUint32(y, true) ^ STATE[y >> 2 & 15],
@@ -129,7 +129,7 @@ export const xor = (
     ); while (y > offset);
   }
   if (max !== text.length) {
-    chacha(key, start_block, iv0, iv1, iv2, STATE), view = VIEW, y = 0;
+    chacha(key, startBlock, iv0, iv1, iv2, STATE), view = VIEW, y = 0;
     do text[z] ^= view.getUint8(y++); while (++z < text.length);
   }
 };
