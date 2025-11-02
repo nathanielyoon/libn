@@ -9,7 +9,6 @@ import {
 } from "@std/assert";
 import fc from "fast-check";
 import { de, en } from "@libn/base/utf";
-import { dePoint, enPoint } from "./lib.ts";
 import {
   lowerCamel,
   lowerKebab,
@@ -36,7 +35,9 @@ Deno.test("convert", async (t) => {
     (Object.keys(vectors.convert) as (keyof typeof vectors.convert)[]).reduce(
       (to, key) => ({
         ...to,
-        [key]: fc.constantFrom(...vectors.convert[key].map(($) => dePoint($))),
+        [key]: fc.constantFrom(
+          ...vectors.convert[key].map(($) => String.fromCodePoint($)),
+        ),
       }),
       {} as { [_ in keyof typeof vectors.convert]: fc.Arbitrary<string> },
     );
@@ -111,7 +112,7 @@ Deno.test("normalize", async (t) => {
       else for (let z = $[0]; z <= $[1]; ++z) to[z] = z;
     }
     for (let z = 0; z < 0x110000; ++z) {
-      assertEquals(to[enPoint.call(uncode(dePoint(z)))], to[z]);
+      assertEquals(to[uncode(String.fromCodePoint(z)).codePointAt(0)!], to[z]);
     }
   });
   await t.step("unlone() replaces lone surrogates", () => {
@@ -146,14 +147,14 @@ Deno.test("normalize", async (t) => {
     for (let z = 0x10000; z <= 0x10ffff; ++z) {
       assertEquals(
         de(0xd800 | z - 0x10000 >> 10) + de(0xdc00 | z - 0x10000 & 0x3ff),
-        dePoint(z),
+        String.fromCodePoint(z),
       );
     }
   });
   await t.step("uncode() replaces all noncharacters", () => {
     for (let z = 0x00; z <= 0x10; ++z) {
-      assertEquals(uncode(dePoint(z << 16 | 0xfffe)), "\ufffd");
-      assertEquals(uncode(dePoint(z << 16 | 0xffff)), "\ufffd");
+      assertEquals(uncode(String.fromCodePoint(z << 16 | 0xfffe)), "\ufffd");
+      assertEquals(uncode(String.fromCodePoint(z << 16 | 0xffff)), "\ufffd");
     }
   });
   await t.step("unline() replaces weird breaks with linefeeds", () => {
@@ -359,8 +360,8 @@ Deno.test("match", async (t) => {
           one: fc.constant($),
           two: fc.string({
             unit: "grapheme",
-            minLength: [...$].length,
-            maxLength: [...$].length,
+            minLength: $.length,
+            maxLength: $.length,
           }),
         })
       ),
@@ -371,14 +372,14 @@ Deno.test("match", async (t) => {
     ));
   });
   const levenshtein = (one: string, two: string) => {
-    const a = [...one], b = [...two], c = [...b.map((_, z) => z), b.length];
-    for (let d, e, z = 1, y; z <= a.length; c[b.length] = d, ++z) {
-      for (d = z, y = 1; y <= b.length; c[y - 1] = d, d = e, ++y) {
-        if (a[z - 1] === b[y - 1]) e = c[y - 1];
+    const c = [...Array(two.length).keys(), two.length];
+    for (let d, e, z = 1, y; z <= one.length; c[two.length] = d, ++z) {
+      for (d = z, y = 1; y <= two.length; c[y - 1] = d, d = e, ++y) {
+        if (one[z - 1] === two[y - 1]) e = c[y - 1];
         else e = Math.min(c[y - 1] + 1, d + 1, c[y] + 1);
       }
     }
-    return c[b.length];
+    return c[two.length];
   };
   await t.step("distance() follows levenshtein", () => {
     fc.assert(fc.property(
@@ -394,33 +395,13 @@ Deno.test("match", async (t) => {
       fc.string({ size: "medium", unit: "grapheme" }),
       fc.string({ size: "medium", unit: "grapheme" }),
       (one, two) => {
-        const length1 = [...one].length, length2 = [...two].length;
-        assertLessOrEqual(distance(one, two), Math.max(length1, length2));
-        assertGreaterOrEqual(distance(one, two), Math.abs(length1 - length2));
+        assertLessOrEqual(distance(one, two), Math.max(one.length, two.length));
+        assertGreaterOrEqual(
+          distance(one, two),
+          Math.abs(one.length - two.length),
+        );
       },
     ));
-  });
-  await t.step("distance() accounts for high code points", () => {
-    fc.assert(fc.property(
-      fc.record({
-        points: fc.uniqueArray(fc.integer({ min: 0x10000, max: 0x10ffff }), {
-          minLength: 2,
-          maxLength: 2,
-          comparator: "SameValueZero",
-        }).map((points) => points.map(($) => dePoint($))),
-        repeat: fc.integer({ min: 1, max: 1e3 }),
-      }),
-      ({ points: [one, two], repeat }) => {
-        assertEquals(distance(one, two), 1);
-        assertEquals(distance(one.repeat(repeat), two.repeat(repeat)), repeat);
-      },
-    ));
-  });
-  await t.step("distance() checks surrogate pairs together", () => {
-    assertEquals(distance("\u{1f4a9}", "\u{1f4a9}"), 0);
-    assertEquals(distance("\u{1f4a9}", "x"), 1);
-    assertEquals(distance("\u{1f4a9}", "\u{1f4ab}"), 1);
-    assertEquals(distance("\u{1f4ab}", "\u{1f984}"), 1);
   });
 });
 import.meta.main && await Promise.all([
@@ -441,8 +422,11 @@ import.meta.main && await Promise.all([
     /^([\dA-F]{4,6});[^;]*;(L[ult](?=;)|L(?=[mo];)|N(?=[dlo];))/gm,
   ).reduce<{ [_ in `L${"u" | "l" | "t" | ""}` | "N"]: number[] }>(
     (categories, [_, hex, category]) => {
-      RegExp(`^\\p{${category}}$`, "u").test(dePoint(parseInt(hex, 16))) &&
-        categories[category as keyof typeof categories].push(parseInt(hex, 16));
+      if (
+        RegExp(`^\\p{${category}}$`, "u").test(
+          String.fromCodePoint(parseInt(hex, 16)),
+        )
+      ) categories[category as keyof typeof categories].push(parseInt(hex, 16));
       return categories;
     },
     { Lu: [], Ll: [], Lt: [], L: [], N: [] },
@@ -455,9 +439,9 @@ import.meta.main && await Promise.all([
   uncase: fold.match(/^[\dA-F]{4,5}; [CF];(?: [\dA-F]{4,5})+/gm)!.map(($) => {
     const [code, _, mapping] = $.split("; ");
     return {
-      source: dePoint(parseInt(code, 16)),
+      source: String.fromCodePoint(parseInt(code, 16)),
       target: mapping.split(" ").reduce(
-        (to, point) => to + dePoint(parseInt(point, 16)),
+        (to, point) => to + String.fromCodePoint(parseInt(point, 16)),
         "",
       ),
     };

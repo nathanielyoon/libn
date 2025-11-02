@@ -17,9 +17,9 @@
  * @module fold
  */
 
-import { dePoint, enPoint } from "./lib.ts";
 import ranges from "./ranges.json" with { type: "json" };
 
+const dePoint = /* @__PURE__ */ (() => String.fromCodePoint)();
 /** Creates a case-folding range set from the Unicode source text. */
 export const createRanges = (text: string): string => {
   let head = -1;
@@ -44,7 +44,7 @@ const args = /* @__PURE__ */ ((): Parameters<typeof replace> => {
   let regex = "";
   for (const row of ranges.split(",")) {
     const [head, ...tail] = row.split(" "), rest = tail.length - 1;
-    let code = enPoint.call(head);
+    let code = head.codePointAt(0)!;
     regex += hex(code);
     if (rest) regex += "-" + hex(code + rest);
     for (const $ of tail) map[dePoint(code++)] = $;
