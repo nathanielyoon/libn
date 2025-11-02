@@ -1,7 +1,10 @@
 /**
  * [Ascii85](https://en.wikipedia.org/wiki/Ascii85) uses the first 85 printable,
  * non-whitespace ASCII characters, as well as "z" to compress sequences of 4
- * empty bytes.
+ * empty bytes. Unlike the
+ * [original](https://en.wikipedia.org/wiki/Ascii85#Limitations), the binary
+ * input length doesn't have to be a multiple of 4, the encoding and decoding
+ * functions add and remove padding automatically.
  *
  * @example Usage
  * ```ts
