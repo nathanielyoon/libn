@@ -9,9 +9,9 @@ await build({
   entryPoints: typeof exports === "string"
     ? [exports]
     : Object.entries<string>(exports).map(([name, path]) => ({ name, path })),
-  shims: {},
+  configFile: import.meta.resolve("./deno.json"),
+  shims: { deno: "dev" },
   skipSourceOutput: true,
-  skipNpmInstall: true,
   typeCheck: false,
   test: false,
   package: {
@@ -24,8 +24,6 @@ await build({
       url: "git+https://github.com/nathanielyoon/libn.git",
     },
   },
-  postBuild: async () => {
-    await Deno.copyFile("../LICENSE", "./npm/LICENSE");
-    await Deno.copyFile("./README.md", "./npm/README.md");
-  },
 });
+await Deno.copyFile("../LICENSE", "./npm/LICENSE");
+await Deno.copyFile("./README.md", "./npm/README.md");

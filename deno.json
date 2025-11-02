@@ -94,7 +94,7 @@
     },
     "npm": {
       "dependencies": ["cwd"],
-      "command": "deno run --allow-env --allow-read --allow-write ../npm.ts"
+      "command": "deno run --allow-env --allow-run=npm --allow-read --allow-write ../npm.ts"
     },
     "publish": {
       "dependencies": ["cwd"],
