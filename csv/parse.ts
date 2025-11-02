@@ -32,16 +32,15 @@ export const deCsv = <A extends {} | null = null>(
 ): Row<A>[] | null => {
   if ($.charCodeAt(0) === 0xfeff) $ = $.slice(1);
   if (!$.length) return [];
-  const at = $.charCodeAt.bind($), eol = ~$.indexOf("\r") ? "\r\n" : "\n";
-  const eager = options?.eager ?? true, nil = options?.empty?.value ?? null;
-  const rows = [];
+  const eol = ~$.indexOf("\r") ? "\r\n" : "\n", eager = options?.eager ?? true;
+  const nil = options?.empty?.value ?? null, rows = [];
   let row = [], size = 0, part = Part.BEFORE, raw = false, fix = false, temp;
   let z = 0, y = 0, x = 0, w;
-  do top: switch (at(z) | part) {
+  do top: switch ($.charCodeAt(z) | part) {
     case Case.LF_BEFORE:
     case Case.CR_BEFORE:
       y || rows.push(row = Array(size)), row[y++] = nil, size ||= y, y = 0;
-      at(z) === Code.CR && at(z + 1) === Code.LF && ++z;
+      $.charCodeAt(z) === Code.CR && $.charCodeAt(z + 1) === Code.LF && ++z;
       break;
     case Case.LF_INSIDE:
     case Case.CR_INSIDE:
@@ -50,16 +49,16 @@ export const deCsv = <A extends {} | null = null>(
       fix = raw = false; // falls through
     case Case.LF_FINISH:
     case Case.CR_FINISH:
-      size ||= y, y = 0, at(z) === Code.CR && at(z + 1) === Code.LF && ++z;
-      part = Part.BEFORE;
+      part = Part.BEFORE, size ||= y, y = 0;
+      $.charCodeAt(z) === Code.CR && $.charCodeAt(z + 1) === Code.LF && ++z;
       break;
     case Case.QT_BEFORE:
       if (eager && size) {
         for (w = z; w = $.indexOf('"', w + 1) + 1; fix = true) {
-          if (at(w) !== Code.QT) {
+          if ($.charCodeAt(w) !== Code.QT) {
             temp = $.slice(z + 1, z = w - 1), y || rows.push(row = Array(size));
             row[y] = fix ? temp.replaceAll('""', '"') : temp;
-            ++y === size && (y = 0), part = Part.FINISH, fix = raw = false;
+            part = Part.FINISH, ++y === size && (y = 0), fix = raw = false;
             break top;
           }
         }
@@ -69,7 +68,7 @@ export const deCsv = <A extends {} | null = null>(
       break;
     case Case.QT_INSIDE:
       if (raw) return null;
-      if (at(z + 1) !== Code.QT) {
+      if ($.charCodeAt(z + 1) !== Code.QT) {
         temp = $.slice(x, z), y || rows.push(row = Array(size));
         row[y++] = fix ? temp.replaceAll('""', '"') : temp, part = Part.FINISH;
       } else ++z, fix = true;
