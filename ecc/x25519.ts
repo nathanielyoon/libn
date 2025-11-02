@@ -53,23 +53,23 @@ export const ladder = (scalar: bigint, point: bigint): bigint => {
   return mod(pow(exp(b ^= (b ^ d) & -e, b **= 3n), 3, a ^ (a ^ c) & -e) * b);
 };
 /** Derives an X25519 public key. */
-export const derive = (secret_key: Uint8Array): Uint8Array<ArrayBuffer> =>
-  deBig(ladder(enBig(secret_key), 9n) & F);
+export const derive = (secretKey: Uint8Array): Uint8Array<ArrayBuffer> =>
+  deBig(ladder(enBig(secretKey), 9n) & F);
 /** Derives a not-all-zero shared secret from two Montgomery-curve keys. */
 export const exchange = (
-  secret_key: Uint8Array,
-  public_key: Uint8Array,
+  secretKey: Uint8Array,
+  publicKey: Uint8Array,
 ): Uint8Array<ArrayBuffer> | null => {
-  const shared = deBig(ladder(enBig(secret_key), enBig(public_key)) & F);
+  const shared = deBig(ladder(enBig(secretKey), enBig(publicKey)) & F);
   let byte = 0;
   for (let z = 0; z < 32; ++z) byte |= shared[z];
   return byte ? shared : null;
 };
 /** Converts an Ed25519 secret key to its X25519 equivalent. */
-export const convertSecret = ($: Uint8Array): Uint8Array<ArrayBuffer> =>
-  new Uint8Array(prune($).subarray(0, 32));
+export const convertSecret = (key: Uint8Array): Uint8Array<ArrayBuffer> =>
+  new Uint8Array(prune(key).subarray(0, 32));
 /** Converts an Ed25519 public key to its X25519 equivalent. */
-export const convertPublic = ($: Uint8Array): Uint8Array<ArrayBuffer> => {
-  const a = enBig($) & F;
+export const convertPublic = (key: Uint8Array): Uint8Array<ArrayBuffer> => {
+  const a = enBig(key) & F;
   return deBig(mod((1n + a) * inv(1n - a)) & F);
 };
