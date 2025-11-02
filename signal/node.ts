@@ -5,7 +5,7 @@ export type Is<A, B extends A> = (prev: A, next: B) => boolean;
 /** Connection between two reactive nodes. */
 export type Link =
   & { step: number; dep: Node; sub: Node }
-  & { [_ in `${"dep" | "sub"}_${"prev" | "next"}`]: Link | null };
+  & { [_ in `${"prev" | "next"}${"Dep" | "Sub"}`]: Link | null };
 /** @internal */
 interface Linked<A extends Kind> {
   kind: A;

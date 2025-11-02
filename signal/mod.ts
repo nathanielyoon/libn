@@ -6,15 +6,14 @@ const queue: (Effect | Scoper)[] = [];
 let depth = 0, step = 0, on: Node | null = null;
 /** Pauses updates, runs a function, then resumes. */
 export const batch = <A>($: () => A): A => {
-  ++depth;
   try {
-    return $();
+    return ++depth, $();
   } finally {
     --depth || pull();
   }
 };
 /** Manually sets the current subscriber. */
-export const activate = ($: Node | null): Node | null => ([$, on] = [on, $])[0];
+export const activate = ($: Node | null): Node | null => ([$, on] = [on, $], $);
 const reset = ($: Signal) => (
   $.flags = Flag.BEGIN, !$.is($.prev, $.prev = $.next)
 );
@@ -35,23 +34,22 @@ const check = (sub: Node, $: Link) => {
   do {
     if (sub.flags & Flag.DIRTY) dirty = true;
     else if (dep = $.dep, (dep.flags & Flag.START) === Flag.START) {
-      if (retry(dep)) dep.subs!.sub_next && flat(dep.subs!), dirty = true;
+      if (retry(dep)) dep.subs!.nextSub && flat(dep.subs!), dirty = true;
     } else if ((dep.flags & Flag.CAUSE) === Flag.CAUSE) {
-      if ($.sub_next || $.sub_prev) stack.push($);
-      ++size, sub = dep, $ = dep.deps!;
+      ($.nextSub || $.prevSub) && stack.push($), ++size, $ = (sub = dep).deps!;
       continue;
     }
-    mid: if (dirty || !$.dep_next) {
+    mid: if (dirty || !$.nextDep) {
       while (size--) {
-        link = sub.subs!, $ = link.sub_next ? stack.pop()! : link;
+        link = sub.subs!, $ = link.nextSub ? stack.pop()! : link;
         if (!dirty) sub.flags &= ~Flag.READY;
-        else if (retry(sub)) link.sub_next && flat(link), sub = $.sub;
-        else if (sub = $.sub, $.dep_next) break mid;
+        else if (retry(sub)) link.nextSub && flat(link), sub = $.sub;
+        else if (sub = $.sub, $.nextDep) break mid;
         else dirty = false;
       }
       return dirty;
     }
-    $ = $.dep_next;
+    $ = $.nextDep;
   } while (true);
 };
 const run = ($: Effect | Scoper) => {
@@ -60,15 +58,14 @@ const run = ($: Effect | Scoper) => {
       if (check($, $.deps!)) break;
       $.flags &= ~Flag.READY; // falls through
     case Flag.CLEAR:
-      for (let next = $.deps; next; next = next.dep_next) {
+      for (let next = $.deps; next; next = next.nextDep) {
         next.dep.flags & Flag.QUEUE && run(next.dep as Effect | Scoper);
       }
       return;
   }
   const prev = on;
-  on = $, ++step, $.head = null, $.flags = Flag.OUTER;
   try {
-    $.run();
+    on = $, ++step, $.head = null, $.flags = Flag.OUTER, $.run();
   } finally {
     on = prev, drop($);
   }
@@ -84,40 +81,38 @@ const push = ($: Effect | Scoper) => {
 const flat = ($: Link) => {
   do ($.sub.flags & Flag.SETUP) === Flag.READY &&
     ($.sub.flags |= Flag.DIRTY) & Flag.WATCH &&
-    push($.sub as Effect | Scoper); while ($ = $.sub_next!);
+    push($.sub as Effect | Scoper); while ($ = $.nextSub!);
 };
 const deep = ($: Link) => {
   const stack: (Link | null)[] = [];
-  let next = $.sub_next, sub, flags;
+  let next = $.nextSub, sub, flags;
   top: do {
     switch (sub = $.sub, (flags = sub.flags) & Flag.KNOWN) {
       case Flag.RECUR:
         sub.flags &= ~Flag.RECUR; // falls through
       case Flag.CLEAR:
-        sub.flags |= Flag.READY;
-        flags & Flag.WATCH && push(sub as Effect | Scoper);
+        sub.flags |= Flag.READY, flags & Flag.WATCH && push(sub as Effect);
         break;
       default:
         if (flags & Flag.SETUP || !validate(sub, $)) flags = Flag.CLEAR;
         else sub.flags |= Flag.RECUR | Flag.READY, flags &= Flag.BEGIN;
     }
     mid: if (flags & Flag.BEGIN) {
-      if (sub.subs && ($ = sub.subs).sub_next) stack.push(next);
+      if (sub.subs && ($ = sub.subs).nextSub) stack.push(next);
       else continue top;
     } else if (!next) {
       while (stack.length) if ($ = stack.pop()!) break mid;
       break;
     } else $ = next;
-    next = $.sub_next;
+    next = $.nextSub;
   } while (true);
 };
 const LINKED = { head: null, deps: null, subs: null, tail: null };
 const make = <A extends Kind>(kind: A, flags: Flag, $: object) => {
-  if ($ = Object.assign($, { kind, flags }, LINKED), kind & 2) {
+  if ($ = Object.assign($, { kind, flags }, LINKED), kind & Kind.EFFECT) {
     const prev = on;
-    enlink(on = $ as Effect | Scoper, prev, 0);
     try {
-      ($ as Effect | Scoper).run();
+      enlink(on = $ as Effect | Scoper, prev, 0), ($ as Effect | Scoper).run();
     } finally {
       on = prev;
     }
@@ -141,10 +136,7 @@ function Signal<A>(this: Signal<A>, ...$: [A]) {
   } else {
     this.flags & Flag.DIRTY && reset(this) && this.subs && flat(this.subs);
     for (let sub = on; sub; sub = sub.subs?.sub!) {
-      if (sub.flags & Flag.TRIED) {
-        enlink(this, sub, step);
-        break;
-      }
+      if (sub.flags & Flag.TRIED) return enlink(this, sub, step), this.next;
     }
   }
   return this.next;
