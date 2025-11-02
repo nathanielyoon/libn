@@ -276,7 +276,7 @@ Deno.test("normalize", async (t) => {
     }
   });
 });
-Deno.test("case", async (t) => {
+Deno.test("fold", async (t) => {
   await t.step("createRanges() creates same ranges", async () => {
     const text = await fetch(
       "https://www.unicode.org/Public/UNIDATA/CaseFolding.txt",
@@ -312,7 +312,7 @@ Deno.test("case", async (t) => {
     assertEquals(uncase("\u0130"), "\x69\u0307");
   });
 });
-Deno.test("fuzzy", async (t) => {
+Deno.test("match", async (t) => {
   await t.step("includes() follows built-in includes", () => {
     fc.assert(fc.property(
       fc.string({ size: "medium", unit: "grapheme" }),
