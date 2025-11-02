@@ -486,8 +486,7 @@ Deno.test("mod", async (t) => {
     }));
   });
 });
-
-import.meta.main && await Promise.all([
+import.meta.main && Promise.all([
   fetch(
     "https://www.rfc-editor.org/rfc/rfc4648.txt",
   ).then(($) => $.text()).then(($) => $.slice(25691, 26723)).then(

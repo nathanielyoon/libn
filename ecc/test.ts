@@ -215,7 +215,7 @@ Deno.test("ed25519", async (t) => {
     }));
   });
 });
-import.meta.main && await Promise.all([
+import.meta.main && Promise.all([
   fetch(
     "https://www.rfc-editor.org/rfc/rfc7748.txt",
   ).then(($) => $.text()).then((rfc7748) => ({

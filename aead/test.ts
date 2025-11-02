@@ -150,7 +150,7 @@ Deno.test("mod", async (t) => {
     ));
   });
 });
-import.meta.main && await Promise.all([
+import.meta.main && Promise.all([
   fetch(
     "https://www.rfc-editor.org/rfc/rfc8439.txt",
   ).then(($) => $.text()).then(

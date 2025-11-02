@@ -120,7 +120,7 @@ Deno.test("stringify", async (t) => {
     ));
   });
 });
-import.meta.main && await Promise.all([
+import.meta.main && Promise.all([
   fetch(
     "https://www.rfc-editor.org/rfc/rfc4180.txt",
   ).then(($) => $.text()).then(($) => $.slice(2630, 4734)),

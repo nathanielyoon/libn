@@ -342,7 +342,7 @@ Deno.test("blake3", async (t) => {
     }));
   });
 });
-import.meta.main && await Promise.all([
+import.meta.main && Promise.all([
   Promise.all([
     fetch(
       "https://raw.githubusercontent.com/rurban/smhasher/3931fd6f723f4fb2afab6ef9a628912220e90ce7/Hashes.cpp",

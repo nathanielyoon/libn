@@ -404,7 +404,7 @@ Deno.test("match", async (t) => {
     ));
   });
 });
-import.meta.main && await Promise.all([
+import.meta.main && Promise.all([
   fetch(
     "https://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt",
   ).then(($) => $.text()),
