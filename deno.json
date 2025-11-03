@@ -88,7 +88,7 @@
     "size": "cd \"$INIT_CWD\" || exit 1; (deno bundle --quiet --unstable-raw-imports --minify /dev/stdin | brotli | wc --bytes | awk '{ printf \"%.1fkb\\n\", $1/1000; }') <",
     "mini": {
       "description": "Bundles, minifies, and calculates the brotli'd size. Requires bash, jq, brotli, wc, and awk.",
-      "command": "cd \"$INIT_CWD\" || exit 1; bash -c 'deno task --quiet --cwd=. exports | while read line; do echo \"$(deno task --quiet --cwd=. size \"$(cut -d\" \" -f2 <<<\"$line\")\")\t$(cut -d\" \" -f1 <<<\"$line\")\"; done'"
+      "command": "cd \"$INIT_CWD\" || exit 1; bash -c 'deno task --quiet --cwd=. exports | while read line; do echo \"$(deno task --quiet --cwd=. size \"$(cut -d\" \" -f2 <<<\"$line\")\") $(cut -d\" \" -f1 <<<\"$line\")\"; done'"
     },
     "npm": "cd \"$INIT_CWD\" || exit 1; deno run --allow-env --allow-run=npm,bun --allow-read --allow-write ../npm.ts",
     "publish": "cd \"$INIT_CWD\" || exit 1; deno publish --allow-dirty; cd npm && npm publish --access=public && cd .. && rm -r npm;"
