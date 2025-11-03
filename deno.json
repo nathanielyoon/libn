@@ -81,14 +81,14 @@
       "command": "cd \"$INIT_CWD\" || exit 1; jq -r 'if (.exports | type) == \"object\" then .exports | to_entries[] | \"\\(.key) \\(.value)\" else \". \\(.exports)\" end' ./deno.json"
     },
     "pure": {
-      "description": "Checks for side-effects, which would be included in the generated output. Requires sh and jq.",
-      "command": "cd \"$INIT_CWD\" || exit 1; sh -c 'deno task --quiet --cwd=. exports | while read line; do echo \"# $(cut -d\" \" -f1 <<<\"$line\")\"; echo \"import \\\"$(cut -d\" \" -f2 <<<\"$line\")\\\";\" >bundle.ts && deno bundle --quiet --unstable-raw-imports bundle.ts; rm -f bundle.ts; echo; done'"
+      "description": "Checks for side-effects, which would be included in the generated output. Requires bash and jq.",
+      "command": "cd \"$INIT_CWD\" || exit 1; bash -c 'deno task --quiet --cwd=. exports | while read line; do echo \"# $(cut -d\" \" -f1 <<<\"$line\")\"; echo \"import \\\"$(cut -d\" \" -f2 <<<\"$line\")\\\";\" >bundle.ts && deno bundle --quiet --unstable-raw-imports bundle.ts; rm -f bundle.ts; echo; done'"
     },
     "all": "cd \"$INIT_CWD\" || exit 1; deno task --cwd=. check; deno task --cwd=. lint; deno task --cwd=. cover; deno task --cwd=. pure; deno publish --dry-run --allow-dirty",
-    "size": "cd \"$INIT_CWD\" || exit 1; (deno bundle --quiet --unstable-raw-imports --minify /dev/stdin | brotli | wc --bytes | numfmt --to=iec) <",
+    "size": "cd \"$INIT_CWD\" || exit 1; (deno bundle --quiet --unstable-raw-imports --minify /dev/stdin | brotli | wc --bytes | awk '{ printf \"%.1f KiB\\n\", $1/1024; }') <",
     "mini": {
-      "description": "Bundles, minifies, and calculates the brotli'd size. Requires sh, jq, brotli, wc, and numfmt.",
-      "command": "cd \"$INIT_CWD\" || exit 1; sh -c 'deno task --quiet --cwd=. exports | while read line; do echo \"$(deno task --quiet --cwd=. size \"$(cut -d\" \" -f2 <<<\"$line\")\")\t$(cut -d\" \" -f1 <<<\"$line\")\"; done'"
+      "description": "Bundles, minifies, and calculates the brotli'd size. Requires bash, jq, brotli, wc, and awk.",
+      "command": "cd \"$INIT_CWD\" || exit 1; bash -c 'deno task --quiet --cwd=. exports | while read line; do echo \"$(deno task --quiet --cwd=. size \"$(cut -d\" \" -f2 <<<\"$line\")\")\t$(cut -d\" \" -f1 <<<\"$line\")\"; done'"
     },
     "npm": "cd \"$INIT_CWD\" || exit 1; deno run --allow-env --allow-run=npm,bun --allow-read --allow-write ../npm.ts",
     "publish": "cd \"$INIT_CWD\" || exit 1; deno publish --allow-dirty; cd npm && npm publish --access=public && cd .. && rm -r npm;"
