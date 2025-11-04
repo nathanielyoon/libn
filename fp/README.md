@@ -12,6 +12,7 @@ bunx jsr add @libn/fp
 bun add @libn/fp
 ```
 
+- [Rust std::result](https://doc.rust-lang.org/std/result/#the-question-mark-operator-)
 - [Purifree](https://github.com/nythrox/purifree)
 
 ## default
