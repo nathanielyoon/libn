@@ -176,7 +176,7 @@ const B3 = /* @__PURE__ */ perm(
 );
 /** Hashes with BLAKE3. */
 export const blake3:
-  & Hash<[$: Uint8Array, key?: undefined, length?: number, seek?: number]>
+  & Hash<[$: Uint8Array, _?: undefined, length?: number, seek?: number]>
   & Hash<[$: Uint8Array, key: Uint8Array, length?: number, seek?: number]>
   & Hash<[key: Uint8Array, context?: string, length?: number, seek?: number]> =
     ($, key, length, seek) => {
