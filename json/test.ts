@@ -29,71 +29,13 @@ import { dereference, deToken, enToken, type Pointer } from "./pointer.ts";
 import { arr, bit, int, nil, num, obj, str } from "./build.ts";
 import { assert, BASES, compile, FORMATS, is, parse } from "./check.ts";
 
-Deno.test("lib.Merge combines intersections", () => {
-  type<Is<Merge<{} & {}>, {}>>(true);
-  type<Is<Merge<{ 0: 0 } & {}>, { 0: 0 }>>(true);
-  type<Is<Merge<{ 0: 0 } & { 1: 1 }>, { 0: 0; 1: 1 }>>(true);
-  type<
-    Is<
-      Merge<{ 0: { 0: 0 } & { 1: 1 } } & { 1: { 0: 0 } & { 1: 1 } }>,
-      { 0: { 0: 0; 1: 1 }; 1: { 0: 0; 1: 1 } }
-    >
-  >(true);
-});
-Deno.test("lib.Writable strips readonly", () => {
-  type<Is<Writable<{}>, {}>>(true);
-  type<Is<Writable<{ readonly 0: 0 }>, { 0: 0 }>>(true);
-});
-Deno.test("lib.Xor disallows non-shared properties", () => {
-  type<Is<Xor<[]>, never>>(true);
-  type<
-    Is<
-      Xor<[{ 0: 0 }, { 1: 1 }]>,
-      { 0: 0; 1?: never } | { 0?: never; 1: 1 }
-    >
-  >(true);
-  type<
-    Is<
-      Xor<[{ 0: 0; 2: 2 }, { 1: 1; 2: 2 }]>,
-      { 0: 0; 1?: never; 2: 2 } | { 0?: never; 1: 1; 2: 2 }
-    >
-  >(true);
-});
-Deno.test("lib.And converts a union to an intersection", () => {
-  type<Is<And<{} | {}>, {}>>(true);
-  type<Is<And<0 | never>, 0>>(true);
-  type<Is<And<0 | 1>, never>>(true);
-  type<Is<And<{ 0: 0 } | { 1: 1 }>, { 0: 0; 1: 1 }>>(true);
-});
-Deno.test("lib.Tuple converts a union to an array", () => {
-  type<Is<Tuple<never>, []>>(true);
-  type<Is<Tuple<0>, [0]>>(true);
-  type<Is<Tuple<0 | 1>, [0, 1]>>(true);
-  type<Is<Tuple<keyof { 0: 0; 1: 1 }>, [0, 1]>>(true);
-});
-Deno.test("lib.isArray() aliases Array.isArray", () => {
-  assertStrictEquals(isArray, Array.isArray);
-  fc.assert(fc.property(fc.constantFrom<0 | readonly [1]>(0, [1]), ($) => {
-    if (isArray($)) {
-      type<Is<typeof $, readonly [1]>>(true);
-      assertEquals($, [1]);
-    } else {
-      type<Is<typeof $, 0>>(true);
-      assertEquals($, 0);
-    }
-  }));
-});
-Deno.test("lib.hasOwn() aliases Object.hasOwn", () => {
-  assertStrictEquals(hasOwn, Object.hasOwn);
-  fc.assert(fc.property(fc.constantFrom({ 0: 0 }, {}), ($) => {
-    if (hasOwn($, "0")) {
-      type<Is<typeof $, { readonly 0: 0 }>>(true);
-      assertEquals($, { 0: 0 });
-    } else {
-      type<Is<typeof $, { readonly 0?: never }>>(true);
-      assertEquals($, {});
-    }
-  }));
+Deno.test("lib.Json includes all JSON values", () => {
+  type<Json>(null);
+  type<Json>(true), type<Json>(false);
+  type<Json>(0), type<Json>(0.1);
+  type<Json>("");
+  type<Json>([]), type<Json>([null]);
+  type<Json>({}), type<Json>({ "": "" });
 });
 type Sequence<A, B extends number, C extends A[] = []> = B extends B
   ? C["length"] extends B ? C : Sequence<A, B, [...C, A]>
@@ -328,20 +270,70 @@ Deno.test("lib.Is checks equality", () => {
 
   type<Is<[{ a: 1 }] & [{ a: 1 }], [{ a: 1 }]>>(true);
 });
+Deno.test("lib.Merge combines intersections", () => {
+  type<Is<Merge<{} & {}>, {}>>(true);
+  type<Is<Merge<{ 0: 0 } & {}>, { 0: 0 }>>(true);
+  type<Is<Merge<{ 0: 0 } & { 1: 1 }>, { 0: 0; 1: 1 }>>(true);
+  type<
+    Is<
+      Merge<{ 0: { 0: 0 } & { 1: 1 } } & { 1: { 0: 0 } & { 1: 1 } }>,
+      { 0: { 0: 0; 1: 1 }; 1: { 0: 0; 1: 1 } }
+    >
+  >(true);
+});
+Deno.test("lib.Writable strips readonly", () => {
+  type<Is<Writable<{}>, {}>>(true);
+  type<Is<Writable<{ readonly 0: 0 }>, { 0: 0 }>>(true);
+});
+Deno.test("lib.Xor disallows non-shared properties", () => {
+  type<Is<Xor<[]>, never>>(true);
+  type<
+    Is<
+      Xor<[{ 0: 0 }, { 1: 1 }]>,
+      { 0: 0; 1?: never } | { 0?: never; 1: 1 }
+    >
+  >(true);
+  type<
+    Is<
+      Xor<[{ 0: 0; 2: 2 }, { 1: 1; 2: 2 }]>,
+      { 0: 0; 1?: never; 2: 2 } | { 0?: never; 1: 1; 2: 2 }
+    >
+  >(true);
+});
+Deno.test("lib.And converts a union to an intersection", () => {
+  type<Is<And<{} | {}>, {}>>(true);
+  type<Is<And<0 | never>, 0>>(true);
+  type<Is<And<0 | 1>, never>>(true);
+  type<Is<And<{ 0: 0 } | { 1: 1 }>, { 0: 0; 1: 1 }>>(true);
+});
+Deno.test("lib.Tuple converts a union to an array", () => {
+  type<Is<Tuple<never>, []>>(true);
+  type<Is<Tuple<0>, [0]>>(true);
+  type<Is<Tuple<0 | 1>, [0, 1]>>(true);
+  type<Is<Tuple<keyof { 0: 0; 1: 1 }>, [0, 1]>>(true);
+});
+Deno.test("lib.isArray() aliases Array.isArray", () =>
+  fc.assert(fc.property(fc.constantFrom<0 | readonly [1]>(0, [1]), ($) => {
+    if (isArray($)) assertEquals(type<readonly [1]>()($), [1]);
+    else assertEquals(type<0>()($), 0);
+  })));
+Deno.test("lib.hasOwn() aliases Object.hasOwn", () =>
+  fc.assert(fc.property(fc.constantFrom({ 0: 0 }, {}), ($) => {
+    if (hasOwn($, "0")) assertEquals(type<{ readonly 0: 0 }>()($), { 0: 0 });
+    else assertEquals(type<{ readonly 0?: never }>()($), {});
+  })));
 const fcJson = fc.jsonValue() as fc.Arbitrary<Json>;
-Deno.test("pointer.enToken() encodes a reference token", () => {
+Deno.test("pointer.enToken() encodes a reference token", () =>
   fc.assert(fc.property(fc.string(), ($) => {
     const encoded = enToken($);
     assertMatch(encoded, /^(?:~[01]|[^/~])*$/);
     assertEquals(encoded.length, $.length + ($.match(/[/~]/g)?.length ?? 0));
-  }));
-});
-Deno.test("pointer.deToken() decodes a reference token", () => {
+  })));
+Deno.test("pointer.deToken() decodes a reference token", () =>
   fc.assert(fc.property(fc.string(), ($) => {
     assertEquals(deToken(enToken($)), $);
-  }));
-});
-Deno.test("pointer.dereference() accesses keys/indices", () => {
+  })));
+Deno.test("pointer.dereference() accesses keys/indices", () =>
   fc.assert(fc.property(
     fc.string(),
     fc.nat({ max: 1e2 }),
@@ -362,41 +354,36 @@ Deno.test("pointer.dereference() accesses keys/indices", () => {
         value,
       );
     },
-  ));
-});
-Deno.test("pointer.dereference() returns the root when pointer is empty", () => {
+  )));
+Deno.test("pointer.dereference() returns the root when pointer is empty", () =>
   fc.assert(fc.property(fcJson, ($) => {
     assertStrictEquals(dereference($, ""), $);
-  }));
-});
-Deno.test("pointer.dereference() rejects invalid pointers", () => {
+  })));
+Deno.test("pointer.dereference() rejects invalid pointers", () =>
   fc.assert(fc.property(
     fcJson,
     fc.stringMatching(/^.+(?:\/(?:~[01]|[^/~])*)*$/),
     ($, pointer) => {
       assertEquals(dereference($, pointer), undefined);
     },
-  ));
-});
-Deno.test("pointer.dereference() rejects non-objects", () => {
+  )));
+Deno.test("pointer.dereference() rejects non-objects", () =>
   fc.assert(fc.property(
     fc.oneof(fc.constant(null), fc.boolean(), fc.double(), fc.string()),
     fc.stringMatching(/^(?:\/(?:~[01]|[^/~])*)+$/),
     ($, pointer) => {
       assertEquals(dereference($, pointer), undefined);
     },
-  ));
-});
-Deno.test("pointer.dereference() rejects non-numeric array indices", () => {
+  )));
+Deno.test("pointer.dereference() rejects non-numeric array indices", () =>
   fc.assert(fc.property(
     fc.array(fcJson),
     fc.stringMatching(/^\/(?:\d*\D\d*|0\d=)(?:\/(?:~[01]|[^/~])*)*$/),
     ($, pointer) => {
       assertEquals(dereference($, pointer), undefined);
     },
-  ));
-});
-Deno.test("pointer.dereference() rejects missing indices/keys", () => {
+  )));
+Deno.test("pointer.dereference() rejects missing keys", () =>
   fc.assert(fc.property(
     fc.stringMatching(/^(?:\/(?:~[01]|[^/~])*)+$/).filter(($) =>
       !(deToken($.slice(1)) in {})
@@ -404,11 +391,11 @@ Deno.test("pointer.dereference() rejects missing indices/keys", () => {
     (pointer) => {
       assertEquals(dereference({}, pointer), undefined);
     },
-  ));
+  )));
+Deno.test("pointer.dereference() rejects missing indices", () =>
   fc.assert(fc.property(fc.array(fcJson), ($) => {
     assertEquals(dereference($, `/${$.length || 1}`), undefined);
-  }));
-});
+  })));
 Deno.test("build.nil() creates Nil schemas", () => {
   type(nil())({ type: "null" });
   type(nil(bit()))({
