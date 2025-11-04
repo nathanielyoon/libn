@@ -2,154 +2,134 @@ import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { chacha, hchacha, xor } from "./chacha.ts";
 import { poly } from "./poly.ts";
-import { polyXchacha, xchachaPoly } from "./xchachapoly.ts";
+import { polyXchacha, xchachaPoly } from "./aead.ts";
 import { cipher, decrypt, encrypt } from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 const u32 = ($: string) => new Uint32Array(Uint8Array.fromHex($).buffer);
-const fcRight = ($: number) => fc.uint8Array({ minLength: $, maxLength: $ });
 const fcWrong = <const A extends number[]>(...lengths: A) =>
-  fc.oneof(...Array.from(lengths, (_, index) =>
-    fc.tuple(
-      ...lengths.map(($, z) =>
-        z !== index ? fcRight($) : fc.oneof(
+  fc.oneof(
+    ...Array(lengths.length).keys().map((index) =>
+      fc.tuple(...lengths.map(($, z) =>
+        z !== index ? fc.uint8Array({ minLength: $, maxLength: $ }) : fc.oneof(
           fc.uint8Array({ minLength: $ + 1 }),
           fc.uint8Array({ maxLength: $ - 1 }),
         )
-      ),
-    ) as fc.Arbitrary<{ [_ in keyof A]: Uint8Array<ArrayBuffer> }>));
-Deno.test("chacha", async (t) => {
-  await t.step("chacha() passes reference vectors", () => {
-    for (const $ of vectors.chacha) {
-      const state = new Uint32Array(16);
-      const [iv0, iv1, iv2] = u32($.iv);
-      chacha(u32($.key), $.count, iv0, iv1, iv2, state);
-      assertEquals(
-        new Uint8Array(state.buffer).subarray(0, $.state.length >> 1),
-        Uint8Array.fromHex($.state),
-      );
-    }
-  });
-  await t.step("hchacha() passes reference vectors", () => {
-    for (const $ of vectors.hchacha) {
-      assertEquals(
-        hchacha(Uint8Array.fromHex($.key), Uint8Array.fromHex($.iv)),
-        u32($.subkey),
-      );
-    }
-  });
-  await t.step("xor() passes reference vectors", () => {
-    for (const $ of vectors.xor) {
-      const plaintext = Uint8Array.fromHex($.plaintext);
-      const [iv0, iv1, iv2] = u32($.iv);
-      xor(u32($.key), iv0, iv1, iv2, plaintext, $.count);
-      assertEquals(plaintext, Uint8Array.fromHex($.ciphertext));
-    }
-  });
-});
-Deno.test("poly", async (t) => {
-  await t.step("poly() passes reference vectors", () => {
-    for (const $ of vectors.poly) {
-      assertEquals(
-        poly(u32($.key), Uint8Array.fromHex($.message)),
-        Uint8Array.fromHex($.tag),
-      );
-    }
-  });
-  await t.step("poly() ignores empty key and message", () => {
+      ))
+    ),
+  ) as fc.Arbitrary<{ [_ in keyof A]: Uint8Array<ArrayBuffer> }>;
+Deno.test("chacha.chacha() passes reference vectors", () =>
+  vectors.chacha.forEach(($) => {
+    const state = new Uint32Array(16);
+    const [iv0, iv1, iv2] = u32($.iv);
+    chacha(u32($.key), $.count, iv0, iv1, iv2, state);
     assertEquals(
-      poly(new Uint32Array(8), new Uint8Array()),
-      new Uint8Array(16),
+      new Uint8Array(state.buffer).subarray(0, $.state.length >> 1),
+      Uint8Array.fromHex($.state),
     );
-  });
+  }));
+Deno.test("chacha.hchacha() passes reference vectors", () =>
+  vectors.hchacha.forEach(($) => {
+    assertEquals(
+      hchacha(Uint8Array.fromHex($.key), Uint8Array.fromHex($.iv)),
+      u32($.subkey),
+    );
+  }));
+Deno.test("chacha.xor() passes reference vectors", () =>
+  vectors.xor.forEach(($) => {
+    const plaintext = Uint8Array.fromHex($.plaintext);
+    const [iv0, iv1, iv2] = u32($.iv);
+    xor(u32($.key), iv0, iv1, iv2, plaintext, $.count);
+    assertEquals(plaintext, Uint8Array.fromHex($.ciphertext));
+  }));
+Deno.test("poly.poly() passes reference vectors", () =>
+  vectors.poly.forEach(($) => {
+    assertEquals(
+      poly(u32($.key), Uint8Array.fromHex($.message)),
+      Uint8Array.fromHex($.tag),
+    );
+  }));
+Deno.test("poly.poly() passes through empty key and message", () => {
+  assertEquals(poly(new Uint32Array(8), new Uint8Array()), new Uint8Array(16));
 });
-Deno.test("aead", async (t) => {
-  await t.step("xchachapoly() passes reference vectors", () => {
-    for (const $ of vectors.xchachaPoly) {
-      const plaintext = Uint8Array.fromHex($.plaintext);
-      assertEquals(
-        xchachaPoly(
-          Uint8Array.fromHex($.key),
-          Uint8Array.fromHex($.iv),
-          plaintext,
-          Uint8Array.fromHex($.ad),
-        ),
-        Uint8Array.fromHex($.tag),
-      );
-      assertEquals(plaintext, Uint8Array.fromHex($.ciphertext));
-    }
-  });
-  await t.step("polyxchacha() passes reference vectors", () => {
-    for (const $ of vectors.polyXchacha) {
-      const key = Uint8Array.fromHex($.key);
-      const iv = Uint8Array.fromHex($.iv);
-      const ciphertext = Uint8Array.fromHex($.ciphertext);
-      const ad = Uint8Array.fromHex($.ad);
-      const tag = Uint8Array.fromHex($.tag);
-      if ($.result) {
-        assertEquals(polyXchacha(key, iv, tag, ciphertext, ad), true);
-        assertEquals(ciphertext, Uint8Array.fromHex($.plaintext));
-      } else assertEquals(polyXchacha(key, iv, tag, ciphertext, ad), false);
-    }
-  });
-  await t.step("xchachaPoly() rejects wrong-size arguments", () => {
-    fc.assert(fc.property(fcWrong(32, 24), ($) => {
-      assertEquals(xchachaPoly(...$, new Uint8Array(), new Uint8Array()), null);
-    }));
-  });
-  await t.step("polyXchacha() rejects wrong-size arguments", () => {
-    fc.assert(fc.property(fcWrong(32, 24, 16), ($) => {
-      assertEquals(polyXchacha(...$, new Uint8Array(), new Uint8Array()), null);
-    }));
-  });
-});
-Deno.test("mod", async (t) => {
-  await t.step("cipher() passes reference vectors", () => {
-    for (const $ of vectors.cipher) {
-      const key = Uint8Array.fromHex($.key);
-      const iv = Uint8Array.fromHex($.iv);
-      const plaintext = Uint8Array.fromHex($.plaintext);
-      const text = new Uint8Array(plaintext.length);
-      cipher(key, iv, text);
-      assertEquals(text, Uint8Array.fromHex($.keystream));
-      text.set(plaintext);
-      cipher(key, iv, text);
-      assertEquals(text, Uint8Array.fromHex($.ciphertext));
-    }
-  });
-  await t.step("mod round-trips losslessly", () => {
-    fc.assert(fc.property(
-      fcRight(32),
-      fc.uint8Array(),
-      fc.uint8Array(),
-      (key, plaintext, data) => {
-        const textWithAd = encrypt(key, plaintext, data);
-        assert(textWithAd);
-        assertEquals(decrypt(key, textWithAd!, data), plaintext);
-        const textWithoutAd = encrypt(key, plaintext);
-        assert(textWithoutAd);
-        assertEquals(decrypt(key, textWithoutAd!), plaintext);
-      },
-    ));
-  });
-  await t.step("encrypt() rejects wrong-size arguments", () => {
-    fc.assert(fc.property(fcWrong(32), ($) => {
-      assertEquals(encrypt(...$, new Uint8Array()), null);
-    }));
-  });
-  await t.step("decrypt() rejects wrong-size arguments", () => {
-    fc.assert(fc.property(fcWrong(32), ($) => {
-      assertEquals(decrypt(...$, new Uint8Array(40)), null);
-    }));
-    fc.assert(fc.property(
-      fcRight(32),
-      fc.uint8Array({ maxLength: 39 }),
-      (key, text) => {
-        assertEquals(decrypt(key, text), null);
-      },
-    ));
-  });
-});
+Deno.test("aead.xchachaPoly() passes reference vectors", () =>
+  vectors.xchachaPoly.forEach(($) => {
+    const plaintext = Uint8Array.fromHex($.plaintext);
+    assertEquals(
+      xchachaPoly(
+        Uint8Array.fromHex($.key),
+        Uint8Array.fromHex($.iv),
+        plaintext,
+        Uint8Array.fromHex($.ad),
+      ),
+      Uint8Array.fromHex($.tag),
+    );
+    assertEquals(plaintext, Uint8Array.fromHex($.ciphertext));
+  }));
+Deno.test("aead.polyXchacha() passes reference vectors", () =>
+  vectors.polyXchacha.forEach(($) => {
+    const key = Uint8Array.fromHex($.key);
+    const iv = Uint8Array.fromHex($.iv);
+    const ciphertext = Uint8Array.fromHex($.ciphertext);
+    const ad = Uint8Array.fromHex($.ad);
+    const tag = Uint8Array.fromHex($.tag);
+    if ($.result) {
+      assertEquals(polyXchacha(key, iv, tag, ciphertext, ad), true);
+      assertEquals(ciphertext, Uint8Array.fromHex($.plaintext));
+    } else assertEquals(polyXchacha(key, iv, tag, ciphertext, ad), false);
+  }));
+Deno.test("aead.xchachaPoly() rejects wrong-size arguments", () =>
+  fc.assert(fc.property(fcWrong(32, 24), ($) => {
+    assertEquals(xchachaPoly(...$, new Uint8Array(), new Uint8Array()), null);
+  })));
+Deno.test("aead.polyXchacha() rejects wrong-size arguments", () =>
+  fc.assert(fc.property(fcWrong(32, 24, 16), ($) => {
+    assertEquals(polyXchacha(...$, new Uint8Array(), new Uint8Array()), null);
+  })));
+Deno.test("mod.cipher() passes reference vectors", () =>
+  vectors.cipher.forEach(($) => {
+    const key = Uint8Array.fromHex($.key);
+    const iv = Uint8Array.fromHex($.iv);
+    const plaintext = Uint8Array.fromHex($.plaintext);
+    const text = new Uint8Array(plaintext.length);
+    cipher(key, iv, text);
+    assertEquals(text, Uint8Array.fromHex($.keystream));
+    text.set(plaintext), cipher(key, iv, text);
+    assertEquals(text, Uint8Array.fromHex($.ciphertext));
+  }));
+Deno.test("mod round-trips losslessly", () =>
+  fc.assert(fc.property(
+    fc.uint8Array({ minLength: 32, maxLength: 32 }),
+    fc.uint8Array(),
+    fc.uint8Array(),
+    (key, plaintext, data) => {
+      const textWithAd = encrypt(key, plaintext, data);
+      assert(textWithAd);
+      assertEquals(decrypt(key, textWithAd, data), plaintext);
+      const textWithoutAd = encrypt(key, plaintext);
+      assert(textWithoutAd);
+      assertEquals(decrypt(key, textWithoutAd), plaintext);
+    },
+  )));
+Deno.test("mod.encrypt() rejects wrong-size arguments", () =>
+  fc.assert(fc.property(fcWrong(32), ($) => {
+    assertEquals(encrypt(...$, new Uint8Array()), null);
+    assertEquals(encrypt(...$, new Uint8Array(), new Uint8Array()), null);
+  })));
+Deno.test("mod.decrypt() rejects wrong-size arguments", () =>
+  fc.assert(fc.property(
+    fc.oneof(
+      fc.tuple(fcWrong(32).map(($) => $[0]), fc.uint8Array({ minLength: 40 })),
+      fc.tuple(
+        fc.uint8Array({ minLength: 32, maxLength: 32 }),
+        fc.uint8Array({ maxLength: 39 }),
+      ),
+    ),
+    ($) => {
+      assertEquals(decrypt(...$), null);
+      assertEquals(decrypt(...$, new Uint8Array()), null);
+    },
+  )));
 import.meta.main && Promise.all([
   fetch(
     "https://www.rfc-editor.org/rfc/rfc8439.txt",
@@ -160,15 +140,14 @@ import.meta.main && Promise.all([
           regex.global
             ? rfc8439.slice(...from).matchAll(regex)
             : [rfc8439.slice(...from).match(regex)!],
-          ($) => $.groups!,
+          ({ groups: { count, ...$ } = {} }) =>
+            Object.keys($).reduce((to, key) => ({
+              ...to,
+              [key]: $[key].match(
+                /(?<=^|[\da-f]{2}[\s:])[\da-f](?:\n {6})?[\da-f](?=[\s).:]|$)|(?<=^|[\s(:])[\da-f]{2}(?=[\s:][\da-f]{2}|$)/gi,
+              )?.join("").replace(/\n {6}/g, "") ?? "",
+            }), count === undefined ? {} : { count: Number(count) }),
         )
-      ).map(({ count, ...$ }) =>
-        Object.keys($).reduce((to, key) => ({
-          ...to,
-          [key]: String($[key]).match(
-            /(?<=^|[\da-f]{2}[\s:])[\da-f](?:\n {6})?[\da-f](?=[\s).:]|$)|(?<=^|[\s(:])[\da-f]{2}(?=[\s:][\da-f]{2}|$)/gi,
-          )?.join("").replaceAll("\n      ", "") ?? "",
-        }), count === undefined ? {} : { count: Number(count) })
       ),
   ),
   fetch(
@@ -277,17 +256,11 @@ import.meta.main && Promise.all([
         result: $.result === "valid",
       }))
     ),
-  ].reduce<{ [_: string]: { [_: string]: string | boolean }[] }>(
-    (to, $) => {
-      if ($.result) {
-        const { result: _, ...rest } = $;
-        to.xchachaPoly.push(rest);
-      }
-      to.polyXchacha.push($);
-      return to;
-    },
-    { xchachaPoly: [], polyXchacha: [] },
-  ),
+  ].reduce((to, { result, ...rest }) => {
+    result && to.xchachaPoly.push(rest);
+    to.polyXchacha.push({ result, ...rest });
+    return to;
+  }, { xchachaPoly: [] as {}[], polyXchacha: [] as {}[] }),
 })).then(($) =>
   Deno.writeTextFile(`${import.meta.dirname}/vectors.json`, JSON.stringify($))
 );
