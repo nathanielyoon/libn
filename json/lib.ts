@@ -4,6 +4,26 @@ import { assertEquals } from "@std/assert";
 export type Json = null | boolean | number | string | readonly Json[] | {
   [_: string]: Json;
 };
+type All<A> = A extends Objecty ? { [B in keyof A]: All<A[B]> } : A;
+declare const ANY: unique symbol;
+type Any<A> = false extends (true & A) ? typeof ANY : All<A>;
+type Both<A, B> = A extends B ? B extends A ? true : false : false;
+type Is<A, B> = Both<
+  <C>(_: A) => C extends A & C | C ? true : false,
+  <C>(_: B) => C extends B & C | C ? true : false
+>;
+/** Checks that two types are equal. */
+export type IsExact<A, B> = [A, B] extends [never, never] ? true
+  : [A & B] extends [never] ? false
+  : Is<Any<A>, Any<B>>;
+/** Checks the type of a value and returns it, optionally asserting equality. */
+export const type = <A>(
+  ...expected: [A?]
+): <B extends A>(actual: IsExact<A, B> extends true ? B : never) => B =>
+<B extends A>(actual: B) => {
+  if (expected.length) assertEquals<A | undefined>(actual, expected[0]);
+  return actual;
+};
 /** Composite type. */
 export type Objecty = { [_: PropertyKey]: unknown };
 /** Condensed object intersection. */
@@ -43,23 +63,3 @@ export const isArray = /* @__PURE__ */
 export const hasOwn = /* @__PURE__ */ (() => Object.hasOwn)() as <
   A extends PropertyKey,
 >($: object, key: A) => $ is { [_ in A]: unknown };
-type All<A> = A extends Objecty ? { [B in keyof A]: All<A[B]> } : A;
-declare const ANY: unique symbol;
-type Any<A> = false extends (true & A) ? typeof ANY : All<A>;
-type Both<A, B> = A extends B ? B extends A ? true : false : false;
-type Is<A, B> = Both<
-  <C>(_: A) => C extends A & C | C ? true : false,
-  <C>(_: B) => C extends B & C | C ? true : false
->;
-/** Checks that two types are equal. */
-export type IsExact<A, B> = [A, B] extends [never, never] ? true
-  : [A & B] extends [never] ? false
-  : Is<Any<A>, Any<B>>;
-/** Checks the type of a value and returns it, optionally asserting equality. */
-export const type = <A>(
-  ...expected: [A?]
-): <B extends A>(actual: IsExact<A, B> extends true ? B : never) => B =>
-<B extends A>(actual: B) => {
-  if (expected.length) assertEquals<A | undefined>(actual, expected[0]);
-  return actual;
-};
