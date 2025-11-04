@@ -1,23 +1,4 @@
-/**
- * Wrappers for `querySelector`/`querySelectorAll`.
- *
- * @example Usage
- * ```ts
- * // only necessary in non-browser environments
- * import { DOMParser } from "@b-fuze/deno-dom";
- * globalThis.document = new DOMParser().parseFromString(
- *   '<div id="i"><span class="c">text</span></div>',
- *   "text/html",
- * ) as any;
- *
- * import { assertEquals } from "@std/assert";
- *
- * assertEquals(qs("div#i > span.c")?.textContent, "text");
- * ```
- *
- * @module select
- */
-
+/** @module select */
 /** @internal */
 type Html = HTMLElementTagNameMap;
 /** @internal */

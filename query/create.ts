@@ -1,22 +1,4 @@
-/**
- * Wrapper for `document.createElement`.
- *
- * @example Usage
- * ```ts
- * // only necessary in non-browser environments
- * import { Document, Element } from "@b-fuze/deno-dom";
- * globalThis.document = new Document() as any;
- * globalThis.Element = Element as any;
- *
- * import { assertEquals } from "@std/assert";
- *
- * const div = ce("div", { id: "i" }, ce("span", { class: "c" }, "text"));
- * assertEquals(div.outerHTML, '<div id="i"><span class="c">text</span></div>');
- * ```
- *
- * @module create
- */
-
+/** @module create */
 /** @internal */
 type Attributes<A> =
   & {
