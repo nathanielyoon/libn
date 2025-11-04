@@ -1,10 +1,4 @@
-import {
-  isArray,
-  type Keys,
-  type Only,
-  type Tuple,
-  type Writable,
-} from "./lib.ts";
+import { isArray, type Only, type Tuple, type Writable } from "./lib.ts";
 import type { Arr, Bit, Int, Num, Obj, Schema, Str } from "./schema.ts";
 
 /** Creates a null schema. */
@@ -112,7 +106,7 @@ export const obj = (($: any, meta?: any) => ({
       additionalProperties: false;
       required: B["required"] extends infer C extends readonly string[]
         ? Writable<C>
-        : Keys<A>;
+        : Tuple<`${Exclude<keyof A, symbol>}`>;
     } & Omit<B, "required">
   >;
   <

@@ -7,25 +7,23 @@ export type Json = null | boolean | number | string | readonly Json[] | {
 type All<A> = A extends { [_: PropertyKey]: unknown }
   ? { [B in keyof A]: All<A[B]> }
   : A;
+/** @internal */
 declare const ANY: unique symbol;
-type Any<A> = false extends (true & A) ? typeof ANY : All<A>;
-type Both<A, B> = A extends B ? B extends A ? true : false : false;
-type Equal<A, B> = Both<
+/** @internal */
+type An<A> = false extends (true & A) ? typeof ANY : All<A>;
+type Both<A, B> = [A] extends [B] ? [B] extends [A] ? true : false : false;
+/** @internal */
+type Are<A, B> = Both<
   <C>(_: A) => C extends A & C | C ? true : false,
   <C>(_: B) => C extends B & C | C ? true : false
 >;
 /** Checks that two types are equal. */
-export type Is<A, B> = [A, B] extends [never, never] ? true
-  : [A & B] extends [never] ? false
-  : Equal<Any<A>, Any<B>>;
+export type Is<A, B> = [A, B] extends [never, never] ? true : Are<An<A>, An<B>>;
 /** Checks the type of a value and returns it, optionally asserting equality. */
 export const type = <A>(
-  ...expected: [A?]
-): <B extends A>(actual: Is<A, B> extends true ? B : never) => B =>
-<B extends A>(actual: B) => {
-  if (expected.length) assertEquals<A | undefined>(actual, expected[0]);
-  return actual;
-};
+  ...type: [A?]
+): <B extends A>(value: Is<A, B> extends true ? B : never) => B =>
+<B extends A>(value: B) => (type.length && assertEquals(value, type[0]), value);
 /** Condensed object intersection. */
 export type Merge<A> = A extends object ? { [B in keyof A]: A[B] } : A;
 /** Non-readonly. */
@@ -50,8 +48,6 @@ export type And<A> = (A extends never ? never : (_: A) => void) extends
 /** Union to tuple. */
 export type Tuple<A> = And<A extends never ? never : (_: A) => A> extends
   ((_: never) => infer B extends A) ? [...Tuple<Exclude<A, B>>, B] : [];
-/** Object keys. */
-export type Keys<A> = Tuple<`${Exclude<keyof A, symbol>}`>;
 /** Array type predicate. */
 export const isArray = /* @__PURE__ */
   (() => Array.isArray)() as ($: any) => $ is any[] | readonly any[];
