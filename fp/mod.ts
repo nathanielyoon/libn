@@ -1,3 +1,4 @@
+/** @module fp */
 /** Failure/success discriminated union. */
 export type Result<A = any, B = any> =
   | { state: false; value: A }
