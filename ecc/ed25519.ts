@@ -1,26 +1,4 @@
-/**
- * Edwards-curve digital signatures over Curve25519.
- *
- * @example Key generation, signing, verification
- * ```ts
- * import { assert } from "@std/assert";
- *
- * const message = crypto.getRandomValues(new Uint8Array(100));
- *
- * // Only you know this value
- * const secretKey = crypto.getRandomValues(new Uint8Array(32));
- *
- * // So only you can make this signature
- * const signature = sign(secretKey, message);
- *
- * // Share your public key to prove it
- * const publicKey = generate(secretKey);
- * assert(verify(publicKey, message, signature));
- * ```
- *
- * @module ed25519
- */
-
+/** @module ed25519 */
 import { sha512 } from "@libn/hash/sha2";
 import {
   add,
