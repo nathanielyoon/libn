@@ -1,6 +1,6 @@
 {
   "name": "@libn/json",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "0BSD",
   "exports": {
     "./lib": "./lib.ts",
