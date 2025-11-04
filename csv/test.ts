@@ -4,6 +4,47 @@ import { deCsv } from "./parse.ts";
 import { enCsv } from "./stringify.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
+Deno.test("parse.deCsv() passes reference vectors", () =>
+  vectors.deCsv.forEach(($) => {
+    assertEquals(deCsv($.csv, { empty: "" }), $.json);
+  }));
+Deno.test("parse.deCsv() strips byte-order marker", () => {
+  assertEquals(deCsv("\ufeff"), []);
+  assertEquals(deCsv("\ufeffa"), [["a"]]);
+});
+Deno.test("parse.deCsv() rejects unclosed quoted fields", () => {
+  assertEquals(deCsv('"'), null);
+  assertEquals(deCsv('"a'), null);
+  assertEquals(deCsv('a\n"'), null);
+});
+Deno.test("parse.deCsv() rejects quotes inside unquoted fields", () => {
+  assertEquals(deCsv('a"'), null);
+});
+Deno.test("parse.deCsv() rejects quotes after quoted fields", () => {
+  assertEquals(deCsv('""a"'), null);
+  assertEquals(deCsv('"a"\n"a""'), null);
+});
+Deno.test("parse.deCsv() detects quoted and unquoted empty fields", () => {
+  assertEquals(deCsv('""'), [[""]]);
+  assertEquals(deCsv(",a"), [[null, "a"]]);
+});
+Deno.test("parse.deCsv() strips trailing newlines", () => {
+  assertEquals(deCsv("a\r\n"), [["a"]]);
+});
+Deno.test("parse.deCsv() parses leading newlines", () => {
+  assertEquals(deCsv("\r\na"), [[null], ["a"]]);
+});
+const fcRows = <A>($: A, row?: fc.ArrayConstraints) =>
+  fc.array(
+    fc.array(
+      fc.oneof(
+        { weight: 15, arbitrary: fc.string() },
+        { weight: 1, arbitrary: fc.constant($) },
+      ),
+      { minLength: 1, maxLength: 64, ...row },
+    ),
+    { minLength: 1 },
+  );
 const parse = (csv: string) => {
   const rows: string[][] = [];
   for (let quoted = false, char, z = 0, y = 0, x = 0; z < csv.length; ++z) {
@@ -18,108 +59,54 @@ const parse = (csv: string) => {
   }
   return rows;
 };
-const fcRows = <A>($: A, row?: fc.ArrayConstraints) =>
-  fc.array(
-    fc.array(
-      fc.oneof(
-        { weight: 15, arbitrary: fc.string() },
-        { weight: 1, arbitrary: fc.constant($) },
-      ),
-      { minLength: 1, maxLength: 64, ...row },
+Deno.test("parse.deCsv() eagerly parses same-length rows", () =>
+  fc.assert(fc.property(
+    fc.integer({ min: 1, max: 64 }).chain(($) =>
+      fcRows(null, { minLength: $, maxLength: $ })
     ),
-    { minLength: 1 },
-  );
-Deno.test("parse", async (t) => {
-  await t.step("deCsv() passes reference vectors", () => {
-    for (const $ of vectors.deCsv) {
-      assertEquals(deCsv($.csv, { empty: { value: "" } }), $.json);
-    }
-  });
-  await t.step("deCsv() strips byte-order marker", () => {
-    assertEquals(deCsv("\ufeff"), []);
-    assertEquals(deCsv("\ufeffa"), [["a"]]);
-  });
-  await t.step("deCsv() rejects unclosed quoted fields", () => {
-    assertEquals(deCsv('"'), null);
-    assertEquals(deCsv('"a'), null);
-    assertEquals(deCsv('a\n"'), null);
-  });
-  await t.step("deCsv() rejects quotes inside unquoted fields", () => {
-    assertEquals(deCsv('a"'), null);
-  });
-  await t.step("deCsv() rejects quotes after quoted fields", () => {
-    assertEquals(deCsv('""a"'), null);
-    assertEquals(deCsv('"a"\n"a""'), null);
-  });
-  await t.step("deCsv() distinguishes quoted and unquoted empty fields", () => {
-    assertEquals(deCsv('""'), [[""]]);
-    assertEquals(deCsv(",a"), [[null, "a"]]);
-  });
-  await t.step("deCsv() strips trailing newlines", () => {
-    assertEquals(deCsv("a\r\n"), [["a"]]);
-  });
-  await t.step("deCsv() parses leading newlines", () => {
-    assertEquals(deCsv("\r\na"), [[null], ["a"]]);
-  });
-  await t.step("deCsv() eagerly parses same-length rows", () => {
-    fc.assert(fc.property(
-      fc.integer({ min: 1, max: 64 }).chain(($) =>
-        fcRows(null, { minLength: $, maxLength: $ })
-      ),
-      ($) => {
-        const csv = enCsv($);
-        assertEquals(deCsv(csv), $);
-        assertEquals(deCsv(csv, { empty: { value: "" } }), parse(csv));
-      },
-    ));
-  });
-  await t.step("deCsv() parses different-length rows if not eager", () => {
-    fc.assert(fc.property(fcRows(null), ($) => {
+    ($) => {
       const csv = enCsv($);
-      assertEquals(deCsv(csv, { eager: false }), $);
-      assertEquals(
-        deCsv(csv, { eager: false, empty: { value: "" } }),
-        parse(csv),
+      assertEquals(deCsv(csv), $);
+      assertEquals(deCsv(csv, { empty: "" }), parse(csv));
+    },
+  )));
+Deno.test("parse.deCsv() parses different-length rows if not eager", () =>
+  fc.assert(fc.property(fcRows(null), ($) => {
+    const csv = enCsv($);
+    assertEquals(deCsv(csv, { eager: false }), $);
+    assertEquals(deCsv(csv, { eager: false, empty: "" }), parse(csv));
+  })));
+Deno.test("stringify.enCsv() appends newline", () => {
+  assertEquals(enCsv([["ok"]]), "ok\n");
+});
+Deno.test("stringify.enCsv() detects quoted and unquoted empty fields", () => {
+  assertEquals(enCsv([[null]]), "\n");
+  assertEquals(enCsv([[""]]), '""\n');
+});
+Deno.test("stringify.enCsv() quotes special characters", () => {
+  assertEquals(enCsv([["\n"]]), '"\n"\n');
+  assertEquals(enCsv([['"']]), '""""\n');
+  assertEquals(enCsv([[","]]), '","\n');
+});
+Deno.test("stringify.enCsv() recognizes different newlines as special", () => {
+  assertEquals(enCsv([["\n"]]), '"\n"\n');
+  assertEquals(enCsv([["\r"]]), '"\r"\n');
+  assertEquals(enCsv([["\r\n"]]), '"\r\n"\n');
+});
+Deno.test("stringify.enCsv() takes custom empty predicate", () =>
+  fc.assert(fc.property(
+    fc.string().chain(($) =>
+      fc.record({ nil: fc.constant($), rows: fcRows($) })
+    ),
+    ({ nil, rows }) => {
+      assert(
+        deCsv(
+          enCsv(rows, ($): $ is typeof nil => $ === nil),
+          { eager: false },
+        )?.flat().every(($) => $ !== nil),
       );
-    }));
-  });
-});
-Deno.test("stringify", async (t) => {
-  await t.step("enCsv() appends newline", () => {
-    assertEquals(enCsv([["ok"]]), "ok\n");
-  });
-  await t.step("enCsv() distinguishes quoted and unquoted empty fields", () => {
-    assertEquals(enCsv([[null]]), "\n");
-    assertEquals(enCsv([[""]]), '""\n');
-  });
-  await t.step("enCsv() quotes special characters", () => {
-    assertEquals(enCsv([["\n"]]), '"\n"\n');
-    assertEquals(enCsv([['"']]), '""""\n');
-    assertEquals(enCsv([[","]]), '","\n');
-  });
-  await t.step("enCsv() recognizes different newlines as special", () => {
-    assertEquals(enCsv([["\n"]]), '"\n"\n');
-    assertEquals(enCsv([["\r"]]), '"\r"\n');
-    assertEquals(enCsv([["\r\n"]]), '"\r\n"\n');
-  });
-  await t.step("enCsv() takes custom empty predicate", () => {
-    fc.assert(fc.property(
-      fc.string().chain(($) =>
-        fc.record({ nil: fc.constant($), rows: fcRows($) })
-      ),
-      ({ nil, rows }) => {
-        assert(
-          deCsv(
-            enCsv(rows, {
-              empty: { value: nil, check: ($): $ is typeof nil => $ === nil },
-            }),
-            { eager: false },
-          )?.flat().every(($) => $ !== nil),
-        );
-      },
-    ));
-  });
-});
+    },
+  )));
 import.meta.main && Promise.all([
   fetch(
     "https://www.rfc-editor.org/rfc/rfc4180.txt",
