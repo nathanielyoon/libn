@@ -86,7 +86,7 @@ export const obj = (($: any, meta?: any) => ({
       required: [$],
       oneOf: Object.entries<Extract<Obj, { properties: {} }>>(meta).map((
         [key, { properties, required }],
-      ) => obj({ ...properties, [$]: str(key) }, { required: required })),
+      ) => obj({ ...properties, [$]: str(key) }, { required })),
     }
     : typeof $.type !== "string"
     ? {
