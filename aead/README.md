@@ -16,7 +16,7 @@ bun add @libn/csv
 - [poly1305-donna](https://github.com/floodyberry/poly1305-donna)
 - [draft-irtf-cfrg-xchacha](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-xchacha)
 
-## .
+## default
 
 ```ts
 import { cipher, decrypt, encrypt } from "@libn/aead";
