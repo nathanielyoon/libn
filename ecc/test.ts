@@ -21,8 +21,8 @@ const generateExport = async (type: "Ed" | "X") => {
     pair,
     keys: {
       secret: new Uint8Array(
-        (await crypto.subtle.exportKey("pkcs8", pair.privateKey)).slice(16),
-      ),
+        await crypto.subtle.exportKey("pkcs8", pair.privateKey),
+      ).subarray(16),
       public: new Uint8Array(
         await crypto.subtle.exportKey("raw", pair.publicKey),
       ),
@@ -47,173 +47,156 @@ const importPublic = (type: "Ed" | "X", $: Uint8Array) =>
     type === "X" ? [] : ["verify"],
   );
 const fcKey = fc.uint8Array({ minLength: 32, maxLength: 32 });
-Deno.test("x25519", async (t) => {
-  await t.step("ladder() passes reference vectors", () => {
-    let k = enBig(Uint8Array.fromHex(vectors.ladder.k));
-    let u = enBig(Uint8Array.fromHex(vectors.ladder.u));
-    let y = 0;
-    for (const step of vectors.ladder.after) {
-      do {
-        const next = ladder(k, u);
-        u = k, k = next;
-      } while (++y < step.iterations);
-      assertEquals(deBig(k), Uint8Array.fromHex(step.k));
-      // Remove to run the remaining two steps, which take a while.
-      // ./test.ts => x25519 ... ladder() passes reference vectors ... ok (7m49s)
-      break;
-    }
-  });
-  await t.step("derive() passes reference vectors", () => {
-    for (const $ of vectors.derive) {
-      assertEquals(
-        derive(Uint8Array.fromHex($.secret)),
-        Uint8Array.fromHex($.public),
-      );
-    }
-  });
-  await t.step("exchange() passes reference vectors", () => {
-    for (const $ of vectors.exchange) {
-      assertEquals(
-        exchange(Uint8Array.fromHex($.secret), Uint8Array.fromHex($.public)),
-        $.shared && Uint8Array.fromHex($.shared),
-      );
-    }
-  });
-  await t.step("derive() follows built-in generateKey", async () => {
-    const { keys } = await generateExport("X");
-    assertEquals(derive(keys.secret), keys.public);
-  });
-  await t.step("exchange() follows built-in deriveBits", async () => {
-    await fc.assert(fc.asyncProperty(fcKey, fcKey, async (secret1, secret2) => {
-      const public1 = derive(secret1), public2 = derive(secret2);
-      assertEquals(
-        exchange(secret1, public2),
-        new Uint8Array(
-          await crypto.subtle.deriveBits(
-            { name: "X25519", public: await importPublic("X", public2) },
-            await importSecret("X", secret1),
-            256,
-          ),
-        ),
-      );
-      assertEquals(
-        exchange(secret2, public1),
-        new Uint8Array(
-          await crypto.subtle.deriveBits(
-            { name: "X25519", public: await importPublic("X", public1) },
-            await importSecret("X", secret2),
-            256,
-          ),
-        ),
-      );
-    }));
-  });
-  await t.step("exchange() shares a secret with x25519 keys", () => {
-    fc.assert(fc.property(fcKey, fcKey, (key1, key2) => {
-      assertEquals(exchange(key1, derive(key2)), exchange(key2, derive(key1)));
-    }));
-  });
-  await t.step("exchange() shares a secret with ed25519 keys", () => {
-    fc.assert(fc.property(fcKey, fcKey, (key1, key2) => {
-      assertEquals(
-        exchange(convertSecret(key1), convertPublic(generate(key2))),
-        exchange(convertSecret(key2), convertPublic(generate(key1))),
-      );
-    }));
-  });
-  await t.step("exchange() rejects all-zero shared secrets", () => {
-    fc.assert(fc.property(fcKey, ($) => {
-      assertEquals(exchange($, new Uint8Array(32)), null);
-    }));
-  });
-  await t.step("exchange() accepts non-canonical values", () => {
-    const key = new Uint8Array(32);
-    for (let z = (1n << 255n) - 19n; z < 1n << 255n; ++z) {
-      assertEquals(exchange(key, deBig(z)), exchange(key, deBig(mod(z))));
-    }
-  });
+Deno.test("x25519.ladder() passes reference vectors", () => {
+  let k = enBig(Uint8Array.fromHex(vectors.ladder.k));
+  let u = enBig(Uint8Array.fromHex(vectors.ladder.u));
+  let y = 0;
+  for (const step of vectors.ladder.after) {
+    do {
+      const next = ladder(k, u);
+      u = k, k = next;
+    } while (++y < step.iterations);
+    assertEquals(deBig(k), Uint8Array.fromHex(step.k));
+    // Remove to run the remaining two steps, which take a while.
+    // ./test.ts => x25519.ladder() passes reference vectors ... ok (7m49s)
+    break;
+  }
 });
-Deno.test("ed25519", async (t) => {
-  await t.step("generate() passes reference vectors", () => {
-    for (const $ of vectors.generate) {
-      assertEquals(
-        generate(Uint8Array.fromHex($.secret)),
-        Uint8Array.fromHex($.public),
-      );
-    }
-  });
-  await t.step("sign() passes reference vectors", () => {
-    for (const $ of vectors.sign) {
-      assertEquals(
-        sign(Uint8Array.fromHex($.secret), Uint8Array.fromHex($.message)),
-        Uint8Array.fromHex($.signature),
-      );
-    }
-  });
-  await t.step("verify() passes reference vectors", () => {
-    for (const $ of vectors.verify) {
-      assertEquals(
-        verify(
-          Uint8Array.fromHex($.public),
-          Uint8Array.fromHex($.message),
-          Uint8Array.fromHex($.signature),
-        ),
-        $.result,
-      );
-    }
-  });
-  await t.step("generate() follows built-in generateKey", async () => {
-    const { keys } = await generateExport("Ed");
-    assertEquals(generate(keys.secret), keys.public);
-  });
-  await t.step("sign() follows built-in sign", async () => {
-    await fc.assert(fc.asyncProperty(fcKey, fc.uint8Array(), async (key, $) => {
-      assertEquals(
-        sign(key, $),
-        new Uint8Array(
-          await crypto.subtle.sign("Ed25519", await importSecret("Ed", key), $),
-        ),
-      );
-    }));
-  });
-  await t.step("verify() follows built-in verify", async () => {
-    await fc.assert(
-      fc.asyncProperty(fcKey, fc.uint8Array(), async (key, message) => {
-        const publicKey = generate(key), signature = sign(key, message);
-        assertEquals(
-          verify(publicKey, message, signature),
-          await crypto.subtle.verify(
-            "Ed25519",
-            await importPublic("Ed", publicKey),
-            signature,
-            message,
-          ),
-        );
-        ++signature[0];
-        assertEquals(
-          verify(publicKey, message, signature),
-          await crypto.subtle.verify(
-            "Ed25519",
-            await importPublic("Ed", publicKey),
-            signature,
-            message,
-          ),
-        );
-      }),
+Deno.test("x25519.derive() passes reference vectors", () =>
+  vectors.derive.forEach(($) => {
+    assertEquals(
+      derive(Uint8Array.fromHex($.secret)),
+      Uint8Array.fromHex($.public),
     );
-  });
-  await t.step("verify() rejects bad points", () => {
-    const zero32 = new Uint8Array(32), zer64 = new Uint8Array(64);
-    assertEquals(verify(zero32.with(-1, 1), zero32, zer64), false);
-    for (const $ of [zero32, zer64.with(-1, 1), zer64.fill(-1, 32)]) {
-      assertEquals(verify(zero32, zero32, $), false);
-    }
-  });
-  await t.step("verify() accepts valid signatures", () => {
-    fc.assert(fc.property(fcKey, fc.uint8Array(), (key, message) => {
-      assertEquals(verify(generate(key), message, sign(key, message)), true);
-    }));
-  });
+  }));
+Deno.test("x25519.exchange() passes reference vectors", () =>
+  vectors.exchange.forEach(($) => {
+    assertEquals(
+      exchange(Uint8Array.fromHex($.secret), Uint8Array.fromHex($.public)),
+      $.shared && Uint8Array.fromHex($.shared),
+    );
+  }));
+Deno.test("x25519.derive() follows built-in generateKey", async () => {
+  const { keys } = await generateExport("X");
+  assertEquals(derive(keys.secret), keys.public);
+});
+Deno.test("x25519.exchange() follows built-in deriveBits", () =>
+  fc.assert(fc.asyncProperty(fcKey, fcKey, async (secret1, secret2) => {
+    const public1 = derive(secret1), public2 = derive(secret2);
+    assertEquals(
+      exchange(secret1, public2),
+      new Uint8Array(
+        await crypto.subtle.deriveBits(
+          { name: "X25519", public: await importPublic("X", public2) },
+          await importSecret("X", secret1),
+          256,
+        ),
+      ),
+    );
+    assertEquals(
+      exchange(secret2, public1),
+      new Uint8Array(
+        await crypto.subtle.deriveBits(
+          { name: "X25519", public: await importPublic("X", public1) },
+          await importSecret("X", secret2),
+          256,
+        ),
+      ),
+    );
+  })));
+Deno.test("x25519.exchange() shares a secret with x25519 keys", () =>
+  fc.assert(fc.property(fcKey, fcKey, (key1, key2) => {
+    assertEquals(exchange(key1, derive(key2)), exchange(key2, derive(key1)));
+  })));
+Deno.test("x25519.exchange() shares a secret with ed25519 keys", () =>
+  fc.assert(fc.property(fcKey, fcKey, (key1, key2) => {
+    assertEquals(
+      exchange(convertSecret(key1), convertPublic(generate(key2))),
+      exchange(convertSecret(key2), convertPublic(generate(key1))),
+    );
+  })));
+Deno.test("x25519.exchange() rejects all-zero shared secrets", () =>
+  fc.assert(fc.property(fcKey, ($) => {
+    assertEquals(exchange($, new Uint8Array(32)), null);
+  })));
+Deno.test("x25519.exchange() accepts non-canonical values", () => {
+  const key = new Uint8Array(32);
+  for (let z = (1n << 255n) - 19n; z < 1n << 255n; ++z) {
+    assertEquals(exchange(key, deBig(z)), exchange(key, deBig(mod(z))));
+  }
+});
+Deno.test("ed25519.generate() passes reference vectors", () =>
+  vectors.generate.forEach(($) => {
+    assertEquals(
+      generate(Uint8Array.fromHex($.secret)),
+      Uint8Array.fromHex($.public),
+    );
+  }));
+Deno.test("ed25519.sign() passes reference vectors", () =>
+  vectors.sign.forEach(($) => {
+    assertEquals(
+      sign(Uint8Array.fromHex($.secret), Uint8Array.fromHex($.message)),
+      Uint8Array.fromHex($.signature),
+    );
+  }));
+Deno.test("ed25519.verify() passes reference vectors", () =>
+  vectors.verify.forEach(($) => {
+    assertEquals(
+      verify(
+        Uint8Array.fromHex($.public),
+        Uint8Array.fromHex($.message),
+        Uint8Array.fromHex($.signature),
+      ),
+      $.result,
+    );
+  }));
+Deno.test("ed25519.generate() follows built-in generateKey", async () => {
+  const { keys } = await generateExport("Ed");
+  assertEquals(generate(keys.secret), keys.public);
+});
+Deno.test("ed25519.sign() follows built-in sign", () =>
+  fc.assert(fc.asyncProperty(fcKey, fc.uint8Array(), async (key, $) => {
+    assertEquals(
+      sign(key, $),
+      new Uint8Array(
+        await crypto.subtle.sign("Ed25519", await importSecret("Ed", key), $),
+      ),
+    );
+  })));
+Deno.test("ed25519.verify() follows built-in verify", () =>
+  fc.assert(fc.asyncProperty(fcKey, fc.uint8Array(), async (key, message) => {
+    const publicKey = generate(key), signature = sign(key, message);
+    assertEquals(
+      verify(publicKey, message, signature),
+      await crypto.subtle.verify(
+        "Ed25519",
+        await importPublic("Ed", publicKey),
+        signature,
+        message,
+      ),
+    );
+    ++signature[0];
+    assertEquals(
+      verify(publicKey, message, signature),
+      await crypto.subtle.verify(
+        "Ed25519",
+        await importPublic("Ed", publicKey),
+        signature,
+        message,
+      ),
+    );
+  })));
+Deno.test("ed25519.verify() rejects bad points", () => {
+  const zero32 = new Uint8Array(32), zer64 = new Uint8Array(64);
+  assertEquals(verify(zero32.with(-1, 1), zero32, zer64), false);
+  for (const $ of [zero32, zer64.with(-1, 1), zer64.fill(-1, 32)]) {
+    assertEquals(verify(zero32, zero32, $), false);
+  }
+});
+Deno.test("ed25519.verify() accepts valid signatures", () => {
+  fc.assert(fc.property(fcKey, fc.uint8Array(), (key, message) => {
+    assertEquals(verify(generate(key), message, sign(key, message)), true);
+  }));
 });
 import.meta.main && Promise.all([
   fetch(
