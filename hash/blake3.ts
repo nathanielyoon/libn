@@ -1,22 +1,4 @@
-/**
- * [BLAKE3](https://github.com/BLAKE3-team/BLAKE3) hash function.
- *
- * @example Usage
- * ```ts
- * import { assertEquals } from "@std/assert";
- * import { crypto } from "@std/crypto";
- *
- * const data = crypto.getRandomValues(new Uint8Array(100));
- *
- * assertEquals(
- *   blake3(data),
- *   new Uint8Array(await crypto.subtle.digest("BLAKE3", data)),
- * );
- * ```
- *
- * @module blake3
- */
-
+/** @module blake3 */
 import { type Hash, perm } from "./lib.ts";
 
 const enum Size {

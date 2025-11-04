@@ -1,33 +1,4 @@
-/**
- * [SHA-2](https://www.rfc-editor.org/rfc/rfc6234) hash functions.
- *
- * @example Usage
- * ```ts
- * import { assertEquals } from "@std/assert";
- * import { crypto } from "@std/crypto";
- *
- * const data = crypto.getRandomValues(new Uint8Array(100));
- * assertEquals(
- *   sha224(data),
- *   new Uint8Array(await crypto.subtle.digest("SHA-224", data)),
- * );
- * assertEquals(
- *   sha256(data),
- *   new Uint8Array(await crypto.subtle.digest("SHA-256", data)),
- * );
- * assertEquals(
- *   sha384(data),
- *   new Uint8Array(await crypto.subtle.digest("SHA-384", data)),
- * );
- * assertEquals(
- *   sha512(data),
- *   new Uint8Array(await crypto.subtle.digest("SHA-512", data)),
- * );
- * ```
- *
- * @module sha2
- */
-
+/** @module sha2 */
 import { type Hash, iv } from "./lib.ts";
 
 const STATE = /* @__PURE__ */ new Uint32Array(16);
