@@ -13,3 +13,18 @@ bun add @libn/fp
 ```
 
 - [Purifree](https://github.com/nythrox/purifree)
+
+## default
+
+```ts
+import { exec, some } from "@libn/fp";
+import { assertEquals } from "@std/assert";
+
+const ok = false;
+assertEquals(
+  exec(function* ($) {
+    return yield* some($);
+  })(ok).state,
+  ok,
+);
+```
