@@ -14,12 +14,12 @@ function* generate<A, B>(this: Yieldable<A, B>): Generator<Yieldable<A, B>, B> {
   return yield this;
 }
 /** Creates a yieldable failure. */
-export const fail = <const A>($: A): Yieldable<A, never> => (
-  { state: false, value: $, [Symbol.iterator]: generate }
+export const fail = <const A = undefined>($?: A): Yieldable<A, never> => (
+  { state: false, value: $!, [Symbol.iterator]: generate }
 );
 /** Creates a yieldable success. */
-export const pass = <const A>($: A): Yieldable<never, A> => (
-  { state: true, value: $, [Symbol.iterator]: generate }
+export const pass = <const A = undefined>($?: A): Yieldable<never, A> => (
+  { state: true, value: $!, [Symbol.iterator]: generate }
 );
 /** Coerced-to-false values (except `NaN`, which isn't representable here). */
 export type Falsy = undefined | null | false | 0 | 0n | "";
