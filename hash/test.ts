@@ -21,34 +21,29 @@ const fcUint = fc.double({
   noDefaultInfinity: true,
   noNaN: true,
 }).map(($) => $ >>> 0);
-Deno.test("lib", async (t) => {
-  await t.step("iv() parses base16", () => {
-    fc.assert(fc.property(fc.uint32Array({ minLength: 1 }), ($) => {
-      assertEquals(
-        iv(Array.from($, (int) => int.toString(16).padStart(8, "0")).join("")),
-        $,
-      );
-    }));
-  });
-  await t.step("perm() parses base16", () => {
-    fc.assert(fc.property(fc.uint8Array({ max: 15 }), ($) => {
-      const base = $.reduce((hex, byte) => hex + byte.toString(16), "");
-      assertEquals(perm(base), $);
-      assertEquals(perm(base.split("")), $);
-      for (let z = 0; z <= 4; ++z) {
-        assertEquals(perm(base, z), $.map((byte) => byte << z));
-      }
-    }));
-  });
-  await t.step("mul64() multiplies 64 bits", () => {
-    fc.assert(fc.property(fcUint, fcUint, (one, two) => {
-      const big = BigInt(one) * BigInt(two);
-      const pair = umul(one, two);
-      assertEquals(deI64(pair), big);
-      assertEquals({ hi: pair.hi >>> 0, lo: pair.lo >>> 0 }, enI64(big));
-    }));
-  });
-});
+Deno.test("lib.iv() parses base16", () =>
+  fc.assert(fc.property(fc.uint32Array({ minLength: 1 }), ($) => {
+    assertEquals(
+      iv(Array.from($, (int) => int.toString(16).padStart(8, "0")).join("")),
+      $,
+    );
+  })));
+Deno.test("lib.perm() parses base16", () =>
+  fc.assert(fc.property(fc.uint8Array({ max: 15 }), ($) => {
+    const base = $.reduce((hex, byte) => hex + byte.toString(16), "");
+    assertEquals(perm(base), $);
+    assertEquals(perm(base.split("")), $);
+    for (let z = 0; z <= 4; ++z) {
+      assertEquals(perm(base, z), $.map((byte) => byte << z));
+    }
+  })));
+Deno.test("lib.mul64() multiplies 64 bits", () =>
+  fc.assert(fc.property(fcUint, fcUint, (one, two) => {
+    const big = BigInt(one) * BigInt(two);
+    const pair = umul(one, two);
+    assertEquals(deI64(pair), big);
+    assertEquals({ hi: pair.hi >>> 0, lo: pair.lo >>> 0 }, enI64(big));
+  })));
 const bin = async (
   bin: string,
   run: (
@@ -71,277 +66,233 @@ const bin = async (
   });
   await Deno.remove(path);
 };
-Deno.test("integer", async (t) => {
-  await t.step("oaat() follows original implementation", async () => {
-    await bin(vectors.oaat, (spawn) =>
-      fc.assert(fc.asyncProperty(
-        fc.string({ size: "medium" }),
-        fcUint,
-        async ($, seed) => {
-          assertEquals(
-            oaat32(enUtf8($), seed),
-            +(await spawn(`${$}\n${seed}`)),
-          );
-        },
-      )));
-  });
-  await t.step("a5hash32() follows original implementation", async () => {
-    await bin(vectors.a5hash, (spawn) =>
-      fc.assert(fc.asyncProperty(
-        fc.string({ size: "medium" }),
-        fcUint,
-        async ($, seed) => {
-          assertEquals(
-            a5hash32(enUtf8($), seed),
-            +(await spawn(`${$}\n${seed}`, ["\x20"])),
-          );
-        },
-      )));
-  });
-  await t.step("a5hash64() follows original implementation", async () => {
-    await bin(vectors.a5hash, (spawn) =>
-      fc.assert(fc.asyncProperty(
-        fc.string({ size: "medium" }),
-        fc.bigInt({ min: 0n, max: 0xffffffffffffffffn }),
-        async ($, seed) => {
-          const [hi, lo] = (await spawn(`${$}\n${seed}`, ["\x40"])).split(" ");
-          assertEquals(a5hash64(enUtf8($), seed), deI64({ hi: +hi, lo: +lo }));
-        },
-      )));
-  });
-});
-Deno.test("sha2", async (t) => {
-  await t.step("sha224() passes reference vectors", () => {
-    for (const $ of vectors.sha224) {
-      assertEquals(
-        sha224(Uint8Array.fromHex($.data)),
-        Uint8Array.fromHex($.digest),
-      );
-    }
-  });
-  await t.step("sha256() passes reference vectors", () => {
-    for (const $ of vectors.sha256) {
-      assertEquals(
-        sha256(Uint8Array.fromHex($.data)),
-        Uint8Array.fromHex($.digest),
-      );
-    }
-  });
-  await t.step("sha384() passes reference vectors", () => {
-    for (const $ of vectors.sha384) {
-      assertEquals(
-        sha384(Uint8Array.fromHex($.data)),
-        Uint8Array.fromHex($.digest),
-      );
-    }
-  });
-  await t.step("sha512() passes reference vectors", () => {
-    for (const $ of vectors.sha512) {
-      assertEquals(
-        sha512(Uint8Array.fromHex($.data)),
-        Uint8Array.fromHex($.digest),
-      );
-    }
-  });
-  await t.step("sha256() follows built-in digest", async () => {
-    await fc.assert(fc.asyncProperty(fc.uint8Array(), async ($) => {
-      assertEquals(
-        sha256($),
-        new Uint8Array(await crypto.subtle.digest("SHA-256", $)),
-      );
-    }));
-  });
-  await t.step("sha384() follows built-in digest", async () => {
-    await fc.assert(fc.asyncProperty(fc.uint8Array(), async ($) => {
-      assertEquals(
-        sha384($),
-        new Uint8Array(await crypto.subtle.digest("SHA-384", $)),
-      );
-    }));
-  });
-  await t.step("sha512() follows built-in digest", async () => {
-    await fc.assert(fc.asyncProperty(fc.uint8Array(), async ($) => {
-      assertEquals(
-        sha512($),
-        new Uint8Array(await crypto.subtle.digest("SHA-512", $)),
-      );
-    }));
-  });
-  await t.step("sha224() follows @std/crypto digestSync", () => {
-    fc.assert(fc.property(fc.uint8Array(), ($) => {
-      assertEquals(
-        sha224($),
-        new Uint8Array(std.subtle.digestSync("SHA-224", $)),
-      );
-    }));
-  });
-  await t.step("sha256() follows @std/crypto digestSync", () => {
-    fc.assert(fc.property(fc.uint8Array(), ($) => {
-      assertEquals(
-        sha256($),
-        new Uint8Array(std.subtle.digestSync("SHA-256", $)),
-      );
-    }));
-  });
-  await t.step("sha384() follows @std/crypto digestSync", () => {
-    fc.assert(fc.property(fc.uint8Array(), ($) => {
-      assertEquals(
-        sha384($),
-        new Uint8Array(std.subtle.digestSync("SHA-384", $)),
-      );
-    }));
-  });
-  await t.step("sha512() follows @std/crypto digestSync", () => {
-    fc.assert(fc.property(fc.uint8Array(), ($) => {
-      assertEquals(
-        sha512($),
-        new Uint8Array(std.subtle.digestSync("SHA-512", $)),
-      );
-    }));
-  });
-});
-Deno.test("hmac", async (t) => {
-  await t.step("hmac() passes reference vectors", () => {
-    for (const $ of vectors.hmac) {
-      const tag = hmac(
-        Uint8Array.fromHex($.key),
-        Uint8Array.fromHex($.data),
-      ).subarray(0, $.tag.length >> 1);
-      if ($.result) assertEquals(tag, Uint8Array.fromHex($.tag));
-      else assertNotEquals(tag, Uint8Array.fromHex($.tag));
-    }
-  });
-  await t.step("hkdf() passes reference vectors", () => {
-    for (const $ of vectors.hkdf) {
-      assertEquals(
-        hkdf(
-          Uint8Array.fromHex($.key),
-          Uint8Array.fromHex($.info),
-          Uint8Array.fromHex($.salt),
-          $.out,
-        ),
-        Uint8Array.fromHex($.derived),
-      );
-    }
-  });
-  await t.step("hmac() follows built-in sign", async () => {
-    await fc.assert(fc.asyncProperty(
-      fc.uint8Array({ minLength: 1 }),
-      fc.uint8Array(),
-      async (key, data) => {
+Deno.test("integer.oaat() follows original implementation", () =>
+  bin(vectors.oaat, (spawn) =>
+    fc.assert(fc.asyncProperty(
+      fc.string({ size: "medium" }),
+      fcUint,
+      async ($, seed) => {
         assertEquals(
-          hmac(key, data),
-          new Uint8Array(
-            await crypto.subtle.sign(
-              "HMAC",
-              await crypto.subtle.importKey(
-                "raw",
-                key,
-                { name: "HMAC", hash: "SHA-256" },
-                false,
-                ["sign"],
-              ),
-              data,
+          oaat32(enUtf8($), seed),
+          +(await spawn(`${$}\n${seed}`)),
+        );
+      },
+    ))));
+Deno.test("integer.a5hash32() follows original implementation", () =>
+  bin(vectors.a5hash, (spawn) =>
+    fc.assert(fc.asyncProperty(
+      fc.string({ size: "medium" }),
+      fcUint,
+      async ($, seed) => {
+        assertEquals(
+          a5hash32(enUtf8($), seed),
+          +(await spawn(`${$}\n${seed}`, ["\x20"])),
+        );
+      },
+    ))));
+Deno.test("integer.a5hash64() follows original implementation", () =>
+  bin(vectors.a5hash, (spawn) =>
+    fc.assert(fc.asyncProperty(
+      fc.string({ size: "medium" }),
+      fc.bigInt({ min: 0n, max: 0xffffffffffffffffn }),
+      async ($, seed) => {
+        const [hi, lo] = (await spawn(`${$}\n${seed}`, ["\x40"])).split(" ");
+        assertEquals(a5hash64(enUtf8($), seed), deI64({ hi: +hi, lo: +lo }));
+      },
+    ))));
+Deno.test("sha2.sha224() passes reference vectors", () =>
+  vectors.sha224.forEach(($) => {
+    assertEquals(
+      sha224(Uint8Array.fromHex($.data)),
+      Uint8Array.fromHex($.digest),
+    );
+  }));
+Deno.test("sha2.sha256() passes reference vectors", () =>
+  vectors.sha256.forEach(($) => {
+    assertEquals(
+      sha256(Uint8Array.fromHex($.data)),
+      Uint8Array.fromHex($.digest),
+    );
+  }));
+Deno.test("sha2.sha384() passes reference vectors", () =>
+  vectors.sha384.forEach(($) => {
+    assertEquals(
+      sha384(Uint8Array.fromHex($.data)),
+      Uint8Array.fromHex($.digest),
+    );
+  }));
+Deno.test("sha2.sha512() passes reference vectors", () =>
+  vectors.sha512.forEach(($) => {
+    assertEquals(
+      sha512(Uint8Array.fromHex($.data)),
+      Uint8Array.fromHex($.digest),
+    );
+  }));
+Deno.test("sha2.sha256() follows built-in digest", () =>
+  fc.assert(fc.asyncProperty(fc.uint8Array(), async ($) => {
+    assertEquals(
+      sha256($),
+      new Uint8Array(await crypto.subtle.digest("SHA-256", $)),
+    );
+  })));
+Deno.test("sha2.sha384() follows built-in digest", () =>
+  fc.assert(fc.asyncProperty(fc.uint8Array(), async ($) => {
+    assertEquals(
+      sha384($),
+      new Uint8Array(await crypto.subtle.digest("SHA-384", $)),
+    );
+  })));
+Deno.test("sha2.sha512() follows built-in digest", () =>
+  fc.assert(fc.asyncProperty(fc.uint8Array(), async ($) => {
+    assertEquals(
+      sha512($),
+      new Uint8Array(await crypto.subtle.digest("SHA-512", $)),
+    );
+  })));
+Deno.test("sha2.sha224() follows @std/crypto digestSync", () =>
+  fc.assert(fc.property(fc.uint8Array(), ($) => {
+    assertEquals(
+      sha224($),
+      new Uint8Array(std.subtle.digestSync("SHA-224", $)),
+    );
+  })));
+Deno.test("sha2.sha256() follows @std/crypto digestSync", () =>
+  fc.assert(fc.property(fc.uint8Array(), ($) => {
+    assertEquals(
+      sha256($),
+      new Uint8Array(std.subtle.digestSync("SHA-256", $)),
+    );
+  })));
+Deno.test("sha2.sha384() follows @std/crypto digestSync", () =>
+  fc.assert(fc.property(fc.uint8Array(), ($) => {
+    assertEquals(
+      sha384($),
+      new Uint8Array(std.subtle.digestSync("SHA-384", $)),
+    );
+  })));
+Deno.test("sha2.sha512() follows @std/crypto digestSync", () =>
+  fc.assert(fc.property(fc.uint8Array(), ($) => {
+    assertEquals(
+      sha512($),
+      new Uint8Array(std.subtle.digestSync("SHA-512", $)),
+    );
+  })));
+Deno.test("hmac.hmac() passes reference vectors", () =>
+  vectors.hmac.forEach(($) => {
+    const tag = hmac(Uint8Array.fromHex($.key), Uint8Array.fromHex($.data))
+      .subarray(0, $.tag.length >> 1);
+    if ($.result) assertEquals(tag, Uint8Array.fromHex($.tag));
+    else assertNotEquals(tag, Uint8Array.fromHex($.tag));
+  }));
+Deno.test("hmac.hkdf() passes reference vectors", () =>
+  vectors.hkdf.forEach(($) => {
+    assertEquals(
+      hkdf(
+        Uint8Array.fromHex($.key),
+        Uint8Array.fromHex($.info),
+        Uint8Array.fromHex($.salt),
+        $.out,
+      ),
+      Uint8Array.fromHex($.derived),
+    );
+  }));
+Deno.test("hmac.hmac() follows built-in sign", () =>
+  fc.assert(fc.asyncProperty(
+    fc.uint8Array({ minLength: 1 }),
+    fc.uint8Array(),
+    async (key, data) => {
+      assertEquals(
+        hmac(key, data),
+        new Uint8Array(
+          await crypto.subtle.sign(
+            "HMAC",
+            await crypto.subtle.importKey(
+              "raw",
+              key,
+              { name: "HMAC", hash: "SHA-256" },
+              false,
+              ["sign"],
             ),
+            data,
           ),
-        );
-      },
-    ));
-  });
-  await t.step("hkdf() follows built-in deriveBits", async () => {
-    await fc.assert(fc.asyncProperty(
-      fc.uint8Array(),
-      fc.uint8Array(),
-      fc.uint8Array({ maxLength: 32 }),
-      fc.integer({ min: 1, max: 255 }),
-      async (key, info, salt, length) => {
-        const actual = hkdf(key, info, salt, length);
-        const cryptoKey = await crypto.subtle.importKey(
-          "raw",
-          key,
-          "HKDF",
-          false,
-          ["deriveBits"],
-        );
-        const bits = await crypto.subtle.deriveBits(
-          { name: "HKDF", hash: "SHA-256", info: info, salt: salt },
-          cryptoKey,
-          length << 3,
-        );
-        assertEquals(actual, new Uint8Array(bits));
-      },
-    ));
-  });
-});
-Deno.test("blake2", async (t) => {
-  await t.step("blake2s() passes reference vectors", () => {
-    for (const $ of vectors.blake2s) {
-      assertEquals(
-        blake2s(
-          Uint8Array.fromHex($.in),
-          Uint8Array.fromHex($.key),
-          $.hash.length >> 1,
         ),
-        Uint8Array.fromHex($.hash),
       );
-    }
-  });
-  await t.step("blake2b() passes reference vectors", () => {
-    for (const $ of vectors.blake2b) {
-      assertEquals(
-        blake2b(
-          Uint8Array.fromHex($.in),
-          Uint8Array.fromHex($.key),
-          $.hash.length >> 1,
-        ),
-        Uint8Array.fromHex($.hash),
+    },
+  )));
+Deno.test("hmac.hkdf() follows built-in deriveBits", () =>
+  fc.assert(fc.asyncProperty(
+    fc.uint8Array(),
+    fc.uint8Array(),
+    fc.uint8Array({ maxLength: 32 }),
+    fc.integer({ min: 1, max: 255 }),
+    async (key, info, salt, length) => {
+      const actual = hkdf(key, info, salt, length);
+      const cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        key,
+        "HKDF",
+        false,
+        ["deriveBits"],
       );
-    }
-  });
-  await t.step("blake2s() follows @std/crypto digestSync", () => {
-    fc.assert(fc.property(fc.uint8Array(), ($) => {
-      assertEquals(
-        blake2s($),
-        new Uint8Array(std.subtle.digestSync("BLAKE2S", $)),
+      const bits = await crypto.subtle.deriveBits(
+        { name: "HKDF", hash: "SHA-256", info: info, salt: salt },
+        cryptoKey,
+        length << 3,
       );
-    }));
-  });
-  await t.step("blake2b() follows @std/crypto digestSync", () => {
-    fc.assert(fc.property(fc.uint8Array(), ($) => {
-      assertEquals(
-        blake2b($),
-        new Uint8Array(std.subtle.digestSync("BLAKE2B", $)),
-      );
-    }));
+      assertEquals(actual, new Uint8Array(bits));
+    },
+  )));
+Deno.test("blake2.blake2s() passes reference vectors", () =>
+  vectors.blake2s.forEach(($) => {
+    assertEquals(
+      blake2s(
+        Uint8Array.fromHex($.in),
+        Uint8Array.fromHex($.key),
+        $.hash.length >> 1,
+      ),
+      Uint8Array.fromHex($.hash),
+    );
+  }));
+Deno.test("blake2.blake2b() passes reference vectors", () =>
+  vectors.blake2b.forEach(($) => {
+    assertEquals(
+      blake2b(
+        Uint8Array.fromHex($.in),
+        Uint8Array.fromHex($.key),
+        $.hash.length >> 1,
+      ),
+      Uint8Array.fromHex($.hash),
+    );
+  }));
+Deno.test("blake2.blake2s() follows @std/crypto digestSync", () =>
+  fc.assert(fc.property(fc.uint8Array(), ($) => {
+    assertEquals(
+      blake2s($),
+      new Uint8Array(std.subtle.digestSync("BLAKE2S", $)),
+    );
+  })));
+Deno.test("blake2.blake2b() follows @std/crypto digestSync", () =>
+  fc.assert(fc.property(fc.uint8Array(), ($) => {
+    assertEquals(
+      blake2b($),
+      new Uint8Array(std.subtle.digestSync("BLAKE2B", $)),
+    );
+  })));
+Deno.test("blake3.blake3() passes reference vectors", () => {
+  const key = new TextEncoder().encode(vectors.blake3.key);
+  const context = vectors.blake3.context;
+  const length = vectors.blake3.length;
+  vectors.blake3.cases.forEach(($) => {
+    const input = Uint8Array.from({ length: $.input }, (_, z) => z % 251);
+    assertEquals(blake3(input, undefined, length), Uint8Array.fromHex($.hash));
+    assertEquals(blake3(input, key, length), Uint8Array.fromHex($.keyed));
+    assertEquals(blake3(input, context, length), Uint8Array.fromHex($.derive));
   });
 });
-Deno.test("blake3", async (t) => {
-  await t.step("blake3() passes reference vectors", () => {
-    const key = new TextEncoder().encode(vectors.blake3.key);
-    const context = vectors.blake3.context;
-    const length = vectors.blake3.length;
-    for (const $ of vectors.blake3.cases) {
-      const input = Uint8Array.from({ length: $.input }, (_, z) => z % 251);
-      assertEquals(
-        blake3(input, undefined, length),
-        Uint8Array.fromHex($.hash),
-      );
-      assertEquals(blake3(input, key, length), Uint8Array.fromHex($.keyed));
-      assertEquals(
-        blake3(input, context, length),
-        Uint8Array.fromHex($.derive),
-      );
-    }
-  });
-  await t.step("blake3() follows @std/crypto digestSync", () => {
-    fc.assert(fc.property(fc.uint8Array(), ($) => {
-      assertEquals(
-        blake3($),
-        new Uint8Array(std.subtle.digestSync("BLAKE3", $)),
-      );
-    }));
-  });
-});
+Deno.test("blake3.blake3() follows @std/crypto digestSync", () =>
+  fc.assert(fc.property(fc.uint8Array(), ($) => {
+    assertEquals(blake3($), new Uint8Array(std.subtle.digestSync("BLAKE3", $)));
+  })));
 import.meta.main && Promise.all([
   Promise.all([
     fetch(
