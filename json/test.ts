@@ -409,20 +409,20 @@ Deno.test("pointer.dereference() rejects missing indices/keys", () => {
     assertEquals(dereference($, `/${$.length || 1}`), undefined);
   }));
 });
-Deno.test("nil() creates Nil schemas", () => {
+Deno.test("build.nil() creates Nil schemas", () => {
   type(nil())({ type: "null" });
   type(nil(bit()))({
     type: ["null", "boolean"],
     oneOf: [{ type: "null" }, { type: "boolean" }],
   });
 });
-Deno.test("bit() creates Bit schemas", () => {
+Deno.test("build.bit() creates Bit schemas", () => {
   type(bit())({ type: "boolean" });
   type(bit(false))({ type: "boolean", const: false });
   type(bit([true]))({ type: "boolean", enum: [true] as const });
   type(bit({}))({ type: "boolean" });
 });
-Deno.test("int() creates Int schemas", () => {
+Deno.test("build.int() creates Int schemas", () => {
   type(int())({ type: "integer" });
   type(int(0))({ type: "integer", const: 0 });
   type(int([1]))({ type: "integer", enum: [1] as const });
@@ -441,7 +441,7 @@ Deno.test("int() creates Int schemas", () => {
     multipleOf: 6,
   });
 });
-Deno.test("num() creates Num schemas", () => {
+Deno.test("build.num() creates Num schemas", () => {
   type(num())({ type: "number" });
   type(num(0))({ type: "number", const: 0 });
   type(num([1]))({ type: "number", enum: [1] as const });
@@ -460,7 +460,7 @@ Deno.test("num() creates Num schemas", () => {
     multipleOf: 6,
   });
 });
-Deno.test("str() creates Str schemas", () => {
+Deno.test("build.str() creates Str schemas", () => {
   type(str())({ type: "string" });
   type(str("0"))({ type: "string", const: "0" });
   type(str(["1"]))({ type: "string", enum: ["1"] as const });
@@ -479,7 +479,7 @@ Deno.test("str() creates Str schemas", () => {
     contentEncoding: "base16",
   });
 });
-Deno.test("arr() creates Arr schemas", () => {
+Deno.test("build.arr() creates Arr schemas", () => {
   type(arr(nil(), {}))({ type: "array", items: { type: "null" } });
   type(arr(nil(), { minItems: 0, maxItems: 1, uniqueItems: false }))({
     type: "array",
@@ -508,7 +508,7 @@ Deno.test("arr() creates Arr schemas", () => {
     uniqueItems: true,
   });
 });
-Deno.test("obj() creates Obj schemas", () => {
+Deno.test("build.obj() creates Obj schemas", () => {
   type(obj(nil(), {}))({
     type: "object",
     additionalProperties: { type: "null" },
@@ -629,7 +629,7 @@ const fcOrdered = <A extends number>(size: A, value?: fc.Arbitrary<number>) =>
     comparator: "SameValueZero",
   }).map(($) => [...new Float64Array($).sort()] as Sequence<number, A>);
 const fcLength = fc.integer({ min: 1, max: 64 });
-Deno.test("compile() checks nil schemas", () => {
+Deno.test("check.compile() checks Nil schemas", () => {
   assertCheck({ schema: nil(), ok: [null], no: { "/type~": not("null") } });
   assertCheck({
     schema: nil(bit(false)),
@@ -637,7 +637,7 @@ Deno.test("compile() checks nil schemas", () => {
     no: { "/oneOf/1/type~": not("null", "boolean"), "/oneOf/1/const~": [true] },
   });
 });
-Deno.test("compile() checks bit schemas", () => {
+Deno.test("check.compile() checks Bit schemas", () => {
   assertCheck({
     schema: bit(),
     ok: [false, true],
@@ -663,7 +663,7 @@ Deno.test("compile() checks bit schemas", () => {
     no: { "/type~": [], "/enum~": [] },
   });
 });
-Deno.test("compile() checks int schemas", () => {
+Deno.test("check.compile() checks Int schemas", () => {
   const fcInteger = fcNumber.map(Math.round);
   assertCheck({ schema: int(), ok: [0], no: { "/type~": not("integer") } });
   const fcEnum = fcUnique(fcInteger);
@@ -706,7 +706,7 @@ Deno.test("compile() checks int schemas", () => {
     })),
   );
 });
-Deno.test("compile() checks num schemas", () => {
+Deno.test("check.compile() checks Num schemas", () => {
   assertCheck({
     schema: num(),
     ok: [Number.MIN_VALUE],
@@ -752,7 +752,7 @@ Deno.test("compile() checks num schemas", () => {
     })),
   );
 });
-Deno.test("compile() checks str schemas()", () => {
+Deno.test("check.compile() checks Str schemas()", () => {
   const fcString = fc.string({ unit: "grapheme", size: "medium" });
   assertCheck({ schema: str(), ok: [""], no: { "/type~": not("string") } });
   const fcEnum = fcUnique(fcString);
@@ -844,7 +844,7 @@ Deno.test("compile() checks str schemas()", () => {
       ),
   );
 });
-Deno.test("compile() checks arr schemas", () => {
+Deno.test("check.compile() checks Arr schemas", () => {
   assertCheck({ schema: arr(nil()), ok: [[]], no: { "/type~": not("array") } });
   assertCheck({
     schema: arr([nil()]),
@@ -934,7 +934,7 @@ Deno.test("compile() checks arr schemas", () => {
     })),
   );
 });
-Deno.test("compile() checks obj schemas", () => {
+Deno.test("check.compile() checks Obj schemas", () => {
   assertCheck({
     schema: obj(nil()),
     ok: [{}, { "": null }],
