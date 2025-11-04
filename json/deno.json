@@ -5,6 +5,7 @@
   "exports": {
     "./lib": "./lib.ts",
     "./pointer": "./pointer.ts",
+    "./schema": "./schema.ts",
     "./build": "./build.ts",
     "./check": "./check.ts"
   }
