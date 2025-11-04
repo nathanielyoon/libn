@@ -72,7 +72,7 @@
     },
     "check": "deno check --doc",
     "lint": "deno lint --compact && deno doc --lint **/*.ts",
-    "test": "deno test -P --unstable-raw-imports --doc --no-check --parallel --trace-leaks",
+    "test": "deno test --permission-set --quiet --unstable-raw-imports --doc --no-check --parallel --trace-leaks",
     "record": "deno task --quiet --cwd=. test --reporter=dot --clean --coverage=/tmp/deno-coverage --coverage-raw-data-only",
     "report": "deno coverage --detailed /tmp/deno-coverage --include=\"^file://$(pwd)\"",
     "cover": "deno task --quiet --cwd=. record && deno task --quiet --cwd=. report",
