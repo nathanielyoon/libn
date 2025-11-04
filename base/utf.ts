@@ -1,21 +1,4 @@
-/**
- * Aliases for built-in UTF-8 and UTF-16 APIs.
- *
- * @example Usage
- * ```ts
- * import { assertEquals } from "@std/assert";
- *
- * const binary = new TextEncoder().encode("Hello :)");
- * assertEquals(enUtf8("Hello :)"), binary);
- * assertEquals(deUtf8(binary), "Hello :)");
- *
- * assertEquals(en.call("Hello :)"), 72);
- * assertEquals(en.call("Hello :)", 1), 101);
- * assertEquals(de(...binary), "Hello :)");
- * ```
- *
- * @module utf
- */
+/** @module utf */
 
 /** Converts UTF-8 to binary. */
 export const enUtf8: ($: string) => Uint8Array<ArrayBuffer> =

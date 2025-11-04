@@ -1,26 +1,4 @@
-/**
- * [Z85](https://rfc.zeromq.org/spec/32) uses printable, non-whitespace ASCII
- * characters, excluding '"', "'", ",", ";", "\", "_", "`", "|", and "~". Unlike
- * the [original](https://rfc.zeromq.org/spec/32/#formal-specification), the
- * binary input length doesn't have to be a multiple of 4, the encoding and
- * decoding functions add and remove padding automatically.
- *
- * @example Usage
- * ```ts
- * import { assertEquals, assertMatch } from "@std/assert";
- *
- * const binary = new TextEncoder().encode("Hello :)");
- *
- * // Encode!
- * assertEquals(enZ85(binary), "nm=QNzY?7&");
- *
- * // Decode!
- * assertEquals(deZ85("nm=QNzY?7&"), binary);
- * ```
- *
- * @module z85
- */
-
+/** @module z85 */
 import { de85, type Decode, en85, type Encode, map } from "./lib.ts";
 
 const Z85_STR =

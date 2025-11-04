@@ -1,24 +1,4 @@
-/**
- * [Base32hex](https://www.rfc-editor.org/rfc/rfc4648#section-7) uses digits
- * and uppercase letters, excluding "W-Z". Encoding is always uppercase, and
- * decoding is case-insensitive.
- *
- * @example Usage
- * ```ts
- * import { assertEquals } from "@std/assert";
- *
- * const binary = new TextEncoder().encode("Hello :)");
- *
- * // Encode!
- * assertEquals(enH32(binary), "91IMOR3F40T2I");
- *
- * // Decode!
- * assertEquals(deH32("91IMOR3F40T2I"), binary);
- * ```
- *
- * @module h32
- */
-
+/** @module h32 */
 import { de32, type Decode, en32, type Encode, map } from "./lib.ts";
 
 const H32_STR = "0123456789ABCDEFGHIJKLMNOPQRSTUV";

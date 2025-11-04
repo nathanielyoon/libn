@@ -1,27 +1,4 @@
-/**
- * [Ascii85](https://en.wikipedia.org/wiki/Ascii85) uses the first 85 printable,
- * non-whitespace ASCII characters, as well as "z" to compress sequences of 4
- * empty bytes. Unlike the
- * [original](https://en.wikipedia.org/wiki/Ascii85#Limitations), the binary
- * input length doesn't have to be a multiple of 4, the encoding and decoding
- * functions add and remove padding automatically.
- *
- * @example Usage
- * ```ts
- * import { assertEquals } from "@std/assert";
- *
- * const binary = new TextEncoder().encode("Hello :)");
- *
- * // Encode!
- * assertEquals(enA85(binary), "87cURD]h(i");
- *
- * // Decode!
- * assertEquals(deA85("87cURD]h(i"), binary);
- * ```
- *
- * @module a85
- */
-
+/** @module a85 */
 import { de85, type Decode, en85, type Encode, map } from "./lib.ts";
 
 const A85_STR =

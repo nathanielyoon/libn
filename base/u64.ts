@@ -1,24 +1,4 @@
-/**
- * [Base64url](https://www.rfc-editor.org/rfc/rfc4648#section-5) uses
- * alphanumeric characters and "-" and "_". Padding is neither encoded nor
- * decoded.
- *
- * @example Usage
- * ```ts
- * import { assertEquals, assertMatch } from "@std/assert";
- *
- * const binary = new TextEncoder().encode("Hello :)");
- *
- * // Encode!
- * assertEquals(enU64(binary), "SGVsbG8gOik");
- *
- * // Decode!
- * assertEquals(deU64("SGVsbG8gOik"), binary);
- * ```
- *
- * @module u64
- */
-
+/** @module u64 */
 import { de64, type Decode, type Encode, map } from "./lib.ts";
 
 const U64_STR =

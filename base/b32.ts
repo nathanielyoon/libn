@@ -1,24 +1,4 @@
-/**
- * [Base32](https://www.rfc-editor.org/rfc/rfc4648#section-6) uses uppercase
- * letters and digits, excluding "0", "1", "8", and "9". Encoding is always
- * uppercase, and decoding is case-insensitive.
- *
- * @example Usage
- * ```ts
- * import { assertEquals } from "@std/assert";
- *
- * const binary = new TextEncoder().encode("Hello :)");
- *
- * // Encode!
- * assertEquals(enB32(binary), "JBSWY3DPEA5CS");
- *
- * // Decode!
- * assertEquals(deB32("JBSWY3DPEA5CS"), binary);
- * ```
- *
- * @module b32
- */
-
+/** @module b32 */
 import { de32, type Decode, en32, type Encode, map } from "./lib.ts";
 
 const B32_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";

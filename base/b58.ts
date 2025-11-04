@@ -1,23 +1,4 @@
-/**
- * [Base58](https://github.com/bitcoin/bitcoin/blob/master/src/base58.h) uses
- * alphanumeric characters, excluding "0", "I", "O", and "l".
- *
- * @example Usage
- * ```ts
- * import { assertEquals } from "@std/assert";
- *
- * const binary = new TextEncoder().encode("Hello :)");
- *
- * // Encode!
- * assertEquals(enB58(binary), "D7LMXYjUZJQ");
- *
- * // Decode!
- * assertEquals(deB58("D7LMXYjUZJQ"), binary);
- * ```
- *
- * @module b58
- */
-
+/** @module b58 */
 import { type Decode, type Encode, map } from "./lib.ts";
 import { en } from "./utf.ts";
 
