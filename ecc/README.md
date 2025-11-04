@@ -19,6 +19,7 @@ bun add @libn/aead
 ## x25519
 
 ```ts
+import { derive, exchange } from "@libn/ecc/x25519";
 import { assertEquals } from "@std/assert";
 
 // Alice has a secret key
@@ -40,6 +41,7 @@ assertEquals(sharedAB, sharedBA);
 ## ed25519
 
 ```ts
+import { generate, sign, verify } from "@libn/ecc/ed25519";
 import { assert } from "@std/assert";
 
 const message = crypto.getRandomValues(new Uint8Array(100));
