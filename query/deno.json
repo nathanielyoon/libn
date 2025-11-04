@@ -11,5 +11,12 @@
   },
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "deno.ns"]
+  },
+  "test": {
+    "permissions": {
+      "env": ["HOME", "XDG_CACHE_HOME", "DENO_DIR"],
+      "read": ["/home"],
+      "ffi": ["/home"]
+    }
   }
 }

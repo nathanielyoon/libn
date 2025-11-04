@@ -1,7 +1,7 @@
 import { assertEquals, assertStrictEquals } from "@std/assert";
 import { assertType, type Has, type IsExact } from "@std/testing/types";
 import fc from "fast-check";
-import { Document, Element as DenoDomElement } from "@b-fuze/deno-dom";
+import { Document, Element as DenoDomElement } from "@b-fuze/deno-dom/native";
 import { unhtml } from "@libn/text/normalize";
 import { ce } from "./create.ts";
 import { qa, qs } from "./select.ts";
