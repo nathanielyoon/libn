@@ -1,5 +1,3 @@
-import { assertEquals } from "@std/assert";
-
 /** JSON value. */
 export type Json = null | boolean | number | string | readonly Json[] | {
   [_: string]: Json;
@@ -19,11 +17,10 @@ type Are<A, B> = Both<
 >;
 /** Checks that two types are equal. */
 export type Is<A, B> = [A, B] extends [never, never] ? true : Are<An<A>, An<B>>;
-/** Checks the type of a value and returns it, optionally asserting equality. */
-export const type = <A>(
-  ...type: [A?]
-): <B extends A>(value: Is<A, B> extends true ? B : never) => B =>
-<B extends A>(value: B) => (type.length && assertEquals(value, type[0]), value);
+/** Checks the type of a value and returns it. */
+export const type =
+  <A>(_?: A): <B extends A>(value: Is<A, B> extends true ? B : never) => B =>
+  <B extends A>(value: B) => value;
 /** Condensed object intersection. */
 export type Merge<A> = A extends object ? { [B in keyof A]: A[B] } : A;
 /** Non-readonly. */
