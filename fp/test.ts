@@ -1,6 +1,5 @@
 import { assert, assertEquals, assertStrictEquals } from "@std/assert";
 import { assertType, type IsExact, type IsNever } from "@std/testing/types";
-import fc from "fast-check";
 import {
   exec,
   fail,
@@ -29,12 +28,12 @@ Deno.test("pass() creates a success", () => {
   assertEquals(ok.value, S0);
 });
 Deno.test("some() creates a failure or success", () => {
-  fc.assert(fc.property(fc.boolean(), ($) => {
+  for (const $ of [false, true]) {
     const or = some($);
     if (or.state) assertType<IsExact<typeof or.value, true>>(true);
     else assertType<IsExact<typeof or.value, false>>(true);
     assertEquals(or.value, $);
-  }));
+  }
 });
 Deno.test("some() coerces all falsy values", () => {
   for (const $ of [undefined, null, false, 0, 0n, ""] as const) {
@@ -71,10 +70,8 @@ Deno.test("result[Symbol.iterator]() returns passed-in argument", () => {
   assertStrictEquals(ok2.value, S0);
 });
 Deno.test("join() aggregates", () => {
-  fc.assert(fc.property(
-    fc.boolean().map(some),
-    fc.boolean().map(some),
-    (one, two) => {
+  for (const one of [some(false), some(true)]) {
+    for (const two of [some(false), some(true)]) {
       const result = join([one, two]);
       if (result.state) {
         assert(one.state);
@@ -84,11 +81,11 @@ Deno.test("join() aggregates", () => {
         assert(!two.state);
         assertEquals(result.value, [pass(true), fail(false)]);
       } else assertEquals(result.value, [fail(false), some(two.state)]);
-    },
-  ));
+    }
+  }
 });
 Deno.test("safe() try-catches", async () => {
-  fc.assert(fc.property(fc.boolean(), ($) => {
+  for (const $ of [false, true]) {
     const unsafe = (ok: boolean) => {
       if (ok) return ok;
       throw ok;
@@ -101,8 +98,8 @@ Deno.test("safe() try-catches", async () => {
     assertType<IsExact<typeof result2, Yieldable<unknown, true>>>(true);
     assertEquals(result2.state, result2.value);
     assertEquals(result2.value, $);
-  }));
-  await fc.assert(fc.asyncProperty(fc.boolean(), async ($) => {
+  }
+  for (const $ of [false, true]) {
     const unsafe = async (ok: boolean) => {
       if (ok) return await Promise.resolve(ok);
       throw ok;
@@ -130,18 +127,18 @@ Deno.test("safe() try-catches", async () => {
         assertEquals(value, $);
       });
     }
-  }));
+  }
 });
 Deno.test("exec() runs a block", async () => {
-  fc.assert(fc.property(fc.boolean(), ($) => {
+  for (const $ of [false, true]) {
     const result = exec(function* ($: boolean) {
       return yield* some($);
     })($);
     assertType<IsExact<typeof result, Yieldable<false, true>>>(true);
     assertEquals(result.state, $);
     assertEquals(result.value, $);
-  }));
-  await fc.assert(fc.asyncProperty(fc.boolean(), async ($) => {
+  }
+  for (const $ of [false, true]) {
     const result = exec(async function* ($: boolean) {
       return await Promise.resolve(yield* some($));
     })($);
@@ -150,5 +147,5 @@ Deno.test("exec() runs a block", async () => {
       assertEquals(state, $);
       assertEquals(value, $);
     });
-  }));
+  }
 });
