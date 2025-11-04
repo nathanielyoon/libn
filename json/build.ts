@@ -1,7 +1,7 @@
 import {
-  type Exact,
   isArray,
   type Keys,
+  type Only,
   type Tuple,
   type Writable,
 } from "./lib.ts";
@@ -32,7 +32,7 @@ type Typer<A extends Bit | Int | Num | Str> = {
   <const B extends Exclude<A["enum"], undefined>>(
     $: B,
   ): { type: A["type"]; enum: Writable<B> };
-  <const B extends Exact<Omit<A, "type" | "const" | "enum">, B>>(
+  <const B extends Only<Omit<A, "type" | "const" | "enum">, B>>(
     $: B,
   ): Writable<{ type: A["type"] } & B>;
 };
@@ -60,11 +60,11 @@ export const arr = (($: Schema | Schema[], meta?: {}) => ({
 })) as {
   <
     const A extends Schema,
-    const B extends Exact<ArrMeta<{ items: Schema }>, B> = {},
+    const B extends Only<ArrMeta<{ items: Schema }>, B> = {},
   >($: A, meta?: B): Writable<{ type: "array"; items: A } & B>;
   <
     const A extends readonly Schema[],
-    const B extends Exact<Partial<ArrMeta<{ items: false }>>, B> = {},
+    const B extends Only<Partial<ArrMeta<{ items: false }>>, B> = {},
   >($: A, meta?: B): Writable<
     {
       type: "array";
@@ -100,11 +100,11 @@ export const obj = (($: any, meta?: any) => ({
 })) as {
   <
     const A extends Schema,
-    const B extends Exact<ObjMeta<{ additionalProperties: Schema }>, B> = {},
+    const B extends Only<ObjMeta<{ additionalProperties: Schema }>, B> = {},
   >($: A, meta?: B): Writable<{ type: "object"; additionalProperties: A } & B>;
   <
     const A extends { [_: string]: Schema },
-    const B extends Exact<Partial<ObjMeta<{ properties: {} }>>, B> = {},
+    const B extends Only<Partial<ObjMeta<{ properties: {} }>>, B> = {},
   >($: A, meta?: B): Writable<
     {
       type: "object";
