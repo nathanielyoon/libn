@@ -1,3 +1,4 @@
+/** @module pointer */
 import { isArray, type Json } from "./lib.ts";
 import type { Schema } from "./schema.ts";
 

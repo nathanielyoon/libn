@@ -1,3 +1,4 @@
+/** @module check */
 import { B16 } from "@libn/base/b16";
 import { B32 } from "@libn/base/b32";
 import { H32 } from "@libn/base/h32";

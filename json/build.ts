@@ -1,3 +1,4 @@
+/** @module build */
 import { isArray, type Only, type Tuple, type Writable } from "./lib.ts";
 import type { Arr, Bit, Int, Num, Obj, Schema, Str } from "./schema.ts";
 
