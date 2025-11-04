@@ -24,7 +24,17 @@ import {
   type Writable,
   type Xor,
 } from "./lib.ts";
-import type { Instance, Schema } from "./schema.ts";
+import type {
+  Arr,
+  Bit,
+  Instance,
+  Int,
+  Nil,
+  Num,
+  Obj,
+  Schema,
+  Str,
+} from "./schema.ts";
 import { dereference, deToken, enToken, type Pointer } from "./pointer.ts";
 import { arr, bit, int, nil, num, obj, str } from "./build.ts";
 import { assert, BASES, compile, FORMATS, is, parse } from "./check.ts";
@@ -48,7 +58,6 @@ Deno.test("lib.Is checks equality", () => {
   type<Is<never, any>>(false);
   type<Is<unknown, any>>(false);
   type<Is<{}, {}>>(true);
-
   type<Is<string, any>>(false);
   type<Is<string, never>>(false);
   type<Is<string, unknown>>(false);
@@ -58,13 +67,11 @@ Deno.test("lib.Is checks equality", () => {
   type<Is<string | number, string | number>>(true);
   type<Is<typeof globalThis, typeof globalThis>>(true);
   type<Is<Date | typeof globalThis, Date>>(false);
-
   type<Is<string | undefined, string | undefined>>(true);
   type<Is<string | undefined, string>>(false);
   type<Is<string | undefined, any | string>>(false);
   type<Is<any | string | undefined, string>>(false);
   type<Is<never, never | string>>(false);
-
   type<Is<[], []>>(true);
   type<Is<any[], any[]>>(true);
   type<Is<never[], never[]>>(true);
@@ -72,7 +79,6 @@ Deno.test("lib.Is checks equality", () => {
   type<Is<any[], []>>(false);
   type<Is<any[], never[]>>(false);
   type<Is<any[], unknown[]>>(false);
-
   type<Is<[...any[]], [...any[]]>>(true);
   type<Is<[any, ...any[]], [any, ...any[]]>>(true);
   type<Is<[...any[]], [any, ...any[]]>>(false);
@@ -81,13 +87,11 @@ Deno.test("lib.Is checks equality", () => {
   type<Is<[...any[], any], [...any[], any]>>(true);
   type<Is<[any, ...any[], any], [any, ...any[], any]>>(true);
   type<Is<[...any[]], [any, ...any[], any]>>(false);
-
   type<Is<readonly [], readonly []>>(true);
   type<Is<[], readonly []>>(false);
   type<Is<[elm?: any], [elm?: any]>>(true);
   type<Is<[], [elm?: any]>>(false);
   type<Is<[elm: any], [elm?: any]>>(false);
-
   type<Is<() => any, () => any>>(true);
   type<Is<() => never, () => never>>(true);
   type<Is<() => unknown, () => unknown>>(true);
@@ -95,13 +99,11 @@ Deno.test("lib.Is checks equality", () => {
   type<Is<() => any, () => unknown>>(false);
   type<Is<() => void, () => void>>(true);
   type<Is<() => void, () => undefined>>(false);
-
   type<Is<(arg: any) => void, (arg: any) => void>>(true);
   type<Is<(arg?: any) => void, (arg?: any) => void>>(true);
   type<Is<() => void, (arg?: any) => void>>(false);
   type<Is<(arg: any) => void, (arg?: any) => void>>(false);
   type<Is<(arg: any) => void, (arg: unknown) => void>>(false);
-
   type<
     Is<(arg: any, ...args: any[]) => void, (arg: any, ...args: any[]) => void>
   >(true);
@@ -119,7 +121,6 @@ Deno.test("lib.Is checks equality", () => {
       (arg: unknown, ...args: any[]) => void
     >
   >(false);
-
   type Type<A> = { _: A };
   type<Is<Type<any>, Type<any>>>(true);
   type<Is<Type<any>, Type<number>>>(false);
@@ -137,7 +138,6 @@ Deno.test("lib.Is checks equality", () => {
       Type<{ x: any; readonly prop: any }>
     >
   >(false);
-
   type<Is<{ prop: any }, { prop: any }>>(true);
   type<Is<{ prop: never }, { prop: never }>>(true);
   type<Is<{ prop: unknown }, { prop: unknown }>>(true);
@@ -148,14 +148,12 @@ Deno.test("lib.Is checks equality", () => {
   type<Is<{ prop: unknown }, { prop: never }>>(false);
   type<Is<{ prop: string }, { prop: never }>>(false);
   type<Is<{ prop: Date }, { prop: string }>>(false);
-
   type<Is<{ name: string; other?: Date }, { name: string }>>(false);
   type<Is<{ other?: Date }, { prop?: string }>>(false);
   type<Is<{ readonly prop: any }, { readonly prop: any }>>(true);
   type<Is<{ prop: any }, { readonly prop: any }>>(false);
   type<Is<{ prop: { prop?: string } }, { prop: { prop: string } }>>(false);
   type<Is<{ prop: string | undefined }, { prop?: string }>>(false);
-
   type<Is<{ prop: { prop: unknown } }, { prop: { prop: any } }>>(false);
   type<Is<{ prop: { prop: unknown } }, { prop: { prop: never } }>>(false);
   type<
@@ -164,7 +162,6 @@ Deno.test("lib.Is checks equality", () => {
   type<Is<{ prop: { prop: string } }, { prop: { prop: string } }>>(true);
   type<Is<{ prop: { prop: any } }, { prop: { prop: never } }>>(false);
   type<Is<{ prop: { prop: any } }, { prop: { prop: string } }>>(false);
-
   type<
     Is<
       { [x: string]: unknown; prop: any } & { prop: unknown },
@@ -189,13 +186,11 @@ Deno.test("lib.Is checks equality", () => {
       { [x: string]: unknown } & { prop: unknown }
     >
   >(true);
-
   type Inner = string | number | Date | Inner[];
   type<Is<Inner, Inner>>(true);
   type Outer = { a: string; prop: Outer; sub: { prop: Outer; other: Inner } };
   type<Is<Outer, Outer>>(true);
   type<Is<Inner, Outer>>(false);
-
   // https://github.com/sindresorhus/type-fest/blob/785549f36465e3f3d99a08832784b603261f74f2/test-d/is-equal.ts
   type<Is<number, string>>(false);
   type<Is<1, 1>>(true);
@@ -203,7 +198,6 @@ Deno.test("lib.Is checks equality", () => {
   type<Is<"foo", "foo">>(true);
   type<Is<true, false>>(false);
   type<Is<false, false>>(true);
-
   type<Is<any, number>>(false);
   type<Is<"", never>>(false);
   type<Is<any, any>>(true);
@@ -218,16 +212,13 @@ Deno.test("lib.Is checks equality", () => {
   type<Is<[any], [never]>>(false);
   type<Is<[any], [any]>>(true);
   type<Is<[never], [never]>>(true);
-
   type<Is<1 | 2, 1>>(false);
   type<Is<1 | 2, 2 | 3>>(false);
   type<Is<1 | 2, 2 | 1>>(true);
   type<Is<boolean, true>>(false);
-
   type<Is<{ a: 1 }, { a: 1 }>>(true);
   type<Is<{ a: 1 }, { a?: 1 }>>(false);
   type<Is<{ a: 1 }, { readonly a: 1 }>>(false);
-
   type<Is<[], []>>(true);
   type<Is<readonly [], readonly []>>(true);
   type<Is<readonly [], []>>(false);
@@ -237,13 +228,11 @@ Deno.test("lib.Is checks equality", () => {
   type<Is<[string], [string]>>(true);
   type<Is<[string], [string, number]>>(false);
   type<Is<[0, 1] | [0, 2], [0, 2]>>(false);
-
   type Long = Sequence<0, 50>;
   type<Is<Long, Long>>(true);
   type ReadonlyLong = Readonly<Sequence<0, 50>>;
   type<Is<ReadonlyLong, ReadonlyLong>>(true);
   type<Is<ReadonlyLong, Long>>(false);
-
   type WrappedTupleMatches<Tpl> = Tpl extends [[0, 2]] ? "Foo" : "Bar";
   type WrappedTupleDoesNotMatch<Tpl> = Tpl extends [[0, 1]] ? "Foo" : "Bar";
   type TupleMatches<Tpl> = Tpl extends [0, 2] ? "Foo" : "Bar";
@@ -267,7 +256,6 @@ Deno.test("lib.Is checks equality", () => {
       ? Is<(TupleMatches<Tpl> & TupleDoesNotMatch<Tpl>), never>
       : never
   >(true);
-
   type<Is<[{ a: 1 }] & [{ a: 1 }], [{ a: 1 }]>>(true);
 });
 Deno.test("lib.Merge combines intersections", () => {
@@ -397,29 +385,31 @@ Deno.test("pointer.dereference() rejects missing indices", () =>
     assertEquals(dereference($, `/${$.length || 1}`), undefined);
   })));
 Deno.test("build.nil() creates Nil schemas", () => {
-  type(nil())({ type: "null" });
-  type(nil(bit()))({
+  type(nil() satisfies Nil)({ type: "null" });
+  type(nil(bit()) satisfies Nil)({
     type: ["null", "boolean"],
     oneOf: [{ type: "null" }, { type: "boolean" }],
   });
 });
 Deno.test("build.bit() creates Bit schemas", () => {
-  type(bit())({ type: "boolean" });
-  type(bit(false))({ type: "boolean", const: false });
-  type(bit([true]))({ type: "boolean", enum: [true] as const });
-  type(bit({}))({ type: "boolean" });
+  type(bit() satisfies Bit)({ type: "boolean" });
+  type(bit(false) satisfies Bit)({ type: "boolean", const: false });
+  type(bit([true]) satisfies Bit)({ type: "boolean", enum: [true] as const });
+  type(bit({}) satisfies Bit)({ type: "boolean" });
 });
 Deno.test("build.int() creates Int schemas", () => {
-  type(int())({ type: "integer" });
-  type(int(0))({ type: "integer", const: 0 });
-  type(int([1]))({ type: "integer", enum: [1] as const });
-  type(int({
-    minimum: 2,
-    maximum: 3,
-    exclusiveMinimum: 4,
-    exclusiveMaximum: 5,
-    multipleOf: 6,
-  }))({
+  type(int() satisfies Int)({ type: "integer" });
+  type(int(0) satisfies Int)({ type: "integer", const: 0 });
+  type(int([1]) satisfies Int)({ type: "integer", enum: [1] as const });
+  type(
+    int({
+      minimum: 2,
+      maximum: 3,
+      exclusiveMinimum: 4,
+      exclusiveMaximum: 5,
+      multipleOf: 6,
+    }) satisfies Int,
+  )({
     type: "integer",
     minimum: 2,
     maximum: 3,
@@ -429,16 +419,18 @@ Deno.test("build.int() creates Int schemas", () => {
   });
 });
 Deno.test("build.num() creates Num schemas", () => {
-  type(num())({ type: "number" });
-  type(num(0))({ type: "number", const: 0 });
-  type(num([1]))({ type: "number", enum: [1] as const });
-  type(num({
-    minimum: 2,
-    maximum: 3,
-    exclusiveMinimum: 4,
-    exclusiveMaximum: 5,
-    multipleOf: 6,
-  }))({
+  type(num() satisfies Num)({ type: "number" });
+  type(num(0) satisfies Num)({ type: "number", const: 0 });
+  type(num([1]) satisfies Num)({ type: "number", enum: [1] as const });
+  type(
+    num({
+      minimum: 2,
+      maximum: 3,
+      exclusiveMinimum: 4,
+      exclusiveMaximum: 5,
+      multipleOf: 6,
+    }) satisfies Num,
+  )({
     type: "number",
     minimum: 2,
     maximum: 3,
@@ -448,16 +440,18 @@ Deno.test("build.num() creates Num schemas", () => {
   });
 });
 Deno.test("build.str() creates Str schemas", () => {
-  type(str())({ type: "string" });
-  type(str("0"))({ type: "string", const: "0" });
-  type(str(["1"]))({ type: "string", enum: ["1"] as const });
-  type(str({
-    minLength: 2,
-    maxLength: 3,
-    pattern: "4",
-    format: "email",
-    contentEncoding: "base16",
-  }))({
+  type(str() satisfies Str)({ type: "string" });
+  type(str("0") satisfies Str)({ type: "string", const: "0" });
+  type(str(["1"]) satisfies Str)({ type: "string", enum: ["1"] as const });
+  type(
+    str({
+      minLength: 2,
+      maxLength: 3,
+      pattern: "4",
+      format: "email",
+      contentEncoding: "base16",
+    }) satisfies Str,
+  )({
     type: "string",
     minLength: 2,
     maxLength: 3,
@@ -467,27 +461,32 @@ Deno.test("build.str() creates Str schemas", () => {
   });
 });
 Deno.test("build.arr() creates Arr schemas", () => {
-  type(arr(nil(), {}))({ type: "array", items: { type: "null" } });
-  type(arr(nil(), { minItems: 0, maxItems: 1, uniqueItems: false }))({
+  type(arr(nil(), {}) satisfies Arr)({
+    type: "array",
+    items: { type: "null" },
+  });
+  type(
+    arr(nil(), { minItems: 0, maxItems: 1, uniqueItems: false }) satisfies Arr,
+  )({
     type: "array",
     items: { type: "null" },
     minItems: 0,
     maxItems: 1,
     uniqueItems: false,
   });
-  type(arr([]))({
+  type(arr([]) satisfies Arr)({
     type: "array",
     prefixItems: [],
     items: false,
     minItems: 0,
   });
-  type(arr([nil()]))({
+  type(arr([nil()]) satisfies Arr)({
     type: "array",
     prefixItems: [{ type: "null" }],
     items: false,
     minItems: 1,
   });
-  type(arr([nil()], { minItems: 1, uniqueItems: true }))({
+  type(arr([nil()], { minItems: 1, uniqueItems: true }) satisfies Arr)({
     type: "array",
     prefixItems: [{ type: "null" }],
     items: false,
@@ -496,46 +495,48 @@ Deno.test("build.arr() creates Arr schemas", () => {
   });
 });
 Deno.test("build.obj() creates Obj schemas", () => {
-  type(obj(nil(), {}))({
+  type(obj(nil(), {}) satisfies Obj)({
     type: "object",
     additionalProperties: { type: "null" },
   });
-  type(obj(nil(), {
-    propertyNames: str(),
-    minProperties: 0,
-    maxProperties: 1,
-  }))({
+  type(
+    obj(nil(), {
+      propertyNames: str(),
+      minProperties: 0,
+      maxProperties: 1,
+    }) satisfies Obj,
+  )({
     type: "object",
     additionalProperties: { type: "null" },
     minProperties: 0,
     maxProperties: 1,
     propertyNames: { type: "string" },
   });
-  type(obj({}))({
+  type(obj({}) satisfies Obj)({
     type: "object",
     properties: {},
     additionalProperties: false,
     required: [],
   });
-  type(obj({}, { required: [""] }))({
+  type(obj({}, { required: [""] }) satisfies Obj)({
     type: "object",
     properties: {},
     additionalProperties: false,
     required: [""],
   });
-  type(obj({ 0: nil() }))({
+  type(obj({ 0: nil() }) satisfies Obj)({
     type: "object",
     properties: { 0: { type: "null" } },
     additionalProperties: false,
     required: ["0"],
   });
-  type(obj({ 0: nil(), 1: nil() }, { required: [""] }))({
+  type(obj({ 0: nil(), 1: nil() }, { required: [""] }) satisfies Obj)({
     type: "object",
     properties: { 0: { type: "null" }, 1: { type: "null" } },
     additionalProperties: false,
     required: [""],
   });
-  type(obj("0", { 1: obj({}) }))({
+  type(obj("0", { 1: obj({}) }) satisfies Obj)({
     type: "object",
     required: ["0"],
     oneOf: [obj({ 0: str("1") }, { required: [] })],
