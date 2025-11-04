@@ -2,5 +2,8 @@
   "name": "@libn/csv",
   "version": "0.3.2",
   "license": "0BSD",
-  "exports": "./mod.ts"
+  "exports": {
+    "./parse": "./parse.ts",
+    "./stringify": "./stringify.ts"
+  }
 }

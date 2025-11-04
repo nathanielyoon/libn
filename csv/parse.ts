@@ -1,5 +1,20 @@
-import type { CsvOptions, Row } from "./lib.ts";
+/** @module parse */
 
+/** Parse options. */
+export interface ParseOptions<A> {
+  /**
+   * Whether to assume all rows are the same length.
+   *
+   * @default true
+   */
+  eager?: boolean;
+  /**
+   * Value for empty fields (between adjacent delimiters/line endings).
+   *
+   * @default null
+   */
+  empty?: A;
+}
 const enum Code {
   LF = 10, // \n
   CR = 13, // \r
@@ -26,14 +41,14 @@ const enum Case {
   CM_FINISH = Code.CM | Part.FINISH,
 }
 /** Decodes CSV to an array of rows. */
-export const deCsv = <A extends {} | null = null>(
+export const deCsv = <A = null>(
   $: string,
-  options?: CsvOptions<A>,
-): Row<A>[] | null => {
+  options: ParseOptions<A> = {},
+): (string | A)[][] | null => {
   if ($.charCodeAt(0) === 0xfeff) $ = $.slice(1);
   if (!$.length) return [];
-  const eol = ~$.indexOf("\r") ? "\r\n" : "\n", eager = options?.eager ?? true;
-  const nil = options?.empty?.value ?? null, rows = [];
+  const eol = ~$.indexOf("\r") ? "\r\n" : "\n", eager = options.eager ?? true;
+  const nil = Object.hasOwn(options, "empty") ? options.empty : null, rows = [];
   let row = [], size = 0, part = Part.BEFORE, raw = false, fix = false, temp;
   let z = 0, y = 0, x = 0, w;
   do top: switch ($.charCodeAt(z) | part) {
