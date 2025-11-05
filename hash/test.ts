@@ -2,7 +2,7 @@ import { assert, assertEquals, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
 import { crypto as std } from "@std/crypto";
 import { deUtf8, enUtf8 } from "@libn/base/utf";
-import { type I64, iv, perm, umul } from "./lib.ts";
+import { iv, perm, umul } from "./lib.ts";
 import { a5hash32, a5hash64, oaat32 } from "./integer.ts";
 import { sha224, sha256, sha384, sha512 } from "./sha2.ts";
 import { hkdf, hmac } from "./hmac.ts";
@@ -11,10 +11,6 @@ import { blake3 } from "./blake3.ts";
 import compiled from "./compiled.json" with { type: "json" };
 import vectors from "./vectors.json" with { type: "json" };
 
-const enI64 = ($: bigint) => (
-  { hi: Number($ >> 32n) >>> 0, lo: Number($ & 0xffffffffn) >>> 0 }
-);
-const deI64 = ($: I64) => BigInt($.hi >>> 0) << 32n | BigInt($.lo >>> 0);
 const fcUint = fc.double({
   min: 0,
   max: -1 >>> 0,
@@ -39,65 +35,76 @@ Deno.test("lib.perm() parses base16", () =>
   })));
 Deno.test("lib.mul64() multiplies 64 bits", () =>
   fc.assert(fc.property(fcUint, fcUint, (one, two) => {
-    const big = BigInt(one) * BigInt(two);
-    const pair = umul(one, two);
-    assertEquals(deI64(pair), big);
-    assertEquals({ hi: pair.hi >>> 0, lo: pair.lo >>> 0 }, enI64(big));
+    const big = BigInt(one) * BigInt(two), pair = umul(one, two);
+    assertEquals(BigInt(pair.hi >>> 0) << 32n | BigInt(pair.lo >>> 0), big);
+    assertEquals({ hi: pair.hi >>> 0, lo: pair.lo >>> 0 }, {
+      hi: Number(big >> 32n),
+      lo: Number(big & 0xffffffffn),
+    });
   })));
-const bin = async (
+const stream = async ($: ReadableStream<Uint8Array<ArrayBuffer>>) => {
+  const chunks = await Array.fromAsync($);
+  let size = 0;
+  for (let z = 0; z < chunks.length; ++z) size += chunks[z].length;
+  const buffer = new Uint8Array(size);
+  for (let z = 0, y = 0; z < chunks.length; ++z) {
+    buffer.set(chunks[z], y), y += chunks[z].length;
+  }
+  return buffer;
+};
+const run = async (
   bin: string,
-  run: (
-    spawn: (stdin: string, args?: string[]) => Promise<string>,
+  test: (
+    hash: (data: string, seed: string) => Promise<string>,
   ) => Promise<void>,
 ) => {
   const path = await Deno.makeTempFile();
-  await Deno.writeFile(path, Uint8Array.fromBase64(bin), { mode: 0o755 });
-  await run(async (stdin, args = []) => {
-    const child = new Deno.Command(
-      path,
-      { args, stdin: "piped", stdout: "piped", stderr: "piped" },
-    ).spawn();
-    const writer = child.stdin.getWriter();
-    await writer.write(enUtf8(stdin));
-    await writer.close();
-    const out = await child.output();
+  await Deno.writeFile(
+    path,
+    await stream(
+      new Blob([Uint8Array.fromBase64(bin)]).stream().pipeThrough(
+        new DecompressionStream("gzip"),
+      ),
+    ),
+    { mode: 0o755 },
+  );
+  await test(async (data, seed) => {
+    const out = await new Deno.Command(path, {
+      args: [data, seed],
+    }).output();
     if (!out.success) throw Error(deUtf8(out.stderr), { cause: out.code });
     return deUtf8(out.stdout);
   });
   await Deno.remove(path);
 };
-Deno.test("integer.oaat() follows original implementation", () =>
-  bin(vectors.oaat, (spawn) =>
+Deno.test("integer.oaat32() follows original implementation", () =>
+  run(vectors.oaat32, (hash) =>
     fc.assert(fc.asyncProperty(
       fc.string({ size: "medium" }),
       fcUint,
       async ($, seed) => {
-        assertEquals(
-          oaat32(enUtf8($), seed),
-          +(await spawn(`${$}\n${seed}`)),
-        );
+        assertEquals(oaat32(enUtf8($), seed), +(await hash($, `${seed}`)));
       },
     ))));
 Deno.test("integer.a5hash32() follows original implementation", () =>
-  bin(vectors.a5hash, (spawn) =>
+  run(vectors.a5hash32, (hash) =>
     fc.assert(fc.asyncProperty(
       fc.string({ size: "medium" }),
       fcUint,
       async ($, seed) => {
-        assertEquals(
-          a5hash32(enUtf8($), seed),
-          +(await spawn(`${$}\n${seed}`, ["\x20"])),
-        );
+        assertEquals(a5hash32(enUtf8($), seed), +(await hash($, `${seed}`)));
       },
     ))));
 Deno.test("integer.a5hash64() follows original implementation", () =>
-  bin(vectors.a5hash, (spawn) =>
+  run(vectors.a5hash64, (hash) =>
     fc.assert(fc.asyncProperty(
       fc.string({ size: "medium" }),
       fc.bigInt({ min: 0n, max: 0xffffffffffffffffn }),
       async ($, seed) => {
-        const [hi, lo] = (await spawn(`${$}\n${seed}`, ["\x40"])).split(" ");
-        assertEquals(a5hash64(enUtf8($), seed), deI64({ hi: +hi, lo: +lo }));
+        assertEquals(
+          a5hash64(enUtf8($), seed),
+          BigInt(await hash($, `${seed}`)),
+        );
       },
     ))));
 Deno.test("sha2.sha224() passes reference vectors", () =>
@@ -298,21 +305,15 @@ import.meta.main && Promise.all([
     fetch(
       "https://raw.githubusercontent.com/rurban/smhasher/3931fd6f723f4fb2afab6ef9a628912220e90ce7/Hashes.cpp",
     ).then(($) => $.text()).then(($) =>
-      `#include <cassert>
-#include <cstdint>
+      `#include <cstdint>
+#include <cstring>
 #include <iostream>
 
 ${$.slice(6690, 7787)}
 
-int main(void) {
-  std::string key;
-  assert(std::getline(std::cin, key));
-
-  uint32_t seed;
-  std::cin >> seed;
-
+int main(int argc, char **argv) {
   uint32_t out;
-  GoodOAAT(key.c_str(), key.size(), seed, &out);
+  GoodOAAT(argv[1], strlen(argv[1]), strtoul(argv[2], NULL, 10), &out);
   std::cout << out << std::endl;
 
   return 0;
@@ -321,56 +322,54 @@ int main(void) {
     ),
     fetch(
       "https://raw.githubusercontent.com/avaneev/a5hash/c9ce07aad514ef7073f1436e5bed26310aab8c2c/a5hash.h",
-    ).then(($) => $.text()).then(($) =>
-      `#include <iostream>
-#include <cassert>
+    ).then(($) => $.text()).then(($) => [
+      `#include <cstdlib>
+#include <iostream>
 
 ${$}
 
 int main(int argc, char **argv) {
-  if (argc != 2)
-    return 1;
-
-  std::string Msg0;
-  assert(std::getline(std::cin, Msg0));
-
-  uint64_t seed;
-  std::cin >> seed;
-
-  switch (argv[1][0]) {
-  case '\x20': {
-    uint32_t hash = a5hash32(Msg0.c_str(), Msg0.size(), seed);
-    std::cout << hash << std::endl;
-    break;
-  }
-  case '\x40': {
-    uint64_t hash = a5hash(Msg0.c_str(), Msg0.size(), seed);
-    std::cout << (hash >> 32) << " " << (hash & 0xffffffff) << std::endl;
-    break;
-  }
-  default:
-    return 1;
-  }
+  std::cout << a5hash32(argv[1], strlen(argv[1]), strtoul(argv[2], NULL, 10))
+            << std::endl;
 
   return 0;
-}
-`
-    ),
+}`,
+      `#include <cstdlib>
+#include <iostream>
+
+${$}
+
+int main(int argc, char **argv) {
+  std::cout << a5hash(argv[1], strlen(argv[1]), strtoull(argv[2], NULL, 10))
+            << std::endl;
+
+  return 0;
+}`,
+    ]),
   ]).then(($) =>
-    Array.fromAsync($, async (cpp) => {
-      try {
-        const path = await Deno.makeTempDir();
-        await Deno.writeTextFile(`${path}/main.cpp`, cpp);
-        const { success, stderr } = await new Deno.Command("g++", {
-          args: ["main.cpp"],
-          cwd: path,
-        }).output();
-        assert(success, new TextDecoder().decode(stderr));
-        const bin = await Deno.readFile(`${path}/a.out`);
-        return await Deno.remove(path, { recursive: true }), bin.toBase64();
-      } catch { /* empty */ }
+    Array.fromAsync($.flat(), async (cpp) => {
+      const path = await Deno.makeTempDir();
+      await Deno.writeTextFile(`${path}/main.cpp`, cpp);
+      const out = await new Deno.Command("g++", {
+        args: ["-o", "main.out", "main.cpp"],
+        cwd: path,
+      }).output();
+      assert(out.success, new TextDecoder().decode(out.stderr));
+      const bin = await stream(
+        new Blob([await Deno.readFile(`${path}/main.out`)]).stream()
+          .pipeThrough(new CompressionStream("gzip")),
+      );
+      await Deno.remove(path, { recursive: true });
+      return bin.toBase64();
     })
-  ),
+  ).then(async ($) => {
+    const recompiled = { oaat32: $[0], a5hash32: $[1], a5hash64: $[2] };
+    await Deno.writeTextFile(
+      `${import.meta.dirname}/compiled.json`,
+      JSON.stringify(recompiled),
+    );
+    return recompiled;
+  }).catch(() => compiled),
   Promise.all(Array.from([224, 256, 384, 512], (size) =>
     fetch(
       `https://raw.githubusercontent.com/usnistgov/ACVP-Server/fb44dce5257aba23088256e63c9b950db6967610/gen-val/json-files/SHA2-${size}-1.0/internalProjection.json`,
@@ -429,8 +428,7 @@ int main(int argc, char **argv) {
     }[];
   }>(($) => $.json()),
 ]).then(([cpp, nist, hmac, hkdf, blake2, blake3]) => ({
-  oaat: cpp[0] ?? compiled.oaat,
-  a5hash: cpp[1] ?? compiled.a5hash,
+  ...cpp,
   sha224: nist[0],
   sha256: nist[1],
   sha384: nist[2],
