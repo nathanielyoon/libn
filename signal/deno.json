@@ -2,5 +2,8 @@
   "name": "@libn/signal",
   "version": "0.3.0",
   "license": "0BSD",
-  "exports": "./mod.ts"
+  "exports": "./mod.ts",
+  "imports": {
+    "@std/testing": "jsr:@std/testing@^1.0.16"
+  }
 }
