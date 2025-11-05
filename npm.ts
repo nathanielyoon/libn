@@ -52,7 +52,11 @@ await build({
 });
 await Deno.copyFile("../LICENSE", "./npm/LICENSE");
 await Deno.copyFile("./README.md", "./npm/README.md");
-test && await new Deno.Command(
-  "bun",
-  { args: ["run", "./npm/test_runner.js"] },
-).output().then<{}>(($) => $.success || Deno.stderr.write($.stderr));
+if (test) {
+  console.log("[dnt] Running tests...");
+  const output = await new Deno.Command("bun", {
+    args: ["run", "./npm/test_runner.js"],
+  }).output();
+  if (!output.success) Deno.stderr.write(output.stderr);
+  else console.log("[dnt] Complete!");
+}
