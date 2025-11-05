@@ -20,8 +20,8 @@ type Are<A, B> = Both<
 export type Is<A, B> = [A, B] extends [never, never] ? true : Are<An<A>, An<B>>;
 /** Checks the type of a value and returns it. */
 export const type =
-  <A>(_?: A): <B extends A>(value: Is<A, B> extends true ? B : never) => B =>
-  <B extends A>(value: B) => value;
+  <const A>(_?: A): <B extends A>($: Is<A, B> extends true ? B : never) => B =>
+  <B extends A>($: B) => $;
 /** Condensed object intersection. */
 export type Merge<A> = A extends object ? { [B in keyof A]: A[B] } : A;
 /** Non-readonly. */
