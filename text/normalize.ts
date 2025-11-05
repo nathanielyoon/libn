@@ -1,32 +1,4 @@
-/**
- * Normalize text.
- *
- * @example
- * ```ts
- * import { assertEquals } from "@std/assert";
- *
- * // This string has some abnormal characters
- * let string = "\ud800\0\r\n\n\xf1"
- *
- * // Replace lone surrogates
- * assertEquals(string = unlone(string), "\ufffd\0\r\n\n\xf1");
- *
- * // Replace non-Unicode Assignables
- * assertEquals(string = uncode(string), "\ufffd\ufffd\r\n\n\xf1");
- *
- * // Replace non-LF breaks
- * assertEquals(string = unline(string), "\ufffd\ufffd\n\n\xf1");
- *
- * // Condense whitespace
- * assertEquals(string = unwide(string), "\ufffd\ufffd\n\xf1");
- *
- * // Remove diacritics
- * assertEquals(string = unmark(string), "\ufffd\ufffd\nn")
- * ```
- *
- * @module normalize
- */
-
+/** @module normalize */
 import { en } from "@libn/base/utf";
 
 /** Replaces lone surrogates. */
