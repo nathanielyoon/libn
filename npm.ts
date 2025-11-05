@@ -1,14 +1,15 @@
-import { build, emptyDir } from "@deno/dnt";
+import { build, emptyDir, type LibName } from "@deno/dnt";
 import config from "./deno.json" with { type: "json" };
 
 await emptyDir("./npm");
 const { name, version, exports, imports, compilerOptions = {} } = JSON.parse(
   await Deno.readTextFile("./deno.json"),
 );
+const lib = ["ESNext"] satisfies LibName[];
 const test = !Object.hasOwn(imports ?? {}, "@b-fuze/deno-dom");
 compilerOptions.lib &&= compilerOptions.lib.filter(($: string) =>
   !$.startsWith("deno")
-);
+).concat(lib);
 await build({
   outDir: "./npm",
   entryPoints: typeof exports === "string"
@@ -16,8 +17,9 @@ await build({
     : Object.entries<string>(exports).map(([name, path]) => ({ name, path })),
   shims: { deno: "dev" },
   skipSourceOutput: true,
-  typeCheck: false,
-  compilerOptions: { ...config.compilerOptions, ...compilerOptions },
+  typeCheck: "both",
+  compilerOptions: { lib, ...config.compilerOptions, ...compilerOptions },
+  filterDiagnostic: ($) => !$.file?.fileName.endsWith("test.ts"),
   test,
   package: {
     name,
