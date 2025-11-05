@@ -1,4 +1,5 @@
 import { build, emptyDir } from "@deno/dnt";
+import config from "./deno.json" with { type: "json" };
 
 await emptyDir("./npm");
 const { name, version, exports, imports, compilerOptions = {} } = JSON.parse(
@@ -16,7 +17,7 @@ await build({
   shims: { deno: "dev" },
   skipSourceOutput: true,
   typeCheck: false,
-  compilerOptions,
+  compilerOptions: { ...config.compilerOptions, ...compilerOptions },
   test,
   package: {
     name,
