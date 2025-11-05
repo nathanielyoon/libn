@@ -22,4 +22,4 @@ export const deB16: Decode = ($) => {
   return binary;
 };
 /** Decodable base16. */
-export const B16 = /^(?:[\dA-Fa-f]{2})*$/;
+export const B16: RegExp = /^(?:[\dA-Fa-f]{2})*$/;

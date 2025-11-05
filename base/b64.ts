@@ -22,4 +22,5 @@ export const deB64: Decode = ($) => {
   }
 };
 /** Decodable base64. */
-export const B64 = /^(?:[+/\dA-Za-z]{4})*(?:[+/\dA-Za-z]{2}[+/\d=A-Za-z]=)?$/;
+export const B64: RegExp =
+  /^(?:[+/\dA-Za-z]{4})*(?:[+/\dA-Za-z]{2}[+/\d=A-Za-z]=)?$/;

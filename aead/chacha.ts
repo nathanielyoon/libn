@@ -1,9 +1,4 @@
-const enum W {
-  EXPA = 0x61707865,
-  ND_3 = 0x3320646e,
-  "2_BY" = 0x79622d32,
-  TE_K = 0x6b206574,
-}
+const C0 = 0x61707865, C1 = 0x3320646e, C2 = 0x79622d32, C3 = 0x6b206574;
 /** Updates a ChaCha20 block. */
 export const chacha = (
   key: Uint32Array,
@@ -13,7 +8,7 @@ export const chacha = (
   iv2: number,
   fill: Uint32Array,
 ): void => {
-  let a = W.EXPA, b = W.ND_3, c = W["2_BY"], d = W.TE_K, e = key[0], f = key[1];
+  let a = C0, b = C1, c = C2, d = C3, e = key[0], f = key[1];
   let g = key[2], h = key[3], i = key[4], j = key[5], k = key[6], l = key[7];
   let m = count, n = iv0, o = iv1, p = iv2, z = 10;
   do m ^= a = a + e | 0,
@@ -80,8 +75,8 @@ export const chacha = (
     o = o << 8 | o >>> 24,
     e ^= j = j + o | 0,
     e = e << 7 | e >>> 25; while (--z);
-  fill[0] = W.EXPA + a, fill[1] = W.ND_3 + b, fill[2] = W["2_BY"] + c;
-  fill[3] = W.TE_K + d, fill[4] = key[0] + e, fill[5] = key[1] + f;
+  fill[0] = C0 + a, fill[1] = C1 + b, fill[2] = C2 + c;
+  fill[3] = C3 + d, fill[4] = key[0] + e, fill[5] = key[1] + f;
   fill[6] = key[2] + g, fill[7] = key[3] + h, fill[8] = key[4] + i;
   fill[9] = key[5] + j, fill[10] = key[6] + k, fill[11] = key[7] + l;
   fill[12] = count + m, fill[13] = iv0 + n, fill[14] = iv1 + o;
@@ -103,9 +98,9 @@ export const hchacha = (
   const iv1 = iv[4] | iv[5] << 8 | iv[6] << 16 | iv[7] << 24;
   const iv2 = iv[8] | iv[9] << 8 | iv[10] << 16 | iv[11] << 24;
   const iv3 = iv[12] | iv[13] << 8 | iv[14] << 16 | iv[15] << 24;
-  chacha(SUBKEY, iv0, iv1, iv2, iv3, STATE), SUBKEY[0] = STATE[0] - W.EXPA;
-  SUBKEY[1] = STATE[1] - W.ND_3, SUBKEY[2] = STATE[2] - W["2_BY"];
-  SUBKEY[3] = STATE[3] - W.TE_K, SUBKEY[4] = STATE[12] - iv0;
+  chacha(SUBKEY, iv0, iv1, iv2, iv3, STATE), SUBKEY[0] = STATE[0] - C0;
+  SUBKEY[1] = STATE[1] - C1, SUBKEY[2] = STATE[2] - C2;
+  SUBKEY[3] = STATE[3] - C3, SUBKEY[4] = STATE[12] - iv0;
   SUBKEY[5] = STATE[13] - iv1, SUBKEY[6] = STATE[14] - iv2;
   return SUBKEY[7] = STATE[15] - iv3, SUBKEY;
 };

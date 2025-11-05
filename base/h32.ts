@@ -8,4 +8,4 @@ export const enH32: Encode = /* @__PURE__ */ en32.bind(null, H32_STR);
 export const deH32: Decode = /* @__PURE__ */
   de32.bind(null, /* @__PURE__ */ map(H32_STR, 32));
 /** Decodable base32hex. */
-export const H32 = /^[\dA-Va-v]*$/;
+export const H32: RegExp = /^[\dA-Va-v]*$/;

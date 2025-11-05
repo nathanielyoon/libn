@@ -39,7 +39,7 @@ export const de32 = (bin: Uint8Array, $: string): Uint8Array<ArrayBuffer> => {
   return binary;
 };
 /** Converts a radix-64 string to binary. */
-export const de64 = (bin: Uint8Array, $: string) => {
+export const de64 = (bin: Uint8Array, $: string): Uint8Array<ArrayBuffer> => {
   const binary = new Uint8Array($.length * 3 >> 2);
   for (let z = 0, y = 0; z < $.length; z += 4, y += 3) {
     const a = bin[en.call($, z + 1)], b = bin[en.call($, z + 2)];
@@ -49,19 +49,13 @@ export const de64 = (bin: Uint8Array, $: string) => {
   }
   return binary;
 };
-const enum Step {
-  A = 85 ** 4,
-  B = 85 ** 3,
-  C = 85 ** 2,
-  D = 85 ** 1,
-}
 /** Converts binary to a radix-85 string. */
 export const en85 = (str: string, $: Uint8Array): string => {
   let string = "";
   for (let z = 0; z < $.length; z += 4) {
     const a = ($[z] << 24 | $[z + 1] << 16 | $[z + 2] << 8 | $[z + 3]) >>> 0;
-    string += str[a / Step.A % 85 | 0] + str[a / Step.B % 85 | 0] +
-      str[a / Step.C % 85 | 0] + str[a / Step.D % 85 | 0] + str[a % 85];
+    string += str[a / 52200625 % 85 | 0] + str[a / 614125 % 85 | 0] +
+      str[a / 7225 % 85 | 0] + str[a / 85 % 85 | 0] + str[a % 85];
   }
   return string;
 };
@@ -69,9 +63,9 @@ export const en85 = (str: string, $: Uint8Array): string => {
 export const de85 = (bin: Uint8Array, $: string): Uint8Array<ArrayBuffer> => {
   const binary = new Uint8Array(Math.ceil($.length / 5 * 4));
   for (let z = 0, y = 0; z < $.length; z += 5, y += 4) {
-    const a = binary[y + 3] = bin[en.call($, z)] * Step.A +
-      bin[en.call($, z + 1)] * Step.B + bin[en.call($, z + 2)] * Step.C +
-      bin[en.call($, z + 3)] * Step.D + bin[en.call($, z + 4)];
+    const a = binary[y + 3] = bin[en.call($, z)] * 52200625 +
+      bin[en.call($, z + 1)] * 614125 + bin[en.call($, z + 2)] * 7225 +
+      bin[en.call($, z + 3)] * 85 + bin[en.call($, z + 4)];
     binary[y] = a >> 24, binary[y + 1] = a >> 16, binary[y + 2] = a >> 8;
   }
   return binary;

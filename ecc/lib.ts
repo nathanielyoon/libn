@@ -26,7 +26,11 @@ export const N: bigint = /* @__PURE__ */
 /** Reduces modulo P. */
 export const mod = ($: bigint): bigint => ($ %= P) < 0n ? $ + P : $;
 /** Raises to a power modulo P. */
-export const pow = (base: bigint, power: number, multiplier = base): bigint => {
+export const pow = (
+  base: bigint,
+  power: number,
+  multiplier: bigint = base,
+): bigint => {
   do base = base * base % P; while (--power); // use `% P` to avoid bigint limit
   return base * multiplier % P;
 };
@@ -37,7 +41,7 @@ export const inv = ($: bigint): bigint => {
   return mod(a);
 };
 /** Common exponentiation. */
-export const exp = (base: bigint, cube = base ** 3n): bigint => {
+export const exp = (base: bigint, cube: bigint = base ** 3n): bigint => {
   const a = pow(cube ** 10n % P * base % P, 5);
   const b = pow(pow(pow(a, 10), 20), 40);
   return pow(pow(pow(b, 80), 80, b), 10, a) ** 4n % P * base % P;

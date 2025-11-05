@@ -8,4 +8,4 @@ export const enB32: Encode = /* @__PURE__ */ en32.bind(null, B32_STR);
 export const deB32: Decode = /* @__PURE__ */
   de32.bind(null, /* @__PURE__ */ map(B32_STR, 32));
 /** Decodable base32. */
-export const B32 = /^[2-7A-Za-z]*$/;
+export const B32: RegExp = /^[2-7A-Za-z]*$/;

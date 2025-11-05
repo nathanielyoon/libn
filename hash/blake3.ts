@@ -1,19 +1,6 @@
 /** @module blake3 */
 import { type Hash, perm } from "./lib.ts";
 
-const enum Size {
-  BLOCK = 64,
-  CHUNK = 1024,
-}
-const enum Flag {
-  START = 1 << 0,
-  END = 1 << 1,
-  PARENT = 1 << 2,
-  ROOT = 1 << 3,
-  KEYED = 1 << 4,
-  DERIVE_CTX = 1 << 5,
-  DERIVE_KEY = 1 << 6,
-}
 const PERMUTE = /* @__PURE__ */ perm(
   "0123456789abcdef263a704d1bc59ef834acd27e6590bf81a7c9e3df40b25816cd9bfae8725301649eb58cf1d30a2647bf501986ea2c347d",
   2,
@@ -97,7 +84,7 @@ const mix = (
     e = e << 25 | e >>> 7; while (z < 112);
   to[0] = a ^ i, to[1] = b ^ j, to[2] = c ^ k, to[3] = d ^ l, to[4] = e ^ m;
   to[5] = f ^ n, to[6] = g ^ o, to[7] = h ^ p;
-  if (flag & Flag.ROOT) {
+  if (flag & 0b0001000) { // root
     to[8] = i ^ KEY[key], to[9] = j ^ KEY[key + 1], to[10] = k ^ KEY[key + 2];
     to[11] = l ^ KEY[key + 3], to[12] = m ^ KEY[key + 4];
     to[13] = n ^ KEY[key + 5], to[14] = o ^ KEY[key + 6];
@@ -109,8 +96,17 @@ const merge = (left: Uint32Array<ArrayBuffer>, right: Uint32Array) => (
 );
 const min = (a: number, b: number) => b + (a - b & a - b >> 31);
 const TEMP = /* @__PURE__ */ new Uint32Array(16);
-const BLOCK = /* @__PURE__ */ new Uint8Array(Size.BLOCK);
+const BLOCK = /* @__PURE__ */ new Uint8Array(64);
 const VIEW = /* @__PURE__ */ (() => new DataView(BLOCK.buffer))();
+// Table 3 of the spec defines the following flags:
+// 0b0000000
+//   |||||||_ CHUNK_START
+//   ||||||__ CHUNK_END
+//   |||||___ PARENT
+//   ||||____ ROOT
+//   |||_____ KEYED_HASH
+//   ||______ DERIVE_KEY_CONTEXT
+//   |_______ DERIVE_KEY_MATERIAL
 const b3 = (
   flags: number,
   key: Uint8Array,
@@ -123,31 +119,31 @@ const b3 = (
   do KEY[--z] = KEY[z + 8] = key[d = z << 2] | key[d + 1] << 8 |
     key[d + 2] << 16 | key[d + 3] << 24; while (z);
   while (z < $.length) {
-    if (b + (c << 6) === Size.CHUNK) {
-      mix(8, a, y, b, flags | Flag.END, TEMP), d = flags | Flag.PARENT;
+    if (b + (c << 6) === 1024) {
+      mix(8, a, y, b, flags | 0b0000010, TEMP), d = flags | 0b0000100;
       for (e = ++y; e & 1 ^ 1; e >>= 1) {
-        mix(0, merge(stack.pop()!, TEMP), 0, Size.BLOCK, d, TEMP);
+        mix(0, merge(stack.pop()!, TEMP), 0, 64, d, TEMP);
       }
       stack.push(new Uint32Array(TEMP)), KEY.copyWithin(8, 0, 8);
       BLOCK.fill(b = c = 0);
     }
-    d = min(z + Size.CHUNK - b - (c << 6), $.length);
+    d = min(z + 1024 - b - (c << 6), $.length);
     do {
-      if (b >= Size.BLOCK) {
-        mix(8, a, y, b, flags | +!c++ & Flag.START, KEY.subarray(8));
+      if (b >= 64) {
+        mix(8, a, y, b, flags | +!c++ & 0b0000001, KEY.subarray(8));
         BLOCK.fill(b = 0);
       }
-      BLOCK.set($.subarray(z, z += e = min(Size.BLOCK - b, d - z)), b), b += e;
+      BLOCK.set($.subarray(z, z += e = min(64 - b, d - z)), b), b += e;
     } while (z < d);
   }
-  c = flags | +!c & Flag.START | Flag.END;
+  c = flags | +!c & 0b0000001 | 0b0000010;
   if (z = stack.length) {
-    mix(8, a, y, b, c, TEMP), c = flags | Flag.PARENT;
-    while (--z) mix(0, merge(stack[z], TEMP), 0, Size.BLOCK, c, TEMP);
-    KEY.copyWithin(8, 0, 8), a = merge(stack[0], TEMP), b = Size.BLOCK;
+    mix(8, a, y, b, c, TEMP), c = flags | 0b0000100;
+    while (--z) mix(0, merge(stack[z], TEMP), 0, 64, c, TEMP);
+    KEY.copyWithin(8, 0, 8), a = merge(stack[0], TEMP), b = 64;
   }
   do {
-    mix(8, a, seek++, b, c | Flag.ROOT, TEMP), y = min(z + Size.BLOCK, length);
+    mix(8, a, seek++, b, c | 0b0001000, TEMP), y = min(z + 64, length);
     do out[z] = TEMP[z >> 2 & 15] >> (z << 3); while (++z < y);
   } while (z < length);
   return BLOCK.fill(0), out;
@@ -164,8 +160,8 @@ export const blake3:
     ($, key, length, seek) => {
       if (key === undefined) return b3(0, B3, $, length, seek);
       else if (typeof key === "object") {
-        return b3(Flag.KEYED, key, $, length, seek);
+        return b3(0b0010000, key, $, length, seek);
       }
-      const ctx = b3(Flag.DERIVE_CTX, B3, new TextEncoder().encode(key));
-      return b3(Flag.DERIVE_KEY, ctx, $, length, seek);
+      const ctx = b3(0b0100000, B3, new TextEncoder().encode(key));
+      return b3(0b1000000, ctx, $, length, seek);
     };

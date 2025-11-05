@@ -1,4 +1,3 @@
-import { Flag, Kind } from "./flags.ts";
 import type { Effect, Link, Node, Scoper } from "./node.ts";
 
 /** Creates a link between two nodes. */
@@ -32,12 +31,12 @@ const delink = ($: Link, to: Node) => {
   if (prev) prev.nextSub = tail;
   else if (!(dep.subs = tail)) {
     switch (dep.kind) {
-      case Kind.DERIVE:
+      case 1:
         if ($ = dep.deps!) {
-          dep.flags = Flag.START;
+          dep.flags = 0b0001001;
           do $ = delink($, dep)!; while ($);
         } // falls through
-      case Kind.SIGNAL:
+      case 0:
         break;
       default:
         dispose(dep);
@@ -48,11 +47,11 @@ const delink = ($: Link, to: Node) => {
 /** Cleans up effects. */
 export const dispose = ($: Effect | Scoper): void => {
   for (let a = $.deps; a; a = delink(a, $));
-  $.subs && delink($.subs, $.subs.sub), $.flags = Flag.CLEAR;
+  $.subs && delink($.subs, $.subs.sub), $.flags = 0;
 };
 /** Clears a node from its dependencies. */
 export const drop = ($: Node): void => {
-  $.flags &= ~Flag.CHECK;
+  $.flags &= ~0b0010000;
   for (let a = $.head ? $.head.nextDep : $.deps; a; a = delink(a, $));
 };
 /** Checks a link. */

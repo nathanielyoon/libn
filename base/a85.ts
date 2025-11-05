@@ -17,4 +17,4 @@ export const deA85: Decode = ($) => {
     : de85(A85_BIN, as);
 };
 /** Decodable Ascii85. */
-export const A85 = /^[!-uz]*$/;
+export const A85: RegExp = /^[!-uz]*$/;

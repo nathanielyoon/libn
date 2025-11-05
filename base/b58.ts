@@ -34,4 +34,4 @@ export const deB58: Decode = ($) => {
   return binary;
 };
 /** Decodable base58. */
-export const B58 = /^[1-9A-HJ-NP-Za-km-z]*$/;
+export const B58: RegExp = /^[1-9A-HJ-NP-Za-km-z]*$/;

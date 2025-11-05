@@ -18,7 +18,9 @@
     "fast-check": "npm:fast-check@^4.3.0"
   },
   "compilerOptions": {
+    "erasableSyntaxOnly": true,
     "exactOptionalPropertyTypes": true,
+    "isolatedDeclarations": true,
     "verbatimModuleSyntax": true
   },
   "lint": {
@@ -28,7 +30,6 @@
         "eqeqeq",
         "no-console",
         "no-external-import",
-        "no-inferrable-types",
         "no-self-compare",
         "no-sparse-arrays",
         "no-useless-rename",

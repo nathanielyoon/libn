@@ -17,4 +17,4 @@ export const enU64: Encode = ($) => {
 export const deU64: Decode = /* @__PURE__ */
   de64.bind(null, /* @__PURE__ */ map(U64_STR));
 /** Decodable base64url. */
-export const U64 = /^(?:[-\w]{4})*(?:[-\w]{2,3})?$/;
+export const U64: RegExp = /^(?:[-\w]{4})*(?:[-\w]{2,3})?$/;

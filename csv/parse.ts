@@ -15,31 +15,7 @@ export interface ParseOptions<A> {
    */
   empty?: A;
 }
-const enum Code {
-  LF = 10, // \n
-  CR = 13, // \r
-  QT = 34, // "
-  CM = 44, // ,
-}
-const enum Part { // outside UTF-16 range
-  BEFORE = 1 << 16,
-  INSIDE = 1 << 17,
-  FINISH = 1 << 18,
-}
-const enum Case {
-  LF_BEFORE = Code.LF | Part.BEFORE,
-  LF_INSIDE = Code.LF | Part.INSIDE,
-  LF_FINISH = Code.LF | Part.FINISH,
-  CR_BEFORE = Code.CR | Part.BEFORE,
-  CR_INSIDE = Code.CR | Part.INSIDE,
-  CR_FINISH = Code.CR | Part.FINISH,
-  QT_BEFORE = Code.QT | Part.BEFORE,
-  QT_INSIDE = Code.QT | Part.INSIDE,
-  QT_FINISH = Code.QT | Part.FINISH,
-  CM_BEFORE = Code.CM | Part.BEFORE,
-  CM_INSIDE = Code.CM | Part.INSIDE,
-  CM_FINISH = Code.CM | Part.FINISH,
-}
+type Flag = 0x10000 | 0x20000 | 0x40000; // before/inside/finish field
 /** Decodes CSV to an array of rows. */
 export const deCsv = <A = null>(
   $: string,
@@ -49,72 +25,72 @@ export const deCsv = <A = null>(
   if (!$.length) return [];
   const eol = ~$.indexOf("\r") ? "\r\n" : "\n", eager = options.eager ?? true;
   const nil = Object.hasOwn(options, "empty") ? options.empty : null, rows = [];
-  let row = [], size = 0, part = Part.BEFORE, raw = false, fix = false, temp;
+  let row = [], size = 0, flag: Flag = 0x10000, raw = false, fix = false, temp;
   let z = 0, y = 0, x = 0, w;
-  do top: switch ($.charCodeAt(z) | part) {
-    case Case.LF_BEFORE:
-    case Case.CR_BEFORE:
+  do top: switch ($.charCodeAt(z) | flag) {
+    case 0x1000a:
+    case 0x1000d:
       y || rows.push(row = Array(size)), row[y++] = nil, size ||= y, y = 0;
-      $.charCodeAt(z) === Code.CR && $.charCodeAt(z + 1) === Code.LF && ++z;
+      $.charCodeAt(z) === 0x0d && $.charCodeAt(z + 1) === 0x0a && ++z;
       break;
-    case Case.LF_INSIDE:
-    case Case.CR_INSIDE:
+    case 0x2000a:
+    case 0x2000d:
       if (!raw) break;
       y || rows.push(row = Array(size)), row[y++] = $.slice(x, z);
       fix = raw = false; // falls through
-    case Case.LF_FINISH:
-    case Case.CR_FINISH:
-      part = Part.BEFORE, size ||= y, y = 0;
-      $.charCodeAt(z) === Code.CR && $.charCodeAt(z + 1) === Code.LF && ++z;
+    case 0x4000a:
+    case 0x4000d:
+      flag = 0x10000, size ||= y, y = 0;
+      $.charCodeAt(z) === 0x0d && $.charCodeAt(z + 1) === 0x0a && ++z;
       break;
-    case Case.QT_BEFORE:
+    case 0x10022:
       if (eager && size) {
         for (w = z; w = $.indexOf('"', w + 1) + 1; fix = true) {
-          if ($.charCodeAt(w) !== Code.QT) {
+          if ($.charCodeAt(w) !== 0x22) {
             temp = $.slice(z + 1, z = w - 1), y || rows.push(row = Array(size));
             row[y] = fix ? temp.replaceAll('""', '"') : temp;
-            part = Part.FINISH, ++y === size && (y = 0), fix = raw = false;
+            flag = 0x40000, ++y === size && (y = 0), fix = raw = false;
             break top;
           }
         }
         return null;
       }
-      x = z + 1, part = Part.INSIDE, fix = raw = false;
+      x = z + 1, flag = 0x20000, fix = raw = false;
       break;
-    case Case.QT_INSIDE:
+    case 0x20022:
       if (raw) return null;
-      if ($.charCodeAt(z + 1) !== Code.QT) {
+      if ($.charCodeAt(z + 1) !== 0x22) {
         temp = $.slice(x, z), y || rows.push(row = Array(size));
-        row[y++] = fix ? temp.replaceAll('""', '"') : temp, part = Part.FINISH;
+        row[y++] = fix ? temp.replaceAll('""', '"') : temp, flag = 0x40000;
       } else ++z, fix = true;
       break;
-    case Case.QT_FINISH:
+    case 0x40022:
       return null;
-    case Case.CM_BEFORE:
+    case 0x1002c:
       y || rows.push(row = Array(size)), row[y++] = nil;
       break;
-    case Case.CM_INSIDE:
+    case 0x2002c:
       if (!raw) break;
       y || rows.push(row = Array(size)), row[y++] = $.slice(x, z);
       raw = false; // falls through
-    case Case.CM_FINISH:
-      part = Part.BEFORE;
+    case 0x4002c:
+      flag = 0x10000;
       break;
     default:
-      if (part === Part.BEFORE) {
+      if (flag === 0x10000) {
         if (eager && size) {
           w = $.indexOf(temp = y === size - 1 ? eol : ",", z + 1);
           if (~w) {
             y || rows.push(row = Array(size)), row[y] = $.slice(z, w);
             ++y === size && (y = 0), z = w + temp.length - 1;
-            part = Part.BEFORE, raw = false;
+            flag = 0x10000, raw = false;
             break;
           }
         }
-        x = z, part = Part.INSIDE, raw = true;
+        x = z, flag = 0x20000, raw = true;
       }
   } while (++z < $.length);
-  if (part === Part.INSIDE) {
+  if (flag === 0x20000) {
     if (!raw) return null;
     y || rows.push(row = Array(size)), row[y] = $.slice(x);
   }
