@@ -1,3 +1,4 @@
+/** @module signal */
 import { Flag, Kind } from "./flags.ts";
 import type { Derive, Effect, Is, Link, Node, Scoper, Signal } from "./node.ts";
 import { dispose, drop, enlink, validate } from "./link.ts";
