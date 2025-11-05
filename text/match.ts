@@ -1,11 +1,11 @@
 /** Checks whether one string sorta-includes another. */
 export const includes = (source: string, target: string): boolean => {
-  const a = [...source], b = [...target], max = a.length, min = b.length;
+  const max = source.length, min = target.length;
   if (min > max) return false;
   if (min === max) return source === target;
   top: for (let z = 0, y = 0; z < min; ++z) {
-    for (const next = b[z].charCodeAt(0); y < max; ++y) {
-      if (a[y].charCodeAt(0) === next) continue top;
+    for (const next = target.charCodeAt(z); y < max; ++y) {
+      if (source.charCodeAt(y) === next) continue top;
     }
     return false;
   }
