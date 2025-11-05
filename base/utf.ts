@@ -7,8 +7,8 @@ export const enUtf8: ($: string) => Uint8Array<ArrayBuffer> =
   );
 /** Converts binary to UTF-8. */
 export const deUtf8: (
-  $: AllowSharedBufferSource,
-  options?: TextDecodeOptions,
+  $: ArrayBufferLike | ArrayBufferView<ArrayBufferLike>,
+  options?: { stream?: boolean },
 ) => string = /* @__PURE__ */ TextDecoder.prototype.decode.bind(
   /* @__PURE__ */ new TextDecoder("utf-8"),
 );
