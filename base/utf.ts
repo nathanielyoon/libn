@@ -1,17 +1,15 @@
 /** @module utf */
 
 /** Converts UTF-8 to binary. */
-export const enUtf8: ($: string) => Uint8Array<ArrayBuffer> =
+export const enUtf8: typeof TextEncoder.prototype.encode =
   /* @__PURE__ */ TextEncoder.prototype.encode.bind(
     /* @__PURE__ */ new TextEncoder(),
   );
 /** Converts binary to UTF-8. */
-export const deUtf8: (
-  $: ArrayBufferLike | ArrayBufferView<ArrayBufferLike>,
-  options?: { stream?: boolean },
-) => string = /* @__PURE__ */ TextDecoder.prototype.decode.bind(
-  /* @__PURE__ */ new TextDecoder("utf-8"),
-);
+export const deUtf8: typeof TextDecoder.prototype.decode =
+  /* @__PURE__ */ TextDecoder.prototype.decode.bind(
+    /* @__PURE__ */ new TextDecoder("utf-8"),
+  );
 /** UTF-16 character code encoder. */
 export const en: (this: string, index?: number) => number =
   /* @__PURE__ */ (() =>
