@@ -23,7 +23,9 @@ await build({
   skipSourceOutput: true,
   typeCheck: "both",
   compilerOptions: { lib, ...config.compilerOptions, ...compilerOptions },
-  filterDiagnostic: ($) => !$.file?.fileName.endsWith("test.ts"),
+  filterDiagnostic: ($) =>
+    !$.file?.fileName.endsWith("test.ts") &&
+    !$.file?.fileName.includes("/deps/jsr.io/@std/"),
   test,
   package: {
     name,
