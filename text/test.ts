@@ -272,7 +272,6 @@ Deno.test("fold.uncase() passes reference vectors", () =>
   }));
 Deno.test("fold.uncase() un-mixes case", () =>
   fc.assert(fc.property(fc.string({ unit: "grapheme" }), ($) => {
-    ["ʕ", "ª"];
     assertEquals(uncase($), uncase($.toUpperCase()));
     assertEquals(uncase($), uncase($.toLowerCase()));
   })));
