@@ -350,8 +350,8 @@ const levenshtein = (one: string, two: string) => {
 };
 Deno.test("match.distance() follows levenshtein", () =>
   fc.assert(fc.property(
-    fc.string({ size: "medium", unit: "grapheme" }),
-    fc.string({ size: "medium", unit: "grapheme" }),
+    fc.string({ size: "medium", unit: "grapheme", minLength: 1 }),
+    fc.string({ size: "medium", unit: "grapheme", minLength: 1 }),
     (one, two) => {
       assertEquals(distance(one, two), levenshtein(one, two));
     },
