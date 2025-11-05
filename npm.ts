@@ -1,19 +1,15 @@
 import { build, emptyDir, type LibName } from "@deno/dnt";
 import config from "./deno.json" with { type: "json" };
 
-const FILL =
-  'Uint8Array.prototype.toHex??=function(){return this.reduce((t,r)=>t+r.toString(16).padStart(2,"0"),"")};Uint8Array.fromHex??=t=>Uint8Array.from(t.match(/../g)??[],r=>parseInt(r,16));Uint8Array.prototype.toBase64??=function(t){let r=btoa(this.reduce((e,a)=>e+String.fromCharCode(a),""));return t?.alphabet==="base64url"&&(r=r.replaceAll("+","-").replaceAll("/","_")),t?.omitPadding&&(r=r.replace(/=+$/,"")),r};Uint8Array.fromBase64??=(t,r)=>Uint8Array.from(atob(r?.alphabet==="base64url"?t.replaceAll("-","+").replaceAll("_","/"):t),e=>e.charCodeAt(0));';
 await emptyDir("./npm");
 const { name, version, exports, imports, compilerOptions = {} } = JSON.parse(
   await Deno.readTextFile("./deno.json"),
 );
 const lib = ["ESNext"] satisfies LibName[];
-const test = !Object.hasOwn(imports ?? {}, "@b-fuze/deno-dom");
 compilerOptions.lib &&= compilerOptions.lib.filter(($: string) =>
   !$.startsWith("deno")
 ).concat(lib);
-const prepend = (path: string, text: string) =>
-  Deno.readTextFile(path).then(($) => Deno.writeTextFile(path, text + $));
+const test = !Object.hasOwn(imports ?? {}, "@b-fuze/deno-dom");
 await build({
   outDir: "./npm",
   entryPoints: typeof exports === "string"
@@ -38,18 +34,23 @@ await build({
     },
   },
   postBuild: async () => {
-    test && await Promise.all(
-      ["esm", "script"].map(($) =>
-        prepend(`./npm/${$}/test.js`, FILL).catch((error) => {
-          if (error instanceof Deno.errors.NotFound) {
-            return prepend(
-              `./npm/${$}/${name.slice(name.indexOf("/") + 1)}/test.js`,
-              FILL,
-            );
-          } else throw Error;
-        })
-      ),
-    );
+    test && await Promise.all(["esm", "script"].map(async ($) => {
+      let path = `./npm/${$}/test.js`, text;
+      try {
+        text = await Deno.readTextFile(path);
+      } catch (thrown) {
+        if (thrown instanceof Deno.errors.NotFound) {
+          text = await Deno.readTextFile(
+            path = `./npm/${$}/${name.slice(name.indexOf("/") + 1)}/test.js`,
+          );
+        } else throw thrown;
+      }
+      await Deno.writeTextFile(
+        path,
+        'Uint8Array.prototype.toHex??=function(){return this.reduce((t,r)=>t+r.toString(16).padStart(2,"0"),"")};Uint8Array.fromHex??=t=>Uint8Array.from(t.match(/../g)??[],r=>parseInt(r,16));Uint8Array.prototype.toBase64??=function(t){let r=btoa(this.reduce((e,a)=>e+String.fromCharCode(a),""));return t?.alphabet==="base64url"&&(r=r.replaceAll("+","-").replaceAll("/","_")),t?.omitPadding&&(r=r.replace(/=+$/,"")),r};Uint8Array.fromBase64??=(t,r)=>Uint8Array.from(atob(r?.alphabet==="base64url"?t.replaceAll("-","+").replaceAll("_","/"):t),e=>e.charCodeAt(0));' +
+          text,
+      );
+    }));
   },
 });
 await Deno.copyFile("../LICENSE", "./npm/LICENSE");
