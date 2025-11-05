@@ -60,6 +60,14 @@ const capitalize = (delimiter: string) => (to: string, next: string) => {
   const [head = "", ...tail] = next;
   return to + delimiter + head.toUpperCase() + tail.join("").toLowerCase();
 };
+Deno.test("convert ignores empty strings", () => {
+  assertEquals(lowerCamel(""), "");
+  assertEquals(upperCamel(""), "");
+  assertEquals(lowerKebab(""), "");
+  assertEquals(upperKebab(""), "");
+  assertEquals(lowerSnake(""), "");
+  assertEquals(upperSnake(""), "");
+});
 Deno.test("convert.lowerCamel() converts to lower camel case", () =>
   fc.assert(fc.property(fcWords, ({ separate, together }) => {
     assertEquals(
