@@ -7,6 +7,7 @@
     "./ecc",
     "./hash",
     "./json",
+    "./is",
     "./lib",
     "./query",
     "./result",

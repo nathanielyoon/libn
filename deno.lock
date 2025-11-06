@@ -138,6 +138,11 @@
           "jsr:@std/crypto@^1.0.5"
         ]
       },
+      "is": {
+        "dependencies": [
+          "jsr:@std/testing@^1.0.16"
+        ]
+      },
       "lib": {
         "dependencies": [
           "jsr:@std/testing@^1.0.16"

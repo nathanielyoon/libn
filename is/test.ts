@@ -1,15 +1,6 @@
-import { open } from "@libn/result";
-import {
-  assertEquals,
-  assertNotEquals,
-  assertRejects,
-  assertThrows,
-} from "@std/assert";
+import { type Is, is } from "@libn/is";
+import { assertEquals } from "@std/assert";
 import { assertType } from "@std/testing/types";
-import fc from "fast-check";
-import { fcBinary, identity } from "@libn/lib/fc";
-import { hasOwn, type Is, isArray, type } from "@libn/lib/is";
-import { type Output, run, spawn, tmp } from "@libn/lib/process";
 
 type Sequence<A, B extends number, C extends A[] = []> = B extends B
   ? C["length"] extends B ? C : Sequence<A, B, [...C, A]>
@@ -230,83 +221,11 @@ Deno.test("is.Is checks equality", () => {
   >(true);
   assertType<Is<[{ a: 1 }] & [{ a: 1 }], [{ a: 1 }]>>(true);
 });
-Deno.test("is.type() checks types", () => {
+Deno.test("is.is() checks types", () => {
   // @ts-expect-error expect unknown
-  type()(0);
-  assertEquals(type(0)(0), 0);
-  assertEquals(type<0>()(0), 0);
+  is()(0);
+  assertEquals(is(0)(0), 0);
+  assertEquals(is<0>()(0), 0);
   // @ts-expect-error incorrect
-  type(0)(1);
-});
-Deno.test("is.isArray() aliases Array.isArray", () =>
-  fc.assert(fc.property(fc.constantFrom<0 | readonly [1]>(0, [1]), ($) => {
-    if (isArray($)) assertEquals(type<readonly [1]>()($), [1]);
-    else assertEquals(type<0>()($), 0);
-  })));
-Deno.test("is.hasOwn() aliases Object.hasOwn", () =>
-  fc.assert(fc.property(fc.constantFrom({ 0: 0 }, {}), ($) => {
-    if (hasOwn($, "0")) assertEquals(type<{ readonly 0: 0 }>()($), { 0: 0 });
-    else assertEquals(type<{ readonly 0?: never }>()($), {});
-  })));
-Deno.test("fc.fcBinary() returns specific-length binary", () =>
-  fc.assert(fc.property(
-    fc.integer({ min: 1, max: 1e3 }).chain(($) =>
-      fc.record({
-        length: fc.constant($),
-        binary: fc.array(fcBinary($)),
-      })
-    ),
-    ({ binary, length }) => {
-      for (const $ of binary) assertEquals($.length, length);
-    },
-  )));
-Deno.test("fc.fcBinary() returns not-specific-length binary", () =>
-  fc.assert(fc.property(
-    fc.integer({ min: 1, max: 1e3 }).chain(($) =>
-      fc.record({
-        length: fc.constant($),
-        binary: fc.array(fcBinary(-$)),
-      })
-    ),
-    ({ binary, length }) => {
-      for (const $ of binary) assertNotEquals($.length, length);
-    },
-  )));
-Deno.test("fc.identity() validates an identity function", () =>
-  fc.assert(fc.property(fc.anything(), identity(($) => $))));
-Deno.test("fc.identity() rejects a changing function", () =>
-  fc.assert(fc.property(fc.uint8Array({ minLength: 1 }), ($) => {
-    assertThrows(() =>
-      identity((old: Uint8Array) => old.with(0, old[0] + 1))($)
-    );
-  })));
-Deno.test("process.tmp() disposes", async () => {
-  let path;
-  {
-    await using temp = await tmp();
-    path = temp.directory;
-    await Deno.writeFile(temp("/file"), new Uint8Array());
-    assertEquals(await Array.fromAsync(Deno.readDir(path)), [{
-      isDirectory: false,
-      isFile: true,
-      isSymlink: false,
-      name: "file",
-    }]);
-  }
-  await assertRejects(
-    () => Array.fromAsync(Deno.readDir(path)),
-    Deno.errors.NotFound,
-  );
-});
-const assertHello = ($: Output) =>
-  assertEquals(open($, true), new TextEncoder().encode("hello"));
-const assertFalse = ($: Output) =>
-  assertEquals(open($, false), { code: 1, stderr: new Uint8Array() });
-Deno.test("process.run() calls", async () => {
-  assertHello(await run("echo", ["-n", "hello"]));
-  assertFalse(await run("false", []));
-});
-Deno.test("process.spawn() pipes and calls", async () => {
-  assertHello(await spawn("cat", new TextEncoder().encode("hello")));
-  assertFalse(await spawn("false", new Uint8Array()));
+  is(0)(1);
 });
