@@ -154,14 +154,18 @@ const B3 = /* @__PURE__ */ perm(
 );
 /** Hashes with BLAKE3. */
 export const blake3:
-  & Hash<[$: Uint8Array, _?: undefined, length?: number, seek?: number]>
-  & Hash<[$: Uint8Array, key: Uint8Array, length?: number, seek?: number]>
-  & Hash<[key: Uint8Array, context?: string, length?: number, seek?: number]> =
-    ($, key, length, seek) => {
-      if (key === undefined) return b3(0, B3, $, length, seek);
-      else if (typeof key === "object") {
-        return b3(0b0010000, key, $, length, seek);
-      }
-      const ctx = b3(0b0100000, B3, new TextEncoder().encode(key));
-      return b3(0b1000000, ctx, $, length, seek);
-    };
+  & Hash<[data: Uint8Array, _?: undefined, length?: number, seek?: number]>
+  & Hash<[data: Uint8Array, key: Uint8Array, length?: number, seek?: number]>
+  & Hash<[key: Uint8Array, context: string, length?: number, seek?: number]> = (
+    data,
+    $,
+    length,
+    seek,
+  ) => {
+    if ($ === undefined) return b3(0, B3, data, length, seek);
+    else if (typeof $ === "object") {
+      return b3(0b0010000, $, data, length, seek);
+    }
+    const ctx = b3(0b0100000, B3, new TextEncoder().encode($));
+    return b3(0b1000000, ctx, data, length, seek);
+  };
