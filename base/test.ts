@@ -5,17 +5,17 @@ import {
   assertThrows,
 } from "@std/assert";
 import fc from "fast-check";
-import { B16, deB16, enB16 } from "./b16.ts";
-import { B32, deB32, enB32 } from "./b32.ts";
-import { deH32, enH32, H32 } from "./h32.ts";
-import { C32, deC32, enC32 } from "./c32.ts";
-import { B58, deB58, enB58 } from "./b58.ts";
-import { B64, deB64, enB64 } from "./b64.ts";
-import { deU64, enU64, U64 } from "./u64.ts";
-import { deZ85, enZ85, Z85 } from "./z85.ts";
-import { A85, deA85, enA85 } from "./a85.ts";
-import { deUtf8, enUtf8 } from "./utf.ts";
+import { A85, deA85, enA85 } from "@libn/base/a85";
+import { B16, deB16, enB16 } from "@libn/base/b16";
+import { B32, deB32, enB32 } from "@libn/base/b32";
+import { B58, deB58, enB58 } from "@libn/base/b58";
+import { B64, deB64, enB64 } from "@libn/base/b64";
+import { C32, deC32, enC32 } from "@libn/base/c32";
+import { deH32, enH32, H32 } from "@libn/base/h32";
+import { deU64, enU64, U64 } from "@libn/base/u64";
+import { deUtf8, enUtf8 } from "@libn/base/utf";
 import vectors from "./vectors.json" with { type: "json" };
+import { deZ85, enZ85, Z85 } from "@libn/base/z85";
 
 Deno.test("b16 passes reference vectors", () =>
   vectors.b16.forEach(($) => {

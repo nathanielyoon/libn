@@ -1,4 +1,5 @@
 /** @module signal */
+import { dispose, drop, enlink, validate } from "./link.ts";
 import type {
   Derive,
   Effect,
@@ -9,7 +10,6 @@ import type {
   Scoper,
   Signal,
 } from "./node.ts";
-import { dispose, drop, enlink, validate } from "./link.ts";
 
 const queue: (Effect | Scoper)[] = [];
 let depth = 0, step = 0, on: Node | null = null;

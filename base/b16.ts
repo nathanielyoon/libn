@@ -1,6 +1,6 @@
 /** @module b16 */
 import { type Decode, type Encode, map } from "./lib.ts";
-import { en } from "./utf.ts";
+import { en } from "@libn/base/utf";
 
 const B16_STR = /* @__PURE__ */ Array.from(
   { length: 256 },

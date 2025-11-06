@@ -14,7 +14,7 @@ import {
   scoper,
   type Setter,
   signal,
-} from "./mod.ts";
+} from "@libn/signal";
 
 Deno.test("derive() passes alien-signals computed tests", () => {
   { // should correctly propagate changes through derive signals

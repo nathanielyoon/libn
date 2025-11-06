@@ -1,6 +1,6 @@
 /** @module build */
-import { isArray, type Only, type Tuple, type Writable } from "./lib.ts";
-import type { Arr, Bit, Int, Num, Obj, Schema, Str } from "./schema.ts";
+import { isArray, type Only, type Tuple, type Writable } from "@libn/json/lib";
+import type { Arr, Bit, Int, Num, Obj, Schema, Str } from "@libn/json/schema";
 
 /** Creates a null schema. */
 export const nil = (($?: Schema) => (

@@ -1,7 +1,7 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { deCsv } from "./parse.ts";
-import { enCsv } from "./stringify.ts";
+import { deCsv } from "@libn/csv/parse";
+import { enCsv } from "@libn/csv/stringify";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("parse.deCsv() passes reference vectors", () =>

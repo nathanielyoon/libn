@@ -1,15 +1,15 @@
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
+import { generate, sign, verify } from "@libn/ecc/ed25519";
 import { deBig, enBig, mod } from "./lib.ts";
+import vectors from "./vectors.json" with { type: "json" };
 import {
   convertPublic,
   convertSecret,
   derive,
   exchange,
   ladder,
-} from "./x25519.ts";
-import { generate, sign, verify } from "./ed25519.ts";
-import vectors from "./vectors.json" with { type: "json" };
+} from "@libn/ecc/x25519";
 
 const generateExport = async (type: "Ed" | "X") => {
   const pair = await crypto.subtle.generateKey(

@@ -1,6 +1,6 @@
 /** @module b64 */
 import { de64, type Decode, type Encode, map } from "./lib.ts";
-import { de, en } from "./utf.ts";
+import { de, en } from "@libn/base/utf";
 
 const B64_BIN = /* @__PURE__ */ map(
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",

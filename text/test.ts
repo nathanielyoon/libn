@@ -1,3 +1,4 @@
+import { de, en } from "@libn/base/utf";
 import {
   assert,
   assertEquals,
@@ -8,7 +9,6 @@ import {
   assertNotMatch,
 } from "@std/assert";
 import fc from "fast-check";
-import { de, en } from "@libn/base/utf";
 import {
   lowerCamel,
   lowerKebab,
@@ -16,7 +16,9 @@ import {
   upperCamel,
   upperKebab,
   upperSnake,
-} from "./convert.ts";
+} from "@libn/text/convert";
+import { createRanges, uncase } from "@libn/text/fold";
+import { distance, includes } from "@libn/text/match";
 import {
   uncode,
   unhtml,
@@ -25,9 +27,7 @@ import {
   unmark,
   unrexp,
   unwide,
-} from "./normalize.ts";
-import { createRanges, uncase } from "./fold.ts";
-import { distance, includes } from "./match.ts";
+} from "@libn/text/normalize";
 import vectors from "./vectors.json" with { type: "json" };
 
 const { Lu, Ll, Lt, L, N } =

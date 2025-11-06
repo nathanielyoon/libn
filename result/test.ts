@@ -1,5 +1,5 @@
-import { assert, assertEquals, assertStrictEquals } from "@std/assert";
 import { type } from "@libn/json/lib";
+import { assert, assertEquals, assertStrictEquals } from "@std/assert";
 import {
   exec,
   fail,
@@ -10,7 +10,7 @@ import {
   safe,
   some,
   type Yieldable,
-} from "./mod.ts";
+} from "@libn/result";
 
 const S0 = Symbol("S0");
 Deno.test("fail() creates a failure", () => {

@@ -1,3 +1,9 @@
+import { enB16 } from "@libn/base/b16";
+import { enB32 } from "@libn/base/b32";
+import { enB64 } from "@libn/base/b64";
+import { enH32 } from "@libn/base/h32";
+import { enU64 } from "@libn/base/u64";
+import { unrexp } from "@libn/text/normalize";
 import {
   assertEquals,
   assertInstanceOf,
@@ -6,12 +12,8 @@ import {
   fail,
 } from "@std/assert";
 import fc from "fast-check";
-import { unrexp } from "@libn/text/normalize";
-import { enB16 } from "@libn/base/b16";
-import { enB32 } from "@libn/base/b32";
-import { enB64 } from "@libn/base/b64";
-import { enH32 } from "@libn/base/h32";
-import { enU64 } from "@libn/base/u64";
+import { arr, bit, int, nil, num, obj, str } from "@libn/json/build";
+import { assert, BASES, compile, FORMATS, is, parse } from "@libn/json/check";
 import {
   type And,
   hasOwn,
@@ -23,7 +25,13 @@ import {
   type,
   type Writable,
   type Xor,
-} from "./lib.ts";
+} from "@libn/json/lib";
+import {
+  dereference,
+  deToken,
+  enToken,
+  type Pointer,
+} from "@libn/json/pointer";
 import type {
   Arr,
   Bit,
@@ -34,10 +42,7 @@ import type {
   Obj,
   Schema,
   Str,
-} from "./schema.ts";
-import { dereference, deToken, enToken, type Pointer } from "./pointer.ts";
-import { arr, bit, int, nil, num, obj, str } from "./build.ts";
-import { assert, BASES, compile, FORMATS, is, parse } from "./check.ts";
+} from "@libn/json/schema";
 
 Deno.test("lib.Json includes all JSON values", () => {
   type<Json>(null);

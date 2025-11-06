@@ -1,9 +1,9 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { chacha, hchacha, xor } from "./chacha.ts";
-import { poly } from "./poly.ts";
 import { polyXchacha, xchachaPoly } from "./aead.ts";
-import { cipher, decrypt, encrypt } from "./mod.ts";
+import { chacha, hchacha, xor } from "./chacha.ts";
+import { cipher, decrypt, encrypt } from "@libn/aead";
+import { poly } from "./poly.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 const u32 = ($: string) => new Uint32Array(Uint8Array.fromHex($).buffer);

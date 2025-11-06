@@ -1,10 +1,10 @@
-import { assertEquals, assertStrictEquals } from "@std/assert";
-import fc from "fast-check";
 import { Document, Element as DenoDomElement } from "@b-fuze/deno-dom/native";
 import { type } from "@libn/json/lib";
 import { unhtml } from "@libn/text/normalize";
-import { ce } from "./create.ts";
-import { qa, qs } from "./select.ts";
+import { assertEquals, assertStrictEquals } from "@std/assert";
+import fc from "fast-check";
+import { ce } from "@libn/query/create";
+import { qa, qs } from "@libn/query/select";
 
 Deno.test.beforeAll(() => {
   globalThis.document = new Document() as any;

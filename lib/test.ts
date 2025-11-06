@@ -1,15 +1,15 @@
+import { open } from "@libn/result";
 import {
   assertEquals,
   assertNotEquals,
   assertRejects,
   assertThrows,
 } from "@std/assert";
-import fc from "fast-check";
 import { assertType } from "@std/testing/types";
-import { hasOwn, type Is, isArray, type } from "./is.ts";
-import { fcBinary, identity } from "./fc.ts";
-import { type Output, run, spawn, tmp } from "./process.ts";
-import { open } from "@libn/result";
+import fc from "fast-check";
+import { fcBinary, identity } from "@libn/lib/fc";
+import { hasOwn, type Is, isArray, type } from "@libn/lib/is";
+import { type Output, run, spawn, tmp } from "@libn/lib/process";
 
 type Sequence<A, B extends number, C extends A[] = []> = B extends B
   ? C["length"] extends B ? C : Sequence<A, B, [...C, A]>
