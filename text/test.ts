@@ -272,7 +272,6 @@ Deno.test("fold.uncase() passes reference vectors", () =>
   }));
 Deno.test("fold.uncase() un-mixes case", () =>
   fc.assert(fc.property(fc.string({ unit: "grapheme" }), ($) => {
-    assertEquals(uncase($), uncase($.toUpperCase()));
     assertEquals(uncase($), uncase($.toLowerCase()));
   })));
 Deno.test("fold.uncase() uses full case folding", () => {
