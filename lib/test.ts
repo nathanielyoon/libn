@@ -293,7 +293,7 @@ Deno.test("process.tmp() disposes", async () => {
       name: "file",
     }]);
   }
-  assertRejects(
+  await assertRejects(
     () => Array.fromAsync(Deno.readDir(path)),
     Deno.errors.NotFound,
   );
