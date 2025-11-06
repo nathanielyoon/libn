@@ -22,6 +22,13 @@ export const fail = <const A = undefined>($?: A): Yieldable<A, never> => (
 export const pass = <const A = undefined>($?: A): Yieldable<never, A> => (
   { state: true, value: $!, [Symbol.iterator]: generate }
 );
+/** Extracts a result's value, optionally throwing if the state is wrong. */
+export const open = <A extends Result, B extends boolean>($: A, only?: B):
+  | (false extends B ? No<A> : never)
+  | (true extends B ? Ok<A> : never) => {
+  if (!$.state === only) throw Error(`${$.state}`, { cause: $ });
+  return $.value;
+};
 /** Coerced-to-false values (except `NaN`, which isn't representable here). */
 export type Falsy = undefined | null | false | 0 | 0n | "";
 /** Creates a failure if falsy or a success if truthy. */
