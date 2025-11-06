@@ -8,7 +8,6 @@
     "./hash",
     "./json",
     "./is",
-    "./lib",
     "./query",
     "./result",
     "./signal",
