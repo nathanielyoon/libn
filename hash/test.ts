@@ -1,14 +1,12 @@
 import { assert, assertEquals, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
 import { crypto as std } from "@std/crypto";
-import { enUtf8 } from "@libn/base/utf";
 import { iv, perm, umul } from "./lib.ts";
 import { a5hash32, a5hash64, oaat32 } from "./integer.ts";
 import { sha224, sha256, sha384, sha512 } from "./sha2.ts";
 import { hkdf, hmac } from "./hmac.ts";
 import { blake2b, blake2s } from "./blake2.ts";
 import { blake3 } from "./blake3.ts";
-import compiled from "./compiled.json" with { type: "json" };
 import vectors from "./vectors.json" with { type: "json" };
 
 const fcUint = fc.double({
@@ -42,92 +40,52 @@ Deno.test("lib.mul64() multiplies 64 bits", () =>
       lo: Number(big & 0xffffffffn),
     });
   })));
-Deno.test("integer.oaat32() follows original implementation", async () => {
-  const url = new URL(import.meta.resolve("./oaat32.so"));
+const ffi = async <A extends "oaat32" | "a5hash32" | "a5hash64">(hash: A) => {
+  const url = new URL(import.meta.resolve(`./${hash}`));
   await Deno.writeFile(
     url,
     await press(
-      Uint8Array.fromBase64(vectors.oaat32),
+      Uint8Array.fromBase64(vectors[hash]),
       new DecompressionStream("gzip"),
     ),
   );
-  const ffi = Deno.dlopen(url, {
-    oaat32: {
-      parameters: ["buffer", "usize", "u32"],
-      result: "u32",
-      name: "ffi",
-    },
-  });
-  fc.assert(fc.property(
-    fc.uint8Array({ size: "medium" }),
-    fcUint,
-    ($, seed) => {
-      assertEquals(
-        oaat32($, seed),
-        ffi.symbols.oaat32($, BigInt($.length), seed),
-      );
-    },
-  ));
-  ffi.close();
-  await Deno.remove(url);
+  const size = (hash === "a5hash64" ? "u64" : "u32") as A extends "a5hash64"
+    ? "u64"
+    : "u32";
+  return [
+    url,
+    Deno.dlopen(url, {
+      ffi: { parameters: ["buffer", "usize", size], result: size },
+    }),
+  ] as const;
+};
+Deno.test("integer.oaat32() follows original implementation", async () => {
+  const [url, lib] = await ffi("oaat32");
+  fc.assert(fc.property(fc.uint8Array({ size: "large" }), fcUint, ($, seed) => {
+    assertEquals(oaat32($, seed), lib.symbols.ffi($, BigInt($.length), seed));
+  }));
+  lib.close(), await Deno.remove(url);
 });
 Deno.test("integer.a5hash32() follows original implementation", async () => {
-  const url = new URL(import.meta.resolve("./a5hash32.so"));
-  await Deno.writeFile(
-    url,
-    await press(
-      Uint8Array.fromBase64(vectors.a5hash32),
-      new DecompressionStream("gzip"),
-    ),
-  );
-  const ffi = Deno.dlopen(url, {
-    a5hash32: {
-      parameters: ["buffer", "usize", "u32"],
-      result: "u32",
-      name: "ffi",
-    },
-  });
-  fc.assert(fc.property(
-    fc.uint8Array({ size: "medium" }),
-    fcUint,
-    ($, seed) => {
-      assertEquals(
-        a5hash32($, seed),
-        ffi.symbols.a5hash32($, BigInt($.length), seed),
-      );
-    },
-  ));
-  ffi.close();
-  await Deno.remove(url);
+  const [url, lib] = await ffi("a5hash32");
+  fc.assert(fc.property(fc.uint8Array({ size: "large" }), fcUint, ($, seed) => {
+    assertEquals(a5hash32($, seed), lib.symbols.ffi($, BigInt($.length), seed));
+  }));
+  lib.close(), await Deno.remove(url);
 });
 Deno.test("integer.a5hash64() follows original implementation", async () => {
-  const url = new URL(import.meta.resolve("./a5hash64.so"));
-  await Deno.writeFile(
-    url,
-    await press(
-      Uint8Array.fromBase64(vectors.a5hash64),
-      new DecompressionStream("gzip"),
-    ),
-  );
-  const ffi = Deno.dlopen(url, {
-    a5hash64: {
-      parameters: ["buffer", "usize", "u64"],
-      result: "u64",
-      name: "ffi",
-    },
-  });
+  const [url, lib] = await ffi("a5hash64");
   fc.assert(fc.property(
-    fc.uint8Array({ size: "medium" }),
-    fc.bigInt({ min: 0n, max: (1n << 64n) - 1n }),
+    fc.uint8Array({ size: "large" }),
+    fc.bigInt({ min: 0n, max: 0xffffffffffffffffn }),
     ($, seed) => {
       assertEquals(
         a5hash64($, seed),
-        ffi.symbols.a5hash64($, BigInt($.length), seed),
+        lib.symbols.ffi($, BigInt($.length), seed),
       );
     },
   ));
-  ffi.close();
-  await Deno.remove(url);
+  lib.close(), await Deno.remove(url);
 });
 Deno.test("sha2.sha224() passes reference vectors", () =>
   vectors.sha224.forEach(($) => {
@@ -363,15 +321,11 @@ extern "C" uint64_t ffi(uint8_t *key, size_t len, uint64_t seed) {
     ]),
   ]).then(($) =>
     Promise.all(
-      $.flat().map(async (cpp, z) => {
+      $.flat().map(async (cpp) => {
         const tmp = await Deno.makeTempDir();
         await Deno.writeTextFile(`${tmp}/lib.cpp`, cpp);
-        await run("g++", "-c", "-fPIC", "-o", `${tmp}/lib.o`, `${tmp}/lib.cpp`);
-        await run("g++", "-shared", "-o", `${tmp}/lib.so`, `${tmp}/lib.o`);
-        assertEquals(
-          await run("nm", "-D", "-U", "-j", `${tmp}/lib.so`),
-          "ffi\n",
-        );
+        await run("g++", "-shared", "-o", `${tmp}/lib.so`, `${tmp}/lib.cpp`);
+        assertEquals(await run("nm", "-DUj", `${tmp}/lib.so`), "ffi\n");
         const bin = await Deno.readFile(`${tmp}/lib.so`);
         const [compressed] = await Promise.all([
           press(bin, new CompressionStream("gzip")),
