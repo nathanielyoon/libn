@@ -14,8 +14,8 @@
   },
   "test": {
     "permissions": {
-      "write": true,
-      "run": true
+      "write": ["./oaat32.so", "./a5hash32.so", "./a5hash64.so"],
+      "ffi": ["./oaat32.so", "./a5hash32.so", "./a5hash64.so"]
     }
   }
 }
