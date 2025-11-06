@@ -138,6 +138,11 @@
           "jsr:@std/crypto@^1.0.5"
         ]
       },
+      "lib": {
+        "dependencies": [
+          "jsr:@std/testing@^1.0.16"
+        ]
+      },
       "query": {
         "dependencies": [
           "jsr:@b-fuze/deno-dom@~0.1.56"
