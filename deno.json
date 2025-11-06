@@ -5,10 +5,10 @@
     "./base",
     "./csv",
     "./ecc",
-    "./fp",
     "./hash",
     "./json",
     "./query",
+    "./result",
     "./signal",
     "./text"
   ],

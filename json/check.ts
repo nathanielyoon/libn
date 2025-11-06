@@ -4,7 +4,7 @@ import { B32 } from "@libn/base/b32";
 import { H32 } from "@libn/base/h32";
 import { B64 } from "@libn/base/b64";
 import { U64 } from "@libn/base/u64";
-import type { Result } from "@libn/fp";
+import type { Result } from "@libn/result";
 import { hasOwn, type Merge } from "./lib.ts";
 import { enToken, type Pointer } from "./pointer.ts";
 import type { Instance, Schema, Str } from "./schema.ts";

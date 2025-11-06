@@ -1,15 +1,15 @@
-# @libn/fp
+# @libn/result
 
 Functional result handling.
 
 ```sh
-deno add jsr:@libn/fp
+deno add jsr:@libn/result
 
-npx jsr add @libn/fp
-npm install @libn/fp
+npx jsr add @libn/result
+npm install @libn/result
 
-bunx jsr add @libn/fp
-bun add @libn/fp
+bunx jsr add @libn/result
+bun add @libn/result
 ```
 
 - [Rust std::result](https://doc.rust-lang.org/std/result/#the-question-mark-operator-)
@@ -18,7 +18,7 @@ bun add @libn/fp
 ## default
 
 ```ts ignore
-import { safe } from "@libn/fp";
+import { safe } from "@libn/result";
 
 // Refactor this:
 const parse = (
@@ -40,7 +40,7 @@ const parse = safe(JSON.parse, ($) => console.error($.message));
 ```
 
 ```ts ignore
-import { exec, some } from "@libn/fp";
+import { exec, some } from "@libn/result";
 
 // Refactor this:
 const respond = async (request: Request) => {
@@ -62,7 +62,7 @@ const respond = exec(async function* (request: Request) {
 ```
 
 ```ts ignore
-import { fail, join, pass } from "@libn/fp";
+import { fail, join, pass } from "@libn/result";
 
 // Refactor this:
 const validate = (username: string, password: string) => {
