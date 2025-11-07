@@ -1,11 +1,17 @@
 import { type } from "@libn/json/lib";
-import { assert, assertEquals, assertStrictEquals } from "@std/assert";
+import {
+  assert,
+  assertEquals,
+  assertStrictEquals,
+  assertThrows,
+} from "@std/assert";
 import {
   exec,
   fail,
   join,
   type No,
   type Ok,
+  open,
   pass,
   safe,
   some,
@@ -22,6 +28,17 @@ Deno.test("pass() creates a success", () => {
   const ok = pass(S0);
   assertEquals(type<Yieldable<never, typeof S0>>()(ok).state, true);
   assertEquals(type<Ok<typeof ok>>()(ok.value), S0);
+});
+Deno.test("open() unwraps", () => {
+  for (const $ of [pass(S0), fail(S0)]) assertEquals(type(S0)(open($)), S0);
+});
+Deno.test("open() unwraps a success", () => {
+  assertThrows(() => open(fail(S0), true));
+  assertEquals(type(S0)(open(pass(S0), true)), S0);
+});
+Deno.test("open() unwraps a failure", () => {
+  assertEquals(type(S0)(open(fail(S0), false)), S0);
+  assertThrows(() => open(pass(S0), false));
 });
 Deno.test("some() creates a failure or success", () => {
   for (const $ of [false, true]) {
