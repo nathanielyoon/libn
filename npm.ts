@@ -58,10 +58,11 @@ await Deno.copyFile("./README.md", "./npm/README.md");
 if (test) {
   // deno-lint-ignore no-console
   console.log("[dnt] Running tests...");
-  const output = await new Deno.Command("bun", {
+  await new Deno.Command("bun", {
     args: ["run", "./npm/test_runner.js"],
+    stdout: "inherit",
+    stderr: "inherit",
   }).output();
-  if (!output.success) Deno.stderr.write(output.stderr);
   // deno-lint-ignore no-console
-  else console.log("[dnt] Complete!");
+  console.log("\n[dnt] Complete!");
 }
