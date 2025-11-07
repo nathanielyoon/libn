@@ -1,4 +1,5 @@
-import { type Is, is } from "@libn/is";
+import fc from "fast-check";
+import { hasOwn, type Is, is, isArray, isObject } from "@libn/is";
 import { assertEquals } from "@std/assert";
 import { assertType } from "@std/testing/types";
 
@@ -217,4 +218,39 @@ Deno.test("is() checks types", () => {
   assertEquals(is<0>()(0), 0);
   // @ts-expect-error incorrect
   is(0)(1);
+});
+Deno.test("isArray() checks mutable arrays", () => {
+  for (const $ of [0, [1]]) {
+    if (isArray($)) assertEquals(is<number[]>()($), [1]);
+    else assertEquals(is<number>()($), 0);
+  }
+});
+Deno.test("isArray() checks readonly arrays", () => {
+  for (const $ of [0, [1]] as const) {
+    if (isArray($)) assertEquals(is<readonly [1]>()($), [1]);
+    else assertEquals(is<0>()($), 0);
+  }
+});
+Deno.test("isObject() checks objects", () => {
+  for (const $ of [0, { 0: 0 }] as const) {
+    if (isObject($)) assertEquals(is<{ readonly 0: 0 }>()($), { 0: 0 });
+    else assertEquals(is<0>()($), 0);
+  }
+});
+Deno.test("isObject() excludes arrays", () => {
+  for (const $ of [[0], { 0: 0 }] as const) {
+    if (isObject($)) assertEquals(is<{ readonly 0: 0 }>()($), { 0: 0 });
+    else assertEquals(is<readonly [0]>()($), [0]);
+  }
+});
+Deno.test("hasOwn() checks for properties", () => {
+  for (const $ of [{}, { 0: 0 }] as const) {
+    if (hasOwn($, "0")) assertEquals(is<{ readonly 0: 0 }>()($), { 0: 0 });
+    else assertEquals(is<{ readonly 0?: never }>()($), {});
+  }
+});
+Deno.test("hasOwn() excludes prototypes", () => {
+  const $ = { __proto__: { 0: 0 } };
+  assertEquals(0 in $, true);
+  assertEquals(hasOwn($, 0), false);
 });

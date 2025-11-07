@@ -18,3 +18,13 @@ export type Is<A, B> = [A, B] extends [never, never] ? true : Are<An<A>, An<B>>;
 export const is =
   <const A>(_?: A): <B extends A>($: Is<A, B> extends true ? B : never) => B =>
   <B extends A>($: B) => $;
+/** Checks that something is an array (or `readonly` array). */
+export const isArray = /* @__PURE__ */
+  (() => Array.isArray)() as ($: any) => $ is any[] | readonly any[];
+/** Checks that something is an object. */
+export const isObject = ($: any): $ is { [_: PropertyKey]: unknown } =>
+  typeof $ === "object" && $ !== null && !isArray($);
+/** Checks that an object has a property. */
+export const hasOwn = /* @__PURE__ */ (() => Object.hasOwn)() as <
+  A extends PropertyKey,
+>($: object, key: A) => $ is { [_ in A]: unknown };
