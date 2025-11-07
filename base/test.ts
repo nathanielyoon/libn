@@ -39,6 +39,7 @@ Deno.test("b16.deB16() decodes base16", () => {
 Deno.test("b16.B16 matches base16", () => {
   assertMatch("", B16);
   assertMatch("0123456789ABCDEF", B16);
+  for (const $ of "0123456789ABCDEF") assertNotMatch($, B16);
   for (const $ of "GHIJKLMNOPQRSTUVWXYZ") assertNotMatch($.repeat(2), B16);
 });
 Deno.test("b16.enB16() matches B16 regex", () =>
