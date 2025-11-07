@@ -26,11 +26,12 @@ await build({
   package: {
     name,
     version,
-    license: "0BSD",
+    license: config.license,
     homepage: `https://jsr.io/${name}`,
     repository: {
       type: "git",
       url: "git+https://github.com/nathanielyoon/libn.git",
+      directory: name.slice(6),
     },
   },
   postBuild: async () => {
