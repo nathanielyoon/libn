@@ -12,6 +12,9 @@ bunx jsr add @libn/fuzzy
 bun add @libn/fuzzy
 ```
 
+- [fuzzysearch](https://github.com/bevacqua/fuzzysearch)
+- [fastest-levenshtein](https://github.com/ka-weihe/fastest-levenshtein)
+
 ## default
 
 ```ts
