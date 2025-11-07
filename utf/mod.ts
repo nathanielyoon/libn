@@ -1,6 +1,16 @@
 /** @module utf */
 import ranges from "./ranges.json" with { type: "json" };
 
+/** Converts UTF-8 to binary. */
+export const enUtf8: typeof TextEncoder.prototype.encode =
+  /* @__PURE__ */ TextEncoder.prototype.encode.bind(
+    /* @__PURE__ */ new TextEncoder(),
+  );
+/** Converts binary to UTF-8. */
+export const deUtf8: typeof TextDecoder.prototype.decode =
+  /* @__PURE__ */ TextDecoder.prototype.decode.bind(
+    /* @__PURE__ */ new TextDecoder("utf-8"),
+  );
 /** Escapes a string of HTML. */
 export const unhtml = ($: string): string =>
   $.replaceAll("&", "&#38;").replaceAll('"', "&#34;").replaceAll("'", "&#39;")
