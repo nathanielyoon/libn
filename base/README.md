@@ -194,20 +194,3 @@ assertEquals(enA85(binary), "87cURD]h(i");
 // Decode
 assertEquals(deA85("87cURD]h(i"), binary);
 ```
-
-## utf
-
-Aliases for built-in UTF-8 and UTF-16 APIs.
-
-```ts
-import { de, deUtf8, en, enUtf8 } from "@libn/base/utf";
-import { assertEquals } from "@std/assert";
-
-const binary = new TextEncoder().encode("Hello :)");
-assertEquals(enUtf8("Hello :)"), binary);
-assertEquals(deUtf8(binary), "Hello :)");
-
-assertEquals(en.call("Hello :)"), 72);
-assertEquals(en.call("Hello :)", 1), 101);
-assertEquals(de(...binary), "Hello :)");
-```

@@ -1,6 +1,5 @@
 /** @module b64 */
-import { de64, type Decode, type Encode, map } from "./lib.ts";
-import { de, en } from "@libn/base/utf";
+import { de64, type Decode, en, type Encode, map } from "./lib.ts";
 
 const B64_BIN = /* @__PURE__ */ map(
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
@@ -8,7 +7,7 @@ const B64_BIN = /* @__PURE__ */ map(
 /** Converts binary to base64. */
 export const enB64: Encode = ($) => {
   let string = "";
-  for (let z = 0; z < $.length; ++z) string += de($[z]);
+  for (let z = 0; z < $.length; ++z) string += String.fromCharCode($[z]);
   return btoa(string);
 };
 /** Converts base64 to binary. */

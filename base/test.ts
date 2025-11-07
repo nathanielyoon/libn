@@ -6,8 +6,8 @@ import { B64, deB64, enB64 } from "@libn/base/b64";
 import { C32, deC32, enC32 } from "@libn/base/c32";
 import { deH32, enH32, H32 } from "@libn/base/h32";
 import { deU64, enU64, U64 } from "@libn/base/u64";
-import { deUtf8, enUtf8 } from "@libn/base/utf";
 import { deZ85, enZ85, Z85 } from "@libn/base/z85";
+import { enUtf8 } from "@libn/utf";
 import {
   assertEquals,
   assertMatch,
@@ -409,10 +409,6 @@ Deno.test("a85.enA85() replaces all-zero chunks", () => {
     ] as const
   ) assertEquals(enA85(binary), string), assertEquals(deA85(string), binary);
 });
-Deno.test("utf8 round-trips losslessly", () =>
-  fc.assert(fc.property(fc.string({ unit: "grapheme" }), ($) => {
-    assertEquals(deUtf8(enUtf8($)), $);
-  })));
 import.meta.main && Promise.all([
   fetch(
     "https://www.rfc-editor.org/rfc/rfc4648.txt",

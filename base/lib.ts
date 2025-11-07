@@ -1,9 +1,11 @@
-import { en } from "./utf.ts";
-
 /** Binary-to-string function. */
 export type Encode = (binary: Uint8Array) => string;
 /** String-to-binary function. */
 export type Decode = (string: string) => Uint8Array<ArrayBuffer>;
+/** UTF-16 character code encoder. */
+export const en: (this: string, index?: number) => number =
+  /* @__PURE__ */ (() =>
+    String.prototype.charCodeAt as (this: string, index?: number) => number)();
 /** Creates a code-to-byte map. */
 export const map = ($: string, or?: number): Uint8Array<ArrayBuffer> => {
   const bin = new Uint8Array(256);

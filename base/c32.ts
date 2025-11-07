@@ -1,6 +1,5 @@
 /** @module c32 */
-import { de32, type Decode, en32, type Encode, map } from "./lib.ts";
-import { en } from "@libn/base/utf";
+import { de32, type Decode, en, en32, type Encode, map } from "./lib.ts";
 
 const C32_STR = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const C32_BIN = /* @__PURE__ */ (() => {
