@@ -12,7 +12,8 @@
     "./query",
     "./result",
     "./signal",
-    "./text"
+    "./text",
+    "./words"
   ],
   "imports": {
     "@deno/dnt": "jsr:@deno/dnt@^0.42.3",

@@ -1,5 +1,7 @@
 /** @module convert */
-const WORD = /\p{Lu}?\p{Ll}+|\p{N}+|\p{Lu}+(?!\p{Ll})|\p{Lt}\p{Ll}*|\p{L}+/gu;
+/** Pattern for a word. */
+export const WORD: RegExp =
+  /\p{Lu}?\p{Ll}+|\p{N}+|\p{Lu}+(?!\p{Ll})|\p{Lt}\p{Ll}*|\p{L}+/gu;
 const up = ([head, ...tail]: string) =>
   head.toUpperCase() + tail.join("").toLowerCase();
 const all = ($: string) => $.trim().match(WORD) ?? [];
