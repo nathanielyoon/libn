@@ -2,21 +2,21 @@ import { sha512 } from "@libn/hash/sha2";
 
 /** Clears and sets bits. */
 export const prune = ($: Uint8Array): Uint8Array<ArrayBuffer> => {
-  const a = sha512($.subarray(0, 32));
+  const hash = sha512($.subarray(0, 32));
   // Only clamp the lower half, upper is treated as a scalar (or unused).
-  return a[0] &= 248, a[31] = a[31] & 127 | 64, a;
+  return hash[0] &= 248, hash[31] = hash[31] & 127 | 64, hash;
 };
 /** Encodes binary to a bigint. */
 export const enBig = ($: Uint8Array): bigint => {
-  const a = new DataView($.buffer, $.byteOffset);
-  return a.getBigUint64(0, true) | a.getBigUint64(8, true) << 64n |
-    a.getBigUint64(16, true) << 128n | a.getBigUint64(24, true) << 192n;
+  const get = new DataView($.buffer, $.byteOffset);
+  return get.getBigUint64(0, true) | get.getBigUint64(8, true) << 64n |
+    get.getBigUint64(16, true) << 128n | get.getBigUint64(24, true) << 192n;
 };
 /** Decodes a bigint to binary. */
 export const deBig = ($: bigint): Uint8Array<ArrayBuffer> => {
-  const a = new Uint8Array(32), b = new DataView(a.buffer, a.byteOffset);
-  b.setBigUint64(24, $ >> 192n, true), b.setBigUint64(16, $ >> 128n, true);
-  return b.setBigUint64(8, $ >> 64n, true), b.setBigUint64(0, $, true), a;
+  const to = new Uint8Array(32), set = new DataView(to.buffer, to.byteOffset);
+  set.setBigUint64(24, $ >> 192n, true), set.setBigUint64(16, $ >> 128n, true);
+  return set.setBigUint64(8, $ >> 64n, true), set.setBigUint64(0, $, true), to;
 };
 /** Curve25519 prime. */
 export const P: bigint = /* @__PURE__ */ (() => (1n << 255n) - 19n)();
@@ -26,13 +26,9 @@ export const N: bigint = /* @__PURE__ */
 /** Reduces modulo P. */
 export const mod = ($: bigint): bigint => ($ %= P) < 0n ? $ + P : $;
 /** Raises to a power modulo P. */
-export const pow = (
-  base: bigint,
-  power: number,
-  multiplier: bigint = base,
-): bigint => {
-  do base = base * base % P; while (--power); // use `% P` to avoid bigint limit
-  return base * multiplier % P;
+export const pow = ($: bigint, power: number, factor: bigint = $): bigint => {
+  do $ = $ * $ % P; while (--power); // use `% P` to avoid bigint limit
+  return $ * factor % P;
 };
 /** Inverts modulo P. */
 export const inv = ($: bigint): bigint => {
@@ -41,10 +37,9 @@ export const inv = ($: bigint): bigint => {
   return mod(a);
 };
 /** Common exponentiation. */
-export const exp = (base: bigint, cube: bigint = base ** 3n): bigint => {
-  const a = pow(cube ** 10n % P * base % P, 5);
-  const b = pow(pow(pow(a, 10), 20), 40);
-  return pow(pow(pow(b, 80), 80, b), 10, a) ** 4n % P * base % P;
+export const exp = ($: bigint, cube: bigint = $ ** 3n): bigint => {
+  const a = pow(cube ** 10n % P * $ % P, 5), b = pow(pow(pow(a, 10), 20), 40);
+  return pow(pow(pow(b, 80), 80, b), 10, a) ** 4n % P * $ % P;
 };
 const D = 0x52036cee2b6ffe738cc740797779e89800700a4d4141d8ab75eb4dca135978a3n;
 const R = 0x2b8324804fc1df0b2b4d00993dfbd7a72f431806ad2fe478c4ee1b274a0ea0b0n;
@@ -60,28 +55,25 @@ export const I: bigint = /* @__PURE__ */ (() => Z1 | 1n << 256n)();
 export const add = (one: bigint, two: bigint): bigint => {
   const a = one & MX, b = one >> 256n & MX, c = two & MX, d = two >> 256n & MX;
   const e = (one >> 512n & MX) * (two >> 512n & MX) % P;
-  const f = (one >> 768n) * D * (two >> 768n) % P, g = e + f;
-  const h = e - f, i = a * c % P + b * d % P, j = (a + b) * (c + d) % P - i;
-  return mod(h * j) | mod(i * g) << 256n | mod(g * h) << 512n |
-    mod(i * j) << 768n;
+  const f = (one >> 768n) * D * (two >> 768n) % P, g = e + f, h = e - f;
+  const i = a * c % P + b * d % P, j = (a + b) * (c + d) % P - i, k = h * j;
+  return mod(k) | mod(i * g) << 256n | mod(g * h) << 512n | mod(i * j) << 768n;
 };
 /** Doubles a point. */
 export const double = ($: bigint): bigint => {
   const a = $ & MX, b = $ >> 256n & MX, c = $ >> 512n & MX, d = a ** 2n % P;
   const e = P - d, f = b ** 2n % P, g = e + f, h = e - f;
-  const i = g - (c * c % P << 1n) % P, j = (a + b) ** 2n % P - d - f;
-  return mod(i * j) | mod(g * h) << 256n | mod(g * i) << 512n |
-    mod(h * j) << 768n;
+  const i = g - (c * c % P << 1n) % P, j = (a + b) ** 2n % P - d - f, k = i * j;
+  return mod(k) | mod(g * h) << 256n | mod(g * i) << 512n | mod(h * j) << 768n;
 };
-const G = /* @__PURE__ */ (() => {
-  const a = Array<bigint>(4224);
-  let b = X | Y << 256n | Z1 | X * Y % P << 768n, c, z = 0, y;
+const G = /* @__PURE__ */ Array<bigint>(4224);
+/* @__PURE__ */ (() => {
+  let point = X | Y << 256n | Z1 | X * Y % P << 768n, temp, z = 0, y;
   do {
-    y = 0, a[z++] = c = b;
-    do a[z++] = c = add(c, b); while (++y < 127);
-    b = double(c);
+    y = 0, G[z++] = temp = point;
+    do G[z++] = temp = add(temp, point); while (++y < 127);
+    point = double(temp);
   } while (z < 4224);
-  return a;
 })();
 /** Multiplies the base point by a scalar. */
 export const wnaf = ($: bigint): { a: bigint; _: bigint } => {

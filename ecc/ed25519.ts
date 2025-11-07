@@ -15,8 +15,8 @@ import {
 } from "./lib.ts";
 
 const int = ($: Uint8Array) => {
-  const a = sha512($);
-  return (enBig(a) | enBig(a.subarray(32)) << 256n) % N;
+  const hash = sha512($);
+  return (enBig(hash) | enBig(hash.subarray(32)) << 256n) % N;
 };
 /** Derives an Ed25519 public key from a secret key. */
 export const generate = ($: Uint8Array): Uint8Array<ArrayBuffer> =>
@@ -41,13 +41,12 @@ export const verify = (
   if (signature.length !== 64) return false;
   const a = enBig(signature.subarray(32));
   if (a >= N) return false;
-  const b = new Uint8Array(message.length + 64);
-  b.set(signature), b.set(publicKey, 32), b.set(message, 64);
-  let c = dePoint(publicKey);
-  if (c < 0n) return false;
-  let d = int(b), e = I;
-  // No secret information involved, so unsafe double-and-add is ok.
-  do if (d & 1n) e = add(e, c); while (c = double(c), d >>= 1n);
-  c = dePoint(signature);
-  return c >= 0n && equals(wnaf(a).a, add(e, c));
+  let b = dePoint(publicKey);
+  if (b < 0n) return false;
+  const c = new Uint8Array(message.length + 64);
+  c.set(signature), c.set(publicKey.subarray(0, 32), 32), c.set(message, 64);
+  let d = int(c), e = I;
+  // No secret information is involved, so unsafe double-and-add is ok.
+  do if (d & 1n) e = add(e, b); while (b = double(b), d >>= 1n);
+  return b = dePoint(signature), b >= 0n && equals(wnaf(a).a, add(e, b));
 };

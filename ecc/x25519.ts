@@ -1,7 +1,7 @@
 /** @module x25519 */
 import { deBig, enBig, exp, inv, mod, P, pow, prune } from "./lib.ts";
 
-const F = /* @__PURE__ */ (() => ~(1n << 255n))(); // clears unused top bit
+const F = /* @__PURE__ */ (() => ~(1n << 255n))(); // mask clears unused top bit
 /** Multiplies a private scalar and a public point. */
 export const ladder = (scalar: bigint, point: bigint): bigint => {
   // Clamping in bigint form isn't as efficient, but doesn't mutate passed-in
