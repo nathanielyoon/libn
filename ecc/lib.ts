@@ -68,9 +68,9 @@ export const double = ($: bigint): bigint => {
 };
 const G = /* @__PURE__ */ Array<bigint>(4224);
 /* @__PURE__ */ (() => {
-  let point = X | Y << 256n | Z1 | X * Y % P << 768n, temp, z = 0, y;
+  let point = X | Y << 256n | Z1 | X * Y % P << 768n, z = 0;
   do {
-    y = 0, G[z++] = temp = point;
+    let y = 0, temp = G[z++] = point;
     do G[z++] = temp = add(temp, point); while (++y < 127);
     point = double(temp);
   } while (z < 4224);
