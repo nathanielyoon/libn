@@ -1,15 +1,16 @@
 import { build, emptyDir, type LibName } from "@deno/dnt";
-import config from "./deno.json" with { type: "json" };
+import root from "./deno.json" with { type: "json" };
 
-await emptyDir("./npm");
+await emptyDir("./npm"); // also creates directory if it doesn't exist
 const { name, version, exports, imports, compilerOptions = {} } = JSON.parse(
-  await Deno.readTextFile("./deno.json"),
+  await Deno.readTextFile("./deno.json"), // relative to cwd of command
 );
 const lib = ["ESNext"] satisfies LibName[];
 compilerOptions.lib &&= compilerOptions.lib.filter(($: string) =>
   !$.startsWith("deno")
 ).concat(lib);
-const test = !Object.hasOwn(imports ?? {}, "@b-fuze/deno-dom");
+const test = !Object.hasOwn(imports ?? {}, "@b-fuze/deno-dom"); // unsupported
+const NAME = name.slice(name.indexOf("/") + 1);
 await build({
   outDir: "./npm",
   entryPoints: typeof exports === "string"
@@ -18,7 +19,7 @@ await build({
   shims: { deno: "dev" },
   skipSourceOutput: true,
   typeCheck: "both",
-  compilerOptions: { lib, ...config.compilerOptions, ...compilerOptions },
+  compilerOptions: { lib, ...root.compilerOptions, ...compilerOptions },
   filterDiagnostic: ($) =>
     !$.file?.fileName.endsWith("test.ts") &&
     !$.file?.fileName.includes("/deps/jsr.io/@std/"),
@@ -26,12 +27,12 @@ await build({
   package: {
     name,
     version,
-    license: config.license,
+    license: root.license,
     homepage: `https://jsr.io/${name}`,
     repository: {
       type: "git",
       url: "git+https://github.com/nathanielyoon/libn.git",
-      directory: name.slice(6),
+      directory: NAME,
     },
   },
   postBuild: async () => {
@@ -41,9 +42,7 @@ await build({
         text = await Deno.readTextFile(path);
       } catch (thrown) {
         if (thrown instanceof Deno.errors.NotFound) {
-          text = await Deno.readTextFile(
-            path = `./npm/${$}/${name.slice(name.indexOf("/") + 1)}/test.js`,
-          );
+          text = await Deno.readTextFile(path = `./npm/${$}/${NAME}/test.js`);
         } else throw thrown;
       }
       await Deno.writeTextFile(
