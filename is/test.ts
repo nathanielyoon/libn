@@ -1,4 +1,3 @@
-import fc from "fast-check";
 import { hasOwn, type Is, is, isArray, isObject } from "@libn/is";
 import { assertEquals } from "@std/assert";
 import { assertType } from "@std/testing/types";
