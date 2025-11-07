@@ -5,8 +5,7 @@
   "exports": {
     "./convert": "./convert.ts",
     "./normalize": "./normalize.ts",
-    "./fold": "./fold.ts",
-    "./match": "./match.ts"
+    "./fold": "./fold.ts"
   },
   "test": {
     "permissions": {

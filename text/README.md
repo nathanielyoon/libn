@@ -82,16 +82,3 @@ assertNotEquals(one, two);
 // But they match case-insensitively
 assertEquals(uncase(one), uncase(two));
 ```
-
-## match
-
-```ts
-import { distance, includes } from "@libn/text/match";
-import { assertEquals } from "@std/assert";
-
-// Check for general presence
-assertEquals(includes("a b c", "abc"), true);
-
-// Or calculate exact Levenshtein distance
-assertEquals(distance("a b c", "abc"), 2);
-```

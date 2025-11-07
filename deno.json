@@ -5,6 +5,7 @@
     "./base",
     "./csv",
     "./ecc",
+    "./fuzzy",
     "./hash",
     "./json",
     "./is",
