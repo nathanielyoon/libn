@@ -8,7 +8,7 @@ import {
   unmark,
   unrexp,
   unwide,
-} from "@libn/text";
+} from "@libn/utf";
 import {
   assertEquals,
   assertMatch,
