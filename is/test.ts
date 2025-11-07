@@ -2,10 +2,7 @@ import { type Is, is } from "@libn/is";
 import { assertEquals } from "@std/assert";
 import { assertType } from "@std/testing/types";
 
-type Sequence<A, B extends number, C extends A[] = []> = B extends B
-  ? C["length"] extends B ? C : Sequence<A, B, [...C, A]>
-  : never;
-Deno.test("is.Is checks equality", () => {
+Deno.test("Is checks equality", () => {
   // https://github.com/denoland/std/blob/b5a5fe4f96b91c1fe8dba5cc0270092dd11d3287/testing/types_test.ts
   assertType<Is<any, any>>(true);
   assertType<Is<never, never>>(true);
@@ -189,39 +186,31 @@ Deno.test("is.Is checks equality", () => {
   assertType<Is<[string], [string]>>(true);
   assertType<Is<[string], [string, number]>>(false);
   assertType<Is<[0, 1] | [0, 2], [0, 2]>>(false);
+  type Sequence<A, B extends number, C extends A[] = []> = B extends B
+    ? C["length"] extends B ? C : Sequence<A, B, [...C, A]>
+    : never;
   type Long = Sequence<0, 50>;
   assertType<Is<Long, Long>>(true);
   type ReadonlyLong = Readonly<Sequence<0, 50>>;
   assertType<Is<ReadonlyLong, ReadonlyLong>>(true);
   assertType<Is<ReadonlyLong, Long>>(false);
-  type WrappedTupleMatches<Tpl> = Tpl extends [[0, 2]] ? "Foo" : "Bar";
-  type WrappedTupleDoesNotMatch<Tpl> = Tpl extends [[0, 1]] ? "Foo" : "Bar";
-  type TupleMatches<Tpl> = Tpl extends [0, 2] ? "Foo" : "Bar";
-  type TupleDoesNotMatch<Tpl> = Tpl extends [0, 1] ? "Foo" : "Bar";
-  assertType<
-    Is<
-      (WrappedTupleMatches<[[0, 2]]> & WrappedTupleDoesNotMatch<[[0, 2]]>),
-      never
-    >
-  >(true);
-  assertType<
-    [0, 2] extends infer Tpl ? Is<
-        (WrappedTupleMatches<[Tpl]> & WrappedTupleDoesNotMatch<[Tpl]>),
-        never
-      >
-      : never
-  >(true);
-  assertType<Is<(TupleMatches<[0, 2]> & TupleDoesNotMatch<[0, 2]>), never>>(
-    true,
-  );
+  type WrappedSame<Tpl> = Tpl extends [[0, 2]] ? "Foo" : "Bar";
+  type WrappedDiff<Tpl> = Tpl extends [[0, 1]] ? "Foo" : "Bar";
+  type Same<Tpl> = Tpl extends [0, 2] ? "Foo" : "Bar";
+  type Diff<Tpl> = Tpl extends [0, 1] ? "Foo" : "Bar";
+  assertType<Is<(WrappedSame<[[0, 2]]> & WrappedDiff<[[0, 2]]>), never>>(true);
   assertType<
     [0, 2] extends infer Tpl
-      ? Is<(TupleMatches<Tpl> & TupleDoesNotMatch<Tpl>), never>
+      ? Is<(WrappedSame<[Tpl]> & WrappedDiff<[Tpl]>), never>
       : never
+  >(true);
+  assertType<Is<(Same<[0, 2]> & Diff<[0, 2]>), never>>(true);
+  assertType<
+    [0, 2] extends infer Tpl ? Is<(Same<Tpl> & Diff<Tpl>), never> : never
   >(true);
   assertType<Is<[{ a: 1 }] & [{ a: 1 }], [{ a: 1 }]>>(true);
 });
-Deno.test("is.is() checks types", () => {
+Deno.test("is() checks types", () => {
   // @ts-expect-error expect unknown
   is()(0);
   assertEquals(is(0)(0), 0);
