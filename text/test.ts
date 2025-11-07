@@ -1,13 +1,6 @@
 import { de, en } from "@libn/base/utf";
 import {
-  assertEquals,
-  assertMatch,
-  assertNotEquals,
-  assertNotMatch,
-} from "@std/assert";
-import fc from "fast-check";
-import { createRanges, uncase } from "@libn/text/fold";
-import {
+  uncase,
   uncode,
   unhtml,
   unline,
@@ -15,7 +8,14 @@ import {
   unmark,
   unrexp,
   unwide,
-} from "@libn/text/normalize";
+} from "@libn/text";
+import {
+  assertEquals,
+  assertMatch,
+  assertNotEquals,
+  assertNotMatch,
+} from "@std/assert";
+import fc from "fast-check";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("normalize.uncode() passes reference vectors", () => {
@@ -175,17 +175,6 @@ Deno.test("normalize.unrexp() escapes the first character if alphanumeric", () =
     );
   }
 });
-Deno.test("fold.createRanges() creates same ranges", async () => {
-  const text = await fetch(
-    "https://www.unicode.org/Public/UNIDATA/CaseFolding.txt",
-  ).then(($) => $.text()).catch(async () =>
-    (await import("./CaseFolding.txt", { with: { type: "text" } })).default
-  );
-  assertEquals(
-    createRanges(text),
-    (await import("./ranges.json", { with: { type: "json" } })).default,
-  );
-});
 Deno.test("fold.uncase() passes reference vectors", () =>
   vectors.uncase.forEach(($) => {
     assertEquals(uncase($.source), $.target);
@@ -221,7 +210,7 @@ import.meta.main && Promise.all([
       : hex.split("-").map(($) => parseInt($, 16))
   ),
   uncase: fold.match(/^[\dA-F]{4,5}; [CF];(?: [\dA-F]{4,5})+/gm)!.map(($) => {
-    const [code, _, mapping] = $.split("; ");
+    const [code, , mapping] = $.split("; ");
     return {
       source: String.fromCodePoint(parseInt(code, 16)),
       target: mapping.split(" ").reduce(

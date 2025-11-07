@@ -1,6 +1,6 @@
 # @libn/text
 
-String utilities.
+Normalize text.
 
 ```sh
 deno add jsr:@libn/text
@@ -17,13 +17,11 @@ bun add @libn/text
 - [Javascript white space](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space)
 - [RegExp.escape](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/escape)
 - [Unicode case folding](https://www.unicode.org/Public/UNIDATA/CaseFolding.txt)
-- [fuzzysearch](https://github.com/bevacqua/fuzzysearch)
-- [fastest-levenshtein](https://github.com/ka-weihe/fastest-levenshtein)
 
-## normalize
+## default
 
 ```ts
-import { uncode, unline, unlone, unmark, unwide } from "@libn/text/normalize";
+import { uncode, unline, unlone, unmark, unwide } from "@libn/text";
 import { assertEquals } from "@std/assert";
 
 // This string has some abnormal characters
@@ -45,10 +43,8 @@ assertEquals(string = unwide(string), "\ufffd\ufffd\n\xf1");
 assertEquals(string = unmark(string), "\ufffd\ufffd\nn");
 ```
 
-## fold
-
 ```ts
-import { uncase } from "@libn/text/fold";
+import { uncase } from "@libn/text";
 import { assertEquals, assertNotEquals } from "@std/assert";
 
 // These strings differ
