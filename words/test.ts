@@ -10,21 +10,19 @@ import { assertEquals } from "@std/assert";
 import fc from "fast-check";
 import vectors from "./vectors.json" with { type: "json" };
 
-const { Lu, Ll, Lt, L, N } = Object.keys(vectors).reduce((to, key) => ({
+const codes = (["Lu", "Ll", "Lt", "L", "N"] as const).reduce((to, key) => ({
   ...to,
-  [key]: fc.constantFrom(
-    ...vectors[key as keyof typeof vectors].map(($) => String.fromCodePoint($)),
-  ),
+  [key]: fc.constantFrom(...vectors[key].map(($) => String.fromCodePoint($))),
 }), {} as { [_ in keyof typeof vectors]: fc.Arbitrary<string> });
 const fcWords = fc.array(
   fc.oneof(
-    fc.tuple(Lu, fc.array(Ll, { minLength: 1 })).map(($) => $.flat()),
-    fc.array(Ll, { minLength: 1 }),
-    fc.array(N, { minLength: 1 }),
-    fc.array(Lu, { minLength: 1 }),
-    fc.tuple(Lt, fc.array(Ll)).map(($) => $.flat()),
-    fc.array(L, { minLength: 1 }),
-  ).map((letters) => letters.join("")),
+    fc.tuple(codes.Lu, fc.array(codes.Ll, { minLength: 1 })),
+    fc.array(codes.Ll, { minLength: 1 }),
+    fc.array(codes.N, { minLength: 1 }),
+    fc.array(codes.Lu, { minLength: 1 }),
+    fc.tuple(codes.Lt, fc.array(codes.Ll)),
+    fc.array(codes.L, { minLength: 1 }),
+  ).map((letters) => letters.flat().join("")),
   { minLength: 1 },
 ).map((words) => ({
   all: words,
