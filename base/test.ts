@@ -1,10 +1,3 @@
-import {
-  assertEquals,
-  assertMatch,
-  assertNotMatch,
-  assertThrows,
-} from "@std/assert";
-import fc from "fast-check";
 import { A85, deA85, enA85 } from "@libn/base/a85";
 import { B16, deB16, enB16 } from "@libn/base/b16";
 import { B32, deB32, enB32 } from "@libn/base/b32";
@@ -14,8 +7,15 @@ import { C32, deC32, enC32 } from "@libn/base/c32";
 import { deH32, enH32, H32 } from "@libn/base/h32";
 import { deU64, enU64, U64 } from "@libn/base/u64";
 import { deUtf8, enUtf8 } from "@libn/base/utf";
-import vectors from "./vectors.json" with { type: "json" };
 import { deZ85, enZ85, Z85 } from "@libn/base/z85";
+import {
+  assertEquals,
+  assertMatch,
+  assertNotMatch,
+  assertThrows,
+} from "@std/assert";
+import fc from "fast-check";
+import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("b16 passes reference vectors", () =>
   vectors.b16.forEach(($) => {
