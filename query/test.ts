@@ -1,6 +1,6 @@
 import { Document, Element as DenoDomElement } from "@b-fuze/deno-dom/native";
 import { type } from "@libn/json/lib";
-import { unhtml } from "@libn/text/normalize";
+import { unhtml } from "@libn/text";
 import { assertEquals, assertStrictEquals } from "@std/assert";
 import fc from "fast-check";
 import { ce } from "@libn/query/create";
