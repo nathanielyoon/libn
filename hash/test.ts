@@ -41,7 +41,7 @@ Deno.test("lib.mul64() multiplies 64 bits", () =>
     });
   })));
 const ffi = async <A extends "oaat32" | "a5hash32" | "a5hash64">(hash: A) => {
-  const url = new URL(import.meta.resolve(`./${hash}`));
+  const url = new URL(import.meta.resolve(`./${hash}.so`));
   await Deno.writeFile(
     url,
     await press(
