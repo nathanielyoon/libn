@@ -1,4 +1,4 @@
-/** @module normalize */
+/** @module utf */
 import ranges from "./ranges.json" with { type: "json" };
 
 /** Escapes a string of HTML. */

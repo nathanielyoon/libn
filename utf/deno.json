@@ -1,5 +1,5 @@
 {
-  "name": "@libn/text",
+  "name": "@libn/utf",
   "version": "0.4.0",
   "license": "0BSD",
   "exports": "./mod.ts"
