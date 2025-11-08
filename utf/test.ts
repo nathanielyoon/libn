@@ -6,14 +6,8 @@ import {
   unlone,
   unmark,
   unrexp,
-  unwide,
 } from "@libn/utf";
-import {
-  assertEquals,
-  assertMatch,
-  assertNotEquals,
-  assertNotMatch,
-} from "@std/assert";
+import { assertEquals, assertMatch, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
 import vectors from "./vectors.json" with { type: "json" };
 
@@ -83,24 +77,6 @@ Deno.test("normalize.unline() replaces weird breaks with linefeeds", () =>
 Deno.test("normalize.unline() matches any break", () =>
   ["\r\n", "\x85", "\u2028", "\u2029"].forEach(($) => {
     assertEquals(unline($), "\n");
-  }));
-Deno.test("normalize.unwide() trims", () =>
-  fc.assert(fc.property(fc.string({ unit: "grapheme" }), ($) => {
-    assertNotMatch(unwide($), /^\s|\s$/);
-  })));
-Deno.test("normalize.unwide() collapses consecutive spaces", () =>
-  fc.assert(fc.property(fc.string({ unit: "grapheme" }), ($) => {
-    assertMatch(unwide($), /^(?:\S|(\s|\r\n)(?!\1))*$/);
-  })));
-Deno.test("normalize.unwide() matches any space", () =>
-  Array.from({ length: 11 }, (_, z) => z + 0x2000).concat(
-    [0x1680, 0x2028, 0x2029, 0x202f, 0x205f, 0x3000, 0xfeff],
-  ).map(($) => from($)).concat(
-    ["\t", "\n", "\v", "\f", "\r", "\r\n", " ", "\xa0"],
-  ).forEach(($) => {
-    for (let z = 1; z < 9; ++z) {
-      assertEquals(unwide(`\0${$.repeat(z)}\0`).slice(1, -1), $);
-    }
   }));
 Deno.test("normalize.unmark() removes diacritics", () =>
   fc.assert(fc.property(

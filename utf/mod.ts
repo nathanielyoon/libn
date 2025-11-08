@@ -35,9 +35,6 @@ export const uncode = ($: string): string =>
 /** Replaces breaks with linefeeds. */
 export const unline = ($: string): string =>
   $.replace(/\r\n|[\x85\u2028\u2029]/g, "\n");
-/** Removes leading/trailing whitespace and collapses repeated sequences. */
-export const unwide = ($: string): string =>
-  $.trim().replace(/(\r\n|\s)\1+/g, "$1");
 /** Compatibilizes and removes diacritics. */
 export const unmark = ($: string): string =>
   $.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").normalize("NFKC");
