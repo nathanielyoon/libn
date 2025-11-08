@@ -1,15 +1,15 @@
-# @libn/text
+# @libn/utf
 
-Normalize text.
+Process UTF-8 and UTF-16.
 
 ```sh
-deno add jsr:@libn/text
+deno add jsr:@libn/utf
 
-npx jsr add @libn/text
-npm install @libn/text
+npx jsr add @libn/utf
+npm install @libn/utf
 
-bunx jsr add @libn/text
-bun add @libn/text
+bunx jsr add @libn/utf
+bun add @libn/utf
 ```
 
 - [RFC 9839](https://www.rfc-editor.org/rfc/rfc9839.txt)
@@ -21,7 +21,7 @@ bun add @libn/text
 ## default
 
 ```ts
-import { uncode, unline, unlone, unmark, unwide } from "@libn/text";
+import { uncode, unline, unlone, unmark, unwide } from "@libn/utf";
 import { assertEquals } from "@std/assert";
 
 // This string has some abnormal characters
@@ -44,7 +44,7 @@ assertEquals(string = unmark(string), "\ufffd\ufffd\nn");
 ```
 
 ```ts
-import { uncase } from "@libn/text";
+import { uncase } from "@libn/utf";
 import { assertEquals, assertNotEquals } from "@std/assert";
 
 // These strings differ

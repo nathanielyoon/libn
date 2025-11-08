@@ -1,5 +1,5 @@
 /** @module utf */
-import ranges from "./ranges.json" with { type: "json" };
+import codes from "./codes.json" with { type: "json" };
 
 /** Converts UTF-8 to binary. */
 export const enUtf8: typeof TextEncoder.prototype.encode =
@@ -15,9 +15,10 @@ export const deUtf8: typeof TextDecoder.prototype.decode =
 export const unhtml = ($: string): string =>
   $.replaceAll("&", "&#38;").replaceAll('"', "&#34;").replaceAll("'", "&#39;")
     .replaceAll("<", "&#60;").replaceAll(">", "&#62;");
-const b1 = ($: string) => `\\${"tnvfr"[$.charCodeAt(0) - 9]}`; // \x09-\x0d
-const h2 = ($: string) => `\\x${$.charCodeAt(0).toString(16).padStart(2, "0")}`;
-const u4 = ($: string) => `\\u${$.charCodeAt(0).toString(16).padStart(4, "0")}`;
+const at = ($: string) => $.codePointAt(0)!;
+const b1 = ($: string) => `\\${"tnvfr"[at($) - 9]}`; // \x09-\x0d
+const h2 = ($: string) => `\\x${at($).toString(16).padStart(2, "0")}`;
+const u4 = ($: string) => `\\u${at($).toString(16).padStart(4, "0")}`;
 /** Escapes a string as a regular expression literal. */
 export const unrexp = ($: string): string =>
   $.replace(/[$(-+./?[-^{|}]/g, "\\$&").replace(/[\t\n\v\f\r]/g, b1)
@@ -40,23 +41,34 @@ export const unwide = ($: string): string =>
 /** Compatibilizes and removes diacritics. */
 export const unmark = ($: string): string =>
   $.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").normalize("NFKC");
-const replace = /* @__PURE__ */ (() => String.prototype.replace)();
-const args = /* @__PURE__ */ ((): Parameters<typeof replace> => {
-  const hex = ($: number) => {
-    if ($ < 256) return `\\x${$.toString(16).padStart(2, "0")}`;
-    else if ($ < 0x10000) return `\\u${$.toString(16).padStart(4, "0")}`;
-    return `\\u{${$.toString(16)}}`;
-  };
-  const map: { [_: string]: string } = {};
+const args = /* @__PURE__ */ (() => {
+  const hex = ($: number) => `\\u{${$.toString(16)}}`;
   let regex = "";
-  for (const row of ranges.split(",")) {
-    const [head, ...tail] = row.split(" "), rest = tail.length - 1;
-    let code = head.codePointAt(0)!;
-    regex += hex(code);
-    if (rest) regex += "-" + hex(code + rest);
-    for (const $ of tail) map[String.fromCodePoint(code++)] = $;
+  const map: { [_: string]: string } = {};
+  for (const [code, mapping, length] of codes.ranges) {
+    regex += `${hex(code)}-${hex(code + length)}`;
+    for (let z = 0; z <= length; ++z) {
+      map[String.fromCodePoint(code + z)] = String.fromCodePoint(mapping + z);
+    }
   }
-  return [RegExp(`[${regex}]`, "gu"), Reflect.get.bind(null, map)];
+  const bytes = Uint8Array.from(atob(codes.utf8), at);
+  let use: string[] = [];
+  for (const $ of deUtf8(bytes.subarray(0, 3214))) {
+    if (use.length) {
+      regex += hex(at(use[0])), map[use[0]] = $, use = [];
+    } else use.push($);
+  }
+  for (const $ of deUtf8(bytes.subarray(3214, 3854))) {
+    if (use.length === 2) {
+      regex += hex(at(use[0])), map[use[0]] = use[1] + $, use = [];
+    } else use.push($);
+  }
+  for (const $ of deUtf8(bytes.subarray(3854))) {
+    if (use.length === 3) {
+      regex += hex(at(use[0])), map[use[0]] = use[1] + use[2] + $, use = [];
+    } else use.push($);
+  }
+  return [RegExp(`[${regex}]`, "gu"), Reflect.get.bind(Reflect, map)] as const;
 })();
 /** Case-folds. */
-export const uncase = ($: string): string => replace.apply($, args);
+export const uncase = ($: string): string => $.replace(...args);
