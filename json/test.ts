@@ -3,7 +3,7 @@ import { enB32 } from "@libn/base/b32";
 import { enB64 } from "@libn/base/b64";
 import { enH32 } from "@libn/base/h32";
 import { enU64 } from "@libn/base/u64";
-import { unrexp } from "@libn/text";
+import { unrexp } from "@libn/utf";
 import {
   assertEquals,
   assertInstanceOf,
