@@ -1,4 +1,4 @@
-import { Document, Element } from "@b-fuze/deno-dom/native";
+import { parseHTML } from "linkedom";
 import { h } from "@libn/element";
 import { lowerKebab } from "@libn/words";
 import { is } from "@libn/is";
@@ -6,8 +6,7 @@ import { assertEquals } from "@std/assert";
 import fc from "fast-check";
 
 Deno.test.beforeAll(() => {
-  globalThis.document = new Document() as any;
-  globalThis.Element = Element as any;
+  globalThis.document = parseHTML("").document;
 });
 Deno.test("h() creates tags", () => {
   const a = h("a");
@@ -36,7 +35,7 @@ Deno.test("h() attaches known listeners", () =>
         },
       },
     });
-    for (let z = 0; z < count; ++z) element.dispatchEvent(new Event("click"));
+    for (let z = 0; z < count; ++z) element.click();
     assertEquals(actual, count);
   })));
 Deno.test("h() sets attributes", () =>
@@ -52,5 +51,38 @@ Deno.test("h() sets attributes", () =>
       for (const [key, value] of Object.entries($)) {
         assertEquals(element.getAttribute(key), value);
       }
+    },
+  )));
+const fcText = fc.stringMatching(/^[^'&"<>]*$/);
+const fcNode = fc.oneof(
+  fc.tuple(fcText, fcText).map(([tag, text]) => h(tag, {}, text)),
+  fcText,
+  fc.constantFrom(null, undefined),
+);
+Deno.test("h() appends children", () =>
+  fc.assert(fc.property(
+    fc.array(
+      fc.oneof(fcNode, fc.array(fcNode)).chain(($) =>
+        fc.constantFrom($, () => $, (parent: HTMLElement) => {
+          for (const child of [$].flat()) child && parent.append(child);
+        })
+      ),
+    ),
+    ($) => {
+      assertEquals(
+        h("a", {}, ...$).innerHTML.trim(),
+        $.flat().flatMap((child) => {
+          if (typeof child === "string") {
+            return child.replaceAll("&", "&amp;").replaceAll('"', "&#34;")
+              .replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+          }
+          if (typeof child !== "function") return child;
+          const parent = h("a");
+          return child(parent) ?? parent.innerHTML;
+        }).reduce<string>(
+          (to, $) => to + (typeof $ === "string" ? $ : $?.outerHTML ?? ""),
+          "",
+        ).trim(),
+      );
     },
   )));
