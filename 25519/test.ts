@@ -1,11 +1,11 @@
-import { generate, sign, verify } from "@libn/ecc/ed25519";
+import { generate, sign, verify } from "@libn/25519/ed25519";
 import {
   convertPublic,
   convertSecret,
   derive,
   exchange,
   ladder,
-} from "@libn/ecc/x25519";
+} from "@libn/25519/x25519";
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { deBig, enBig, mod } from "./lib.ts";

@@ -1,5 +1,5 @@
 {
-  "name": "@libn/ecc",
+  "name": "@libn/25519",
   "version": "0.4.0",
   "license": "0BSD",
   "exports": {

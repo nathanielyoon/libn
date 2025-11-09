@@ -1,15 +1,15 @@
-# @libn/ecc
+# @libn/25519
 
 Curve25519 key exchange and digital signatures.
 
 ```sh
-deno add jsr:@libn/ecc
+deno add jsr:@libn/25519
 
-npx jsr add @libn/aead
-npm install @libn/aead
+npx jsr add @libn/25519
+npm install @libn/25519
 
-bunx jsr add @libn/aead
-bun add @libn/aead
+bunx jsr add @libn/25519
+bun add @libn/25519
 ```
 
 - [RFC 7748](https://www.rfc-editor.org/rfc/rfc7748)
@@ -19,7 +19,7 @@ bun add @libn/aead
 ## x25519
 
 ```ts
-import { derive, exchange } from "@libn/ecc/x25519";
+import { derive, exchange } from "@libn/25519/x25519";
 import { assertEquals } from "@std/assert";
 
 // Alice has a secret key
@@ -41,7 +41,7 @@ assertEquals(sharedAB, sharedBA);
 ## ed25519
 
 ```ts
-import { generate, sign, verify } from "@libn/ecc/ed25519";
+import { generate, sign, verify } from "@libn/25519/ed25519";
 import { assert } from "@std/assert";
 
 const message = crypto.getRandomValues(new Uint8Array(100));

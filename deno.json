@@ -1,10 +1,10 @@
 {
   "license": "0BSD",
   "workspace": [
+    "./25519",
     "./aead",
     "./base",
     "./csv",
-    "./ecc",
     "./fuzzy",
     "./hash",
     "./json",
@@ -71,7 +71,7 @@
     },
     "vectors": {
       "description": "Runs all test-vector-writing scripts.",
-      "command": "deno task --quiet --cwd=./aead write; deno task --quiet --cwd=./base write; deno task --quiet --cwd=./csv write; deno task --quiet --cwd=./ecc write; deno task --quiet --cwd=./hash write; deno task --quiet --cwd=./text write;"
+      "command": "deno task --quiet --cwd=./25519 write; deno task --quiet --cwd=./aead write; deno task --quiet --cwd=./base write; deno task --quiet --cwd=./csv write; deno task --quiet --cwd=./hash write; deno task --quiet --cwd=./text write;"
     },
     "check": "deno check --doc",
     "lint": "deno lint --compact && deno doc --lint **/*.ts",
