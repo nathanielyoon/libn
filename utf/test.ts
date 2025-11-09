@@ -1,4 +1,12 @@
-import { uncase, uncode, unline, unlone, unmark, unrexp } from "@libn/utf";
+import {
+  uncase,
+  uncode,
+  unhtml,
+  unline,
+  unlone,
+  unmark,
+  unrexp,
+} from "@libn/utf";
 import { assertEquals, assertMatch, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
 import vectors from "./vectors.json" with { type: "json" };
@@ -81,6 +89,21 @@ Deno.test("normalize.unmark() removes diacritics", () =>
     }),
     ({ character, mark }) => {
       assertEquals(unmark(character + mark), character);
+    },
+  )));
+Deno.test("normalize.unhtml() removes special html characters", () =>
+  fc.assert(fc.property(fc.string(), ($) => {
+    assertMatch(unhtml($), /^(?:[^&"'<>]|&#\d\d;)*$/);
+  })));
+Deno.test("normalize.unhtml() escapes with right codes", () =>
+  fc.assert(fc.property(
+    fc.string({ unit: fc.constantFrom('"', "&", "'", "<", ">") }),
+    ($) => {
+      const codes = unhtml($).match(/&#[\da-f]{2};/g) ?? [];
+      assertEquals(codes.length, $.length);
+      for (let z = 0; z < $.length; ++z) {
+        assertEquals(+codes[z].slice(2, -1), $.charCodeAt(z));
+      }
     },
   )));
 Deno.test("normalize.unrexp() makes literal", () =>

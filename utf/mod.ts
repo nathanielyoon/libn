@@ -11,6 +11,29 @@ export const deUtf8: typeof TextDecoder.prototype.decode =
   /* @__PURE__ */ TextDecoder.prototype.decode.bind(
     /* @__PURE__ */ new TextDecoder("utf-8"),
   );
+/** Escapes a string as HTML text. */
+export const unhtml = ($: string): string => {
+  if (/^[^"&'<>]*$/.test($)) return $;
+  let out = "", z = 0, y = -1;
+  do switch ($.charCodeAt(z)) {
+    case 34:
+      out += $.slice(y + 1, y = z) + "&#34;";
+      break;
+    case 38:
+      out += $.slice(y + 1, y = z) + "&#38;";
+      break;
+    case 39:
+      out += $.slice(y + 1, y = z) + "&#39;";
+      break;
+    case 60:
+      out += $.slice(y + 1, y = z) + "&#60;";
+      break;
+    case 62:
+      out += $.slice(y + 1, y = z) + "&#62;";
+      break;
+  } while (++z < $.length);
+  return out + $.slice(y + 1);
+};
 const at = ($: string) => $.codePointAt(0)!;
 const h2 = ($: string) => `\\x${at($).toString(16).padStart(2, "0")}`;
 const u4 = ($: string) => `\\u${at($).toString(16).padStart(4, "0")}`;
@@ -63,4 +86,4 @@ const args = /* @__PURE__ */ (() => {
   return [RegExp(`[${regex}]`, "gu"), Reflect.get.bind(Reflect, map)] as const;
 })();
 /** Case-folds. */
-export const uncase = ($: string): string => $.replace(...args);
+export const uncase = ($: string): string => $.replace(args[0], args[1]);
