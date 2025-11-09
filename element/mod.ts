@@ -35,8 +35,10 @@ export const h = ((tag: string, props?: Props<any>, ...childs: Childs<any>) => {
   for (const $ of Object.entries(attributes)) { // deno-lint-ignore eqeqeq
     $[1] != null && out.setAttribute($[0], $[1]);
   }
-  for (const $ of childs.flatMap(($) => typeof $ === "function" ? $(out) : $)) {
-    $ && out.appendChild(typeof $ === "string" ? new globalThis.Text($) : $);
+  for (const $ of childs) {
+    for (const child of [typeof $ === "function" ? $(out) : $].flat()) {
+      child && out.append(child);
+    }
   }
   return out;
 }) as {
