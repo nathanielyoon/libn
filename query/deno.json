@@ -2,10 +2,7 @@
   "name": "@libn/query",
   "version": "0.3.2",
   "license": "0BSD",
-  "exports": {
-    "./create": "./create.ts",
-    "./select": "./select.ts"
-  },
+  "exports": "./mod.ts",
   "imports": {
     "@b-fuze/deno-dom": "jsr:@b-fuze/deno-dom@^0.1.56"
   },

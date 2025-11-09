@@ -16,22 +16,7 @@ bun add @libn/query
 - [querySelector](https://developer.mozilla.org/en-US/docs/Web/API/Element/querySelector)
 - [querySelectorAll](https://developer.mozilla.org/en-US/docs/Web/API/Element/querySelectorAll)
 
-## create
-
-```ts
-// only necessary in non-browser environments
-import { Document, Element } from "@b-fuze/deno-dom";
-globalThis.document = new Document() as any;
-globalThis.Element = Element as any;
-
-import { ce } from "@libn/query/create";
-import { assertEquals } from "@std/assert";
-
-const div = ce("div", { id: "i" }, ce("span", { class: "c" }, "text"));
-assertEquals(div.outerHTML, '<div id="i"><span class="c">text</span></div>');
-```
-
-## select
+## default
 
 ```ts
 // only necessary in non-browser environments
@@ -41,8 +26,8 @@ globalThis.document = new DOMParser().parseFromString(
   "text/html",
 ) as any;
 
-import { qs } from "@libn/query/select";
+import { queryFirst } from "@libn/query";
 import { assertEquals } from "@std/assert";
 
-assertEquals(qs("div#i > span.c")?.textContent, "text");
+assertEquals(queryFirst("div#i > span.c")?.textContent, "text");
 ```
