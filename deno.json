@@ -2,7 +2,6 @@
   "license": "0BSD",
   "workspace": [
     "./25519",
-    "./aead",
     "./base",
     "./csv",
     "./fuzzy",
@@ -14,6 +13,7 @@
     "./signal",
     "./utf",
     "./words"
+    "./xchachapoly",
   ],
   "imports": {
     "@deno/dnt": "jsr:@deno/dnt@^0.42.3",

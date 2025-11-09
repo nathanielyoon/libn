@@ -1,15 +1,15 @@
-# @libn/aead
+# @libn/xchachapoly
 
 XChaCha20-Poly1305 authenticated encryption and XChaCha20 stream cipher.
 
 ```sh
-deno add jsr:@libn/csv
+deno add jsr:@libn/xchachapoly
 
-npx jsr add @libn/csv
-npm install @libn/csv
+npx jsr add @libn/xchachapoly
+npm install @libn/xchachapoly
 
-bunx jsr add @libn/csv
-bun add @libn/csv
+bunx jsr add @libn/xchachapoly
+bun add @libn/xchachapoly
 ```
 
 - [RFC 8439](https://www.rfc-editor.org/rfc/rfc8439)
@@ -19,7 +19,7 @@ bun add @libn/csv
 ## default
 
 ```ts
-import { cipher, decrypt, encrypt } from "@libn/aead";
+import { cipher, decrypt, encrypt } from "@libn/xchachapoly";
 import { assert, assertEquals, assertNotEquals } from "@std/assert";
 
 const key = crypto.getRandomValues(new Uint8Array(32));
