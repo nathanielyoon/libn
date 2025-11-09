@@ -1,0 +1,19 @@
+{
+  "name": "@libn/element",
+  "version": "0.1.0",
+  "license": "0BSD",
+  "exports": "./mod.ts",
+  "imports": {
+    "@b-fuze/deno-dom": "jsr:@b-fuze/deno-dom@^0.1.56"
+  },
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "deno.ns"]
+  },
+  "test": {
+    "permissions": {
+      "env": ["HOME", "XDG_CACHE_HOME", "DENO_DIR"],
+      "read": ["/home"],
+      "ffi": ["/home"]
+    }
+  }
+}

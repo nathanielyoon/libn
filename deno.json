@@ -4,6 +4,7 @@
     "./25519",
     "./base",
     "./csv",
+    "./element",
     "./fuzzy",
     "./hash",
     "./json",
@@ -12,8 +13,8 @@
     "./result",
     "./signal",
     "./utf",
-    "./words"
-    "./xchachapoly",
+    "./words",
+    "./xchachapoly"
   ],
   "imports": {
     "@deno/dnt": "jsr:@deno/dnt@^0.42.3",

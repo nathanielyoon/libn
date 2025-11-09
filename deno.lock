@@ -133,6 +133,11 @@
       "npm:fast-check@^4.3.0"
     ],
     "members": {
+      "element": {
+        "dependencies": [
+          "jsr:@b-fuze/deno-dom@~0.1.56"
+        ]
+      },
       "hash": {
         "dependencies": [
           "jsr:@std/crypto@^1.0.5"
