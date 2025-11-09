@@ -11,17 +11,12 @@ export const deUtf8: typeof TextDecoder.prototype.decode =
   /* @__PURE__ */ TextDecoder.prototype.decode.bind(
     /* @__PURE__ */ new TextDecoder("utf-8"),
   );
-/** Escapes a string of HTML. */
-export const unhtml = ($: string): string =>
-  $.replaceAll("&", "&#38;").replaceAll('"', "&#34;").replaceAll("'", "&#39;")
-    .replaceAll("<", "&#60;").replaceAll(">", "&#62;");
 const at = ($: string) => $.codePointAt(0)!;
-const b1 = ($: string) => `\\${"tnvfr"[at($) - 9]}`; // \x09-\x0d
 const h2 = ($: string) => `\\x${at($).toString(16).padStart(2, "0")}`;
 const u4 = ($: string) => `\\u${at($).toString(16).padStart(4, "0")}`;
 /** Escapes a string as a regular expression literal. */
 export const unrexp = ($: string): string =>
-  $.replace(/[$(-+./?[-^{|}]/g, "\\$&").replace(/[\t\n\v\f\r]/g, b1)
+  $.replace(/[$(-+./?[-^{|}]/g, "\\$&")
     .replace(/[\0-#%&',\-:->@_`~\x7f\x85\xa0]|^[\dA-Za-z]/g, h2)
     .replace(/[\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\uffef]/g, u4);
 /** Replaces lone surrogates. */

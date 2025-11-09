@@ -1,12 +1,4 @@
-import {
-  uncase,
-  uncode,
-  unhtml,
-  unline,
-  unlone,
-  unmark,
-  unrexp,
-} from "@libn/utf";
+import { uncase, uncode, unline, unlone, unmark, unrexp } from "@libn/utf";
 import { assertEquals, assertMatch, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
 import vectors from "./vectors.json" with { type: "json" };
@@ -91,21 +83,6 @@ Deno.test("normalize.unmark() removes diacritics", () =>
       assertEquals(unmark(character + mark), character);
     },
   )));
-Deno.test("normalize.unhtml() removes special html characters", () =>
-  fc.assert(fc.property(fc.string(), ($) => {
-    assertMatch(unhtml($), /^(?:[^&"'<>]|&#\d\d;)*$/);
-  })));
-Deno.test("normalize.unhtml() escapes with right codes", () =>
-  fc.assert(fc.property(
-    fc.string({ unit: fc.constantFrom('"', "&", "'", "<", ">") }),
-    ($) => {
-      const codes = unhtml($).match(/&#[\da-f]{2};/g) ?? [];
-      assertEquals(codes.length, $.length);
-      for (let z = 0; z < $.length; ++z) {
-        assertEquals(+codes[z].slice(2, -1), $.charCodeAt(z));
-      }
-    },
-  )));
 Deno.test("normalize.unrexp() makes literal", () =>
   fc.assert(fc.property(fc.string({ unit: "grapheme" }), ($) => {
     assertMatch($, RegExp(`^${unrexp($)}$`));
@@ -113,18 +90,8 @@ Deno.test("normalize.unrexp() makes literal", () =>
 Deno.test("normalize.unrexp() escapes all regex syntax characters", () => {
   for (const $ of "/^$\\*+?{}()[]|") assertEquals(unrexp($), `\\${$}`);
 });
-Deno.test("normalize.unrexp() escapes all directly-escapable characters", () => {
-  assertEquals(unrexp("\t"), "\\t");
-  assertEquals(unrexp("\n"), "\\n");
-  assertEquals(unrexp("\v"), "\\v");
-  assertEquals(unrexp("\f"), "\\f");
-  assertEquals(unrexp("\r"), "\\r");
-});
 Deno.test("normalize.unrexp() escapes all weird characters", () => {
-  for (let z = 0; z < 0x08; ++z) {
-    assertEquals(unrexp(from(z)), `\\x${z.toString(16).padStart(2, "0")}`);
-  }
-  for (let z = 0x0e; z <= 0x23; ++z) {
+  for (let z = 0; z <= 0x23; ++z) {
     assertEquals(unrexp(from(z)), `\\x${z.toString(16).padStart(2, "0")}`);
   }
   for (const $ of "&',-:;<=>@_`~\x7f\x85\xa0") {

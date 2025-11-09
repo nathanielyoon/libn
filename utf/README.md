@@ -21,7 +21,7 @@ bun add @libn/utf
 ## default
 
 ```ts
-import { uncode, unline, unlone, unmark, unwide } from "@libn/utf";
+import { uncode, unline, unlone, unmark } from "@libn/utf";
 import { assertEquals } from "@std/assert";
 
 // This string has some abnormal characters
