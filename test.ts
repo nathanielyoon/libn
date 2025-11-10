@@ -3,7 +3,7 @@ import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 
 const url = ($: string) =>
-  `https://${$[0] === "/" ? "raw.githubusercontent.com" : ""}`;
+  `https://${$[0] === "/" ? "raw.githubusercontent.com" : ""}${$}`;
 /** Fetches text, optionally slicing it. */
 export const getText = async (
   $: string,
