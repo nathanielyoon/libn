@@ -29,23 +29,23 @@ const first = (delimiter: string) => (to: string, next: string) => {
   const [head = "", ...tail] = next;
   return to + delimiter + head.toUpperCase() + tail.join("").toLowerCase();
 };
-test("lowerCamel :: words : lower camel case", fcWords, ({ all, one }) => {
+test("lowerCamel : words", fcWords, ({ all, one }) => {
   const [head = "", ...tail] = all;
   return [lowerCamel(one), tail.reduce(first(""), head.toLowerCase())];
 }, { examples: [[{ all: [], one: "" }]] });
-test("upperCamel() :: words : to upper camel case", fcWords, ({ all, one }) => {
+test("upperCamel : words", fcWords, ({ all, one }) => {
   return [upperCamel(one), all.reduce(first(""), "")];
 }, { examples: [[{ all: [], one: "" }]] });
-test("lowerKebab() :: words : to lower kebab case", fcWords, ({ all, one }) => {
+test("lowerKebab : words", fcWords, ({ all, one }) => {
   return [lowerKebab(one), all.join("-").toLowerCase()];
 }, { examples: [[{ all: [], one: "" }]] });
-test("upperKebab() :: words : to upper kebab case", fcWords, ({ all, one }) => {
+test("upperKebab : words", fcWords, ({ all, one }) => {
   return [upperKebab(one), all.reduce(first("-"), "").slice(1)];
 }, { examples: [[{ all: [], one: "" }]] });
-test("lowerSnake() :: words : to lower snake case", fcWords, ({ all, one }) => {
+test("lowerSnake : words", fcWords, ({ all, one }) => {
   return [lowerSnake(one), all.join("_").toLowerCase()];
 }, { examples: [[{ all: [], one: "" }]] });
-test("upperSnake() :: words : to upper snake case", fcWords, ({ all, one }) => {
+test("upperSnake : words", fcWords, ({ all, one }) => {
   return [upperSnake(one), all.join("_").toUpperCase()];
 }, { examples: [[{ all: [], one: "" }]] });
 import.meta.main && getText(
