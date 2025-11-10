@@ -40,23 +40,23 @@ export const fcBytes = ($: number): fc.Arbitrary<Uint8Array<ArrayBuffer>> =>
 export const test = <const A>(
   name: `${string} ${":" | "::"} ${string}`,
   of: readonly A[] | fc.Arbitrary<A> | { [B in keyof A]: fc.Arbitrary<A[B]> },
-  check: ($: A) =>
+  check: ($: A, index: number) =>
     | (void | boolean | readonly [A] | readonly [any, any, ...any[]])
     | Promise<void | boolean | readonly [A] | readonly [any, any, ...any[]]>,
   parameters?: fc.Parameters<[A]>,
 ): void =>
   Deno.test(name, async () => {
-    const run = async ($: A) => {
-      const result = await check($);
+    const run = (async ($: A, z?: number) => {
+      const result = await check($, z ?? -1);
       if (typeof result === "boolean") assert(result);
       else if (result) {
         const [head, ...tail] = result;
         if (!tail.length) assertEquals(head, $);
         else for (const actual of tail) assertEquals(actual, head);
       }
-    };
+    }) as ($: A) => Promise<void>;
     await ((Array.isArray as ($: any) => $ is readonly any[])(of)
-      ? Promise.all(of.map(run))
+      ? Promise.all(of.length ? of.map(run) : [run(of[0])])
       : fc.assert(
         fc.asyncProperty(of instanceof fc.Arbitrary ? of : fc.record(of), run),
         parameters,
