@@ -16,16 +16,11 @@ export const getJson = async <A>($: string): Promise<A> =>
 export const press = async (
   $: { buffer: ArrayBuffer },
   stream: CompressionStream | DecompressionStream,
-): Promise<Uint8Array<ArrayBuffer>> => {
-  const chunks = [];
-  let length = 0, size = 0;
-  for await (const chunk of new Blob([$.buffer]).stream().pipeThrough(stream)) {
-    chunks[length++] = chunk, size += chunk.length;
-  }
-  const out = new Uint8Array(size);
-  do out.set(chunks[--length], size -= chunks[length].length); while (length);
-  return out;
-};
+): Promise<Uint8Array<ArrayBuffer>> =>
+  new Uint8Array((await Array.fromAsync(
+    new Blob([$.buffer]).stream().pipeThrough(stream),
+    ($) => [...$],
+  )).flat());
 /** Writes test vectors. */
 export const save = (at: ImportMeta): ($: any) => Promise<void> => ($) =>
   Deno.writeTextFile(new URL(at.resolve("./vectors.json")), JSON.stringify($));
