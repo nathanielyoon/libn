@@ -49,46 +49,51 @@ type Arby<A> = fc.Arbitrary<A> | { [B in keyof A]: fc.Arbitrary<A[B]> };
 const wrap = <A>($: Arby<A>) => $ instanceof fc.Arbitrary ? $ : fc.record($);
 const each = <A, B>(run: ($: A, z: number) => B, $: readonly A[]) =>
   $.length ? $.map(run) : [run($[0], -1)];
-const call = <A>($: A, result: any) => {
-  if (typeof result === "boolean") assert(result);
-  else if (Array.isArray(result)) {
-    const [head, ...tail] = result;
-    if (!tail.length) assertEquals(head, $);
-    else for (const actual of tail) assertEquals(actual, head);
-  }
-};
-/** Runs a paramterized test. */
-export const test = (<A>(
-  name: string,
-  $: A[] | Arby<A>,
-  run: ($: A, index: number) => any,
-  { async, ...rest }: fc.Parameters<[A]> & { async?: boolean } = {},
-): void =>
-  Deno.test(
-    name,
-    async
-      ? async () =>
-        void await (Array.isArray($)
-          ? Promise.all(each(async ($, z) => call($, await run($, z)), $))
-          : fc.assert(
-            fc.asyncProperty(wrap($), async ($) => call($, await run($, -1))),
-            rest,
-          ))
-      : () =>
-        void (Array.isArray($)
-          ? each(($, z) => call($, run($, z)), $)
-          : fc.assert(fc.property(wrap($), ($) => call($, run($, -1))), rest)),
-  )) as {
+/** Proxied getter for parameterized test runner. */
+export const test: {
+  [name: `${string} ${":" | "::"} ${string}`]: {
+    ($: (t: Deno.TestContext) => void | Promise<void>): void;
     <const A>(
-      name: `${string} ${":" | "::"} ${string}`,
       $: readonly A[] | Arby<A>,
       check: ($: A, index: number) => void | boolean | readonly any[],
       parameters?: fc.Parameters<[A]> & { async?: false },
     ): void;
     <const A>(
-      name: `${string} ${":" | "::"} ${string}`,
       $: readonly A[] | Arby<A>,
       check: ($: A, index: number) => Promise<void | boolean | readonly any[]>,
       parameters: fc.Parameters<[A]> & { async: true },
     ): void;
   };
+} = new Proxy<any>(($: any, result: any) => {
+  if (typeof result === "boolean") assert(result);
+  else if (Array.isArray(result)) {
+    if (result.length > 1) {
+      const last = result.pop();
+      for (let z = 0; z < result.length; ++z) assertEquals(result[z], last);
+    } else assertEquals(result[0], $);
+  }
+}, {
+  get: (call, name: string) =>
+  <A>(
+    $: A[] | Arby<A> | ((t: Deno.TestContext) => void | Promise<void>),
+    run: ($: A, index: number) => any,
+    { async, ...arg }: fc.Parameters<[A]> & { async?: boolean } = {},
+  ) =>
+    Deno.test(
+      name,
+      typeof $ === "function"
+        ? $
+        : async
+        ? async () =>
+          void await (Array.isArray($)
+            ? Promise.all(each(async ($, z) => call($, await run($, z)), $))
+            : fc.assert(
+              fc.asyncProperty(wrap($), async ($) => call($, await run($, -1))),
+              arg,
+            ))
+        : () =>
+          void (Array.isArray($)
+            ? each(($, z) => call($, run($, z)), $)
+            : fc.assert(fc.property(wrap($), ($) => call($, run($, -1))), arg)),
+    ),
+});
