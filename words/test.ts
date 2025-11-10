@@ -30,27 +30,32 @@ const first = (delimiter: string) => (to: string, next: string) => {
   return to + delimiter + head.toUpperCase() + tail.join("").toLowerCase();
 };
 
-test("lowerCamel : words", fcWords, ({ all, one }) => {
-  const [head = "", ...tail] = all;
-  return [lowerCamel(one), tail.reduce(first(""), head.toLowerCase())];
-}, { examples: [[{ all: [], one: "" }]] });
-test("upperCamel : words", fcWords, ({ all, one }) => {
-  return [upperCamel(one), all.reduce(first(""), "")];
-}, { examples: [[{ all: [], one: "" }]] });
+test("lowerCamel : words", fcWords, ({ all: [head = "", ...tail], one }) => [
+  lowerCamel(one),
+  tail.reduce(first(""), head.toLowerCase()),
+], { examples: [[{ all: [], one: "" }]] });
+test("upperCamel : words", fcWords, ({ all, one }) => [
+  upperCamel(one),
+  all.reduce(first(""), ""),
+], { examples: [[{ all: [], one: "" }]] });
 
-test("lowerKebab : words", fcWords, ({ all, one }) => {
-  return [lowerKebab(one), all.join("-").toLowerCase()];
-}, { examples: [[{ all: [], one: "" }]] });
-test("upperKebab : words", fcWords, ({ all, one }) => {
-  return [upperKebab(one), all.reduce(first("-"), "").slice(1)];
-}, { examples: [[{ all: [], one: "" }]] });
+test("lowerKebab : words", fcWords, ({ all, one }) => [
+  lowerKebab(one),
+  all.join("-").toLowerCase(),
+], { examples: [[{ all: [], one: "" }]] });
+test("upperKebab : words", fcWords, ({ all, one }) => [
+  upperKebab(one),
+  all.reduce(first("-"), "").slice(1),
+], { examples: [[{ all: [], one: "" }]] });
 
-test("lowerSnake : words", fcWords, ({ all, one }) => {
-  return [lowerSnake(one), all.join("_").toLowerCase()];
-}, { examples: [[{ all: [], one: "" }]] });
-test("upperSnake : words", fcWords, ({ all, one }) => {
-  return [upperSnake(one), all.join("_").toUpperCase()];
-}, { examples: [[{ all: [], one: "" }]] });
+test("lowerSnake : words", fcWords, ({ all, one }) => [
+  lowerSnake(one),
+  all.join("_").toLowerCase(),
+], { examples: [[{ all: [], one: "" }]] });
+test("upperSnake : words", fcWords, ({ all, one }) => [
+  upperSnake(one),
+  all.join("_").toUpperCase(),
+], { examples: [[{ all: [], one: "" }]] });
 
 import.meta.main && getText(
   "www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt",
