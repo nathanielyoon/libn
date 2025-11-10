@@ -29,6 +29,7 @@ const first = (delimiter: string) => (to: string, next: string) => {
   const [head = "", ...tail] = next;
   return to + delimiter + head.toUpperCase() + tail.join("").toLowerCase();
 };
+
 test("lowerCamel : words", fcWords, ({ all, one }) => {
   const [head = "", ...tail] = all;
   return [lowerCamel(one), tail.reduce(first(""), head.toLowerCase())];
@@ -48,6 +49,7 @@ test("lowerSnake : words", fcWords, ({ all, one }) => {
 test("upperSnake : words", fcWords, ({ all, one }) => {
   return [upperSnake(one), all.join("_").toUpperCase()];
 }, { examples: [[{ all: [], one: "" }]] });
+
 import.meta.main && getText(
   "www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt",
 ).then((data) =>
