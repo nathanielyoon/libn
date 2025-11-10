@@ -47,7 +47,7 @@ test(
   fc.stringMatching(RegExp(`^[\\dA-Fa-f]${B16.source.slice(1)}`)),
   ($) => assertNotMatch($, B16),
 );
-test("b16 : reference", vectors.b16, ($) => {
+test("b16 : vectors", vectors.b16, ($) => {
   assertEquals(enB16(enUtf8($.binary)), $.string);
   assertEquals(deB16($.string), enUtf8($.binary));
   assertEquals(deB16($.string.toLowerCase()), enUtf8($.binary));
@@ -75,7 +75,7 @@ test(
 test("b32.B32 : invalid characters", [
   ..."0189",
 ], ($) => assertNotMatch($, B32));
-test("b32 : reference", vectors.b32, ($) => {
+test("b32 : vectors", vectors.b32, ($) => {
   assertEquals(enB32(enUtf8($.binary)), $.string);
   assertEquals(deB32($.string), enUtf8($.binary));
   assertEquals(deB32($.string.toLowerCase()), enUtf8($.binary));
@@ -102,7 +102,7 @@ test(
 test("h32.H32 : invalid characters", [
   ..."WwXxYyZz",
 ], ($) => assertNotMatch($, H32));
-test("h32 : reference", vectors.h32, ($) => {
+test("h32 : vectors", vectors.h32, ($) => {
   assertEquals(enH32(enUtf8($.binary)), $.string);
   assertEquals(deH32($.string), enUtf8($.binary));
   assertEquals(deH32($.string.toLowerCase()), enUtf8($.binary));
@@ -136,7 +136,7 @@ test("c32.deC32 : similar characters/hyphens", fc.stringMatching(C32), ($) => {
 test("c32.C32 : invalid characters", [
   ..."Uu+/_",
 ], ($) => assertNotMatch($, C32));
-test("c32 : reference", vectors.c32, ($) => {
+test("c32 : vectors", vectors.c32, ($) => {
   assertEquals(enC32(Uint8Array.fromHex($.binary)), $.string);
   assertEquals(deC32($.string), Uint8Array.fromHex($.binary));
   assertEquals(deC32($.string.toLowerCase()), Uint8Array.fromHex($.binary));
@@ -163,7 +163,7 @@ test(
 test("b58.B58 : invalid characters", [
   ..."0IOl",
 ], ($) => assertNotMatch($, B58));
-test("b58 : reference", vectors.b58, ($) => {
+test("b58 : vectors", vectors.b58, ($) => {
   assertEquals(enB58(Uint8Array.fromHex($.binary)), $.string);
   assertEquals(deB58($.string), Uint8Array.fromHex($.binary));
   assertMatch($.string, B58);
@@ -204,7 +204,7 @@ test("b64.deB64 : atob fail", ["=", "AA=", "AAA=="], ($) => {
   assertThrows(() => atob($));
   return [deB64($), new Uint8Array($.length >> 1)];
 });
-test("b64 : reference", vectors.b64, ($) => {
+test("b64 : vectors", vectors.b64, ($) => {
   assertEquals(enB64(enUtf8($.binary)), $.string);
   assertEquals(deB64($.string), enUtf8($.binary));
   assertEquals(deB64($.string + "="), enUtf8($.binary));
@@ -237,7 +237,7 @@ test("u64.deU64 :: built-in fromBase64", fc.uint8Array().map(enU64), ($) => [
   Uint8Array.fromBase64($, { alphabet: "base64url" }),
 ]);
 test("u64.U64 : invalid characters", [..."+/="], ($) => assertNotMatch($, U64));
-test("u64 : reference", vectors.u64, ($) => {
+test("u64 : vectors", vectors.u64, ($) => {
   assertEquals(enU64(enUtf8($.binary)), $.string);
   assertEquals(deU64($.string), enUtf8($.binary));
   assertMatch($.string, U64);
@@ -266,7 +266,7 @@ test(
 test("z85.Z85 : invalid characters", [
   ..."\"',;\\_`",
 ], ($) => assertNotMatch($, Z85));
-test("z85 : reference", vectors.z85, ($) => {
+test("z85 : vectors", vectors.z85, ($) => {
   assertEquals(enZ85(Uint8Array.fromHex($.binary)), $.string);
   assertEquals(deZ85($.string), Uint8Array.fromHex($.binary));
   assertMatch($.string, Z85);
@@ -306,7 +306,7 @@ test(
 test("a85.A85 : invalid characters", [
   ..."vwxy{|}~",
 ], ($) => assertNotMatch($, A85));
-test("a85 : reference", vectors.a85, ($) => {
+test("a85 : vectors", vectors.a85, ($) => {
   assertEquals(enA85(enUtf8($.binary)), $.string);
   assertEquals(deA85($.string), enUtf8($.binary));
   assertMatch($.string, A85);
