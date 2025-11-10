@@ -14,11 +14,11 @@ export const getJson = async <A>($: string): Promise<A> =>
   await (await fetch(url($))).json() as A;
 /** Compresses or decompresses a buffer. */
 export const press = async (
-  $: { buffer: ArrayBuffer },
+  $: BlobPart,
   stream: CompressionStream | DecompressionStream,
 ): Promise<Uint8Array<ArrayBuffer>> =>
   new Uint8Array((await Array.fromAsync(
-    new Blob([$.buffer]).stream().pipeThrough(stream),
+    new Blob([$]).stream().pipeThrough(stream),
     ($) => [...$],
   )).flat());
 /** Writes test vectors. */
@@ -45,29 +45,50 @@ export const fcBytes = ($: number): fc.Arbitrary<Uint8Array<ArrayBuffer>> =>
     fc.uint8Array({ minLength: -~-$ }),
     fc.uint8Array({ maxLength: ~$ }),
   );
+type Arby<A> = fc.Arbitrary<A> | { [B in keyof A]: fc.Arbitrary<A[B]> };
+const wrap = <A>($: Arby<A>) => $ instanceof fc.Arbitrary ? $ : fc.record($);
+const each = <A, B>(run: ($: A, z: number) => B, $: readonly A[]) =>
+  $.length ? $.map(run) : [run($[0], -1)];
+const call = <A>($: A, result: any) => {
+  if (typeof result === "boolean") assert(result);
+  else if (Array.isArray(result)) {
+    const [head, ...tail] = result;
+    if (!tail.length) assertEquals(head, $);
+    else for (const actual of tail) assertEquals(actual, head);
+  }
+};
 /** Runs a paramterized test. */
-export const test = <const A>(
-  name: `${string} ${":" | "::"} ${string}`,
-  of: readonly A[] | fc.Arbitrary<A> | { [B in keyof A]: fc.Arbitrary<A[B]> },
-  check: ($: A, index: number) =>
-    | (void | boolean | readonly [A] | readonly [any, any, ...any[]])
-    | Promise<void | boolean | readonly [A] | readonly [any, any, ...any[]]>,
-  parameters?: fc.Parameters<[A]>,
+export const test = (<A>(
+  name: string,
+  $: A[] | Arby<A>,
+  run: ($: A, index: number) => any,
+  { async, ...rest }: fc.Parameters<[A]> & { async?: boolean } = {},
 ): void =>
-  Deno.test(name, async () => {
-    const run = (async ($: A, z?: number) => {
-      const result = await check($, z ?? -1);
-      if (typeof result === "boolean") assert(result);
-      else if (result) {
-        const [head, ...tail] = result;
-        if (!tail.length) assertEquals(head, $);
-        else for (const actual of tail) assertEquals(actual, head);
-      }
-    }) as ($: A) => Promise<void>;
-    await ((Array.isArray as ($: any) => $ is readonly any[])(of)
-      ? Promise.all(of.length ? of.map(run) : [run(of[0])])
-      : fc.assert(
-        fc.asyncProperty(of instanceof fc.Arbitrary ? of : fc.record(of), run),
-        parameters,
-      ));
-  });
+  Deno.test(
+    name,
+    async
+      ? async () =>
+        void await (Array.isArray($)
+          ? Promise.all(each(async ($, z) => call($, await run($, z)), $))
+          : fc.assert(
+            fc.asyncProperty(wrap($), async ($) => call($, await run($, -1))),
+            rest,
+          ))
+      : () =>
+        void (Array.isArray($)
+          ? each(($, z) => call($, run($, z)), $)
+          : fc.assert(fc.property(wrap($), ($) => call($, run($, -1))), rest)),
+  )) as {
+    <const A>(
+      name: `${string} ${":" | "::"} ${string}`,
+      $: readonly A[] | Arby<A>,
+      check: ($: A, index: number) => void | boolean | readonly any[],
+      parameters?: fc.Parameters<[A]> & { async?: false },
+    ): void;
+    <const A>(
+      name: `${string} ${":" | "::"} ${string}`,
+      $: readonly A[] | Arby<A>,
+      check: ($: A, index: number) => Promise<void | boolean | readonly any[]>,
+      parameters: fc.Parameters<[A]> & { async: true },
+    ): void;
+  };
