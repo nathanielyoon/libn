@@ -37,12 +37,14 @@ test("lowerCamel : words", fcWords, ({ all, one }) => {
 test("upperCamel : words", fcWords, ({ all, one }) => {
   return [upperCamel(one), all.reduce(first(""), "")];
 }, { examples: [[{ all: [], one: "" }]] });
+
 test("lowerKebab : words", fcWords, ({ all, one }) => {
   return [lowerKebab(one), all.join("-").toLowerCase()];
 }, { examples: [[{ all: [], one: "" }]] });
 test("upperKebab : words", fcWords, ({ all, one }) => {
   return [upperKebab(one), all.reduce(first("-"), "").slice(1)];
 }, { examples: [[{ all: [], one: "" }]] });
+
 test("lowerSnake : words", fcWords, ({ all, one }) => {
   return [lowerSnake(one), all.join("_").toLowerCase()];
 }, { examples: [[{ all: [], one: "" }]] });
