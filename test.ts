@@ -41,8 +41,8 @@ export const test = <const A>(
   name: `${string} ${":" | "::"} ${string}`,
   of: readonly A[] | fc.Arbitrary<A> | { [B in keyof A]: fc.Arbitrary<A[B]> },
   check: ($: A) =>
-    | (void | boolean | [A] | readonly [any, any, ...any[]])
-    | Promise<void | boolean | [A] | readonly [any, any, ...any[]]>,
+    | (void | boolean | readonly [A] | readonly [any, any, ...any[]])
+    | Promise<void | boolean | readonly [A] | readonly [any, any, ...any[]]>,
   parameters?: fc.Parameters<[A]>,
 ): void =>
   Deno.test(name, async () => {
