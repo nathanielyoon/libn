@@ -37,7 +37,7 @@ export const fcBytes = ($: number): fc.Arbitrary<Uint8Array<ArrayBuffer>> =>
     fc.uint8Array({ maxLength: ~$ }),
   );
 /** Runs a paramterized test. */
-export const test = <A>(
+export const test = <const A>(
   name: `${string} ${":" | "::"} ${string}`,
   of: readonly A[] | fc.Arbitrary<A> | { [B in keyof A]: fc.Arbitrary<A[B]> },
   check: ($: A) =>
