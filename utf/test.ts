@@ -150,10 +150,10 @@ Deno.test("uncase : non-Turkic mapping", () => {
   assertEquals(uncase("\u0130"), "\x69\u0307");
 });
 
-import.meta.main && source`
-${[14538, 15597]} www.rfc-editor.org/rfc/rfc9839.txt
-${[2990, 87528]} www.unicode.org/Public/UNIDATA/CaseFolding.txt
-`.then(([rfc9839, fold]) => ({
+import.meta.main && Promise.all([
+  source("www.rfc-editor.org/rfc/rfc9839.txt", [14538, 15597]),
+  source("www.unicode.org/Public/UNIDATA/CaseFolding.txt", [2990, 87528]),
+]).then(([rfc9839, fold]) => ({
   uncode: new Uint8Array(
     rfc9839.match(/(?<=%x)\w+(?:-\w+)?/g)!.reduce((to, hex) => {
       const range = hex.split("-").map(($) => parseInt($, 16));

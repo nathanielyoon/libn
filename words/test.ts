@@ -70,9 +70,9 @@ Deno.test("upperSnake : words", () => {
   }));
 });
 
-import.meta.main && source`
-${[]} www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt
-`.then(([data]) =>
+import.meta.main && source(
+  "www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt",
+).then((data) =>
   data.matchAll(
     /^([\dA-F]{4,6});[^;]*;((L[ult](?=;)|L(?=[mo];)|N(?=[dlo];))[modl]?)/gm,
   ).reduce<{ [_: string]: number[] }>((to, [, hex, subcategory, category]) => {

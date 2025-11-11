@@ -247,19 +247,22 @@ Deno.test("a85.A85 : invalid Ascii85", () => {
   for (const $ of "vwxy{|}~") assertNotMatch($, A85);
 });
 
-import.meta.main && source`
-${[25691, 26723]} www.rfc-editor.org/rfc/rfc4648.txt
-${[2215, 5383]} crockford.com/base32.html
-${[4717]} /zeromq/rfc/3d4c0cef87ed761fe09ab9abf8a6e5ea45df0e9f/src/spec_32.c
-${($) => {
-  const cases: string[][] = JSON.parse($), out = Array(cases.length);
-  for (let z = 0; z < cases.length; ++z) {
-    out[z] = { binary: cases[z][0], string: cases[z][1] };
-  }
-  return out;
-}} /bitcoin/bitcoin/5dd3a0d8a899e4c7263d5b999135f4d7584e1244/src/test/data/base58_encode_decode.json
-${[46088, 69413]} en.wikipedia.org/w/index.php?title=Ascii85&oldid=1305034107
-`.then(([rfc4648, crockford, spec32, base58, wikipedia]) => ({
+import.meta.main && Promise.all([
+  source("www.rfc-editor.org/rfc/rfc4648.txt", [25691, 26723]),
+  source("crockford.com/base32.html", [2215, 5383]),
+  source(
+    "/zeromq/rfc/3d4c0cef87ed761fe09ab9abf8a6e5ea45df0e9f/src/spec_32.c",
+    [4717],
+  ),
+  source(
+    "/bitcoin/bitcoin/5dd3a0d8a899e4c7263d5b999135f4d7584e1244/src/test/data/base58_encode_decode.json",
+    ($: string[][]) => $.map(([binary, string]) => ({ binary, string })),
+  ),
+  source(
+    "en.wikipedia.org/w/index.php?title=Ascii85&oldid=1305034107",
+    [46088, 69413],
+  ),
+]).then(([rfc4648, crockford, spec32, base58, wikipedia]) => ({
   ...([
     ["16", true],
     ["32", false],

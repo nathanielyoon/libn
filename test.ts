@@ -1,18 +1,28 @@
 // deno-coverage-ignore-file
 import fc from "fast-check";
 
-/** Fetches a list of URLs, optionally slicing or mapping their texts. */
-export const source = <A extends ([number?, number?] | (($: string) => {}))[]>(
-  urls: TemplateStringsArray,
-  ...ranges: A
-): Promise<{ [B in keyof A]: A[B] extends ($: any) => infer C ? C : string }> =>
-  Promise.all(ranges.map(async ($, z) => {
-    const base = urls[z + 1].trim();
-    const text = await (await fetch(
-      `https://${base[0] === "/" ? "raw.githubusercontent.com" : ""}${base}`,
-    )).text();
-    return typeof $ === "object" ? text.slice($[0], $[1]) : $(text);
-  })) as Promise<{ [B in keyof A]: any }>;
+/** Fetches a URL (or GitHub path), optionally slicing, matching, or mapping. */
+export const source = (async ($: string, to?: any) => {
+  const text = await (await fetch(
+    `https://${$[0] === "/" ? "raw.githubusercontent.com" : ""}${$}`,
+  )).text();
+  if (!to) return text;
+  if (typeof to === "function") return to(JSON.parse(text));
+  const slice = text.slice(to[0], to[1]);
+  return !to[2] ? slice : Array.from(
+    to[2].global ? slice.matchAll(to[2]) : [slice.match(to[2])!],
+    ($) => $.groups,
+  );
+}) as {
+  ($: string, to?: [number?, number?]): Promise<string>;
+  ($: string, to: [number, number, RegExp]): Promise<{ [_: string]: string }[]>;
+  <A>($: string, to: ($: any) => A): Promise<A>;
+};
+/** Extracts base16 from enclosing text. */
+export const hex = ($: string): string =>
+  $.match(
+    /(?<=(?:^|0x|\W)(?:[\da-f]{2})*)[\da-f]{2}(?=(?:[\da-f]{2})*(?:\W|$))/g,
+  )?.join("") ?? "";
 /** Compresses or decompresses a buffer. */
 export const press = async (
   $: BlobPart,

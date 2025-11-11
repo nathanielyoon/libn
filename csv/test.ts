@@ -109,42 +109,34 @@ Deno.test("stringify.enCsv : custom empty predicate", () => {
   ));
 });
 
-import.meta.main && source`
-${[2630, 4734]} www.rfc-editor.org/rfc/rfc4180.txt
-${[]} earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/all-empty.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/all-empty.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/empty-field.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/empty-field.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/empty-one-column.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/empty-one-column.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/leading-space.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/leading-space.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/one-column.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/one-column.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/quotes-empty.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/quotes-empty.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/quotes-with-comma.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/quotes-with-comma.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/quotes-with-escaped-quote.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/quotes-with-escaped-quote.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/quotes-with-newline.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/quotes-with-newline.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/quotes-with-space.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/quotes-with-space.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/simple-crlf.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/simple-crlf.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/simple-lf.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/simple-lf.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/trailing-newline-one-field.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/trailing-newline-one-field.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/trailing-newline.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/trailing-newline.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/trailing-space.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/trailing-space.json
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/utf8.csv
-${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/utf8.json
-`.then(([rfc4180, earthquakes, ...csvTestData]) => [
+import.meta.main && Promise.all([
+  source("www.rfc-editor.org/rfc/rfc4180.txt", [2630, 4734]),
+  source("earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.csv"),
+  ...[
+    "all-empty",
+    "empty-field",
+    "empty-one-column",
+    "leading-space",
+    "one-column",
+    "quotes-empty",
+    "quotes-with-comma",
+    "quotes-with-escaped-quote",
+    "quotes-with-newline",
+    "quotes-with-space",
+    "simple-crlf",
+    "simple-lf",
+    "trailing-newline-one-field",
+    "trailing-newline",
+    "trailing-space",
+    "utf8",
+  ].flatMap(($) =>
+    ["csv", "json"].map((type) =>
+      source(
+        `/sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/${type}/${$}.${type}`,
+      )
+    )
+  ),
+]).then(([rfc4180, earthquakes, ...csvTestData]) => [
   ...[
     [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
     [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
