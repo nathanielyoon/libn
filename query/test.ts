@@ -1,13 +1,12 @@
-import { Document, Element as DenoDomElement } from "@b-fuze/deno-dom/native";
 import { h } from "@libn/element";
-import { is } from "@libn/is";
 import { queryEvery, queryFirst } from "@libn/query";
 import { assertStrictEquals } from "@std/assert";
 import fc from "fast-check";
+import { parseHTML } from "linkedom";
+import { type } from "../test.ts";
 
 Deno.test.beforeAll(() => {
-  globalThis.document = new Document() as any;
-  globalThis.Element = DenoDomElement as any;
+  globalThis.document = parseHTML("").document;
 });
 const fcText = fc.stringMatching(/^[^'&"<>]*$/);
 const fcId = fc.stringMatching(/^[a-z]$/);
@@ -22,17 +21,17 @@ const fcQuery = fc.array(
   fcId.chain(($) => fc.constantFrom($, `#${$}`, `.${$}`)),
   { minLength: 1 },
 ).map(($) => $.join(" "));
-Deno.test("select.qs() follows built-in querySelector", () =>
+Deno.test("select.qs :: built-in querySelector", () =>
   fc.assert(fc.property(fcHtml, fcQuery, (html, query) => {
     assertStrictEquals(queryFirst(query, html), html.querySelector(query));
   })));
-Deno.test("select.qs() strips selector", () => {
+Deno.test("select.qs : nested selector", () => {
   const a = h("a", { id: "a", class: "class" });
   const body = h("body", {}, h("main", {}, h("c", {}, h("b"), a)));
   const query = queryFirst("body > main b + a#a.class", body);
-  assertStrictEquals(is<HTMLAnchorElement | null>()(query), a);
+  assertStrictEquals(type<HTMLAnchorElement | null>()(query), a);
 });
-Deno.test("select.qa() follows built-in querySelectorAll", () =>
+Deno.test("select.qa :: built-in querySelectorAll", () =>
   fc.assert(fc.property(fcHtml, fcQuery, (html, query) => {
     const actual = queryEvery(query, html);
     const expected = html.querySelectorAll(query);
@@ -40,7 +39,7 @@ Deno.test("select.qa() follows built-in querySelectorAll", () =>
       assertStrictEquals(actual[z], expected.item(z));
     }
   })));
-Deno.test("select.qa() strips selector", () => {
+Deno.test("select.qa : nested selector", () => {
   const a = h("a", { id: "a", class: "class" });
   const b = h("div", { id: "b", class: "class" });
   const body = h("body", {}, h("main", {}, h("c", {}, h("b", {}, a), b)));
@@ -48,6 +47,6 @@ Deno.test("select.qa() strips selector", () => {
     "body > main > c a#a.class, body b ~ div#b.class",
     body,
   );
-  is<(HTMLAnchorElement | HTMLDivElement)[]>()(query);
+  type<(HTMLAnchorElement | HTMLDivElement)[]>()(query);
   assertStrictEquals(query[0], a), assertStrictEquals(query[1], b);
 });
