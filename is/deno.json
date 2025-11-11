@@ -1,9 +1,0 @@
-{
-  "name": "@libn/is",
-  "version": "0.1.0",
-  "license": "0BSD",
-  "exports": "./mod.ts",
-  "imports": {
-    "@std/testing": "jsr:@std/testing@^1.0.16"
-  }
-}

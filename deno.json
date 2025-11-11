@@ -8,7 +8,6 @@
     "./fuzzy",
     "./hash",
     "./json",
-    "./is",
     "./query",
     "./result",
     "./signal",
