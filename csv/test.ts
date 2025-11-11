@@ -2,7 +2,7 @@ import { deCsv } from "@libn/csv/parse";
 import { enCsv } from "@libn/csv/stringify";
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { save, source } from "../test.ts";
+import { get, set } from "../test.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("parse.deCsv : vectors", () => {
@@ -110,8 +110,8 @@ Deno.test("stringify.enCsv : custom empty predicate", () => {
 });
 
 import.meta.main && Promise.all([
-  source("www.rfc-editor.org/rfc/rfc4180.txt", [2630, 4734]),
-  source("earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.csv"),
+  get`www.rfc-editor.org/rfc/rfc4180.txt${2630}${4734}`,
+  get`earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.csv`,
   ...[
     "all-empty",
     "empty-field",
@@ -131,9 +131,9 @@ import.meta.main && Promise.all([
     "utf8",
   ].flatMap(($) =>
     ["csv", "json"].map((type) =>
-      source(
+      get([
         `/sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/${type}/${$}.${type}`,
-      )
+      ])
     )
   ),
 ]).then(([rfc4180, earthquakes, ...csvTestData]) => [
@@ -160,4 +160,4 @@ import.meta.main && Promise.all([
   ...csvTestData.flatMap(($, z) =>
     z & 1 ? [] : [{ csv: $, json: JSON.parse(csvTestData[z + 1]) }]
   ),
-]).then(save(import.meta));
+]).then(set(import.meta));

@@ -8,7 +8,7 @@ import {
 } from "@libn/words";
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { save, source } from "../test.ts";
+import { get, set } from "../test.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 const codes = (["Lu", "Ll", "Lt", "L", "N"] as const).reduce((to, key) => ({
@@ -70,9 +70,9 @@ Deno.test("upperSnake : words", () => {
   }));
 });
 
-import.meta.main && source(
-  "www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt",
-).then((data) =>
+import.meta.main && Promise.all([
+  get`www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt`,
+]).then(([data]) =>
   data.matchAll(
     /^([\dA-F]{4,6});[^;]*;((L[ult](?=;)|L(?=[mo];)|N(?=[dlo];))[modl]?)/gm,
   ).reduce<{ [_: string]: number[] }>((to, [, hex, subcategory, category]) => {
@@ -86,4 +86,4 @@ import.meta.main && source(
     ).test(String.fromCodePoint(code)) && to[category].push(code);
     return to;
   }, { Lu: [], Ll: [], Lt: [], L: [], N: [] })
-).then(save(import.meta));
+).then(set(import.meta));

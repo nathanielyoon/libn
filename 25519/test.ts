@@ -198,6 +198,7 @@ Deno.test("ed25519.verify() accepts valid signatures", () => {
     assertEquals(verify(generate(key), message, sign(key, message)), true);
   }));
 });
+
 import.meta.main && Promise.all([
   fetch(
     "https://www.rfc-editor.org/rfc/rfc7748.txt",

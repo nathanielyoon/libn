@@ -15,7 +15,7 @@ import {
   assertThrows,
 } from "@std/assert";
 import fc from "fast-check";
-import { save, source } from "../test.ts";
+import { get, set } from "../test.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("b16 : vectors", () => {
@@ -248,20 +248,11 @@ Deno.test("a85.A85 : invalid Ascii85", () => {
 });
 
 import.meta.main && Promise.all([
-  source("www.rfc-editor.org/rfc/rfc4648.txt", [25691, 26723]),
-  source("crockford.com/base32.html", [2215, 5383]),
-  source(
-    "/zeromq/rfc/3d4c0cef87ed761fe09ab9abf8a6e5ea45df0e9f/src/spec_32.c",
-    [4717],
-  ),
-  source(
-    "/bitcoin/bitcoin/5dd3a0d8a899e4c7263d5b999135f4d7584e1244/src/test/data/base58_encode_decode.json",
-    ($: string[][]) => $.map(([binary, string]) => ({ binary, string })),
-  ),
-  source(
-    "en.wikipedia.org/w/index.php?title=Ascii85&oldid=1305034107",
-    [46088, 69413],
-  ),
+  get`www.rfc-editor.org/rfc/rfc4648.txt${25691}${26723}`,
+  get`crockford.com/base32.html${2215}${5383}`,
+  get`/zeromq/rfc/3d4c0cef87ed761fe09ab9abf8a6e5ea45df0e9f/src/spec_32.c${4717}`,
+  get`/bitcoin/bitcoin/5dd3a0d8a899e4c7263d5b999135f4d7584e1244/src/test/data/base58_encode_decode.json`,
+  get`en.wikipedia.org/w/index.php?title=Ascii85&oldid=1305034107${46088}${69413}`,
 ]).then(([rfc4648, crockford, spec32, base58, wikipedia]) => ({
   ...([
     ["16", true],
@@ -291,7 +282,10 @@ import.meta.main && Promise.all([
       return { binary: binary.subarray(3).toHex(), string: encode.repeat(8) };
     },
   ),
-  b58: base58,
+  b58: JSON.parse(base58).map(($: [string, string]) => ({
+    binary: $[0],
+    string: $[1],
+  })),
   z85: Array.from([1, 2], ($) => {
     const [_, bytes, string] = RegExp(
       `byte test_data_${$} \\[\\d+\\] = \\{(.+?)\\};.*?encoded = Z85_encode \\(test_data_${$}.*?assert \\(streq \\(encoded, "(.+?)"\\)\\)`,
@@ -308,4 +302,4 @@ import.meta.main && Promise.all([
     binary: "\0".repeat(4),
     string: /<code>(.)<\/code>/.exec(wikipedia)![1],
   }],
-})).then(save(import.meta));
+})).then(set(import.meta));

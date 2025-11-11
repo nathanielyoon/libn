@@ -1,39 +1,22 @@
 // deno-coverage-ignore-file
 import fc from "fast-check";
 
-/** Fetches a URL (or GitHub path), optionally slicing, matching, or mapping. */
-export const source = (async ($: string, to?: any) => {
-  const text = await (await fetch(
+/** Fetches text from a URL or GitHub path, optionally slicing. */
+export const get = async (
+  [$]: readonly string[],
+  min?: number,
+  max?: number,
+): Promise<string> =>
+  (await (await fetch(
     `https://${$[0] === "/" ? "raw.githubusercontent.com" : ""}${$}`,
-  )).text();
-  if (!to) return text;
-  if (typeof to === "function") return to(JSON.parse(text));
-  const slice = text.slice(to[0], to[1]);
-  return !to[2] ? slice : Array.from(
-    to[2].global ? slice.matchAll(to[2]) : [slice.match(to[2])!],
-    ($) => $.groups,
-  );
-}) as {
-  ($: string, to?: [number?, number?]): Promise<string>;
-  ($: string, to: [number, number, RegExp]): Promise<{ [_: string]: string }[]>;
-  <A>($: string, to: ($: any) => A): Promise<A>;
-};
+  )).text()).slice(min, max);
 /** Extracts base16 from enclosing text. */
 export const hex = ($: string): string =>
   $.match(
     /(?<=(?:^|0x|\W)(?:[\da-f]{2})*)[\da-f]{2}(?=(?:[\da-f]{2})*(?:\W|$))/g,
   )?.join("") ?? "";
-/** Compresses or decompresses a buffer. */
-export const press = async (
-  $: BlobPart,
-  stream: CompressionStream | DecompressionStream,
-): Promise<Uint8Array<ArrayBuffer>> =>
-  new Uint8Array((await Array.fromAsync(
-    new Blob([$]).stream().pipeThrough(stream),
-    ($) => [...$],
-  )).flat());
 /** Writes test vectors. */
-export const save = (at: ImportMeta): ($: any) => Promise<void> => ($) =>
+export const set = (at: ImportMeta): ($: any) => Promise<void> => ($) =>
   Deno.writeTextFile(new URL(at.resolve("./vectors.json")), JSON.stringify($));
 /** Creates a binary arbitrary with (or if negative, without) the set length. */
 export const fcBytes = ($: number): fc.Arbitrary<Uint8Array<ArrayBuffer>> =>

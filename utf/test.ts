@@ -11,7 +11,7 @@ import {
 } from "@libn/utf";
 import { assertEquals, assertMatch, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
-import { save, source } from "../test.ts";
+import { get, set } from "../test.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("enUtf8 :: built-in TextEncoder", () => {
@@ -151,8 +151,8 @@ Deno.test("uncase : non-Turkic mapping", () => {
 });
 
 import.meta.main && Promise.all([
-  source("www.rfc-editor.org/rfc/rfc9839.txt", [14538, 15597]),
-  source("www.unicode.org/Public/UNIDATA/CaseFolding.txt", [2990, 87528]),
+  get`www.rfc-editor.org/rfc/rfc9839.txt${14538}${15597}`,
+  get`www.unicode.org/Public/UNIDATA/CaseFolding.txt${2990}${87528}`,
 ]).then(([rfc9839, fold]) => ({
   uncode: new Uint8Array(
     rfc9839.match(/(?<=%x)\w+(?:-\w+)?/g)!.reduce((to, hex) => {
@@ -169,4 +169,4 @@ import.meta.main && Promise.all([
       to[1],
     ),
   ], ["", ""]),
-})).then(save(import.meta));
+})).then(set(import.meta));
