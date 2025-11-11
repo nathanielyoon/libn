@@ -21,24 +21,26 @@ const fcQuery = fc.array(
   fcId.chain(($) => fc.constantFrom($, `#${$}`, `.${$}`)),
   { minLength: 1 },
 ).map(($) => $.join(" "));
-Deno.test("select.qs :: built-in querySelector", () =>
+Deno.test("select.qs :: built-in querySelector", () => {
   fc.assert(fc.property(fcHtml, fcQuery, (html, query) => {
     assertStrictEquals(queryFirst(query, html), html.querySelector(query));
-  })));
+  }));
+});
 Deno.test("select.qs : nested selector", () => {
   const a = h("a", { id: "a", class: "class" });
   const body = h("body", {}, h("main", {}, h("c", {}, h("b"), a)));
   const query = queryFirst("body > main b + a#a.class", body);
   assertStrictEquals(type<HTMLAnchorElement | null>()(query), a);
 });
-Deno.test("select.qa :: built-in querySelectorAll", () =>
+Deno.test("select.qa :: built-in querySelectorAll", () => {
   fc.assert(fc.property(fcHtml, fcQuery, (html, query) => {
     const actual = queryEvery(query, html);
     const expected = html.querySelectorAll(query);
     for (let z = 0; z < actual.length; ++z) {
       assertStrictEquals(actual[z], expected.item(z));
     }
-  })));
+  }));
+});
 Deno.test("select.qa : nested selector", () => {
   const a = h("a", { id: "a", class: "class" });
   const b = h("div", { id: "b", class: "class" });
