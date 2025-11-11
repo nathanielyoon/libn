@@ -1,37 +1,37 @@
-import { assert, assertEquals } from "@std/assert";
-import fc from "fast-check";
 import { deCsv } from "@libn/csv/parse";
 import { enCsv } from "@libn/csv/stringify";
+import { assert, assertEquals } from "@std/assert";
+import fc from "fast-check";
+import { save, source } from "../test.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
-Deno.test("parse.deCsv() passes reference vectors", () =>
-  vectors.deCsv.forEach(($) => {
-    assertEquals(deCsv($.csv, { empty: "" }), $.json);
-  }));
-Deno.test("parse.deCsv() strips byte-order marker", () => {
+Deno.test("parse.deCsv : vectors", () => {
+  for (const $ of vectors) assertEquals(deCsv($.csv, { empty: "" }), $.json);
+});
+Deno.test("parse.deCsv : byte-order marker", () => {
   assertEquals(deCsv("\ufeff"), []);
   assertEquals(deCsv("\ufeffa"), [["a"]]);
 });
-Deno.test("parse.deCsv() rejects unclosed quoted fields", () => {
+Deno.test("parse.deCsv : unclosed quoted fields", () => {
   assertEquals(deCsv('"'), null);
   assertEquals(deCsv('"a'), null);
   assertEquals(deCsv('a\n"'), null);
 });
-Deno.test("parse.deCsv() rejects quotes inside unquoted fields", () => {
+Deno.test("parse.deCsv : quote inside unquoted fields", () => {
   assertEquals(deCsv('a"'), null);
 });
-Deno.test("parse.deCsv() rejects quotes after quoted fields", () => {
+Deno.test("parse.deCsv : quote after quoted fields", () => {
   assertEquals(deCsv('""a"'), null);
   assertEquals(deCsv('"a"\n"a""'), null);
 });
-Deno.test("parse.deCsv() detects quoted and unquoted empty fields", () => {
+Deno.test("parse.deCsv : quoted and unquoted empty fields", () => {
   assertEquals(deCsv('""'), [[""]]);
   assertEquals(deCsv(",a"), [[null, "a"]]);
 });
-Deno.test("parse.deCsv() strips trailing newlines", () => {
+Deno.test("parse.deCsv : trailing newlines", () => {
   assertEquals(deCsv("a\r\n"), [["a"]]);
 });
-Deno.test("parse.deCsv() parses leading newlines", () => {
+Deno.test("parse.deCsv : leading newlines", () => {
   assertEquals(deCsv("\r\na"), [[null], ["a"]]);
 });
 const fcRows = <A>($: A, row?: fc.ArrayConstraints) =>
@@ -59,7 +59,7 @@ const parse = (csv: string) => {
   }
   return rows;
 };
-Deno.test("parse.deCsv() eagerly parses same-length rows", () =>
+Deno.test("parse.deCsv : same-length rows", () => {
   fc.assert(fc.property(
     fc.integer({ min: 1, max: 64 }).chain(($) =>
       fcRows(null, { minLength: $, maxLength: $ })
@@ -69,31 +69,31 @@ Deno.test("parse.deCsv() eagerly parses same-length rows", () =>
       assertEquals(deCsv(csv), $);
       assertEquals(deCsv(csv, { empty: "" }), parse(csv));
     },
-  )));
-Deno.test("parse.deCsv() parses different-length rows if not eager", () =>
+  ));
+});
+Deno.test("parse.deCsv : different-length rows", () => {
   fc.assert(fc.property(fcRows(null), ($) => {
     const csv = enCsv($);
     assertEquals(deCsv(csv, { eager: false }), $);
     assertEquals(deCsv(csv, { eager: false, empty: "" }), parse(csv));
-  })));
-Deno.test("stringify.enCsv() appends newline", () => {
-  assertEquals(enCsv([["ok"]]), "ok\n");
+  }));
 });
-Deno.test("stringify.enCsv() detects quoted and unquoted empty fields", () => {
+
+Deno.test("stringify.enCsv : quoted and unquoted empty fields", () => {
   assertEquals(enCsv([[null]]), "\n");
   assertEquals(enCsv([[""]]), '""\n');
 });
-Deno.test("stringify.enCsv() quotes special characters", () => {
+Deno.test("stringify.enCsv : special characters", () => {
   assertEquals(enCsv([["\n"]]), '"\n"\n');
   assertEquals(enCsv([['"']]), '""""\n');
   assertEquals(enCsv([[","]]), '","\n');
 });
-Deno.test("stringify.enCsv() recognizes different newlines as special", () => {
+Deno.test("stringify.enCsv : different newlines", () => {
   assertEquals(enCsv([["\n"]]), '"\n"\n');
   assertEquals(enCsv([["\r"]]), '"\r"\n');
   assertEquals(enCsv([["\r\n"]]), '"\r\n"\n');
 });
-Deno.test("stringify.enCsv() takes custom empty predicate", () =>
+Deno.test("stringify.enCsv : custom empty predicate", () => {
   fc.assert(fc.property(
     fc.string().chain(($) =>
       fc.record({ nil: fc.constant($), rows: fcRows($) })
@@ -106,62 +106,66 @@ Deno.test("stringify.enCsv() takes custom empty predicate", () =>
         )?.flat().every(($) => $ !== nil),
       );
     },
-  )));
-import.meta.main && Promise.all([
-  fetch(
-    "https://www.rfc-editor.org/rfc/rfc4180.txt",
-  ).then(($) => $.text()).then(($) => $.slice(2630, 4734)),
-  fetch(
-    "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.csv",
-  ).then(($) => $.text()),
+  ));
+});
+
+import.meta.main && source`
+${[2630, 4734]} www.rfc-editor.org/rfc/rfc4180.txt
+${[]} earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/all-empty.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/all-empty.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/empty-field.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/empty-field.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/empty-one-column.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/empty-one-column.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/leading-space.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/leading-space.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/one-column.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/one-column.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/quotes-empty.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/quotes-empty.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/quotes-with-comma.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/quotes-with-comma.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/quotes-with-escaped-quote.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/quotes-with-escaped-quote.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/quotes-with-newline.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/quotes-with-newline.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/quotes-with-space.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/quotes-with-space.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/simple-crlf.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/simple-crlf.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/simple-lf.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/simple-lf.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/trailing-newline-one-field.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/trailing-newline-one-field.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/trailing-newline.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/trailing-newline.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/trailing-space.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/trailing-space.json
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/csv/utf8.csv
+${[]} /sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/json/utf8.json
+`.then(([rfc4180, earthquakes, ...csvTestData]) => [
   ...[
-    "all-empty",
-    "empty-field",
-    "empty-one-column",
-    "leading-space",
-    "one-column",
-    "quotes-empty",
-    "quotes-with-comma",
-    "quotes-with-escaped-quote",
-    "quotes-with-newline",
-    "quotes-with-space",
-    "simple-crlf",
-    "simple-lf",
-    "trailing-newline-one-field",
-    "trailing-newline",
-    "trailing-space",
-    "utf8",
-  ].map((name) =>
-    Promise.all(["csv", "json"].map((type) =>
-      fetch(
-        `https://raw.githubusercontent.com/sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/${type}/${name}.${type}`,
-      ).then(($) => $.text())
-    ))
+    [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
+    [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
+    [
+      ["field_name", "field_name", "field_name"],
+      ["aaa", "bbb", "ccc"],
+      ["zzz", "yyy", "xxx"],
+    ],
+    [["aaa", "bbb", "ccc"]],
+    [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
+    [["aaa", "b\r\nbb", "ccc"], ["zzz", "yyy", "xxx"]],
+    [["aaa", 'b"bb', "ccc"]],
+  ].reduce<[RegExp, { csv: string; json: string[][] }[]]>(
+    ([regex, to], json) => [regex, [...to, {
+      csv: regex.exec(rfc4180)![1].replace(/ CRLF\s*/g, "\r\n"),
+      json,
+    }]],
+    [/For example:\s+(.+?)\n\n/gs, []],
+  )[1],
+  { csv: earthquakes, json: parse(earthquakes) },
+  ...csvTestData.flatMap(($, z) =>
+    z & 1 ? [] : [{ csv: $, json: JSON.parse(csvTestData[z + 1]) }]
   ),
-]).then(([rfc4180, earthquakes, ...csvTestData]) => ({
-  deCsv: [
-    ...[
-      [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
-      [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
-      [
-        ["field_name", "field_name", "field_name"],
-        ["aaa", "bbb", "ccc"],
-        ["zzz", "yyy", "xxx"],
-      ],
-      [["aaa", "bbb", "ccc"]],
-      [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
-      [["aaa", "b\r\nbb", "ccc"], ["zzz", "yyy", "xxx"]],
-      [["aaa", 'b"bb', "ccc"]],
-    ].reduce<[RegExp, { csv: string; json: string[][] }[]]>(
-      ([regex, to], json) => [regex, [...to, {
-        csv: regex.exec(rfc4180)![1].replace(/ CRLF\s*/g, "\r\n"),
-        json,
-      }]],
-      [/For example:\s+(.+?)\n\n/gs, []],
-    )[1],
-    { csv: earthquakes, json: parse(earthquakes) },
-    ...csvTestData.map(([csv, json]) => ({ csv, json: JSON.parse(json) })),
-  ],
-})).then(($) =>
-  Deno.writeTextFile(`${import.meta.dirname}/vectors.json`, JSON.stringify($))
-);
+]).then(save(import.meta));
