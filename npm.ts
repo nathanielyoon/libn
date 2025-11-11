@@ -6,9 +6,9 @@ const [config] = await Promise.all([
   emptyDir("./npm"),
 ]);
 const { name, version, exports, compilerOptions = {} } = JSON.parse(config);
-const deno = RegExp.prototype.test.bind(/^(?!deno)/), lib = ["ESNext"] as const;
-compilerOptions.lib &&= compilerOptions.lib.filter(deno).concat(lib);
-const directory = name.slice(name.indexOf("/") + 1);
+const directory = name.slice(name.indexOf("/") + 1), lib = ["ESNext"] as const;
+compilerOptions.lib &&= compilerOptions.lib
+  .filter(RegExp.prototype.test.bind(/^(?!deno)/)).concat(lib);
 await build({
   outDir: "./npm",
   entryPoints: typeof exports === "string"
@@ -46,10 +46,12 @@ await build({
     }));
   },
 });
-await Deno.copyFile("../LICENSE", "./npm/LICENSE");
-await Deno.copyFile("./README.md", "./npm/README.md");
-await new Deno.Command("bun", {
-  args: ["run", "./npm/test_runner.js"],
-  stdout: "inherit",
-  stderr: "inherit", // deno-lint-ignore no-console
-}).output(), console.log();
+await Promise.all([
+  Deno.copyFile("../LICENSE", "./npm/LICENSE"),
+  Deno.copyFile("./README.md", "./npm/README.md"),
+  new Deno.Command("bun", {
+    args: ["run", "./npm/test_runner.js"],
+    stdout: "inherit",
+    stderr: "inherit",
+  }).output(), // deno-lint-ignore no-console
+]), console.log();
