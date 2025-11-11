@@ -6,8 +6,9 @@ import {
   upperKebab,
   upperSnake,
 } from "@libn/words";
+import { assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { getText, save, test } from "../test.ts";
+import { save, source } from "../test.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 const codes = (["Lu", "Ll", "Lt", "L", "N"] as const).reduce((to, key) => ({
@@ -30,36 +31,48 @@ const first = (delimiter: string) => (to: string, next: string) => {
   return to + delimiter + head.toUpperCase() + tail.join("").toLowerCase();
 };
 
-test["lowerCamel : words"](fcWords, ({ all: [head = "", ...tail], one }) => [
-  lowerCamel(one),
-  tail.reduce(first(""), head.toLowerCase()),
-], { examples: [[{ all: [], one: "" }]] });
-test["upperCamel : words"](fcWords, ({ all, one }) => [
-  upperCamel(one),
-  all.reduce(first(""), ""),
-], { examples: [[{ all: [], one: "" }]] });
+Deno.test("lowerCamel : words", () => {
+  assertEquals(lowerCamel(""), "");
+  fc.assert(fc.property(fcWords, ({ all: [head = "", ...tail], one }) => {
+    assertEquals(lowerCamel(one), tail.reduce(first(""), head.toLowerCase()));
+  }));
+});
+Deno.test("upperCamel : words", () => {
+  assertEquals(upperCamel(""), "");
+  fc.assert(fc.property(fcWords, ({ all, one }) => {
+    assertEquals(upperCamel(one), all.reduce(first(""), ""));
+  }));
+});
 
-test["lowerKebab : words"](fcWords, ({ all, one }) => [
-  lowerKebab(one),
-  all.join("-").toLowerCase(),
-], { examples: [[{ all: [], one: "" }]] });
-test["upperKebab : words"](fcWords, ({ all, one }) => [
-  upperKebab(one),
-  all.reduce(first("-"), "").slice(1),
-], { examples: [[{ all: [], one: "" }]] });
+Deno.test("lowerKebab : words", () => {
+  assertEquals(lowerKebab(""), "");
+  fc.assert(fc.property(fcWords, ({ all, one }) => {
+    assertEquals(lowerKebab(one), all.join("-").toLowerCase());
+  }));
+});
+Deno.test("upperKebab : words", () => {
+  assertEquals(upperKebab(""), "");
+  fc.assert(fc.property(fcWords, ({ all, one }) => {
+    assertEquals(upperKebab(one), all.reduce(first("-"), "").slice(1));
+  }));
+});
 
-test["lowerSnake : words"](fcWords, ({ all, one }) => [
-  lowerSnake(one),
-  all.join("_").toLowerCase(),
-], { examples: [[{ all: [], one: "" }]] });
-test["upperSnake : words"](fcWords, ({ all, one }) => [
-  upperSnake(one),
-  all.join("_").toUpperCase(),
-], { examples: [[{ all: [], one: "" }]] });
+Deno.test("lowerSnake : words", () => {
+  assertEquals(lowerSnake(""), "");
+  fc.assert(fc.property(fcWords, ({ all, one }) => {
+    assertEquals(lowerSnake(one), all.join("_").toLowerCase());
+  }));
+});
+Deno.test("upperSnake : words", () => {
+  assertEquals(upperSnake(""), "");
+  fc.assert(fc.property(fcWords, ({ all, one }) => {
+    assertEquals(upperSnake(one), all.join("_").toUpperCase());
+  }));
+});
 
-import.meta.main && getText(
-  "www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt",
-).then((data) =>
+import.meta.main && source`
+${[]} www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt
+`.then(([data]) =>
   data.matchAll(
     /^([\dA-F]{4,6});[^;]*;((L[ult](?=;)|L(?=[mo];)|N(?=[dlo];))[modl]?)/gm,
   ).reduce<{ [_: string]: number[] }>((to, [, hex, subcategory, category]) => {

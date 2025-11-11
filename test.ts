@@ -1,16 +1,18 @@
 // deno-coverage-ignore-file
 import fc from "fast-check";
 
-const url = ($: string) =>
-  `https://${$[0] === "/" ? "raw.githubusercontent.com" : ""}${$}`;
-/** Fetches text, optionally slicing it. */
-export const getText = async (
-  $: string,
-  ...at: [number?, number?]
-): Promise<string> => (await (await fetch(url($))).text()).slice(...at);
-/** Fetches JSON. */
-export const getJson = async <A>($: string): Promise<A> =>
-  await (await fetch(url($))).json() as A;
+/** Fetches a list of URLs, optionally slicing or mapping their texts. */
+export const source = <A extends ([number?, number?] | (($: string) => {}))[]>(
+  urls: TemplateStringsArray,
+  ...ranges: A
+): Promise<{ [B in keyof A]: A[B] extends ($: any) => infer C ? C : string }> =>
+  Promise.all(ranges.map(async ($, z) => {
+    const base = urls[z + 1].trim();
+    const text = await (await fetch(
+      `https://${base[0] === "/" ? "raw.githubusercontent.com" : ""}${base}`,
+    )).text();
+    return typeof $ === "object" ? text.slice($[0], $[1]) : $(text);
+  })) as Promise<{ [B in keyof A]: any }>;
 /** Compresses or decompresses a buffer. */
 export const press = async (
   $: BlobPart,
