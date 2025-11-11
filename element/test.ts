@@ -1,20 +1,20 @@
 import { h } from "@libn/element";
-import { is } from "@libn/is";
 import { lowerKebab } from "@libn/words";
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { parseHTML } from "linkedom";
+import { type } from "../test.ts";
 
 Deno.test.beforeAll(() => {
   globalThis.document = parseHTML("").document;
 });
 Deno.test("h : tags", () => {
   const a = h("a");
-  assertEquals(is<HTMLAnchorElement>()(a).outerHTML, "<a></a>");
+  assertEquals(type<HTMLAnchorElement>()(a).outerHTML, "<a></a>");
   const b = h("b");
-  assertEquals(is<HTMLElement>()(b).outerHTML, "<b></b>");
+  assertEquals(type<HTMLElement>()(b).outerHTML, "<b></b>");
   const c = h("c");
-  assertEquals(is<HTMLUnknownElement>()(c).outerHTML, "<c></c>");
+  assertEquals(type<HTMLUnknownElement>()(c).outerHTML, "<c></c>");
 });
 Deno.test("h : style", () => {
   for (const $ of ["color", "fontSize", "bottomBorder", "wordWrap"] as const) {
@@ -30,7 +30,7 @@ Deno.test("h : event listeners", () => {
     const element = h("a", {
       on: {
         click: ($) => {
-          is<PointerEvent & { currentTarget: typeof element }>()($);
+          type<PointerEvent & { currentTarget: typeof element }>()($);
           ++actual;
         },
       },
