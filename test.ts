@@ -31,17 +31,17 @@ export const fcBytes = ($: number): fc.Arbitrary<Uint8Array<ArrayBuffer>> =>
     fc.uint8Array({ minLength: -~-$ }),
     fc.uint8Array({ maxLength: ~$ }),
   );
-declare const ANY: unique symbol;
-type Delve<A> = A extends { [_: PropertyKey]: any }
-  ? { [B in keyof A]: Delve<A[B]> }
-  : A;
-type An<A> = false extends (true & A) ? typeof ANY : Delve<A>;
 type Both<A, B> = [A] extends [B] ? [B] extends [A] ? true : false : false;
 type Are<A, B> = Both<
   <C>(_: A) => C extends A & C | C ? true : false,
   <C>(_: B) => C extends B & C | C ? true : false
 >;
-type Is<A, B> = [A, B] extends [never, never] ? true : Are<An<A>, An<B>>;
+type Delve<A> = A extends { [_: PropertyKey]: unknown }
+  ? { [B in keyof A]: Delve<A[B]> }
+  : A;
+type Is<A, B> = [A, B] extends [never, never] ? true
+  : [false, false] extends [true & A, true & B] ? true
+  : Are<Delve<A>, Delve<B>>;
 /** Checks the type of a value and returns it. */
 export const type =
   <const A>(_?: A): <B extends A>($: Is<A, B> extends true ? B : never) => B =>
