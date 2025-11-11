@@ -4,8 +4,7 @@ import { deBig, enBig, exp, inv, mod, P, pow, prune } from "./lib.ts";
 const F = /* @__PURE__ */ (() => ~(1n << 255n))(); // mask clears unused top bit
 /** Multiplies a private scalar and a public point. */
 export const ladder = (scalar: bigint, point: bigint): bigint => {
-  // Clamping in bigint form isn't as efficient, but doesn't mutate passed-in
-  // key buffers.
+  // Clamping in bigint form doesn't mutate passed-in key buffers.
   scalar = scalar & ~7n & F | 1n << 254n, point = point & F;
   let a = 1n, b = 0n, c = point, d = 1n, e = 0n, f, g, z = 254n; // t = bits - 1
   do e ^= f = scalar >> z & 1n,
