@@ -7,7 +7,7 @@ import {
 } from "@std/assert";
 import fc from "fast-check";
 
-Deno.test("match.includes() follows built-in includes", () =>
+Deno.test("includes :: includes", () => {
   fc.assert(fc.property(
     fc.string({ size: "medium", unit: "grapheme" }),
     fc.string({ size: "medium", unit: "grapheme" }),
@@ -15,8 +15,9 @@ Deno.test("match.includes() follows built-in includes", () =>
       if (one.includes(two)) assert(includes(one, two));
       if (two.includes(one)) assert(includes(two, one));
     },
-  )));
-Deno.test("match.includes() returns true for any partial substring", () =>
+  ));
+});
+Deno.test("includes : partial substring", () => {
   fc.assert(fc.property(
     fc.string().chain(($) =>
       fc.record({
@@ -27,8 +28,9 @@ Deno.test("match.includes() returns true for any partial substring", () =>
     ({ source, target }) => {
       assert(includes(source, target));
     },
-  )));
-Deno.test("match.includes() returns false for longer targets", () =>
+  ));
+});
+Deno.test("includes : longer target", () => {
   fc.assert(fc.property(
     fc.string({ unit: "grapheme" }).chain(($) =>
       fc.record({
@@ -42,8 +44,9 @@ Deno.test("match.includes() returns false for longer targets", () =>
     ({ shorter, longer }) => {
       assert(!includes(shorter, longer));
     },
-  )));
-Deno.test("match.includes() checks equality for same-length strings", () =>
+  ));
+});
+Deno.test("includes : same-length strings", () => {
   fc.assert(fc.property(
     fc.string({ unit: "grapheme" }).chain(($) =>
       fc.record({
@@ -59,7 +62,8 @@ Deno.test("match.includes() checks equality for same-length strings", () =>
       assertEquals(includes(one, two), one === two);
       assertEquals(includes(two, one), one === two);
     },
-  )));
+  ));
+});
 const levenshtein = (one: string, two: string) => {
   const c = [...Array(two.length).keys(), two.length];
   for (let d, e, z = 1, y; z <= one.length; c[two.length] = d, ++z) {
@@ -70,15 +74,16 @@ const levenshtein = (one: string, two: string) => {
   }
   return c[two.length];
 };
-Deno.test("match.distance() follows levenshtein", () =>
+Deno.test("distance :: levenshtein", () => {
   fc.assert(fc.property(
     fc.string({ size: "medium", unit: "grapheme", minLength: 1 }),
     fc.string({ size: "medium", unit: "grapheme", minLength: 1 }),
     (one, two) => {
       assertEquals(distance(one, two), levenshtein(one, two));
     },
-  )));
-Deno.test("match.distance() falls inside levenshtein bounds", () =>
+  ));
+});
+Deno.test("distance : levenshtein bounds", () => {
   fc.assert(fc.property(
     fc.string({ size: "medium", unit: "grapheme" }),
     fc.string({ size: "medium", unit: "grapheme" }),
@@ -89,4 +94,5 @@ Deno.test("match.distance() falls inside levenshtein bounds", () =>
         Math.abs(one.length - two.length),
       );
     },
-  )));
+  ));
+});
