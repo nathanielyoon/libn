@@ -20,8 +20,8 @@ export const set = (at: ImportMeta): ($: any) => Promise<void> => ($) =>
   Deno.writeTextFile(new URL(at.resolve("./vectors.json")), JSON.stringify($));
 /** Creates a binary arbitrary with (or if negative, without) the set length. */
 export const fcBytes = ($?: number): fc.Arbitrary<Uint8Array<ArrayBuffer>> => {
-  if ($ === undefined) return fc.uint8Array({ size: "medium" });
-  return $ < 0 ? fc.uint8Array({ minLength: $, maxLength: $ }) : fc.oneof(
+  if (!$) return fc.uint8Array({ size: "medium" });
+  return $ > 0 ? fc.uint8Array({ minLength: $, maxLength: $ }) : fc.oneof(
     fc.uint8Array({ minLength: -~-$ }),
     fc.uint8Array({ maxLength: ~$ }),
   );
