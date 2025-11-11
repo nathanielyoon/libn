@@ -30,8 +30,8 @@ await build({
       directory,
     },
   },
-  postBuild: async () => {
-    await Promise.all(["esm", "script"].map(async ($) => {
+  postBuild: async () =>
+    void await Promise.all(["esm", "script"].map(async ($) => {
       const { path, text } = await Deno.readTextFile(`./npm/${$}/test.js`)
         .then((text) => ({ path: `./npm/${$}/test.js`, text }))
         .catch(async (thrown) => {
@@ -43,8 +43,7 @@ await build({
         path,
         `Uint8Array.prototype.toHex??=function(){return this.reduce((t,r)=>t+r.toString(16).padStart(2,"0"),"")};Uint8Array.fromHex??=t=>Uint8Array.from(t.match(/../g)??[],r=>parseInt(r,16));Uint8Array.prototype.toBase64??=function(t){let r=btoa(this.reduce((e,a)=>e+String.fromCharCode(a),""));return t?.alphabet==="base64url"&&(r=r.replaceAll("+","-").replaceAll("/","_")),t?.omitPadding&&(r=r.replace(/=+$/,"")),r};Uint8Array.fromBase64??=(t,r)=>Uint8Array.from(atob(r?.alphabet==="base64url"?t.replaceAll("-","+").replaceAll("_","/"):t),e=>e.charCodeAt(0));${text}`,
       );
-    }));
-  },
+    })),
 });
 await Promise.all([
   Deno.copyFile("../LICENSE", "./npm/LICENSE"),
