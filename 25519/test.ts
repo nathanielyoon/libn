@@ -1,9 +1,9 @@
+import { convertPublic, convertSecret } from "@libn/25519/convert";
 import { generate, sign, verify } from "@libn/25519/ed25519";
 import { derive, exchange, ladder } from "@libn/25519/x25519";
-import { convertPublic, convertSecret } from "@libn/25519/convert";
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { fcBytes, get, set } from "../test.ts";
+import { fcBin, get, set } from "../test.ts";
 import { deBig, enBig, mod } from "./lib.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
@@ -78,7 +78,7 @@ Deno.test("x25519.derive :: built-in generateKey", async () => {
 });
 Deno.test("x25519.exchange :: built-in deriveBits", async () => {
   await fc.assert(
-    fc.asyncProperty(fcBytes(32), fcBytes(32), async (key1, key2) => {
+    fc.asyncProperty(fcBin(32), fcBin(32), async (key1, key2) => {
       const public1 = derive(key1), public2 = derive(key2);
       assertEquals(
         exchange(key1, public2)?.buffer,
@@ -102,7 +102,7 @@ Deno.test("x25519.exchange :: built-in deriveBits", async () => {
 });
 Deno.test("x25519.exchange : x25519 keys", () => {
   fc.assert(
-    fc.property(fcBytes(32), fcBytes(32), (key1, key2) => {
+    fc.property(fcBin(32), fcBin(32), (key1, key2) => {
       assertEquals(exchange(key1, derive(key2)), exchange(key2, derive(key1)));
     }),
     { numRuns: 32 },
@@ -110,7 +110,7 @@ Deno.test("x25519.exchange : x25519 keys", () => {
 });
 Deno.test("x25519.exchange : ed25519 keys", () => {
   fc.assert(
-    fc.property(fcBytes(32), fcBytes(32), (key1, key2) => {
+    fc.property(fcBin(32), fcBin(32), (key1, key2) => {
       assertEquals(
         exchange(convertSecret(key1), convertPublic(generate(key2))),
         exchange(convertSecret(key2), convertPublic(generate(key1))),
@@ -120,7 +120,7 @@ Deno.test("x25519.exchange : ed25519 keys", () => {
   );
 });
 Deno.test("x25519.exchange : all-zero shared secret", () => {
-  fc.assert(fc.property(fcBytes(32), ($) => {
+  fc.assert(fc.property(fcBin(32), ($) => {
     assertEquals(exchange($, new Uint8Array(32)), null);
   }));
 });
@@ -165,7 +165,7 @@ Deno.test("ed25519.generate :: built-in generateKey", async () => {
 });
 Deno.test("ed25519.sign :: built-in sign", async () => {
   await fc.assert(
-    fc.asyncProperty(fcBytes(32), fc.uint8Array(), async (key, $) => {
+    fc.asyncProperty(fcBin(32), fc.uint8Array(), async (key, $) => {
       assertEquals(
         sign(key, $).buffer,
         await crypto.subtle.sign("Ed25519", await importSecret("Ed", key), $),
@@ -176,7 +176,7 @@ Deno.test("ed25519.sign :: built-in sign", async () => {
 });
 Deno.test("ed25519.verify :: built-in verify", async () => {
   await fc.assert(
-    fc.asyncProperty(fcBytes(32), fc.uint8Array(), async (key, message) => {
+    fc.asyncProperty(fcBin(32), fc.uint8Array(), async (key, message) => {
       const publicKey = generate(key), signature = sign(key, message);
       assertEquals(
         verify(publicKey, message, signature),
@@ -203,7 +203,7 @@ Deno.test("ed25519.verify :: built-in verify", async () => {
 });
 Deno.test("ed25519.verify : valid signatures", () => {
   fc.assert(
-    fc.property(fcBytes(32), fc.uint8Array(), (key, message) => {
+    fc.property(fcBin(32), fc.uint8Array(), (key, message) => {
       assertEquals(verify(generate(key), message, sign(key, message)), true);
     }),
     { numRuns: 32 },
