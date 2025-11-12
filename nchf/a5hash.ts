@@ -42,39 +42,32 @@ export const a5hash32 = ($: Uint8Array, seed = 0): number => {
 };
 /** Hashes to a 64-bit integer with a5hash64, always little-endian. */
 export const a5hash64 = ($: Uint8Array, seed = 0n): bigint => {
-  let h01 = 0x55555555, l01 = h01, h10 = 0xaaaaaaaa, l10 = h10, z, y = $.length;
-  const a = { hi: 0, lo: 0 }, b = { hi: 0, lo: 0 }, c = y / 0x100000000 >>> 0;
-  const d = y >>> 0, e = Number(seed >> 32n), f = Number(seed & 0xffffffffn);
-  // Since the 128-bit multiply directly mutates the integers, initialization is
-  // swapped from the source, which reverses the order of arguments in the first
-  // call and not any of the others.
-  const s1 = { hi: 0x452821e6 ^ c ^ e & h10, lo: 0x38d01377 ^ d ^ f & h10 };
-  const s2 = { hi: 0x243f6a88 ^ c ^ e & h01, lo: 0x85a308d3 ^ d ^ f & h01 };
-  umul64(s1, s2), l10 = (l10 ^ s2.lo) >>> 0, h10 = (h10 ^ s2.hi) >>> 0;
-  if (y > 16) {
-    l01 = (l01 ^ s1.lo) >>> 0, h01 = (h01 ^ s1.hi) >>> 0, z = 0, y -= 16;
-    do s1.lo ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
-      s1.hi ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
-      s2.lo ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
+  let h01 = 0x55555555, l01 = h01, h10 = 0xaaaaaaaa, l10 = h10;
+  const a = Number(seed >> 32n), b = Number(seed & 0xffffffffn);
+  let c = $.length, d = c / 0x100000000 >>> 0, e = c >>> 0, z = 0;
+  const s1 = { hi: 0x452821e6 ^ d ^ a & h10, lo: 0x38d01377 ^ e ^ b & h10 };
+  const s2 = { hi: 0x243f6a88 ^ d ^ a & h01, lo: 0x85a308d3 ^ e ^ b & h01 };
+  umul64(s1, s2);
+  if (c > 16) {
+    l01 = (l01 ^ s1.lo) >>> 0, h01 = (h01 ^ s1.hi) >>> 0;
+    l10 = (l10 ^ s2.lo) >>> 0, h10 = (h10 ^ s2.hi) >>> 0;
+    do s1.hi ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
+      s1.lo ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
       s2.hi ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
+      s2.lo ^= $[z++] | $[z++] << 8 | $[z++] << 16 | $[z++] << 24,
       umul64(s1, s2),
-      s1.lo = (s1.lo >>> 0) + l01 >>> 0,
-      s1.hi += h01,
-      s1.lo < l01 && ++s1.hi,
-      s2.lo = (s2.lo >>> 0) + l10 >>> 0,
-      s2.hi += h10,
-      s2.lo < l10 && ++s2.hi; while (z < y);
-    a.lo = $[y] | $[y + 1] << 8 | $[y + 2] << 16 | $[y + 3] << 24;
-    a.hi = $[y + 4] | $[y + 5] << 8 | $[y + 6] << 16 | $[y + 7] << 24;
-    b.lo = $[y + 8] | $[y + 9] << 8 | $[y + 10] << 16 | $[y + 11] << 24;
-    b.hi = $[y + 12] | $[y + 13] << 8 | $[y + 14] << 16 | $[y + 15] << 24;
-  } else if (y > 3) {
-    a.hi = $[0] | $[1] << 8 | $[2] << 16 | $[3] << 24;
-    a.lo = $[y - 4] | $[y - 3] << 8 | $[y - 2] << 16 | $[y - 1] << 24;
-    b.hi = $[z = y / 8 << 2] | $[++z] << 8 | $[++z] << 16 | $[++z] << 24;
-    b.lo = $[z = y - z - 1] | $[++z] << 8 | $[++z] << 16 | $[++z] << 24;
-  } else a.lo = $[0] | $[1] << 8 | $[2] << 16 | $[3] << 24;
-  s1.lo ^= a.lo, s1.hi ^= a.hi, s2.lo ^= b.lo, s2.hi ^= b.hi, umul64(s1, s2);
-  s1.lo ^= l01, s1.hi ^= h01, umul64(s1, s2);
-  return BigInt((s1.lo ^ s2.lo) >>> 0) | BigInt((s1.hi ^ s2.hi) >>> 0) << 32n;
+      s1.lo = s1.lo + l01 >>> 0,
+      s1.hi += h01 + (s1.lo < l01 as unknown as number),
+      s2.lo = s2.lo + l10 >>> 0,
+      s2.hi += h10 + (s2.lo < l10 as unknown as number); while ((c -= 16) > 16);
+  }
+  if (c > 3) {
+    d = c >>> 3 << 2, c += z - 4, e = c - d, d += z;
+    s1.hi ^= $[z] | $[z + 1] << 8 | $[z + 2] << 16 | $[z + 3] << 24;
+    s1.lo ^= $[c] | $[c + 1] << 8 | $[c + 2] << 16 | $[c + 3] << 24;
+    s2.hi ^= $[d] | $[d + 1] << 8 | $[d + 2] << 16 | $[d + 3] << 24;
+    s2.lo ^= $[e] | $[e + 1] << 8 | $[e + 2] << 16 | $[e + 3] << 24;
+  } else if (c) s1.lo ^= $[z] | $[z + 1] << 8 | $[z + 2] << 16;
+  umul64(s1, s2), s1.lo ^= l01, s1.hi ^= h01, umul64(s1, s2);
+  return BigInt((s1.hi ^ s2.hi) >>> 0) << 32n | BigInt((s1.lo ^ s2.lo) >>> 0);
 };

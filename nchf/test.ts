@@ -95,7 +95,7 @@ Deno.test("a5hash.a5hash64 : original a5hash", async () => {
 
 import.meta.main && Promise.all([
   get`/rurban/smhasher/3931fd6f723f4fb2afab6ef9a628912220e90ce7/Hashes.cpp${6967}${7785}`,
-  get`/avaneev/a5hash/c9ce07aad514ef7073f1436e5bed26310aab8c2c/a5hash.h`,
+  get`/avaneev/a5hash/b0ba799928c9aa8ef5ac764a1d3060e48b4797c3/a5hash.h`,
 ]).then(([oaat, a5hash]) =>
   Promise.all([
     `#include <cstddef>
