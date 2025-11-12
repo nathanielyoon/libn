@@ -32,7 +32,6 @@ assertEquals(dereference({ a: 0 }, "/b"), undefined);
 ## schema
 
 ```ts
-import { type } from "@libn/json/lib";
 import type { Instance, Int, Schema } from "@libn/json/schema";
 
 // Only accepts a minimal subset of schemas
