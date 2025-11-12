@@ -1,5 +1,6 @@
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
+import { get, set } from "../test.ts";
 import { polyXchacha, xchachaPoly } from "./aead.ts";
 import { chacha, hchacha, xor } from "./chacha.ts";
 import { cipher, decrypt, encrypt } from "@libn/xchachapoly";
@@ -18,8 +19,9 @@ const fcWrong = <const A extends number[]>(...lengths: A) =>
       ))
     ),
   ) as fc.Arbitrary<{ [_ in keyof A]: Uint8Array<ArrayBuffer> }>;
-Deno.test("chacha.chacha() passes reference vectors", () =>
-  vectors.chacha.forEach(($) => {
+
+Deno.test("chacha.chacha : vectors", () => {
+  for (const $ of vectors.chacha) {
     const state = new Uint32Array(16);
     const [iv0, iv1, iv2] = u32($.iv);
     chacha(u32($.key), $.count, iv0, iv1, iv2, state);
@@ -27,33 +29,39 @@ Deno.test("chacha.chacha() passes reference vectors", () =>
       new Uint8Array(state.buffer).subarray(0, $.state.length >> 1),
       Uint8Array.fromHex($.state),
     );
-  }));
-Deno.test("chacha.hchacha() passes reference vectors", () =>
-  vectors.hchacha.forEach(($) => {
+  }
+});
+Deno.test("chacha.hchacha : vectors", () => {
+  for (const $ of vectors.hchacha) {
     assertEquals(
       hchacha(Uint8Array.fromHex($.key), Uint8Array.fromHex($.iv)),
       u32($.subkey),
     );
-  }));
-Deno.test("chacha.xor() passes reference vectors", () =>
-  vectors.xor.forEach(($) => {
+  }
+});
+Deno.test("chacha.xor : vectors", () => {
+  for (const $ of vectors.xor) {
     const plaintext = Uint8Array.fromHex($.plaintext);
     const [iv0, iv1, iv2] = u32($.iv);
     xor(u32($.key), iv0, iv1, iv2, plaintext, $.count);
     assertEquals(plaintext, Uint8Array.fromHex($.ciphertext));
-  }));
-Deno.test("poly.poly() passes reference vectors", () =>
-  vectors.poly.forEach(($) => {
+  }
+});
+
+Deno.test("poly.poly : vectors", () => {
+  for (const $ of vectors.poly) {
     assertEquals(
       poly(u32($.key), Uint8Array.fromHex($.message)),
       Uint8Array.fromHex($.tag),
     );
-  }));
-Deno.test("poly.poly() passes through empty key and message", () => {
+  }
+});
+Deno.test("poly.poly : empty key/message", () => {
   assertEquals(poly(new Uint32Array(8), new Uint8Array()), new Uint8Array(16));
 });
-Deno.test("aead.xchachaPoly() passes reference vectors", () =>
-  vectors.xchachaPoly.forEach(($) => {
+
+Deno.test("aead.xchachaPoly : vectors", () => {
+  for (const $ of vectors.xchachaPoly) {
     const plaintext = Uint8Array.fromHex($.plaintext);
     assertEquals(
       xchachaPoly(
@@ -65,9 +73,10 @@ Deno.test("aead.xchachaPoly() passes reference vectors", () =>
       Uint8Array.fromHex($.tag),
     );
     assertEquals(plaintext, Uint8Array.fromHex($.ciphertext));
-  }));
-Deno.test("aead.polyXchacha() passes reference vectors", () =>
-  vectors.polyXchacha.forEach(($) => {
+  }
+});
+Deno.test("vectors.polyXchacha : vectors", () => {
+  for (const $ of vectors.polyXchacha) {
     const key = Uint8Array.fromHex($.key);
     const iv = Uint8Array.fromHex($.iv);
     const ciphertext = Uint8Array.fromHex($.ciphertext);
@@ -77,27 +86,20 @@ Deno.test("aead.polyXchacha() passes reference vectors", () =>
       assertEquals(polyXchacha(key, iv, tag, ciphertext, ad), true);
       assertEquals(ciphertext, Uint8Array.fromHex($.plaintext));
     } else assertEquals(polyXchacha(key, iv, tag, ciphertext, ad), false);
-  }));
-Deno.test("aead.xchachaPoly() rejects wrong-size arguments", () =>
+  }
+});
+Deno.test("aead.xchachaPoly : wrong-size arguments", () => {
   fc.assert(fc.property(fcWrong(32, 24), ($) => {
     assertEquals(xchachaPoly(...$, new Uint8Array(), new Uint8Array()), null);
-  })));
-Deno.test("aead.polyXchacha() rejects wrong-size arguments", () =>
+  }));
+});
+Deno.test("aead.polyXchacha : wrong-size arguments", () => {
   fc.assert(fc.property(fcWrong(32, 24, 16), ($) => {
     assertEquals(polyXchacha(...$, new Uint8Array(), new Uint8Array()), null);
-  })));
-Deno.test("mod.cipher() passes reference vectors", () =>
-  vectors.cipher.forEach(($) => {
-    const key = Uint8Array.fromHex($.key);
-    const iv = Uint8Array.fromHex($.iv);
-    const plaintext = Uint8Array.fromHex($.plaintext);
-    const text = new Uint8Array(plaintext.length);
-    cipher(key, iv, text);
-    assertEquals(text, Uint8Array.fromHex($.keystream));
-    text.set(plaintext), cipher(key, iv, text);
-    assertEquals(text, Uint8Array.fromHex($.ciphertext));
   }));
-Deno.test("mod round-trips losslessly", () =>
+});
+
+Deno.test("mod : binary", () => {
   fc.assert(fc.property(
     fc.uint8Array({ minLength: 32, maxLength: 32 }),
     fc.uint8Array(),
@@ -110,13 +112,27 @@ Deno.test("mod round-trips losslessly", () =>
       assert(textWithoutAd);
       assertEquals(decrypt(key, textWithoutAd), plaintext);
     },
-  )));
-Deno.test("mod.encrypt() rejects wrong-size arguments", () =>
+  ));
+});
+Deno.test("mod.cipher : vectors", () => {
+  for (const $ of vectors.cipher) {
+    const key = Uint8Array.fromHex($.key);
+    const iv = Uint8Array.fromHex($.iv);
+    const plaintext = Uint8Array.fromHex($.plaintext);
+    const text = new Uint8Array(plaintext.length);
+    cipher(key, iv, text);
+    assertEquals(text, Uint8Array.fromHex($.keystream));
+    text.set(plaintext), cipher(key, iv, text);
+    assertEquals(text, Uint8Array.fromHex($.ciphertext));
+  }
+});
+Deno.test("mod.encrypt : wrong-size arguments", () => {
   fc.assert(fc.property(fcWrong(32), ($) => {
     assertEquals(encrypt(...$, new Uint8Array()), null);
     assertEquals(encrypt(...$, new Uint8Array(), new Uint8Array()), null);
-  })));
-Deno.test("mod.decrypt() rejects wrong-size arguments", () =>
+  }));
+});
+Deno.test("mod.decrypt : wrong-size arguments", () => {
   fc.assert(fc.property(
     fc.oneof(
       fc.tuple(fcWrong(32).map(($) => $[0]), fc.uint8Array({ minLength: 40 })),
@@ -129,59 +145,40 @@ Deno.test("mod.decrypt() rejects wrong-size arguments", () =>
       assertEquals(decrypt(...$), null);
       assertEquals(decrypt(...$, new Uint8Array()), null);
     },
-  )));
+  ));
+});
+
 import.meta.main && Promise.all([
-  fetch(
-    "https://www.rfc-editor.org/rfc/rfc8439.txt",
-  ).then(($) => $.text()).then(
-    (rfc8439) => (...sources: [from: [number, number], regex: RegExp][]) =>
+  get`www.rfc-editor.org/rfc/rfc8439.txt`.then(
+    ($) => (...sources: [from: [number, number], regex: RegExp][]) =>
       sources.flatMap(([from, regex]) =>
         Array.from(
           regex.global
-            ? rfc8439.slice(...from).matchAll(regex)
-            : [rfc8439.slice(...from).match(regex)!],
-          ({ groups: { count, ...$ } = {} }) =>
-            Object.keys($).reduce((to, key) => ({
+            ? $.slice(...from).matchAll(regex)
+            : [$.slice(...from).match(regex)!],
+          ({ groups: { count, ...rest } = {} }) =>
+            Object.keys(rest).reduce((to, key) => ({
               ...to,
-              [key]: $[key].match(
+              [key]: rest[key].match(
                 /(?<=^|[\da-f]{2}[\s:])[\da-f](?:\n {6})?[\da-f](?=[\s).:]|$)|(?<=^|[\s(:])[\da-f]{2}(?=[\s:][\da-f]{2}|$)/gi,
               )?.join("").replace(/\n {6}/g, "") ?? "",
             }), count === undefined ? {} : { count: Number(count) }),
         )
       ),
   ),
-  fetch(
-    "https://www.ietf.org/archive/id/draft-irtf-cfrg-xchacha-03.txt",
-  ).then(($) => $.text()).then((xchacha) => ({
-    "2.2.1": xchacha.slice(9906, 11288).match(
+  get`www.ietf.org/archive/id/draft-irtf-cfrg-xchacha-03.txt`.then(($) => ({
+    "2.2.1": $.slice(9906, 11288).match(
       /Key = ([\da-f]{2}(?::\s*[\da-f]{2})+).*?Nonce = \(([^)]+)\).*?key:((?:\s+[\da-f]{8})+)/s,
     )!.slice(1).map(($) => $.replace(/[\s\W]+/g, "")),
-    "A.3.1": xchacha.slice(30715, 31722).match(
+    "A.3.1": $.slice(30715, 31722).match(
       /(?:[\da-f]{24,}\s*)+/g,
     )!.map(($) => $.replace(/\s+/g, "")),
-    "A.3.2.1": xchacha.slice(31876, 34302).match(
+    "A.3.2.1": $.slice(31876, 34302).match(
       /(?:[\da-f]{24,}\s*)+/g,
     )!.map(($) => $.replace(/\s+/g, "")),
   })),
-  fetch(
-    "https://raw.githubusercontent.com/floodyberry/poly1305-donna/e6ad6e091d30d7f4ec2d4f978be1fcfcbce72781/poly1305-donna.c",
-  ).then(($) => $.text()),
-  fetch(
-    "https://raw.githubusercontent.com/C2SP/wycheproof/9261e367c14fb762ae28dda9bb5e84b606cdc2fc/testvectors_v1/xchacha20_poly1305_test.json",
-  ).then<{
-    testGroups: {
-      ivSize: number;
-      tests: {
-        key: string;
-        iv: string;
-        aad: string;
-        msg: string;
-        ct: string;
-        tag: string;
-        result: "valid" | "invalid";
-      }[];
-    }[];
-  }>(($) => $.json()),
+  get`/floodyberry/poly1305-donna/e6ad6e091d30d7f4ec2d4f978be1fcfcbce72781/poly1305-donna.c`,
+  get`/C2SP/wycheproof/9261e367c14fb762ae28dda9bb5e84b606cdc2fc/testvectors_v1/xchacha20_poly1305_test.json`,
 ]).then(([rfc8439, xchacha, donna, wycheproof]) => ({
   chacha: rfc8439([
     [17603, 19535],
@@ -245,7 +242,18 @@ import.meta.main && Promise.all([
       tag: xchacha["A.3.1"][6],
       result: true,
     },
-    ...wycheproof.testGroups.flatMap((group) =>
+    ...JSON.parse(wycheproof).testGroups.flatMap((group: {
+      ivSize: number;
+      tests: {
+        key: string;
+        iv: string;
+        aad: string;
+        msg: string;
+        ct: string;
+        tag: string;
+        result: "valid" | "invalid";
+      }[];
+    }) =>
       group.ivSize !== 192 ? [] : group.tests.map(($) => ({
         key: $.key,
         iv: $.iv,
@@ -261,6 +269,4 @@ import.meta.main && Promise.all([
     to.polyXchacha.push({ result, ...rest });
     return to;
   }, { xchachaPoly: [] as {}[], polyXchacha: [] as {}[] }),
-})).then(($) =>
-  Deno.writeTextFile(`${import.meta.dirname}/vectors.json`, JSON.stringify($))
-);
+})).then(set(import.meta));
