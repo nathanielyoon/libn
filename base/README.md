@@ -2,22 +2,6 @@
 
 Binary-to-text encoding.
 
-```sh
-deno add jsr:@libn/base
-
-npx jsr add @libn/base
-npm install @libn/base
-
-bunx jsr add @libn/base
-bun add @libn/base
-```
-
-- [RFC 4648](https://www.rfc-editor.org/rfc/rfc4648)
-- [Crockford base 32](https://crockford.com/base32)
-- [base58.h](https://github.com/bitcoin/bitcoin/blob/master/src/base58.h)
-- [Z85](https://rfc.zeromq.org/spec/32)
-- [Ascii85](https://en.wikipedia.org/wiki/Ascii85)
-
 ## b16
 
 [Base16](https://www.rfc-editor.org/rfc/rfc4648#section-8) uses hexadecimal
@@ -32,11 +16,7 @@ import { deB16, enB16 } from "@libn/base/b16";
 import { assertEquals } from "@std/assert";
 
 const binary = new TextEncoder().encode("Hello :)");
-
-// Encode
 assertEquals(enB16(binary), "48656C6C6F203A29");
-
-// Decode
 assertEquals(deB16("48656C6C6F203A29"), binary);
 ```
 
@@ -51,11 +31,7 @@ import { deB32, enB32 } from "@libn/base/b32";
 import { assertEquals } from "@std/assert";
 
 const binary = new TextEncoder().encode("Hello :)");
-
-// Encode
 assertEquals(enB32(binary), "JBSWY3DPEA5CS");
-
-// Decode
 assertEquals(deB32("JBSWY3DPEA5CS"), binary);
 ```
 
@@ -70,11 +46,7 @@ import { deH32, enH32 } from "@libn/base/h32";
 import { assertEquals } from "@std/assert";
 
 const binary = new TextEncoder().encode("Hello :)");
-
-// Encode
 assertEquals(enH32(binary), "91IMOR3F40T2I");
-
-// Decode
 assertEquals(deH32("91IMOR3F40T2I"), binary);
 ```
 
@@ -91,11 +63,7 @@ import { deC32, enC32 } from "@libn/base/c32";
 import { assertEquals } from "@std/assert";
 
 const binary = new TextEncoder().encode("Hello :)");
-
-// Encode
 assertEquals(enC32(binary), "91JPRV3F40X2J");
-
-// Decode
 assertEquals(deC32("91JPRV3F40X2J"), binary);
 ```
 
@@ -109,11 +77,7 @@ import { deB58, enB58 } from "@libn/base/b58";
 import { assertEquals } from "@std/assert";
 
 const binary = new TextEncoder().encode("Hello :)");
-
-// Encode
 assertEquals(enB58(binary), "D7LMXYjUZJQ");
-
-// Decode
 assertEquals(deB58("D7LMXYjUZJQ"), binary);
 ```
 
@@ -127,11 +91,7 @@ import { deB64, enB64 } from "@libn/base/b64";
 import { assertEquals } from "@std/assert";
 
 const binary = new TextEncoder().encode("Hello :)");
-
-// Encode
 assertEquals(enB64(binary), "SGVsbG8gOik=");
-
-// Decode
 assertEquals(deB64("SGVsbG8gOik="), binary);
 ```
 
@@ -145,11 +105,7 @@ import { deU64, enU64 } from "@libn/base/u64";
 import { assertEquals, assertMatch } from "@std/assert";
 
 const binary = new TextEncoder().encode("Hello :)");
-
-// Encode
 assertEquals(enU64(binary), "SGVsbG8gOik");
-
-// Decode
 assertEquals(deU64("SGVsbG8gOik"), binary);
 ```
 
@@ -166,11 +122,7 @@ import { deZ85, enZ85 } from "@libn/base/z85";
 import { assertEquals, assertMatch } from "@std/assert";
 
 const binary = new TextEncoder().encode("Hello :)");
-
-// Encode
 assertEquals(enZ85(binary), "nm=QNzY?7&");
-
-// Decode
 assertEquals(deZ85("nm=QNzY?7&"), binary);
 ```
 
@@ -187,10 +139,6 @@ import { deA85, enA85 } from "@libn/base/a85";
 import { assertEquals } from "@std/assert";
 
 const binary = new TextEncoder().encode("Hello :)");
-
-// Encode
 assertEquals(enA85(binary), "87cURD]h(i");
-
-// Decode
 assertEquals(deA85("87cURD]h(i"), binary);
 ```
