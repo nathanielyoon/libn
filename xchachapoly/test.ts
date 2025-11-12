@@ -1,9 +1,9 @@
+import { cipher, decrypt, encrypt } from "@libn/xchachapoly";
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { get, set } from "../test.ts";
 import { polyXchacha, xchachaPoly } from "./aead.ts";
 import { chacha, hchacha, xor } from "./chacha.ts";
-import { cipher, decrypt, encrypt } from "@libn/xchachapoly";
 import { poly } from "./poly.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
