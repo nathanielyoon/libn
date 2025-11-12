@@ -33,7 +33,7 @@ export const fcStr: Fc<typeof fc.string, RegExp | string> = ($) =>
 /** Creates a binary arbitrary. */
 export const fcBin: Fc<typeof fc.uint8Array, number> = ($) =>
   typeof $ === "number"
-    ? $ > 0 ? fc.uint8Array({ minLength: $, maxLength: $ }) : fc.oneof(
+    ? $ >= 0 ? fc.uint8Array({ minLength: $, maxLength: $ }) : fc.oneof(
       fc.uint8Array({ minLength: -~-$ }),
       fc.uint8Array({ maxLength: ~$ }),
     )
