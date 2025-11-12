@@ -14,13 +14,11 @@ export const get = async (
 export const set = (at: ImportMeta): ($: any) => Promise<void> => ($) =>
   Deno.writeTextFile(new URL(at.resolve("./vectors.json")), JSON.stringify($));
 /** Creates a binary arbitrary with (or if negative, without) the set length. */
-export const fcBytes = ($?: number): fc.Arbitrary<Uint8Array<ArrayBuffer>> => {
-  if (!$) return fc.uint8Array({ size: "medium" });
-  return $ > 0 ? fc.uint8Array({ minLength: $, maxLength: $ }) : fc.oneof(
+export const fcBytes = ($: number): fc.Arbitrary<Uint8Array<ArrayBuffer>> =>
+  $ > 0 ? fc.uint8Array({ minLength: $, maxLength: $ }) : fc.oneof(
     fc.uint8Array({ minLength: -~-$ }),
     fc.uint8Array({ maxLength: ~$ }),
   );
-};
 type Both<A, B> = [A] extends [B] ? [B] extends [A] ? true : false : false;
 type Are<A, B> = Both<
   <C>(_: A) => C extends A & C | C ? true : false,
