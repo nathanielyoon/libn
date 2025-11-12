@@ -15,8 +15,8 @@ export const zip = async (
   $: BlobPart,
   stream: CompressionStream | DecompressionStream,
 ): Promise<Uint8Array<ArrayBuffer>> =>
-  new Uint8Array((await Array.fromAsync(
-    new Blob([$]).stream().pipeThrough(stream),
+  new Uint8Array((await Array.fromAsync<Uint8Array>(
+    new Blob([$]).stream().pipeThrough(stream) as any,
   )).flatMap(($) => [...$]));
 /** Writes test vectors. */
 export const set = (at: ImportMeta, $: any): Promise<void> =>
