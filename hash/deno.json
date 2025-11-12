@@ -3,7 +3,6 @@
   "version": "0.4.0",
   "license": "0BSD",
   "exports": {
-    "./integer": "./integer.ts",
     "./sha2": "./sha2.ts",
     "./hmac": "./hmac.ts",
     "./blake2": "./blake2.ts",
@@ -11,11 +10,5 @@
   },
   "imports": {
     "@std/crypto": "jsr:@std/crypto@^1.0.5"
-  },
-  "test": {
-    "permissions": {
-      "write": ["./oaat32.so", "./a5hash32.so", "./a5hash64.so"],
-      "ffi": ["./oaat32.so", "./a5hash32.so", "./a5hash64.so"]
-    }
   }
 }

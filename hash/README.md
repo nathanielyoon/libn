@@ -17,21 +17,6 @@ bun add @libn/hash
 - [RFC 5869](https://www.rfc-editor.org/rfc/rfc5869)
 - [RFC 7693](https://www.rfc-editor.org/rfc/rfc7693)
 - [BLAKE3](https://github.com/BLAKE3-team/BLAKE3)
-- [SMHasher3](https://gitlab.com/fwojcik/smhasher3)
-- [One-at-a-time hash](https://github.com/rurban/smhasher/commit/3931fd6f723f4fb2afab6ef9a628912220e90ce7)
-- [a5hash](https://github.com/avaneev/a5hash)
-
-## integer
-
-```ts
-import { a5hash32 } from "@libn/hash/integer"; // or a5hash64, oaat32
-import { assertNotEquals } from "@std/assert";
-
-const upper = a5hash32(new TextEncoder().encode("Hello")); // 0x8de32ed8
-const lower = a5hash32(new TextEncoder().encode("hello")); // 0xf9172684
-
-assertNotEquals(upper, lower);
-```
 
 ## sha2
 

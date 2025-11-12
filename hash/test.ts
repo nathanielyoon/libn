@@ -1,92 +1,13 @@
-import { assert, assertEquals, assertNotEquals } from "@std/assert";
-import { crypto as std } from "@std/crypto";
-import fc from "fast-check";
 import { blake2b, blake2s } from "@libn/hash/blake2";
 import { blake3 } from "@libn/hash/blake3";
 import { hkdf, hmac } from "@libn/hash/hmac";
-import { a5hash32, a5hash64, oaat32 } from "@libn/hash/integer";
-import { iv, perm, umul } from "./lib.ts";
 import { sha224, sha256, sha384, sha512 } from "@libn/hash/sha2";
+import { assertEquals, assertNotEquals } from "@std/assert";
+import { crypto as std } from "@std/crypto";
+import fc from "fast-check";
+import { get, set } from "../test.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
-const fcUint = fc.double({
-  min: 0,
-  max: -1 >>> 0,
-  noDefaultInfinity: true,
-  noNaN: true,
-}).map(($) => $ >>> 0);
-Deno.test("lib.iv() parses base16", () =>
-  fc.assert(fc.property(fc.uint32Array({ minLength: 1 }), ($) => {
-    assertEquals(
-      iv(Array.from($, (int) => int.toString(16).padStart(8, "0")).join("")),
-      $,
-    );
-  })));
-Deno.test("lib.perm() parses base16", () =>
-  fc.assert(fc.property(fc.uint8Array({ max: 15 }), ($) => {
-    const base = $.reduce((hex, byte) => hex + byte.toString(16), "");
-    assertEquals(perm(base), $);
-    assertEquals(perm(base.split("")), $);
-    for (let z = 0; z <= 4; ++z) {
-      assertEquals(perm(base, z), $.map((byte) => byte << z));
-    }
-  })));
-Deno.test("lib.mul64() multiplies 64 bits", () =>
-  fc.assert(fc.property(fcUint, fcUint, (one, two) => {
-    const big = BigInt(one) * BigInt(two), pair = umul(one, two);
-    assertEquals(BigInt(pair.hi >>> 0) << 32n | BigInt(pair.lo >>> 0), big);
-    assertEquals({ hi: pair.hi >>> 0, lo: pair.lo >>> 0 }, {
-      hi: Number(big >> 32n),
-      lo: Number(big & 0xffffffffn),
-    });
-  })));
-const ffi = async <A extends "oaat32" | "a5hash32" | "a5hash64">(hash: A) => {
-  const url = new URL(import.meta.resolve(`./${hash}.so`));
-  await Deno.writeFile(
-    url,
-    await press(
-      Uint8Array.fromBase64(vectors[hash]),
-      new DecompressionStream("gzip"),
-    ),
-  );
-  const size = (hash === "a5hash64" ? "u64" : "u32") as A extends "a5hash64"
-    ? "u64"
-    : "u32";
-  return [
-    url,
-    Deno.dlopen(url, {
-      ffi: { parameters: ["buffer", "usize", size], result: size },
-    }),
-  ] as const;
-};
-Deno.test("integer.oaat32() follows original implementation", async () => {
-  const [url, lib] = await ffi("oaat32");
-  fc.assert(fc.property(fc.uint8Array({ size: "large" }), fcUint, ($, seed) => {
-    assertEquals(oaat32($, seed), lib.symbols.ffi($, BigInt($.length), seed));
-  }));
-  lib.close(), await Deno.remove(url);
-});
-Deno.test("integer.a5hash32() follows original implementation", async () => {
-  const [url, lib] = await ffi("a5hash32");
-  fc.assert(fc.property(fc.uint8Array({ size: "large" }), fcUint, ($, seed) => {
-    assertEquals(a5hash32($, seed), lib.symbols.ffi($, BigInt($.length), seed));
-  }));
-  lib.close(), await Deno.remove(url);
-});
-Deno.test("integer.a5hash64() follows original implementation", async () => {
-  const [url, lib] = await ffi("a5hash64");
-  fc.assert(fc.property(
-    fc.uint8Array({ size: "large" }),
-    fc.bigInt({ min: 0n, max: 0xffffffffffffffffn }),
-    ($, seed) => {
-      assertEquals(
-        a5hash64($, seed),
-        lib.symbols.ffi($, BigInt($.length), seed),
-      );
-    },
-  ));
-  lib.close(), await Deno.remove(url);
-});
 Deno.test("sha2.sha224() passes reference vectors", () =>
   vectors.sha224.forEach(($) => {
     assertEquals(
@@ -280,127 +201,55 @@ Deno.test("blake3.blake3() follows @std/crypto digestSync", () =>
   fc.assert(fc.property(fc.uint8Array(), ($) => {
     assertEquals(blake3($), new Uint8Array(std.subtle.digestSync("BLAKE3", $)));
   })));
-const run = async (command: string | URL, ...args: string[]) => {
-  const out = await new Deno.Command(command, { args }).output();
-  assert(out.success, new TextDecoder().decode(out.stderr));
-  return new TextDecoder().decode(out.stdout);
-};
-const press = async (
-  $: Uint8Array<ArrayBuffer>,
-  stream: CompressionStream | DecompressionStream,
-) => {
-  const all = await Array.fromAsync(new Blob([$]).stream().pipeThrough(stream));
-  let size = 0, z = all.length, y = 0;
-  do size += all[--z].length; while (z);
-  const out = new Uint8Array(size);
-  do out.set(all[z], y), y += all[z].length; while (++z < all.length);
-  return out;
-};
+
 import.meta.main && Promise.all([
-  Promise.all([
-    fetch(
-      "https://raw.githubusercontent.com/rurban/smhasher/3931fd6f723f4fb2afab6ef9a628912220e90ce7/Hashes.cpp",
-    ).then(($) => $.text()).then(($) =>
-      `#include <cstddef>
-#include <cstdint>
-extern "C" uint32_t ffi(uint8_t *key, size_t len, uint32_t seed) ${
-        $.slice(6967, 7785)
-      }`.replace("*(uint32_t *) out =", "return")
-    ),
-    fetch(
-      "https://raw.githubusercontent.com/avaneev/a5hash/c9ce07aad514ef7073f1436e5bed26310aab8c2c/a5hash.h",
-    ).then(($) => $.text()).then(($) => [
-      `${$}
-extern "C" uint32_t ffi(uint8_t *key, size_t len, uint32_t seed) {
-  return a5hash32(key, len, seed);
-}`,
-      `${$}
-extern "C" uint64_t ffi(uint8_t *key, size_t len, uint64_t seed) {
-  return a5hash(key, len, seed);
-}`,
-    ]),
-  ]).then(($) =>
-    Promise.all(
-      $.flat().map(async (cpp) => {
-        const tmp = await Deno.makeTempDir();
-        await Deno.writeTextFile(`${tmp}/lib.cpp`, cpp);
-        await run("g++", "-shared", "-o", `${tmp}/lib.so`, `${tmp}/lib.cpp`);
-        assertEquals(await run("nm", "-DUj", `${tmp}/lib.so`), "ffi\n");
-        const bin = await Deno.readFile(`${tmp}/lib.so`);
-        const [compressed] = await Promise.all([
-          press(bin, new CompressionStream("gzip")),
-          await Deno.remove(tmp, { recursive: true }),
-        ]);
-        return compressed.toBase64();
-      }),
-    )
-  ),
-  Promise.all(Array.from([224, 256, 384, 512], (size) =>
-    fetch(
-      `https://raw.githubusercontent.com/usnistgov/ACVP-Server/fb44dce5257aba23088256e63c9b950db6967610/gen-val/json-files/SHA2-${size}-1.0/internalProjection.json`,
-    ).then<
-      { testGroups: { tests: { msg: string; len: number; md: string }[] }[] }
-    >(($) => $.json()).then(($) =>
-      $.testGroups[0].tests.filter(($) => $.len % 8 === 0).map(($) => ({
+  Promise.all([224, 256, 384, 512].map((size) =>
+    get([
+      `/usnistgov/ACVP-Server/fb44dce5257aba23088256e63c9b950db6967610/gen-val/json-files/SHA2-${size}-1.0/internalProjection.json`,
+    ]).then(JSON.parse).then((groups: {
+      testGroups: { tests: { msg: string; len: number; md: string }[] }[];
+    }) =>
+      groups.testGroups[0].tests.filter(($) => $.len % 8 === 0).map(($) => ({
         data: $.msg,
         digest: $.md,
       }))
-    ))),
-  fetch(
-    "https://raw.githubusercontent.com/C2SP/wycheproof/427a648c39e2edea11b75bcdcd72eea3da482d6f/testvectors_v1/hmac_sha256_test.json",
-  ).then<{
-    testGroups: {
-      tests: {
-        key: string;
-        msg: string;
-        tag: string;
-        result: "valid" | "invalid";
-      }[];
-    }[];
-  }>(($) => $.json()),
-  fetch(
-    "https://raw.githubusercontent.com/C2SP/wycheproof/427a648c39e2edea11b75bcdcd72eea3da482d6f/testvectors_v1/hkdf_sha256_test.json",
-  ).then<{
-    testGroups: {
-      tests: {
-        ikm: string;
-        salt: string;
-        info: string;
-        size: number;
-        okm: string;
-        result: "valid" | "invalid";
-      }[];
-    }[];
-  }>(($) => $.json()),
-  Promise.all(Array.from("sb", (flavor) =>
-    fetch(
-      `https://raw.githubusercontent.com/BLAKE2/BLAKE2/eec32b7170d8dbe4eb59c9afad2ee9297393fb5b/testvectors/blake2${flavor}-kat.txt`,
-    ).then(($) => $.text()).then(($) =>
+    )
+  )),
+  get`/C2SP/wycheproof/427a648c39e2edea11b75bcdcd72eea3da482d6f/testvectors_v1/hmac_sha256_test.json`,
+  get`/C2SP/wycheproof/427a648c39e2edea11b75bcdcd72eea3da482d6f/testvectors_v1/hkdf_sha256_test.json`,
+  Promise.all(["s", "b"].map((flavor) =>
+    get([
+      `/BLAKE2/BLAKE2/eec32b7170d8dbe4eb59c9afad2ee9297393fb5b/testvectors/blake2${flavor}-kat.txt`,
+    ]).then(($) =>
       $.trim().split("\n\n").map((chunk) =>
         Object.fromEntries(chunk.split("\n").map((line) => line.split(":\t")))
       )
-    ))),
-  fetch(
-    "https://raw.githubusercontent.com/BLAKE3-team/BLAKE3/ae3e8e6b3a5ae3190ca5d62820789b17886a0038/test_vectors/test_vectors.json",
-  ).then<{
-    key: string;
-    context_string: string;
-    cases: {
-      input_len: number;
-      hash: string;
-      keyed_hash: string;
-      derive_key: string;
-    }[];
-  }>(($) => $.json()),
-]).then(([so, nist, hmac, hkdf, blake2, blake3]) => ({
-  oaat32: so[0],
-  a5hash32: so[1],
-  a5hash64: so[2],
+    )
+  )),
+  get`/BLAKE3-team/BLAKE3/ae3e8e6b3a5ae3190ca5d62820789b17886a0038/test_vectors/test_vectors.json`
+    .then<{
+      key: string;
+      context_string: string;
+      cases: {
+        input_len: number;
+        hash: string;
+        keyed_hash: string;
+        derive_key: string;
+      }[];
+    }>(JSON.parse),
+]).then(async ([nist, hmac, hkdf, blake2, blake3]) => ({
   sha224: nist[0],
   sha256: nist[1],
   sha384: nist[2],
   sha512: nist[3],
-  hmac: hmac.testGroups.flatMap((group) =>
+  hmac: JSON.parse(hmac).testGroups.flatMap((group: {
+    tests: {
+      key: string;
+      msg: string;
+      tag: string;
+      result: "valid" | "invalid";
+    }[];
+  }) =>
     group.tests.map(($) => ({
       key: $.key,
       data: $.msg,
@@ -408,7 +257,16 @@ extern "C" uint64_t ffi(uint8_t *key, size_t len, uint64_t seed) {
       result: $.result === "valid",
     }))
   ),
-  hkdf: hkdf.testGroups.flatMap((group) =>
+  hkdf: JSON.parse(hkdf).testGroups.flatMap((group: {
+    tests: {
+      ikm: string;
+      salt: string;
+      info: string;
+      size: number;
+      okm: string;
+      result: "valid" | "invalid";
+    }[];
+  }) =>
     group.tests.map(($) => ({
       key: $.ikm,
       info: $.info,
@@ -430,6 +288,4 @@ extern "C" uint64_t ffi(uint8_t *key, size_t len, uint64_t seed) {
       derive: $.derive_key,
     })),
   },
-})).then(($) =>
-  Deno.writeTextFile(`${import.meta.dirname}/vectors.json`, JSON.stringify($))
-);
+})).then(set(import.meta));

@@ -9,14 +9,3 @@ export const perm = (
   shift?: number,
 ): Uint8Array<ArrayBuffer> =>
   Uint8Array.from(hex, ($) => parseInt($, 16) << shift!);
-/** 64-bit integer represented as its 32-bit halves. */
-export type I64 = { hi: number; lo: number };
-/** Multiplies two 32-bit integers to an unsigned 64-bit product. */
-export const umul = (one: number, two: number): I64 => {
-  const a = one & 0xffff, b = one >>> 16, c = two & 0xffff, d = two >>> 16;
-  const e = a * c, f = b * c, g = (e >>> 16) + (f & 0xffff) + a * d;
-  return {
-    hi: (f >>> 16) + (g >>> 16) + b * d,
-    lo: (g << 16 | e & 0xffff) >>> 0,
-  };
-};
