@@ -2,19 +2,17 @@
 
 Convert between case formats.
 
-```sh
-deno add jsr:@libn/words
-
-npx jsr add @libn/words
-npm install @libn/words
-
-bunx jsr add @libn/words
-bun add @libn/words
-```
-
-- [Multiple-word identifier formats](https://en.wikipedia.org/wiki/Naming_convention_(programming)#Examples_of_multiple-word_identifier_formats)
-
 ## default
+
+[Multiple-word identifier formats](https://en.wikipedia.org/wiki/Naming_convention_(programming)#Examples_of_multiple-word_identifier_formats)
+supported:
+
+- lowerCamel
+- UpperCamel
+- lower-kebab
+- Upper-Kebab
+- lower_snake
+- UPPER_SNAKE
 
 ```ts
 import {
@@ -27,12 +25,12 @@ import {
 } from "@libn/words";
 import { assertEquals } from "@std/assert";
 
-const words = "This is a set of words";
+const words = "This is a sequence of words";
 
-assertEquals(lowerCamel(words), "thisIsASetOfWords");
-assertEquals(upperCamel(words), "ThisIsASetOfWords");
-assertEquals(lowerKebab(words), "this-is-a-set-of-words");
-assertEquals(upperKebab(words), "This-Is-A-Set-Of-Words");
-assertEquals(lowerSnake(words), "this_is_a_set_of_words");
-assertEquals(upperSnake(words), "THIS_IS_A_SET_OF_WORDS");
+assertEquals(lowerCamel(words), "thisIsASequenceOfWords");
+assertEquals(upperCamel(words), "ThisIsASequenceOfWords");
+assertEquals(lowerKebab(words), "this-is-a-sequence-of-words");
+assertEquals(upperKebab(words), "This-Is-A-Sequence-Of-Words");
+assertEquals(lowerSnake(words), "this_is_a_sequence_of_words");
+assertEquals(upperSnake(words), "THIS_IS_A_SEQUENCE_OF_WORDS");
 ```
