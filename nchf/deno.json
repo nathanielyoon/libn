@@ -4,7 +4,8 @@
   "license": "0BSD",
   "exports": {
     "./oaat": "./oaat.ts",
-    "./a5hash": "./a5hash.ts"
+    "./a5hash": "./a5hash.ts",
+    "./halfsiphash": "./halfsiphash.ts"
   },
   "test": {
     "permissions": {
