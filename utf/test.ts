@@ -11,24 +11,25 @@ import {
 } from "@libn/utf";
 import { assertEquals, assertMatch, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
+import { fcBin, fcStr } from "../test.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("enUtf8 :: built-in TextEncoder", () => {
-  fc.assert(fc.property(fc.string({ unit: "grapheme" }), ($) => {
+  fc.assert(fc.property(fcStr(), ($) => {
     assertEquals(enUtf8($), new TextEncoder().encode($));
   }));
 });
 Deno.test("deUtf8 :: built-in TextDecoder", () => {
-  fc.assert(fc.property(fc.uint8Array(), ($) => {
+  fc.assert(fc.property(fcBin(), ($) => {
     assertEquals(deUtf8($), new TextDecoder().decode($));
   }));
 });
 
 Deno.test("unhtml : special entities", () => {
   fc.assert(fc.property(
-    fc.string({
+    fcStr({
       unit: fc.oneof(
-        fc.string({ minLength: 1, maxLength: 1, unit: "grapheme" }),
+        fcStr({ minLength: 1, maxLength: 1, unit: "grapheme" }),
         fc.constantFrom(..."\"&'<>"),
       ),
     }),
@@ -135,7 +136,7 @@ Deno.test("uncase : vectors", () => {
   assertEquals(uncase(vectors.uncase[0]), vectors.uncase[1]);
 });
 Deno.test("uncase : mixed-case string", () => {
-  fc.assert(fc.property(fc.string({ unit: "grapheme" }), ($) => {
+  fc.assert(fc.property(fcStr({ unit: "grapheme" }), ($) => {
     assertEquals(uncase($), uncase($.toLowerCase()));
   }));
 });
