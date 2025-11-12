@@ -11,7 +11,6 @@ import {
 } from "@libn/utf";
 import { assertEquals, assertMatch, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
-import { get, set } from "../test.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("enUtf8 :: built-in TextEncoder", () => {
@@ -149,24 +148,3 @@ Deno.test("uncase : non-Turkic mapping", () => {
   assertEquals(uncase("\x49"), "\x69");
   assertEquals(uncase("\u0130"), "\x69\u0307");
 });
-
-import.meta.main && Promise.all([
-  get`www.rfc-editor.org/rfc/rfc9839.txt${14538}${15597}`,
-  get`www.unicode.org/Public/UNIDATA/CaseFolding.txt${2990}${87528}`,
-]).then(([rfc9839, fold]) => ({
-  uncode: new Uint8Array(
-    rfc9839.match(/(?<=%x)\w+(?:-\w+)?/g)!.reduce((to, hex) => {
-      const range = hex.split("-").map(($) => parseInt($, 16));
-      if (range.length === 1) to[range[0]] = range[0];
-      else for (let z = range[0]; z <= range[1]; ++z) to[z] = z;
-      return to;
-    }, new Uint32Array(0x110000).fill(0xfffd)).buffer,
-  ).toBase64({ omitPadding: true }),
-  uncase: fold.matchAll(/^([\dA-F]{4,}); [CF]; ([^;]+)/gm).reduce((to, $) => [
-    to[0] + String.fromCodePoint(parseInt($[1], 16)),
-    $[2].split(" ").reduce(
-      (mapping, hex) => mapping + String.fromCodePoint(parseInt(hex, 16)),
-      to[1],
-    ),
-  ], ["", ""]),
-})).then(set(import.meta));
