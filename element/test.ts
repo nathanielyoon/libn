@@ -3,7 +3,7 @@ import { lowerKebab } from "@libn/words";
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { parseHTML } from "linkedom";
-import { type } from "../test.ts";
+import { fcStr, type } from "../test.ts";
 
 Deno.test.beforeAll(() => {
   globalThis.document = parseHTML("").document;
@@ -42,10 +42,10 @@ Deno.test("h : event listeners", () => {
 Deno.test("h : attributes", () => {
   fc.assert(fc.property(
     fc.dictionary(
-      fc.string().map(($) => $.toLowerCase()).filter(($) =>
+      fcStr().map(($) => $.toLowerCase()).filter(($) =>
         $ !== "on" && $ !== "style"
       ),
-      fc.option(fc.string()),
+      fc.option(fcStr()),
     ),
     ($) => {
       const element = h("a", $);
@@ -55,7 +55,7 @@ Deno.test("h : attributes", () => {
     },
   ));
 });
-const fcText = fc.stringMatching(/^[^'&"<>]*$/);
+const fcText = fcStr(/^[^'&"<>]*$/);
 const fcNode = fc.oneof(
   fc.tuple(fcText, fcText).map(([tag, text]) => h(tag, {}, text)),
   fcText,
