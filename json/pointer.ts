@@ -1,6 +1,6 @@
 /** @module pointer */
-import { isArray, type Json } from "@libn/json/lib";
 import type { Schema } from "@libn/json/schema";
+import { isArray, type Json } from "./lib.ts";
 
 /** @internal */
 type Replace<A extends string, B extends string, C extends string> = A extends

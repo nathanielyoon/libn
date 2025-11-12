@@ -15,18 +15,6 @@ bun add @libn/json
 - [RFC 6901](https://www.rfc-editor.org/rfc/rfc6901)
 - [Draft 2020-12](https://json-schema.org/draft/2020-12)
 
-## lib
-
-```ts
-import { isArray, type } from "@libn/json/lib";
-import { assertEquals } from "@std/assert";
-
-for (const $ of [0, []] as const) {
-  if (isArray($)) assertEquals(type<readonly []>()($), []);
-  else assertEquals(type<0>()($), 0);
-}
-```
-
 ## pointer
 
 ```ts

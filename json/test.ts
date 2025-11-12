@@ -3,27 +3,8 @@ import { enB32 } from "@libn/base/b32";
 import { enB64 } from "@libn/base/b64";
 import { enH32 } from "@libn/base/h32";
 import { enU64 } from "@libn/base/u64";
-import { unrexp } from "@libn/utf";
-import {
-  assertEquals,
-  assertInstanceOf,
-  assertMatch,
-  assertStrictEquals,
-  fail,
-} from "@std/assert";
-import fc from "fast-check";
 import { arr, bit, int, nil, num, obj, str } from "@libn/json/build";
 import { assert, BASES, compile, FORMATS, is, parse } from "@libn/json/check";
-import {
-  type And,
-  hasOwn,
-  isArray,
-  type Json,
-  type Merge,
-  type Tuple,
-  type Writable,
-  type Xor,
-} from "@libn/json/lib";
 import {
   dereference,
   deToken,
@@ -41,7 +22,26 @@ import type {
   Schema,
   Str,
 } from "@libn/json/schema";
+import { unrexp } from "@libn/utf";
+import {
+  assertEquals,
+  assertInstanceOf,
+  assertMatch,
+  assertStrictEquals,
+  fail,
+} from "@std/assert";
+import fc from "fast-check";
 import { type Is, type } from "../test.ts";
+import {
+  type And,
+  hasOwn,
+  isArray,
+  type Json,
+  type Merge,
+  type Tuple,
+  type Writable,
+  type Xor,
+} from "./lib.ts";
 
 Deno.test("lib.Json : JSON values", () => {
   type<Json>(null);
