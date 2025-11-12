@@ -1,4 +1,4 @@
-/** Hashes to a 32-bit integer with GoodOAAT. */
+/** Hashes to a 32-bit unsigned integer with GoodOAAT. */
 export const oaat32 = ($: Uint8Array, seed = 0): number => {
   let h1 = seed ^ 0x3b00, h2 = seed << 15 | seed >>> 17, z = 0;
   while (z < $.length) {

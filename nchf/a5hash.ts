@@ -1,6 +1,6 @@
 import { umul32, umul64 } from "./lib.ts";
 
-/** Hashes to a 32-bit integer with a5hash32. */
+/** Hashes to a 32-bit unsigned integer with a5hash32. */
 export const a5hash32 = ($: Uint8Array, seed = 0): number => {
   let v01 = 0x55555555, v10 = 0xaaaaaaaa, z, y = $.length;
   let { lo: s1, hi: s2 } = umul32(
@@ -40,7 +40,7 @@ export const a5hash32 = ($: Uint8Array, seed = 0): number => {
   ({ lo: s1, hi: s2 } = umul32(a + (s1 ^ s3), b + (s2 ^ s4)));
   return ({ lo: s1, hi: s2 } = umul32(v01 ^ s1, s2)), (s1 ^ s2) >>> 0;
 };
-/** Hashes to a 64-bit integer with a5hash64. */
+/** Hashes to a 64-bit unsigned integer with a5hash64. */
 export const a5hash64 = ($: Uint8Array, seed = 0n): bigint => {
   let h01 = 0x55555555, l01 = h01, h10 = 0xaaaaaaaa, l10 = h10;
   const a = Number(seed >> 32n), b = Number(seed & 0xffffffffn);
