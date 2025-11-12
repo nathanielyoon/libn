@@ -50,7 +50,7 @@
     }
   },
   "permissions": {
-    "write-vectors": {
+    "vectors": {
       "net": [
         "www.rfc-editor.org",
         "raw.githubusercontent.com",
@@ -66,14 +66,14 @@
     }
   },
   "tasks": {
-    "write": "cd \"$INIT_CWD\" || exit 1; echo \"{}\" >./vectors.json && deno run --permission-set=write-vectors --unstable-raw-imports ./test.ts;",
+    "write": "deno run --permission-set=vectors --unstable-raw-imports \"$INIT_CWD/vectors.ts\";",
     "check": "deno check --doc",
     "lint": "deno lint --compact && deno doc --lint **/*.ts",
     "test": "deno test --permission-set --quiet --unstable-raw-imports --doc --no-check --parallel --trace-leaks",
     "record": "deno task --quiet --cwd=. test --reporter=dot --clean --coverage=/tmp/deno-coverage --coverage-raw-data-only",
     "report": "deno coverage --detailed /tmp/deno-coverage --include=\"^file://$(pwd)\"",
     "cover": "deno task --quiet --cwd=. record && deno task --quiet --cwd=. report",
-    "ok": "cd \"$INIT_CWD\" || exit 1; deno task --cwd=. check; deno task --cwd=. lint; deno task --cwd=. cover; deno publish --dry-run --allow-dirty",
+    "ok": "deno task --cwd=. check; deno task --cwd=. lint; deno task --cwd=. cover; deno publish --dry-run --allow-dirty",
     "exports": "cd \"$INIT_CWD\" || exit 1; bash -c 'jq -r \"if (.exports | type) == \\\"object\\\" then .exports | to_entries[] | \\\"\\(.key) \\(.value)\\\" else \\\". \\(.exports)\\\" end\" ./deno.json | while read line; do echo \"# $(cut -d\" \" -f1 <<<\"$line\") ($(deno bundle --quiet --unstable-raw-imports --minify $(cut -d\" \" -f2 <<<\"$line\") | brotli | wc --bytes))\"; echo \"import \\\"$(cut -d\" \" -f2 <<<\"$line\")\\\";\" >bundle.ts && deno bundle --quiet --unstable-raw-imports bundle.ts; rm -f bundle.ts; echo; done'",
     "npm": "cd \"$INIT_CWD\" || exit 1; deno run --allow-env --allow-run=npm,bun --allow-read --allow-write ../npm.ts",
     "publish": "cd \"$INIT_CWD\" || exit 1; deno publish --allow-dirty; cd npm && npm publish --access=public && cd .. && rm -r npm;"
