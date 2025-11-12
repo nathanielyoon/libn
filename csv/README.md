@@ -1,21 +1,11 @@
 # @libn/csv
 
-Parsing and stringifying comma-separated values.
-
-```sh
-deno add jsr:@libn/csv
-
-npx jsr add @libn/csv
-npm install @libn/csv
-
-bunx jsr add @libn/csv
-bun add @libn/csv
-```
-
-- [RFC 4180](https://www.rfc-editor.org/rfc/rfc4180)
-- [csv-simple-parser](https://github.com/fabiospampinato/csv-simple-parser)
+Comma-separated values.
 
 ## parse
+
+[Parse](https://github.com/fabiospampinato/csv-simple-parser)
+[RFC 4180](https://www.rfc-editor.org/rfc/rfc4180) CSV.
 
 ```ts
 import { deCsv } from "@libn/csv/parse";
@@ -28,6 +18,8 @@ assertEquals(
 ```
 
 ## stringify
+
+Stringify [RFC 4180](https://www.rfc-editor.org/rfc/rfc4180) CSV.
 
 ```ts
 import { enCsv } from "@libn/csv/stringify";
