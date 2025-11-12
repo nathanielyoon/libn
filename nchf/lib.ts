@@ -1,5 +1,5 @@
-/** @internal */
-type U64 = { hi: number; lo: number };
+/** 64-bit unsigned integer as its two 32-bit halves (also unsigned). */
+export type U64 = { hi: number; lo: number };
 /** Multiplies two 32-bit integers to an unsigned 64-bit product. */
 export const umul32 = (one: number, two: number): U64 => {
   const a = one & 0xffff, b = one >>> 16, c = two & 0xffff, d = two >>> 16;

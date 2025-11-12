@@ -3,7 +3,7 @@ import { oaat32 } from "@libn/nchf/oaat";
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { get, set } from "../test.ts";
-import { umul32, umul64 } from "./lib.ts";
+import { type U64, umul32, umul64 } from "./lib.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 const zip = async ($: BlobPart, use: CompressionStream | DecompressionStream) =>
@@ -40,12 +40,10 @@ const fcU64 = fc.bigInt({ min: 0n, max: (1n << 64n) - 1n }).map(($) => ({
   bigint: $,
   number: deBig($),
 }));
-const enBig = ($: { hi: number; lo: number }) =>
-  BigInt($.hi) << 32n | BigInt($.lo);
-const deBig = ($: bigint) => ({
-  hi: Number($ >> 32n),
-  lo: Number($ & 0xffffffffn),
-});
+const enBig = ($: U64) => BigInt($.hi) << 32n | BigInt($.lo);
+const deBig = ($: bigint) => (
+  { hi: Number($ >> 32n), lo: Number($ & 0xffffffffn) } satisfies U64
+);
 
 Deno.test("lib.umul32 : 32-bit integers", () => {
   fc.assert(fc.property(fcU32, fcU32, (one, two) => {
