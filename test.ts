@@ -10,11 +10,6 @@ export const get = async (
   (await (await fetch(
     `https://${$[0] === "/" ? "raw.githubusercontent.com" : ""}${$}`,
   )).text()).slice(min, max);
-/** Extracts base16 from enclosing text. */
-export const hex = ($: string): string =>
-  $.match(
-    /(?<=(?:^|0x|\W)(?:[\da-f]{2})*)[\da-f]{2}(?=(?:[\da-f]{2})*(?:\W|$))/g,
-  )?.join("") ?? "";
 /** Writes test vectors. */
 export const set = (at: ImportMeta): ($: any) => Promise<void> => ($) =>
   Deno.writeTextFile(new URL(at.resolve("./vectors.json")), JSON.stringify($));
