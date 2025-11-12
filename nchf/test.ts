@@ -1,19 +1,12 @@
 import { a5hash32, a5hash64 } from "@libn/nchf/a5hash";
-import { oaat32 } from "@libn/nchf/oaat";
-import { assert, assertEquals } from "@std/assert";
-import fc from "fast-check";
-import { get, set } from "../test.ts";
-import { type U64, umul32, umul64 } from "./lib.ts";
 import { halfsiphash32, halfsiphash64 } from "@libn/nchf/halfsiphash";
+import { oaat32 } from "@libn/nchf/oaat";
+import { assertEquals } from "@std/assert";
+import fc from "fast-check";
+import { zip } from "../test.ts";
+import { type U64, umul32, umul64 } from "./lib.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
-const zip = async ($: BlobPart, use: CompressionStream | DecompressionStream) =>
-  new Uint8Array((await Array.fromAsync(
-    new Blob([$]).stream().pipeThrough(use),
-  )).flatMap(($) => [...$]));
-type Size<A extends string> = A extends `${string}${infer B}`
-  ? B extends "32" | "64" ? `u${B}` : Size<B>
-  : never;
 const ffi = async <const A extends Deno.ForeignLibraryInterface[string]>(
   source: string,
   symbol: A,
@@ -146,66 +139,3 @@ Deno.test("halfsiphash.halfsiphash64 :: original halfsiphash64", async () => {
   ));
   lib.close(), await Deno.remove(url);
 });
-
-import.meta.main && Promise.all([
-  get`/rurban/smhasher/3931fd6f723f4fb2afab6ef9a628912220e90ce7/Hashes.cpp${6967}${7785}`,
-  get`/avaneev/a5hash/b0ba799928c9aa8ef5ac764a1d3060e48b4797c3/a5hash.h`,
-  get`/veorq/SipHash/eee7d0d84dc7731df2359b243aa5e75d85f6eaef/halfsiphash.c${545}`,
-  get`/veorq/SipHash/371dd98e3508045bc8346da3ed8225b76ce536f6/vectors.h${23275}`,
-]).then(([oaat, a5hash, halfsiphash, vectors]) =>
-  Promise.all([
-    `#include <cstddef>
-#include <cstdint>
-extern "C" uint32_t ffi(uint8_t *key, size_t len, uint32_t seed) ${
-      oaat.replace("*(uint32_t *) out =", "return")
-    }`,
-    `${a5hash}
-extern "C" uint32_t ffi(uint8_t *key, size_t len, uint32_t seed) {
-  return a5hash32(key, len, seed);
-}`,
-    `${a5hash}
-extern "C" uint64_t ffi(uint8_t *key, size_t len, uint64_t seed) {
-  return a5hash(key, len, seed);
-}`,
-    `${halfsiphash}
-extern "C" uint32_t ffi(uint8_t *in, size_t inlen, uint8_t *key) {
-  uint8_t out[4];
-  halfsiphash(in, inlen, key, out, 4);
-  return (uint32_t)out[0] | (uint32_t)out[1] << 8 | (uint32_t)out[2] << 16 |
-         (uint32_t)out[3] << 24;
-}`,
-    `${halfsiphash}
-extern "C" uint64_t ffi(uint8_t *in, size_t inlen, uint8_t *key) {
-  uint8_t out[8];
-  halfsiphash(in, inlen, key, out, 8);
-  return (uint64_t)out[0] | (uint64_t)out[1] << 8 | (uint64_t)out[2] << 16 |
-         (uint64_t)out[3] << 24 | (uint64_t)out[4] << 32 | (uint64_t)out[5] << 40 |
-         (uint64_t)out[6] << 48 | (uint64_t)out[7] << 56;
-}`,
-  ].map(async (cpp) => {
-    const tmp = await Deno.makeTempDir();
-    await Deno.writeTextFile(`${tmp}/lib.cpp`, cpp);
-    assert(
-      (await new Deno.Command("g++", {
-        args: ["-shared", "-o", `${tmp}/lib.so`, `${tmp}/lib.cpp`],
-      }).output()).success,
-    );
-    const bin = await Deno.readFile(`${tmp}/lib.so`);
-    const [compressed] = await Promise.all([
-      zip(bin, new CompressionStream("gzip")),
-      await Deno.remove(tmp, { recursive: true }),
-    ]);
-    return compressed.toBase64();
-  })).then(([oaat32, a5hash32, a5hash64, halfsiphash32, halfsiphash64]) => ({
-    oaat32,
-    a5hash32,
-    a5hash64,
-    halfsiphash: vectors.match(/\{.+?^\}/gms)!.map((version) =>
-      version.match(/(?:0x[\da-f]{2},\s+)+/g)!.map((vector) =>
-        vector.match(/[\da-f]{2}/g)!.reverse().join("")
-      )
-    ),
-    halfsiphash32,
-    halfsiphash64,
-  }))
-).then(set(import.meta));
