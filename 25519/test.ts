@@ -170,7 +170,7 @@ Deno.test("ed25519.generate :: built-in generateKey", async () => {
 });
 Deno.test("ed25519.sign :: built-in sign", async () => {
   await fc.assert(
-    fc.asyncProperty(fcBytes(32), fcBytes(), async (key, $) => {
+    fc.asyncProperty(fcBytes(32), fc.uint8Array(), async (key, $) => {
       assertEquals(
         sign(key, $).buffer,
         await crypto.subtle.sign("Ed25519", await importSecret("Ed", key), $),
@@ -208,7 +208,7 @@ Deno.test("ed25519.verify :: built-in verify", async () => {
 });
 Deno.test("ed25519.verify : valid signatures", () => {
   fc.assert(
-    fc.property(fcBytes(32), fcBytes(), (key, message) => {
+    fc.property(fcBytes(32), fc.uint8Array(), (key, message) => {
       assertEquals(verify(generate(key), message, sign(key, message)), true);
     }),
     { numRuns: 32 },
