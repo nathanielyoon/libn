@@ -29,7 +29,8 @@ type Are<A, B> = Both<
 type Delve<A> = A extends { [_: PropertyKey]: unknown }
   ? { [B in keyof A]: Delve<A[B]> }
   : A;
-type Is<A, B> = [A, B] extends [never, never] ? true
+/** Resolves to `true` if two types are exactly equal, `false` otherwise. */
+export type Is<A, B> = [A, B] extends [never, never] ? true
   : [false, false] extends [true & A, true & B] ? true
   : Are<Delve<A>, Delve<B>>;
 /** Checks the type of a value and returns it. */
