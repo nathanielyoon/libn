@@ -66,6 +66,13 @@ const levenshtein = (one: string, two: string) => {
 };
 Deno.test("distance :: levenshtein", () => {
   fc.assert(fc.property(
+    fcStr({ minLength: 1, maxLength: 32 }),
+    fcStr({ minLength: 1, maxLength: 32 }),
+    (one, two) => {
+      assertEquals(distance(one, two), levenshtein(one, two));
+    },
+  ));
+  fc.assert(fc.property(
     fcStr({ minLength: 1 }),
     fcStr({ minLength: 1 }),
     (one, two) => {
