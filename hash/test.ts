@@ -5,7 +5,7 @@ import { sha224, sha256, sha384, sha512 } from "@libn/hash/sha2";
 import { assertEquals, assertNotEquals } from "@std/assert";
 import { crypto as std } from "@std/crypto";
 import fc from "fast-check";
-import { get, set } from "../test.ts";
+import { fcBin, get, set } from "../test.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("sha2.sha224 : vectors", () => {
@@ -41,37 +41,37 @@ Deno.test("sha2.sha512 : vectors", () => {
   }
 });
 Deno.test("sha2.sha256 :: built-in digest", async () => {
-  await fc.assert(fc.asyncProperty(fc.uint8Array(), async ($) => {
+  await fc.assert(fc.asyncProperty(fcBin(), async ($) => {
     assertEquals(sha256($).buffer, await crypto.subtle.digest("SHA-256", $));
   }));
 });
 Deno.test("sha2.sha384 :: built-in digest", async () => {
-  await fc.assert(fc.asyncProperty(fc.uint8Array(), async ($) => {
+  await fc.assert(fc.asyncProperty(fcBin(), async ($) => {
     assertEquals(sha384($).buffer, await crypto.subtle.digest("SHA-384", $));
   }));
 });
 Deno.test("sha2.sha512 :: built-in digest", async () => {
-  await fc.assert(fc.asyncProperty(fc.uint8Array(), async ($) => {
+  await fc.assert(fc.asyncProperty(fcBin(), async ($) => {
     assertEquals(sha512($).buffer, await crypto.subtle.digest("SHA-512", $));
   }));
 });
 Deno.test("sha2.sha224 :: @std/crypto digestSync", () => {
-  fc.assert(fc.property(fc.uint8Array(), ($) => {
+  fc.assert(fc.property(fcBin(), ($) => {
     assertEquals(sha224($).buffer, std.subtle.digestSync("SHA-224", $));
   }));
 });
 Deno.test("sha2.sha256 :: @std/crypto digestSync", () => {
-  fc.assert(fc.property(fc.uint8Array(), ($) => {
+  fc.assert(fc.property(fcBin(), ($) => {
     assertEquals(sha256($).buffer, std.subtle.digestSync("SHA-256", $));
   }));
 });
 Deno.test("sha2.sha384 :: @std/crypto digestSync", () => {
-  fc.assert(fc.property(fc.uint8Array(), ($) => {
+  fc.assert(fc.property(fcBin(), ($) => {
     assertEquals(sha384($).buffer, std.subtle.digestSync("SHA-384", $));
   }));
 });
 Deno.test("sha2.sha512 :: @std/crypto digestSync", () => {
-  fc.assert(fc.property(fc.uint8Array(), ($) => {
+  fc.assert(fc.property(fcBin(), ($) => {
     assertEquals(sha512($).buffer, std.subtle.digestSync("SHA-512", $));
   }));
 });
@@ -99,8 +99,8 @@ Deno.test("hmac.hkdf : vectors", () => {
 });
 Deno.test("hmac.hmac :: built-in sign", async () => {
   await fc.assert(fc.asyncProperty(
-    fc.uint8Array({ minLength: 1 }),
-    fc.uint8Array(),
+    fcBin({ minLength: 1 }),
+    fcBin(),
     async (key, data) => {
       assertEquals(
         hmac(key, data).buffer,
@@ -121,9 +121,9 @@ Deno.test("hmac.hmac :: built-in sign", async () => {
 });
 Deno.test("hmac.hkdf :: built-in deriveBits", async () => {
   await fc.assert(fc.asyncProperty(
-    fc.uint8Array(),
-    fc.uint8Array(),
-    fc.uint8Array({ maxLength: 32 }),
+    fcBin(),
+    fcBin(),
+    fcBin({ maxLength: 32 }),
     fc.integer({ min: 1, max: 255 }),
     async (key, info, salt, length) => {
       assertEquals(
@@ -169,7 +169,7 @@ Deno.test("blake2.blake2b : vectors", () => {
   }
 });
 Deno.test("blake2.blake2s :: @std/crypto digestSync", () => {
-  fc.assert(fc.property(fc.uint8Array(), ($) => {
+  fc.assert(fc.property(fcBin(), ($) => {
     assertEquals(
       blake2s($),
       new Uint8Array(std.subtle.digestSync("BLAKE2S", $)),
@@ -177,7 +177,7 @@ Deno.test("blake2.blake2s :: @std/crypto digestSync", () => {
   }));
 });
 Deno.test("blake2.blake2b :: @std/crypto digestSync", () => {
-  fc.assert(fc.property(fc.uint8Array(), ($) => {
+  fc.assert(fc.property(fcBin(), ($) => {
     assertEquals(
       blake2b($),
       new Uint8Array(std.subtle.digestSync("BLAKE2B", $)),
@@ -197,7 +197,7 @@ Deno.test("blake3.blake3 :: vectors", () => {
   }
 });
 Deno.test("blake3.blake3 :: @std/crypto digestSync", () => {
-  fc.assert(fc.property(fc.uint8Array(), ($) => {
+  fc.assert(fc.property(fcBin(), ($) => {
     assertEquals(blake3($), new Uint8Array(std.subtle.digestSync("BLAKE3", $)));
   }));
 });
