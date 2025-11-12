@@ -1,11 +1,6 @@
 import { generate, sign, verify } from "@libn/25519/ed25519";
-import {
-  convertPublic,
-  convertSecret,
-  derive,
-  exchange,
-  ladder,
-} from "@libn/25519/x25519";
+import { derive, exchange, ladder } from "@libn/25519/x25519";
+import { convertPublic, convertSecret } from "@libn/25519/convert";
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { fcBytes, get, set } from "../test.ts";

@@ -1,5 +1,5 @@
 /** @module x25519 */
-import { deBig, enBig, exp, inv, mod, P, pow, prune } from "./lib.ts";
+import { deBig, enBig, exp, mod, P, pow } from "./lib.ts";
 
 const F = /* @__PURE__ */ (() => ~(1n << 255n))(); // mask clears unused top bit
 /** Multiplies a private scalar and a public point. */
@@ -38,12 +38,4 @@ export const exchange = (
   let byte = 0;
   for (let z = 0; z < 32; ++z) byte |= shared[z];
   return byte ? shared : null;
-};
-/** Converts an Ed25519 secret key to its X25519 equivalent. */
-export const convertSecret = (key: Uint8Array): Uint8Array<ArrayBuffer> =>
-  new Uint8Array(prune(key).subarray(0, 32));
-/** Converts an Ed25519 public key to its X25519 equivalent. */
-export const convertPublic = (key: Uint8Array): Uint8Array<ArrayBuffer> => {
-  const a = enBig(key) & F;
-  return deBig(mod((1n + a) * inv(1n - a)) & F);
 };
