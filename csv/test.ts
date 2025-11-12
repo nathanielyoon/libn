@@ -2,8 +2,8 @@ import { deCsv } from "@libn/csv/parse";
 import { enCsv } from "@libn/csv/stringify";
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { get, set } from "../test.ts";
 import vectors from "./vectors.json" with { type: "json" };
+import { fcStr } from "../test.ts";
 
 Deno.test("parse.deCsv : vectors", () => {
   for (const $ of vectors) assertEquals(deCsv($.csv, { empty: "" }), $.json);
@@ -38,7 +38,7 @@ const fcRows = <A>($: A, row?: fc.ArrayConstraints) =>
   fc.array(
     fc.array(
       fc.oneof(
-        { weight: 15, arbitrary: fc.string() },
+        { weight: 15, arbitrary: fcStr({ size: "small" }) },
         { weight: 1, arbitrary: fc.constant($) },
       ),
       { minLength: 1, maxLength: 64, ...row },
@@ -95,9 +95,7 @@ Deno.test("stringify.enCsv : different newlines", () => {
 });
 Deno.test("stringify.enCsv : custom empty predicate", () => {
   fc.assert(fc.property(
-    fc.string().chain(($) =>
-      fc.record({ nil: fc.constant($), rows: fcRows($) })
-    ),
+    fcStr().chain(($) => fc.record({ nil: fc.constant($), rows: fcRows($) })),
     ({ nil, rows }) => {
       assert(
         deCsv(
@@ -108,56 +106,3 @@ Deno.test("stringify.enCsv : custom empty predicate", () => {
     },
   ));
 });
-
-import.meta.main && Promise.all([
-  get`www.rfc-editor.org/rfc/rfc4180.txt${2630}${4734}`,
-  get`earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.csv`,
-  ...[
-    "all-empty",
-    "empty-field",
-    "empty-one-column",
-    "leading-space",
-    "one-column",
-    "quotes-empty",
-    "quotes-with-comma",
-    "quotes-with-escaped-quote",
-    "quotes-with-newline",
-    "quotes-with-space",
-    "simple-crlf",
-    "simple-lf",
-    "trailing-newline-one-field",
-    "trailing-newline",
-    "trailing-space",
-    "utf8",
-  ].flatMap(($) =>
-    ["csv", "json"].map((type) =>
-      get([
-        `/sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/${type}/${$}.${type}`,
-      ])
-    )
-  ),
-]).then(([rfc4180, earthquakes, ...csvTestData]) => [
-  ...[
-    [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
-    [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
-    [
-      ["field_name", "field_name", "field_name"],
-      ["aaa", "bbb", "ccc"],
-      ["zzz", "yyy", "xxx"],
-    ],
-    [["aaa", "bbb", "ccc"]],
-    [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
-    [["aaa", "b\r\nbb", "ccc"], ["zzz", "yyy", "xxx"]],
-    [["aaa", 'b"bb', "ccc"]],
-  ].reduce<[RegExp, { csv: string; json: string[][] }[]]>(
-    ([regex, to], json) => [regex, [...to, {
-      csv: regex.exec(rfc4180)![1].replace(/ CRLF\s*/g, "\r\n"),
-      json,
-    }]],
-    [/For example:\s+(.+?)\n\n/gs, []],
-  )[1],
-  { csv: earthquakes, json: parse(earthquakes) },
-  ...csvTestData.flatMap(($, z) =>
-    z & 1 ? [] : [{ csv: $, json: JSON.parse(csvTestData[z + 1]) }]
-  ),
-]).then(set(import.meta));
