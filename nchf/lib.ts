@@ -1,5 +1,8 @@
 /** 64-bit unsigned integer as its two 32-bit halves. */
 export type U64 = { hi: number; lo: number };
+/** Combines two 32-bit halves into an 64-bit unsigned integer. */
+export const u64 = (hi: number, lo: number): bigint =>
+  BigInt(hi >>> 0) << 32n | BigInt(lo >>> 0);
 /** Multiplies two 32-bit unsigned integers. */
 export const umul32 = (one: number, two: number): U64 => {
   const a = one & 0xffff, b = one >>> 16, c = two & 0xffff, d = two >>> 16;

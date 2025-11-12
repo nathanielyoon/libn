@@ -1,3 +1,6 @@
+/** @module */
+import { u64 } from "./lib.ts";
+
 const create = (key: Uint8Array) => {
   const state = new Uint32Array([
     key[0] | key[1] << 8 | key[2] << 16 | key[3] << 24,
@@ -70,7 +73,7 @@ export const halfsiphash64 = ($: Uint8Array, key: Uint8Array): bigint => {
   const state = create(key);
   state[1] ^= 0xee, update(state, $, 0xee);
   let [a, b, c, d] = state, z = 4;
-  const out = b ^ d;
+  const e = b ^ d;
   b ^= 0xdd;
   do a += b,
     b = b << 5 | b >>> 27,
@@ -86,5 +89,5 @@ export const halfsiphash64 = ($: Uint8Array, key: Uint8Array): bigint => {
     b = b << 13 | b >>> 19,
     b ^= c,
     c = c << 16 | c >>> 16; while (--z);
-  return BigInt((b ^ d) >>> 0) << 32n | BigInt(out >>> 0);
+  return u64(b ^ d, e);
 };

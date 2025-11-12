@@ -1,4 +1,5 @@
-import { umul32, umul64 } from "./lib.ts";
+/** @module */
+import { u64, umul32, umul64 } from "./lib.ts";
 
 /** Hashes to a 32-bit unsigned integer with a5hash32. */
 export const a5hash32 = ($: Uint8Array, seed = 0): number => {
@@ -69,5 +70,5 @@ export const a5hash64 = ($: Uint8Array, seed = 0n): bigint => {
     s2.lo ^= $[e] | $[e + 1] << 8 | $[e + 2] << 16 | $[e + 3] << 24;
   } else if (c) s1.lo ^= $[z] | $[z + 1] << 8 | $[z + 2] << 16;
   umul64(s1, s2), s1.lo ^= l01, s1.hi ^= h01, umul64(s1, s2);
-  return BigInt((s1.hi ^ s2.hi) >>> 0) << 32n | BigInt((s1.lo ^ s2.lo) >>> 0);
+  return u64(s1.hi ^ s2.hi, s1.lo ^ s2.lo);
 };
