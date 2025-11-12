@@ -11,7 +11,7 @@ export const get = async (
     `https://${$[0] === "/" ? "raw.githubusercontent.com" : ""}${$}`,
   )).text()).slice(min, max);
 /** Writes test vectors. */
-export const set = (at: ImportMeta): ($: any) => Promise<void> => ($) =>
+export const set = (at: ImportMeta, $: any): Promise<void> =>
   Deno.writeTextFile(new URL(at.resolve("./vectors.json")), JSON.stringify($));
 /** @internal */
 type Fc<A, B> = A extends ($?: infer C) => infer D ? ($?: C | B) => D : never;
