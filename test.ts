@@ -13,24 +13,39 @@ export const get = async (
 /** Writes test vectors. */
 export const set = (at: ImportMeta): ($: any) => Promise<void> => ($) =>
   Deno.writeTextFile(new URL(at.resolve("./vectors.json")), JSON.stringify($));
-/** Creates a binary arbitrary with (or if negative, without) the set length. */
-export const fcBytes = ($: number): fc.Arbitrary<Uint8Array<ArrayBuffer>> =>
-  $ > 0 ? fc.uint8Array({ minLength: $, maxLength: $ }) : fc.oneof(
-    fc.uint8Array({ minLength: -~-$ }),
-    fc.uint8Array({ maxLength: ~$ }),
-  );
-type Both<A, B> = [A] extends [B] ? [B] extends [A] ? true : false : false;
-type Are<A, B> = Both<
+/** @internal */
+type Fc<A, B> = A extends ($?: infer C) => infer D ? ($?: C | B) => D : never;
+/** Creates a number arbitrary. */
+export const fcNum: Fc<typeof fc.double, never> = ($) =>
+  fc.double({ noDefaultInfinity: true, noNaN: true, ...$ });
+/** Creates a string arbitrary. */
+export const fcStr: Fc<typeof fc.string, RegExp | string> = ($) =>
+  $ instanceof RegExp || typeof $ === "string"
+    ? fc.stringMatching(RegExp($))
+    : fc.string({ unit: "grapheme", size: "medium", ...$ });
+/** Creates a binary arbitrary. */
+export const fcBin: Fc<typeof fc.uint8Array, number> = ($) =>
+  typeof $ === "number"
+    ? $ > 0 ? fc.uint8Array({ minLength: $, maxLength: $ }) : fc.oneof(
+      fc.uint8Array({ minLength: -~-$ }),
+      fc.uint8Array({ maxLength: ~$ }),
+    )
+    : fc.uint8Array({ size: "medium", ...$ });
+/** Whether two types are mutually assignable. */
+export type Are<A, B> = [A, B] extends [B, A] ? true : false;
+/** @internal */
+type Exact<A, B> = Are<
   <C>(_: A) => C extends A & C | C ? true : false,
   <C>(_: B) => C extends B & C | C ? true : false
 >;
+/** @internal */
 type Delve<A> = A extends { [_: PropertyKey]: unknown }
   ? { [B in keyof A]: Delve<A[B]> }
   : A;
-/** Resolves to `true` if two types are exactly equal, `false` otherwise. */
+/** Whether two types are exactly equal. */
 export type Is<A, B> = [A, B] extends [never, never] ? true
   : [false, false] extends [true & A, true & B] ? true
-  : Are<Delve<A>, Delve<B>>;
+  : Exact<Delve<A>, Delve<B>>;
 /** Checks the type of a value and returns it. */
 export const type =
   <const A>(_?: A): <B extends A>($: Is<A, B> extends true ? B : never) => B =>
