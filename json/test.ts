@@ -31,7 +31,7 @@ import {
   fail,
 } from "@std/assert";
 import fc from "fast-check";
-import { type Is, type } from "../test.ts";
+import { fcBin, fcNum, fcStr, type Is, type } from "../test.ts";
 import {
   type And,
   hasOwn,
@@ -111,39 +111,34 @@ Deno.test("lib.hasOwn :: Object.hasOwn", () => {
 
 const fcJson = fc.jsonValue() as fc.Arbitrary<Json>;
 Deno.test("pointer.enToken : reference token", () => {
-  fc.assert(fc.property(fc.string(), ($) => {
+  fc.assert(fc.property(fcStr(), ($) => {
     const encoded = enToken($);
     assertMatch(encoded, /^(?:~[01]|[^/~])*$/);
     assertEquals(encoded.length, $.length + ($.match(/[/~]/g)?.length ?? 0));
   }));
 });
 Deno.test("pointer.deToken : reference token", () => {
-  fc.assert(fc.property(fc.string(), ($) => {
+  fc.assert(fc.property(fcStr(), ($) => {
     assertEquals(deToken(enToken($)), $);
   }));
 });
 Deno.test("pointer.dereference : keys/indices", () => {
-  fc.assert(fc.property(
-    fc.string(),
-    fc.nat({ max: 1e2 }),
-    fcJson,
-    (key, index, value) => {
-      assertEquals(
-        dereference(
-          Array(index + 1).with(index, { [key]: value }),
-          `/${index}/${enToken(key)}`,
-        ),
-        value,
-      );
-      assertEquals(
-        dereference(
-          { [key]: Array(index + 1).with(index, value) },
-          `/${enToken(key)}/${index}`,
-        ),
-        value,
-      );
-    },
-  ));
+  fc.assert(fc.property(fcStr(), fc.nat({ max: 1e2 }), fcJson, (on, at, $) => {
+    assertEquals(
+      dereference(
+        Array(at + 1).with(at, { [on]: $ }),
+        `/${at}/${enToken(on)}`,
+      ),
+      $,
+    );
+    assertEquals(
+      dereference(
+        { [on]: Array(at + 1).with(at, $) },
+        `/${enToken(on)}/${at}`,
+      ),
+      $,
+    );
+  }));
 });
 Deno.test("pointer.dereference : empty pointer", () => {
   fc.assert(fc.property(fcJson, ($) => {
@@ -153,7 +148,7 @@ Deno.test("pointer.dereference : empty pointer", () => {
 Deno.test("pointer.dereference : invalid pointers", () => {
   fc.assert(fc.property(
     fcJson,
-    fc.stringMatching(/^.+(?:\/(?:~[01]|[^/~])*)*$/),
+    fcStr(/^.+(?:\/(?:~[01]|[^/~])*)*$/),
     ($, pointer) => {
       assertEquals(dereference($, pointer), undefined);
     },
@@ -161,8 +156,8 @@ Deno.test("pointer.dereference : invalid pointers", () => {
 });
 Deno.test("pointer.dereference : non-objects", () => {
   fc.assert(fc.property(
-    fc.oneof(fc.constant(null), fc.boolean(), fc.double(), fc.string()),
-    fc.stringMatching(/^(?:\/(?:~[01]|[^/~])*)+$/),
+    fc.oneof(fc.constant(null), fc.boolean(), fcNum(), fcStr()),
+    fcStr(/^(?:\/(?:~[01]|[^/~])*)+$/),
     ($, pointer) => {
       assertEquals(dereference($, pointer), undefined);
     },
@@ -171,7 +166,7 @@ Deno.test("pointer.dereference : non-objects", () => {
 Deno.test("pointer.dereference : non-numeric array indices", () => {
   fc.assert(fc.property(
     fc.array(fcJson),
-    fc.stringMatching(/^\/(?:\d*\D\d*|0\d=)(?:\/(?:~[01]|[^/~])*)*$/),
+    fcStr(/^\/(?:\d*\D\d*|0\d=)(?:\/(?:~[01]|[^/~])*)*$/),
     ($, pointer) => {
       assertEquals(dereference($, pointer), undefined);
     },
@@ -179,7 +174,7 @@ Deno.test("pointer.dereference : non-numeric array indices", () => {
 });
 Deno.test("pointer.dereference : missing keys", () => {
   fc.assert(fc.property(
-    fc.stringMatching(/^(?:\/(?:~[01]|[^/~])*)+$/).filter(($) =>
+    fcStr(/^(?:\/(?:~[01]|[^/~])*)+$/).filter(($) =>
       !(deToken($.slice(1)) in {})
     ),
     (pointer) => {
@@ -414,14 +409,13 @@ const not = (...value: Extract<Schema["type"], string>[]): Json[] =>
     ["array", []],
     ["object", {}],
   ] as const).filter(($) => !value.includes($[0])).map(($) => $[1]);
-const fcNumber = fc.double({ noDefaultInfinity: true, noNaN: true });
 const fcUnique = <A>($: fc.Arbitrary<A>) =>
   fc.uniqueArray($, {
     minLength: 2,
     comparator: "SameValueZero",
   }) as fc.Arbitrary<[A, A, ...A[]]>;
 const fcOrdered = <A extends number>(size: A, value?: fc.Arbitrary<number>) =>
-  fc.uniqueArray(value ?? fcNumber, {
+  fc.uniqueArray(value ?? fcNum(), {
     minLength: size,
     maxLength: size,
     comparator: "SameValueZero",
@@ -462,7 +456,7 @@ Deno.test("check.compile : Bit schemas", () => {
   });
 });
 Deno.test("check.compile : Int schemas", () => {
-  const fcInteger = fcNumber.map(Math.round);
+  const fcInteger = fcNum().map(Math.round);
   assertCheck({ schema: int(), ok: [0], no: { "/type~": not("integer") } });
   const fcEnum = fcUnique(fcInteger);
   assertCheck(fcEnum.map(([head, ...tail]) => ({
@@ -510,7 +504,7 @@ Deno.test("check.compile : Num schemas", () => {
     ok: [Number.MIN_VALUE],
     no: { "/type~": not("integer", "number") },
   });
-  const fcEnum = fcUnique(fcNumber);
+  const fcEnum = fcUnique(fcNum());
   assertCheck(fcEnum.map(([head, ...tail]) => ({
     schema: num(head),
     ok: [head],
@@ -521,7 +515,7 @@ Deno.test("check.compile : Num schemas", () => {
     ok: tail,
     no: { "/type~": [], "/enum~": [head] },
   })));
-  const fcPair = fcOrdered(2, fcNumber);
+  const fcPair = fcOrdered(2, fcNum());
   assertCheck(fcPair.map(([min, max]) => ({
     schema: num({ minimum: max }),
     ok: [max],
@@ -551,9 +545,8 @@ Deno.test("check.compile : Num schemas", () => {
   );
 });
 Deno.test("check.compile : Str schemas()", () => {
-  const fcString = fc.string({ unit: "grapheme", size: "medium" });
   assertCheck({ schema: str(), ok: [""], no: { "/type~": not("string") } });
-  const fcEnum = fcUnique(fcString);
+  const fcEnum = fcUnique(fcStr());
   assertCheck(fcEnum.map(([head, ...tail]) => ({
     schema: str(head),
     ok: [head],
@@ -575,11 +568,13 @@ Deno.test("check.compile : Str schemas()", () => {
     ok: ["\0".repeat(min)],
     no: { "/type~": [], "/maxLength~": ["\0".repeat(max)] },
   })));
-  assertCheck(fcString.map(($) => ({
-    schema: str({ pattern: `^${unrexp($)}$` }),
-    ok: [$],
-    no: { "/type~": [], "/pattern~": [$ + "\0"] },
-  })));
+  assertCheck(
+    fcStr().map(($) => ({
+      schema: str({ pattern: `^${unrexp($)}$` }),
+      ok: [$],
+      no: { "/type~": [], "/pattern~": [$ + "\0"] },
+    })),
+  );
   assertCheck({
     schema: str({ pattern: "\\" }),
     ok: [""],
@@ -600,7 +595,7 @@ Deno.test("check.compile : Str schemas()", () => {
       ),
     ...(["email", "uri", "uuid"] as const).reduce((to, key) => ({
       ...to,
-      [key]: fc.stringMatching(FORMATS[key]).map(($) => $.trim().normalize())
+      [key]: fcStr(FORMATS[key]).map(($) => $.trim().normalize())
         .filter(RegExp.prototype.test.bind(FORMATS[key])),
     }), {} as { [_ in "email" | "uri" | "uuid"]: fc.Arbitrary<string> }),
   };
@@ -613,7 +608,7 @@ Deno.test("check.compile : Str schemas()", () => {
           no: fc.record({
             "/type~": fc.constant(not("string")),
             "/format~": fc.tuple(
-              fc.string().filter(($) => !FORMATS[format].test($)),
+              fcStr().filter(($) => !FORMATS[format].test($)),
             ),
           }),
         })
@@ -631,11 +626,11 @@ Deno.test("check.compile : Str schemas()", () => {
       .chain((base) =>
         fc.record({
           schema: fc.constant(str({ contentEncoding: base })),
-          ok: fc.tuple(fc.uint8Array().map(bases[base])),
+          ok: fc.tuple(fcBin().map(bases[base])),
           no: fc.record({
             "/type~": fc.constant(not("string")),
             "/contentEncoding~": fc.tuple(
-              fc.string().filter(($) => !BASES[base].test($)),
+              fcStr().filter(($) => !BASES[base].test($)),
             ),
           }),
         })
@@ -709,7 +704,7 @@ Deno.test("check.compile : Arr schemas", () => {
     },
   });
   assertCheck(
-    fcUnique(fc.string()).map((keys) => (offset: number) =>
+    fcUnique(fcStr()).map((keys) => (offset: number) =>
       keys.reduce<{ [_: string]: number }>(
         (to, $, z) => ({ ...to, [$]: z + offset }),
         {},
@@ -764,7 +759,7 @@ Deno.test("check.compile : Obj schemas", () => {
     },
   });
   assertCheck(
-    fcUnique(fc.string()).map(([head, ...tail]) => ({
+    fcUnique(fcStr()).map(([head, ...tail]) => ({
       schema: obj(nil(), { propertyNames: str(head) }),
       ok: [{}, { [head]: null }],
       no: {
