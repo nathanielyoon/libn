@@ -10,6 +10,7 @@ export const get = async (
   (await (await fetch(
     `https://${$[0] === "/" ? "raw.githubusercontent.com" : ""}${$}`,
   )).text()).slice(min, max);
+/** Compresses or decompresses a buffer. */
 export const zip = async (
   $: BlobPart,
   stream: CompressionStream | DecompressionStream,
