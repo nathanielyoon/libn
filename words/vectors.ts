@@ -1,8 +1,11 @@
 import { get, set } from "../test.ts";
 
-import.meta.main && Promise.all([
+const [data] = await Promise.all([
   get`www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt`,
-]).then(([data]) =>
+]);
+
+await set(
+  import.meta,
   data.matchAll(
     /^([\dA-F]{4,6});[^;]*;((L[ult](?=;)|L(?=[mo];)|N(?=[dlo];))[modl]?)/gm,
   ).reduce<{ [_: string]: number[] }>((to, [, hex, subcategory, category]) => {
@@ -15,5 +18,5 @@ import.meta.main && Promise.all([
       "u",
     ).test(String.fromCodePoint(code)) && to[category].push(code);
     return to;
-  }, { Lu: [], Ll: [], Lt: [], L: [], N: [] })
-).then(set(import.meta));
+  }, { Lu: [], Ll: [], Lt: [], L: [], N: [] }),
+);
