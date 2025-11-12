@@ -1,4 +1,4 @@
-/** @module b64 */
+/** @module */
 import { de64, type Decode, en, type Encode, map } from "./lib.ts";
 
 const B64_BIN = /* @__PURE__ */ map(

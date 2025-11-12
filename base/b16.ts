@@ -1,4 +1,4 @@
-/** @module b16 */
+/** @module */
 import { type Decode, en, type Encode, map } from "./lib.ts";
 
 const B16_STR = /* @__PURE__ */ Array.from(

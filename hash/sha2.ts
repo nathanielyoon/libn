@@ -1,4 +1,4 @@
-/** @module sha2 */
+/** @module */
 import { type Hash, iv } from "./lib.ts";
 
 const STATE = /* @__PURE__ */ new Uint32Array(16);

@@ -1,4 +1,4 @@
-/** @module blake3 */
+/** @module */
 import { type Hash, perm } from "./lib.ts";
 
 const PERMUTE = /* @__PURE__ */ perm(

@@ -1,4 +1,4 @@
-/** @module stringify */
+/** @module */
 
 /** Encodes an array of rows to CSV. */
 export const enCsv = (($: any[][], check?: ($: unknown) => boolean) => {

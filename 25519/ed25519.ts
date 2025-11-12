@@ -1,4 +1,4 @@
-/** @module ed25519 */
+/** @module */
 import { sha512 } from "@libn/hash/sha2";
 import {
   add,

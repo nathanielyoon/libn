@@ -1,4 +1,4 @@
-/** @module pointer */
+/** @module */
 import type { Schema } from "@libn/json/schema";
 import { isArray, type Json } from "./lib.ts";
 

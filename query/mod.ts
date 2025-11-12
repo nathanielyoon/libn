@@ -1,4 +1,4 @@
-/** @module select */
+/** @module */
 /** @internal */
 type Html = HTMLElementTagNameMap;
 /** @internal */

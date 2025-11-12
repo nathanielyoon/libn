@@ -1,4 +1,4 @@
-/** @module z85 */
+/** @module */
 import { de85, type Decode, en85, type Encode, map } from "./lib.ts";
 
 const Z85_STR =

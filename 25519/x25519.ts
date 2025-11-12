@@ -1,4 +1,4 @@
-/** @module x25519 */
+/** @module */
 import { deBig, enBig, exp, mod, P, pow } from "./lib.ts";
 
 const F = /* @__PURE__ */ (() => ~(1n << 255n))(); // mask clears unused top bit

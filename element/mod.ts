@@ -1,4 +1,4 @@
-/** @module element */
+/** @module */
 /** @internal */
 type Props<A> = {
   style?: {

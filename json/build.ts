@@ -1,4 +1,4 @@
-/** @module build */
+/** @module */
 import type { Arr, Bit, Int, Num, Obj, Schema, Str } from "@libn/json/schema";
 import { isArray, type Only, type Tuple, type Writable } from "./lib.ts";
 

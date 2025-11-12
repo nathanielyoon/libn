@@ -1,4 +1,4 @@
-/** @module parse */
+/** @module */
 
 /** Parse options. */
 export interface ParseOptions<A> {

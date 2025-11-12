@@ -1,4 +1,4 @@
-/** @module c32 */
+/** @module */
 import { de32, type Decode, en, en32, type Encode, map } from "./lib.ts";
 
 const C32_STR = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";

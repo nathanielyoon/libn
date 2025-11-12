@@ -1,4 +1,4 @@
-/** @module signal */
+/** @module */
 import { dispose, drop, enlink, validate } from "./link.ts";
 import type {
   Derive,

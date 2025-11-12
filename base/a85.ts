@@ -1,4 +1,4 @@
-/** @module a85 */
+/** @module */
 import { de85, type Decode, en85, type Encode, map } from "./lib.ts";
 
 const A85_STR =

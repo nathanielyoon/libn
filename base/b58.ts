@@ -1,4 +1,4 @@
-/** @module b58 */
+/** @module */
 import { type Decode, en, type Encode, map } from "./lib.ts";
 
 const B58_STR = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";

@@ -1,4 +1,4 @@
-/** @module h32 */
+/** @module */
 import { de32, type Decode, en32, type Encode, map } from "./lib.ts";
 
 const H32_STR = "0123456789ABCDEFGHIJKLMNOPQRSTUV";

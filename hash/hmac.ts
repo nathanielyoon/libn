@@ -1,4 +1,4 @@
-/** @module hmac */
+/** @module */
 import type { Hash } from "./lib.ts";
 import { sha256 } from "@libn/hash/sha2";
 

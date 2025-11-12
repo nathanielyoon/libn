@@ -1,4 +1,4 @@
-/** @module words */
+/** @module */
 /** Pattern for a word. */
 export const WORD: RegExp =
   /\p{Lu}?\p{Ll}+|\p{N}+|\p{Lu}+(?!\p{Ll})|\p{Lt}\p{Ll}*|\p{L}+/gu;

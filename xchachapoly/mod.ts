@@ -1,4 +1,4 @@
-/** @module xchachapoly */
+/** @module */
 import { polyXchacha, xchachaPoly } from "./aead.ts";
 import { hchacha, xor } from "./chacha.ts";
 

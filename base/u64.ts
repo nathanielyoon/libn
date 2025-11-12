@@ -1,4 +1,4 @@
-/** @module u64 */
+/** @module */
 import { de64, type Decode, type Encode, map } from "./lib.ts";
 
 const U64_STR =

@@ -1,4 +1,4 @@
-/** @module blake2 */
+/** @module */
 import { type Hash, iv, perm } from "./lib.ts";
 
 const STATE = /* @__PURE__ */ new Uint32Array(16);

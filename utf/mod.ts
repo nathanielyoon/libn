@@ -1,4 +1,4 @@
-/** @module utf */
+/** @module */
 import codes from "./codes.json" with { type: "json" };
 
 /** Converts UTF-8 to binary. */
