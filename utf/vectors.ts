@@ -1,9 +1,11 @@
 import { get, set } from "../test.ts";
 
-import.meta.main && Promise.all([
+const [rfc9839, fold] = await Promise.all([
   get`www.rfc-editor.org/rfc/rfc9839.txt${14538}${15597}`,
   get`www.unicode.org/Public/UNIDATA/CaseFolding.txt${2990}${87528}`,
-]).then(([rfc9839, fold]) => ({
+]);
+
+await set(import.meta, {
   uncode: new Uint8Array(
     rfc9839.match(/(?<=%x)\w+(?:-\w+)?/g)!.reduce((to, hex) => {
       const range = hex.split("-").map(($) => parseInt($, 16));
@@ -19,4 +21,4 @@ import.meta.main && Promise.all([
       to[1],
     ),
   ], ["", ""]),
-})).then(set(import.meta));
+});
