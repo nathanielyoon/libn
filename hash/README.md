@@ -1,36 +1,23 @@
 # @libn/aead
 
-Cryptographic and non-cryptographic hash functions.
-
-```sh
-deno add jsr:@libn/hash
-
-npx jsr add @libn/hash
-npm install @libn/hash
-
-bunx jsr add @libn/hash
-bun add @libn/hash
-```
-
-- [RFC 6234](https://www.rfc-editor.org/rfc/rfc6234)
-- [RFC 2104](https://www.rfc-editor.org/rfc/rfc2104)
-- [RFC 5869](https://www.rfc-editor.org/rfc/rfc5869)
-- [RFC 7693](https://www.rfc-editor.org/rfc/rfc7693)
-- [BLAKE3](https://github.com/BLAKE3-team/BLAKE3)
+Cryptographic hash functions.
 
 ## sha2
 
+[SHA-224, SHA-256, SHA-384, and SHA-512](https://www.rfc-editor.org/rfc/rfc6234).
+
 ```ts
-import { sha256 } from "@libn/hash/sha2"; // or sha256
+import { sha256 } from "@libn/hash/sha2";
 import { assertEquals } from "@std/assert";
 
 const data = crypto.getRandomValues(new Uint8Array(100));
-
-// Same as Web Crypto, but sync
 assertEquals(sha256(data).buffer, await crypto.subtle.digest("SHA-256", data));
 ```
 
 ## hmac
+
+[HMAC-SHA256](https://www.rfc-editor.org/rfc/rfc2104) and
+[HKDF-SHA256](https://www.rfc-editor.org/rfc/rfc5869).
 
 ```ts
 import { hkdf, hmac } from "@libn/hash/hmac";
@@ -38,8 +25,6 @@ import { assertEquals } from "@std/assert";
 
 const key = crypto.getRandomValues(new Uint8Array(32));
 const data = crypto.getRandomValues(new Uint8Array(100));
-
-// HMAC-SHA256 only
 assertEquals(
   hmac(key, data).buffer,
   await crypto.subtle.sign(
@@ -54,8 +39,6 @@ assertEquals(
     data,
   ),
 );
-
-// HKDF-SHA256 only
 assertEquals(
   hkdf(key).buffer,
   await crypto.subtle.deriveBits(
@@ -73,21 +56,22 @@ assertEquals(
 
 ## blake2
 
+[BLAKE2s and BLAKE2b](https://www.rfc-editor.org/rfc/rfc7693).
+
 ```ts
 import { blake2b, blake2s } from "@libn/hash/blake2";
 import { assertEquals } from "@std/assert";
 import { crypto } from "@std/crypto";
 
 const data = crypto.getRandomValues(new Uint8Array(100));
-
-// BLAKE2s (32-bit)
 assertEquals(blake2s(data).buffer, await crypto.subtle.digest("BLAKE2S", data));
-
-// BLAKE2b (64-bit)
 assertEquals(blake2b(data).buffer, await crypto.subtle.digest("BLAKE2B", data));
 ```
 
 ## blake3
+
+[BLAKE3](https://github.com/BLAKE3-team/BLAKE3) hashing, keyed hashing, and key
+derivation.
 
 ```ts
 import { blake3 } from "@libn/hash/blake3";
