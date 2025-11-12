@@ -3,7 +3,7 @@ import { generate, sign, verify } from "@libn/25519/ed25519";
 import { derive, exchange, ladder } from "@libn/25519/x25519";
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
-import { fcBin, get, set } from "../test.ts";
+import { fcBin } from "../test.ts";
 import { deBig, enBig, mod } from "./lib.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
@@ -216,89 +216,3 @@ Deno.test("ed25519.verify : bad points", () => {
     assertEquals(verify(zero32, zero32, $), false);
   }
 });
-
-import.meta.main && Promise.all([
-  get`www.rfc-editor.org/rfc/rfc7748.txt`.then(($) => ({
-    "5.2.1": Array.from(
-      $.slice(18300, 19695).matchAll(
-        /scalar:\s*(?<secret>[\da-f]{64}).*?coordinate:\s*(?<public>[\da-f]{64}).*?coordinate:\s*(?<shared>[\da-f]{64})/gs,
-      ),
-      ({ groups }) => groups!,
-    ),
-    "5.2.2": $.slice(21688, 22554).match(/\b[\da-f]{64}\b/g)!,
-    "6.1": $.slice(23217, 25093).match(/\b[\da-f]{64}\b/g)!,
-  })),
-  get`www.rfc-editor.org/rfc/rfc8032.txt${46947}${52155}`.then(($) =>
-    Array.from(
-      $.replace(/\n{3}.+?\n\f\n.+?\n{3}/g, "").matchAll(
-        /SECRET KEY:\s*([\da-f]{32}\s*[\da-f]{32}\n).*?PUBLIC KEY:\s*([\da-f]{32}\s*[\da-f]{32}\n).*?MESSAGE \(length \d+ bytes?\):\n((?: {3}(?:[\da-f]{2})+\n)*).*?SIGNATURE:\s*([\da-f]{32}\s*[\da-f]{32}\s*[\da-f]{32}\s*[\da-f]{32}\n)/gs,
-      ).map((all) => all.slice(1).map((group) => group.replace(/\s+/g, ""))),
-      ([secretKey, publicKey, message, signature]) => (
-        { secret: secretKey, public: publicKey, message, signature }
-      ),
-    )
-  ),
-  get`/C2SP/wycheproof/6b17607867ce8e3c3a2a4e1e35ccc3b42bfd75e3/testvectors_v1/x25519_test.json`,
-  get`/C2SP/wycheproof/0d2dab394df1eb05b0865977f7633d010a98bccd/testvectors_v1/ed25519_test.json`,
-]).then(([rfc7748, rfc8032, x25519, ed25519]) => ({
-  ladder: {
-    k: rfc7748["5.2.2"][0],
-    u: rfc7748["5.2.2"][0],
-    after: [
-      { iterations: 1e0, k: rfc7748["5.2.2"][1] },
-      { iterations: 1e3, k: rfc7748["5.2.2"][2] },
-      { iterations: 1e6, k: rfc7748["5.2.2"][3] },
-    ],
-  },
-  derive: [
-    { secret: rfc7748["6.1"][0], public: rfc7748["6.1"][1] },
-    { secret: rfc7748["6.1"][2], public: rfc7748["6.1"][3] },
-  ],
-  exchange: [
-    ...rfc7748["5.2.1"],
-    {
-      secret: rfc7748["6.1"][0],
-      public: rfc7748["6.1"][3],
-      shared: rfc7748["6.1"][4],
-    },
-    {
-      secret: rfc7748["6.1"][2],
-      public: rfc7748["6.1"][1],
-      shared: rfc7748["6.1"][4],
-    },
-    ...JSON.parse(x25519).testGroups.flatMap((group: {
-      tests: { private: string; public: string; shared: string }[];
-    }) =>
-      group.tests.map(($) => ({
-        secret: $.private,
-        public: $.public,
-        shared: /^0{64}$/.test($.shared) ? null : $.shared,
-      }))
-    ),
-  ],
-  generate: rfc8032.map(($) => ({ secret: $.secret, public: $.public })),
-  sign: rfc8032.map(($) => ({
-    secret: $.secret,
-    message: $.message,
-    signature: $.signature,
-  })),
-  verify: [
-    ...rfc8032.map(($) => ({
-      public: $.public,
-      message: $.message,
-      signature: $.signature,
-      result: true,
-    })),
-    ...JSON.parse(ed25519).testGroups.flatMap((group: {
-      publicKey: { pk: string };
-      tests: { msg: string; sig: string; result: "valid" | "invalid" }[];
-    }) =>
-      group.tests.map(($) => ({
-        public: group.publicKey.pk,
-        message: $.msg,
-        signature: $.sig,
-        result: $.result === "valid",
-      }))
-    ),
-  ],
-})).then(set(import.meta));
