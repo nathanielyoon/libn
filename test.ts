@@ -10,6 +10,13 @@ export const get = async (
   (await (await fetch(
     `https://${$[0] === "/" ? "raw.githubusercontent.com" : ""}${$}`,
   )).text()).slice(min, max);
+export const zip = async (
+  $: BlobPart,
+  stream: CompressionStream | DecompressionStream,
+): Promise<Uint8Array<ArrayBuffer>> =>
+  new Uint8Array((await Array.fromAsync(
+    new Blob([$]).stream().pipeThrough(stream),
+  )).flatMap(($) => [...$]));
 /** Writes test vectors. */
 export const set = (at: ImportMeta, $: any): Promise<void> =>
   Deno.writeTextFile(new URL(at.resolve("./vectors.json")), JSON.stringify($));
