@@ -223,21 +223,21 @@ Deno.test("ed25519.verify : bad points", () => {
 });
 
 import.meta.main && Promise.all([
-  get`www.rfc-editor.org/rfc/rfc7748.txt`.then((rfc7748) => ({
+  get`www.rfc-editor.org/rfc/rfc7748.txt`.then(($) => ({
     "5.2.1": Array.from(
-      rfc7748.slice(18300, 19695).matchAll(
+      $.slice(18300, 19695).matchAll(
         /scalar:\s*(?<secret>[\da-f]{64}).*?coordinate:\s*(?<public>[\da-f]{64}).*?coordinate:\s*(?<shared>[\da-f]{64})/gs,
       ),
-      ($) => $.groups!,
+      ({ groups }) => groups!,
     ),
-    "5.2.2": rfc7748.slice(21688, 22554).match(/\b[\da-f]{64}\b/g)!,
-    "6.1": rfc7748.slice(23217, 25093).match(/\b[\da-f]{64}\b/g)!,
+    "5.2.2": $.slice(21688, 22554).match(/\b[\da-f]{64}\b/g)!,
+    "6.1": $.slice(23217, 25093).match(/\b[\da-f]{64}\b/g)!,
   })),
-  get`www.rfc-editor.org/rfc/rfc8032.txt${46947}${52155}`.then((rfc8032) =>
+  get`www.rfc-editor.org/rfc/rfc8032.txt${46947}${52155}`.then(($) =>
     Array.from(
-      rfc8032.replace(/\n{3}.+?\n\f\n.+?\n{3}/g, "").matchAll(
+      $.replace(/\n{3}.+?\n\f\n.+?\n{3}/g, "").matchAll(
         /SECRET KEY:\s*([\da-f]{32}\s*[\da-f]{32}\n).*?PUBLIC KEY:\s*([\da-f]{32}\s*[\da-f]{32}\n).*?MESSAGE \(length \d+ bytes?\):\n((?: {3}(?:[\da-f]{2})+\n)*).*?SIGNATURE:\s*([\da-f]{32}\s*[\da-f]{32}\s*[\da-f]{32}\s*[\da-f]{32}\n)/gs,
-      ).map((match) => match.slice(1).map(($) => $.replace(/\s+/g, ""))),
+      ).map((all) => all.slice(1).map((group) => group.replace(/\s+/g, ""))),
       ([secretKey, publicKey, message, signature]) => (
         { secret: secretKey, public: publicKey, message, signature }
       ),
