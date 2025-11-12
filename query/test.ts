@@ -3,13 +3,13 @@ import { queryEvery, queryFirst } from "@libn/query";
 import { assertStrictEquals } from "@std/assert";
 import fc from "fast-check";
 import { parseHTML } from "linkedom";
-import { type } from "../test.ts";
+import { fcStr, type } from "../test.ts";
 
 Deno.test.beforeAll(() => {
   globalThis.document = parseHTML("").document;
 });
-const fcText = fc.stringMatching(/^[^'&"<>]*$/);
-const fcId = fc.stringMatching(/^[a-z]$/);
+const fcText = fcStr(/^[^'&"<>]*$/);
+const fcId = fcStr(/^[a-z]$/);
 const fcHtml = fc.letrec<{ element: Element }>((tie) => ({
   element: fc.tuple(
     fcId,
