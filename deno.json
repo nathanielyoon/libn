@@ -50,7 +50,8 @@
         "no-invalid-regexp"
       ],
       "tags": ["recommended", "jsr", "workspace"]
-    }
+    },
+    "plugins": ["./lint.ts"]
   },
   "permissions": {
     "vectors": {

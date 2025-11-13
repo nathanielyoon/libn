@@ -131,6 +131,7 @@ const make = <A extends Kind>(kind: A, flags: number, $: any) => {
 export type Getter<A> = () => A;
 /** Reactive setter. */
 export type Setter<A> = <const B extends A>(next: B | ((prev: A) => B)) => B;
+// deno-lint-ignore libn/naming-convention
 function Signal<A>(this: Signal<A>, ...$: [A]) {
   // Checking the rest parameter's length distinguishes between setting an
   // explicit undefined or getting by calling without arguments.
@@ -159,6 +160,7 @@ export const signal =
         options?: { is?: Is<A | undefined, A | undefined> },
       ): Getter<A | undefined> & Setter<A | undefined>;
     };
+// deno-lint-ignore libn/naming-convention
 function Derive<A>(this: Derive<A>) {
   switch (this.flags & 0b0001100) {
     case 0b0000000:

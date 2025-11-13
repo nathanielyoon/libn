@@ -92,7 +92,7 @@ Deno.test("effect :: alien-signals effect", () => {
     effect(() => {
       if (b()) {
         effect(() => {
-          if (a() === 0) throw new Error("bad");
+          if (a() === 0) throw new Error();
         });
       }
     });
@@ -107,7 +107,7 @@ Deno.test("effect :: alien-signals effect", () => {
       if (a()) {
         effect(() => {
           b();
-          if (a() === 0) throw new Error("bad");
+          if (a() === 0) throw new Error();
         });
       }
     });
@@ -124,7 +124,7 @@ Deno.test("effect :: alien-signals effect", () => {
       effect(() => {
         b();
         innerTriggerTimes++;
-        if (innerTriggerTimes >= 2) throw new Error("bad");
+        if (innerTriggerTimes >= 2) throw new Error();
       });
     });
     a(2);
@@ -338,6 +338,7 @@ Deno.test("derive : alien-signals issue_48 test", () => {
     scheduler?: (fn: () => void) => void;
     once?: boolean;
   }
+  // deno-lint-ignore libn/prefer-arrow
   function reaction<T>(
     dataFn: () => T,
     effectFn: (newValue: T, oldValue: T | undefined) => void,
@@ -386,6 +387,7 @@ Deno.test("derive : alien-signals issue_48 test", () => {
     });
     return dispose;
   }
+  // deno-lint-ignore libn/prefer-arrow
   function untracked<T>(callback: () => T): T {
     const currentSub = activate(null);
     try {
@@ -673,7 +675,7 @@ Deno.test("effect : most preact effect tests", () => {
       } catch {
         return;
       }
-      throw Error("ok");
+      throw Error();
     });
   }
   { // should allow disposing a running effect
@@ -816,7 +818,7 @@ Deno.test("derive : most preact computed tests", () => {
     const a = signal(0);
     const b = derive(() => {
       a();
-      throw new Error("error");
+      throw new Error();
     });
     const c = derive(() => {
       try {
@@ -1179,23 +1181,23 @@ Deno.test("derive : most preact computed tests", () => {
   { // should keep graph consistent on errors during activation
     const a = signal(0);
     const b = derive(() => {
-      throw new Error("fail");
+      throw new Error("Fail");
     });
     const c = derive(() => a());
-    assertThrows(() => b(), Error, "fail");
+    assertThrows(() => b(), Error, "Fail");
     a(1);
     assertEquals(c(), 1);
   }
   { // should keep graph consistent on errors in computeds
     const a = signal(0);
     const b = derive(() => {
-      if (a() === 1) throw new Error("fail");
+      if (a() === 1) throw new Error("Fail");
       return a();
     });
     const c = derive(() => b());
     assertEquals(c(), 0);
     a(1);
-    assertThrows(() => b(), Error, "fail");
+    assertThrows(() => b(), Error, "Fail");
     a(2);
     assertEquals(c(), 2);
   }
@@ -1242,10 +1244,10 @@ Deno.test("batch : most preact batch/transaction tests", () => {
     assertThrows(
       () =>
         batch(() => {
-          throw Error("hello");
+          throw Error("Hello");
         }),
       Error,
-      "hello",
+      "Hello",
     );
   }
   { // should throw non-errors thrown from the callback
@@ -1381,10 +1383,10 @@ Deno.test("batch : most preact batch/transaction tests", () => {
         batch(() => {
           a(($) => $ + 1);
           b(($) => $ + 1);
-          throw Error("hello");
+          throw Error("Hello");
         }),
       Error,
-      "hello",
+      "Hello",
     );
     assertSpyCalls(spy1, 1);
     assertSpyCalls(spy2, 1);
