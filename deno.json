@@ -33,6 +33,7 @@
         "camelcase",
         "eqeqeq",
         "no-console",
+        "no-eval",
         "no-external-import",
         "no-self-compare",
         "no-sparse-arrays",
