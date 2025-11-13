@@ -66,14 +66,15 @@ export const double = ($: bigint): bigint => {
   const i = g - (c * c % P << 1n) % P, j = (a + b) ** 2n % P - d - f, k = i * j;
   return mod(k) | mod(g * h) << 256n | mod(g * i) << 512n | mod(h * j) << 768n;
 };
-const G = /* @__PURE__ */ Array<bigint>(4224);
-/* @__PURE__ */ (() => {
+const G = /* @__PURE__ */ (() => {
+  const points = Array<bigint>(4224);
   let point = X | Y << 256n | Z1 | X * Y % P << 768n, z = 0;
   do {
-    let y = 0, temp = G[z++] = point;
-    do G[z++] = temp = add(temp, point); while (++y < 127);
+    let y = 0, temp = points[z++] = point;
+    do points[z++] = temp = add(temp, point); while (++y < 127);
     point = double(temp);
   } while (z < 4224);
+  return points;
 })();
 /** Multiplies the base point by a scalar. */
 export const wnaf = ($: bigint): { a: bigint; _: bigint } => {
