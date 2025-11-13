@@ -5,9 +5,7 @@ import fc from "fast-check";
 import { parseHTML } from "linkedom";
 import { fcStr, type } from "../test.ts";
 
-Deno.test.beforeAll(() => {
-  globalThis.document = parseHTML("").document;
-});
+globalThis.document = parseHTML("").document;
 const fcText = fcStr(/^[^'&"<>]*$/);
 const fcId = fcStr(/^[a-z]$/);
 const fcHtml = fc.letrec<{ element: Element }>((tie) => ({
