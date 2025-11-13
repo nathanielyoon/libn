@@ -56,7 +56,7 @@ Deno.test("x25519.ladder : vectors", () => {
     if (step.iterations > 1) break;
   }
 });
-Deno.test("x25519.derive : reference vectors", () => {
+Deno.test("x25519.derive : vectors", () => {
   for (const $ of vectors.derive) {
     assertEquals(
       derive(Uint8Array.fromHex($.secret)),
