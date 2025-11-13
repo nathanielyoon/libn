@@ -31,7 +31,7 @@ import {
   fail,
 } from "@std/assert";
 import fc from "fast-check";
-import { fcBin, fcNum, fcStr, type Is, type } from "../test.ts";
+import { fcBin, fcStr, type Is, type } from "../test.ts";
 import {
   type And,
   hasOwn,
@@ -110,6 +110,7 @@ Deno.test("lib.hasOwn :: Object.hasOwn", () => {
 });
 
 const fcJson = fc.jsonValue() as fc.Arbitrary<Json>;
+const fcNumber = fc.double({ noDefaultInfinity: true, noNaN: true });
 Deno.test("pointer.enToken : reference token", () => {
   fc.assert(fc.property(fcStr(), ($) => {
     const encoded = enToken($);
@@ -156,7 +157,7 @@ Deno.test("pointer.dereference : invalid pointers", () => {
 });
 Deno.test("pointer.dereference : non-objects", () => {
   fc.assert(fc.property(
-    fc.oneof(fc.constant(null), fc.boolean(), fcNum(), fcStr()),
+    fc.oneof(fc.constant(null), fc.boolean(), fcNumber, fcStr()),
     fcStr(/^(?:\/(?:~[01]|[^/~])*)+$/),
     ($, pointer) => {
       assertEquals(dereference($, pointer), undefined);
@@ -415,7 +416,7 @@ const fcUnique = <A>($: fc.Arbitrary<A>) =>
     comparator: "SameValueZero",
   }) as fc.Arbitrary<[A, A, ...A[]]>;
 const fcOrdered = <A extends number>(size: A, value?: fc.Arbitrary<number>) =>
-  fc.uniqueArray(value ?? fcNum(), {
+  fc.uniqueArray(value ?? fcNumber, {
     minLength: size,
     maxLength: size,
     comparator: "SameValueZero",
@@ -456,7 +457,7 @@ Deno.test("check.compile : Bit schemas", () => {
   });
 });
 Deno.test("check.compile : Int schemas", () => {
-  const fcInteger = fcNum().map(Math.round);
+  const fcInteger = fcNumber.map(Math.round);
   assertCheck({ schema: int(), ok: [0], no: { "/type~": not("integer") } });
   const fcEnum = fcUnique(fcInteger);
   assertCheck(fcEnum.map(([head, ...tail]) => ({
@@ -504,7 +505,7 @@ Deno.test("check.compile : Num schemas", () => {
     ok: [Number.MIN_VALUE],
     no: { "/type~": not("integer", "number") },
   });
-  const fcEnum = fcUnique(fcNum());
+  const fcEnum = fcUnique(fcNumber);
   assertCheck(fcEnum.map(([head, ...tail]) => ({
     schema: num(head),
     ok: [head],
@@ -515,7 +516,7 @@ Deno.test("check.compile : Num schemas", () => {
     ok: tail,
     no: { "/type~": [], "/enum~": [head] },
   })));
-  const fcPair = fcOrdered(2, fcNum());
+  const fcPair = fcOrdered(2, fcNumber);
   assertCheck(fcPair.map(([min, max]) => ({
     schema: num({ minimum: max }),
     ok: [max],

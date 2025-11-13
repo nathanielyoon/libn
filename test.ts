@@ -23,9 +23,6 @@ export const set = (at: ImportMeta, $: any): Promise<void> =>
   Deno.writeTextFile(new URL(at.resolve("./vectors.json")), JSON.stringify($));
 /** @internal */
 type Fc<A, B> = A extends ($?: infer C) => infer D ? ($?: C | B) => D : never;
-/** Creates a number arbitrary. */
-export const fcNum: Fc<typeof fc.double, never> = ($) =>
-  fc.double({ noDefaultInfinity: true, noNaN: true, ...$ });
 /** Creates a string arbitrary. */
 export const fcStr: Fc<typeof fc.string, RegExp | string> = ($) =>
   $ instanceof RegExp || typeof $ === "string"
