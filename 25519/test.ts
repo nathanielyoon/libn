@@ -76,7 +76,9 @@ Deno.test("x25519.derive :: built-in generateKey", async () => {
   const { keys } = await generateExport("X");
   assertEquals(derive(keys.secret), keys.public);
 });
-Deno.test("x25519.exchange :: built-in deriveBits", async () => {
+Deno.test("x25519.exchange :: built-in deriveBits", {
+  ignore: (globalThis as any).process.versions.bun,
+}, async () => {
   await fc.assert(
     fc.asyncProperty(fcBin(32), fcBin(32), async (key1, key2) => {
       const public1 = derive(key1), public2 = derive(key2);
