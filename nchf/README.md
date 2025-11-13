@@ -37,11 +37,13 @@ a5hash64(new Uint8Array([0, 1, 2, 4]), 0n); // c6ab2ffce1a74b56
 ```ts
 import { halfsiphash32, halfsiphash64 } from "@libn/nchf/halfsiphash";
 
-halfsiphash32(new Uint8Array([0, 1, 2, 3]), new Uint8Array(8).fill(0)); // abeeaa6d
-halfsiphash32(new Uint8Array([0, 1, 2, 3]), new Uint8Array(8).fill(1)); // f167aa09
-halfsiphash32(new Uint8Array([0, 1, 2, 4]), new Uint8Array(8).fill(0)); // 26affe00
+const key0 = new Uint8Array(8);
+const key1 = key0.with(0, 1);
+halfsiphash32(new Uint8Array([0, 1, 2, 3]), key0); // abeeaa6d
+halfsiphash32(new Uint8Array([0, 1, 2, 3]), key1); // f167aa09
+halfsiphash32(new Uint8Array([0, 1, 2, 4]), key0); // 26affe00
 
-halfsiphash64(new Uint8Array([0, 1, 2, 3]), new Uint8Array(8).fill(0)); // 5ad7d3cf8dcbf2b9
-halfsiphash64(new Uint8Array([0, 1, 2, 3]), new Uint8Array(8).fill(1)); // a2c6ee6ab51b12fa
-halfsiphash64(new Uint8Array([0, 1, 2, 4]), new Uint8Array(8).fill(0)); // 6dbe762a1eb369ba
+halfsiphash64(new Uint8Array([0, 1, 2, 3]), key0); // 5ad7d3cf8dcbf2b9
+halfsiphash64(new Uint8Array([0, 1, 2, 3]), key1); // a2c6ee6ab51b12fa
+halfsiphash64(new Uint8Array([0, 1, 2, 4]), key0); // 6dbe762a1eb369ba
 ```
