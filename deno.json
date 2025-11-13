@@ -37,6 +37,7 @@
         "no-external-import",
         "no-self-compare",
         "no-sparse-arrays",
+        "no-throw-literal",
         "no-useless-rename",
         "prefer-ascii"
       ],

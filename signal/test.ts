@@ -1250,7 +1250,7 @@ Deno.test("batch : most preact batch/transaction tests", () => {
   }
   { // should throw non-errors thrown from the callback
     try {
-      batch(() => {
+      batch(() => { // deno-lint-ignore no-throw-literal
         throw undefined;
       });
       fail();
