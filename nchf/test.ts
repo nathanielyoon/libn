@@ -14,28 +14,20 @@ const ffi = async <const A extends Deno.ForeignLibraryInterface[string]>(
   const url = await Deno.makeTempFile();
   await Deno.writeFile(
     url,
-    await zip(
-      Uint8Array.fromBase64(source),
-      new DecompressionStream("gzip"),
-    ),
+    await zip(Uint8Array.fromBase64(source), new DecompressionStream("gzip")),
   );
   return [Deno.dlopen(url, { ffi: symbol }), url] as const;
 };
-const fcU32 = fc.double({
-  min: 0,
-  max: -1 >>> 0,
-  noDefaultInfinity: true,
-  noNaN: true,
-}).map(($) => $ >>> 0);
-const fcU64 = fc.bigInt({ min: 0n, max: (1n << 64n) - 1n }).map(($) => ({
-  bigint: $,
-  number: deBig($),
-}));
 const enBig = ($: U64) => BigInt($.hi) << 32n | BigInt($.lo);
 const deBig = ($: bigint) => (
   { hi: Number($ >> 32n), lo: Number($ & 0xffffffffn) } satisfies U64
 );
-const ignore = !Deno.dlopen;
+const fcU32 = fc.nat({ max: -1 >>> 0 });
+const fcU64 = fc.bigInt({ min: 0n, max: (1n << 64n) - 1n }).map(($) => ({
+  bigint: $,
+  number: deBig($),
+}));
+const ignore = { ignore: !Deno.dlopen };
 
 Deno.test("lib.umul32 : 32-bit integers", () => {
   fc.assert(fc.property(fcU32, fcU32, (one, two) => {
@@ -53,7 +45,7 @@ Deno.test("lib.umul64 : 64-bit integers", () => {
   }));
 });
 
-Deno.test("oaat.oaat32 :: original GoodOAAT", { ignore }, async () => {
+Deno.test("oaat.oaat32 :: GoodOAAT.cpp", ignore, async () => {
   const [lib, url] = await ffi(vectors.oaat32, {
     parameters: ["buffer", "usize", "u32"],
     result: "u32",
@@ -64,7 +56,7 @@ Deno.test("oaat.oaat32 :: original GoodOAAT", { ignore }, async () => {
   lib.close(), await Deno.remove(url);
 });
 
-Deno.test("a5hash.a5hash32 :: original a5hash32", { ignore }, async () => {
+Deno.test("a5hash.a5hash32 :: a5hash.h", ignore, async () => {
   const [lib, url] = await ffi(vectors.a5hash32, {
     parameters: ["buffer", "usize", "u32"],
     result: "u32",
@@ -74,7 +66,7 @@ Deno.test("a5hash.a5hash32 :: original a5hash32", { ignore }, async () => {
   }));
   lib.close(), await Deno.remove(url);
 });
-Deno.test("a5hash.a5hash64 :: original a5hash", { ignore }, async () => {
+Deno.test("a5hash.a5hash64 :: a5hash.h", ignore, async () => {
   const [lib, url] = await ffi(vectors.a5hash64, {
     parameters: ["buffer", "usize", "u64"],
     result: "u64",
@@ -106,45 +98,37 @@ Deno.test("halfsiphash : vectors", () => {
     );
   }
 });
-Deno.test(
-  "halfsiphash.halfsiphash32 :: original halfsiphash32",
-  { ignore },
-  async () => {
-    const [lib, url] = await ffi(vectors.halfsiphash32, {
-      parameters: ["buffer", "usize", "buffer"],
-      result: "u32",
-    });
-    fc.assert(fc.property(
-      fc.uint8Array({ size: "large" }),
-      fc.uint8Array({ minLength: 8, maxLength: 8 }),
-      ($, key) => {
-        assertEquals(
-          halfsiphash32($, key),
-          lib.symbols.ffi($, BigInt($.length), key),
-        );
-      },
-    ));
-    lib.close(), await Deno.remove(url);
-  },
-);
-Deno.test(
-  "halfsiphash.halfsiphash64 :: original halfsiphash64",
-  { ignore },
-  async () => {
-    const [lib, url] = await ffi(vectors.halfsiphash64, {
-      parameters: ["buffer", "usize", "buffer"],
-      result: "u64",
-    });
-    fc.assert(fc.property(
-      fc.uint8Array({ size: "large" }),
-      fc.uint8Array({ minLength: 8, maxLength: 8 }),
-      ($, key) => {
-        assertEquals(
-          halfsiphash64($, key),
-          lib.symbols.ffi($, BigInt($.length), key),
-        );
-      },
-    ));
-    lib.close(), await Deno.remove(url);
-  },
-);
+Deno.test("halfsiphash.halfsiphash32 :: halfsiphash.c", ignore, async () => {
+  const [lib, url] = await ffi(vectors.halfsiphash32, {
+    parameters: ["buffer", "usize", "buffer"],
+    result: "u32",
+  });
+  fc.assert(fc.property(
+    fc.uint8Array({ size: "large" }),
+    fc.uint8Array({ minLength: 8, maxLength: 8 }),
+    ($, key) => {
+      assertEquals(
+        halfsiphash32($, key),
+        lib.symbols.ffi($, BigInt($.length), key),
+      );
+    },
+  ));
+  lib.close(), await Deno.remove(url);
+});
+Deno.test("halfsiphash.halfsiphash64 :: halfsiphash.c", ignore, async () => {
+  const [lib, url] = await ffi(vectors.halfsiphash64, {
+    parameters: ["buffer", "usize", "buffer"],
+    result: "u64",
+  });
+  fc.assert(fc.property(
+    fc.uint8Array({ size: "large" }),
+    fc.uint8Array({ minLength: 8, maxLength: 8 }),
+    ($, key) => {
+      assertEquals(
+        halfsiphash64($, key),
+        lib.symbols.ffi($, BigInt($.length), key),
+      );
+    },
+  ));
+  lib.close(), await Deno.remove(url);
+});
