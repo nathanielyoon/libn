@@ -39,7 +39,8 @@
         "no-sparse-arrays",
         "no-throw-literal",
         "no-useless-rename",
-        "prefer-ascii"
+        "prefer-ascii",
+        "triple-slash-reference"
       ],
       "exclude": [
         "ban-types",
