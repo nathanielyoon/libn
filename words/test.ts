@@ -23,7 +23,6 @@ const fcWords = fc.array(
     fc.tuple(codes.Lt, fc.array(codes.Ll)),
     fc.array(codes.L, { minLength: 1 }),
   ).map((letters) => letters.flat().join("")),
-  { minLength: 1 },
 ).map((words) => ({ all: words, one: ["", ...words, ""].join(" ") }));
 const first = (delimiter: string) => (to: string, next: string) => {
   const [head = "", ...tail] = next;
@@ -31,39 +30,33 @@ const first = (delimiter: string) => (to: string, next: string) => {
 };
 
 Deno.test("lowerCamel : words", () => {
-  assertEquals(lowerCamel(""), "");
   fc.assert(fc.property(fcWords, ({ all: [head = "", ...tail], one }) => {
     assertEquals(lowerCamel(one), tail.reduce(first(""), head.toLowerCase()));
   }));
 });
 Deno.test("upperCamel : words", () => {
-  assertEquals(upperCamel(""), "");
   fc.assert(fc.property(fcWords, ({ all, one }) => {
     assertEquals(upperCamel(one), all.reduce(first(""), ""));
   }));
 });
 
 Deno.test("lowerKebab : words", () => {
-  assertEquals(lowerKebab(""), "");
   fc.assert(fc.property(fcWords, ({ all, one }) => {
     assertEquals(lowerKebab(one), all.join("-").toLowerCase());
   }));
 });
 Deno.test("upperKebab : words", () => {
-  assertEquals(upperKebab(""), "");
   fc.assert(fc.property(fcWords, ({ all, one }) => {
     assertEquals(upperKebab(one), all.reduce(first("-"), "").slice(1));
   }));
 });
 
 Deno.test("lowerSnake : words", () => {
-  assertEquals(lowerSnake(""), "");
   fc.assert(fc.property(fcWords, ({ all, one }) => {
     assertEquals(lowerSnake(one), all.join("_").toLowerCase());
   }));
 });
 Deno.test("upperSnake : words", () => {
-  assertEquals(upperSnake(""), "");
   fc.assert(fc.property(fcWords, ({ all, one }) => {
     assertEquals(upperSnake(one), all.join("_").toUpperCase());
   }));
