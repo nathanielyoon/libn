@@ -46,7 +46,7 @@
         "no-explicit-any",
         "no-invalid-regexp"
       ],
-      "tags": ["recommended", "jsr"]
+      "tags": ["recommended", "jsr", "workspace"]
     }
   },
   "permissions": {
