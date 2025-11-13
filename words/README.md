@@ -1,18 +1,9 @@
 # @libn/words
 
-Convert between case formats.
+Convert between
+[case formats]((https://en.wikipedia.org/wiki/Naming_convention_(programming)#Examples_of_multiple-word_identifier_formats)).
 
 ## default
-
-[Multiple-word identifier formats](https://en.wikipedia.org/wiki/Naming_convention_(programming)#Examples_of_multiple-word_identifier_formats)
-supported:
-
-- lowerCamel
-- UpperCamel
-- lower-kebab
-- Upper-Kebab
-- lower_snake
-- UPPER_SNAKE
 
 ```ts
 import {
