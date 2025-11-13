@@ -1,4 +1,4 @@
-# @libn/aead
+# @libn/hash
 
 Cryptographic hash functions.
 
