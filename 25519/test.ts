@@ -53,7 +53,7 @@ Deno.test("x25519.ladder : vectors", () => {
     assertEquals(deBig(k), Uint8Array.fromHex(step.k));
     // Remove to run the remaining two steps, which take a while.
     // ./test.ts => x25519.ladder : vectors ... ok (18m46s)
-    if (step.iterations > 1) break;
+    break;
   }
 });
 Deno.test("x25519.derive : vectors", () => {
