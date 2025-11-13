@@ -7,12 +7,7 @@ const [rfc7748, rfc8032, x25519, ed25519] = await Promise.all([
   get`/C2SP/wycheproof/0d2dab394df1eb05b0865977f7633d010a98bccd/testvectors_v1/ed25519_test.json`,
 ]);
 
-const ladder = Array.from(
-  rfc7748.slice(18300, 19695).matchAll(
-    /scalar:\s*(?<secret>[\da-f]{64}).*?coordinate:\s*(?<public>[\da-f]{64}).*?coordinate:\s*(?<shared>[\da-f]{64})/gs,
-  ),
-  ({ groups }) => groups!,
-);
+const loop = rfc7748.slice(21688, 22554).match(/\b[\da-f]{64}\b/g)!;
 const ecdh = rfc7748.slice(23217, 25093).match(/\b[\da-f]{64}\b/g)!;
 const vectors = Array.from(
   rfc8032.replace(/\n{3}.+?\n\f\n.+?\n{3}/g, "").matchAll(
@@ -24,12 +19,12 @@ const vectors = Array.from(
 );
 await set(import.meta, {
   ladder: {
-    k: ladder[0],
-    u: ladder[0],
+    k: loop[0],
+    u: loop[0],
     after: [
-      { iterations: 1e0, k: ladder[1] },
-      { iterations: 1e3, k: ladder[2] },
-      { iterations: 1e6, k: ladder[3] },
+      { iterations: 1e0, k: loop[1] },
+      { iterations: 1e3, k: loop[2] },
+      { iterations: 1e6, k: loop[3] },
     ],
   },
   derive: [
@@ -37,6 +32,12 @@ await set(import.meta, {
     { secret: ecdh[2], public: ecdh[3] },
   ],
   exchange: [
+    ...Array.from(
+      rfc7748.slice(18300, 19695).matchAll(
+        /scalar:\s*(?<secret>[\da-f]{64}).*?coordinate:\s*(?<public>[\da-f]{64}).*?coordinate:\s*(?<shared>[\da-f]{64})/gs,
+      ),
+      ({ groups }) => groups!,
+    ),
     ...Array.from(
       rfc7748.slice(18300, 19695).matchAll(
         /scalar:\s*(?<secret>[\da-f]{64}).*?coordinate:\s*(?<public>[\da-f]{64}).*?coordinate:\s*(?<shared>[\da-f]{64})/gs,
@@ -80,4 +81,4 @@ await set(import.meta, {
       }))
     ),
   ],
-});
+}, "624d70a3c46fa12d7d7ec7399d26ffc8fa372429b6c06674f7be1d5a28019a32");

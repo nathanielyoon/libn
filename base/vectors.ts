@@ -57,4 +57,4 @@ await set(import.meta, {
     binary: "\0".repeat(4),
     string: /<code>(.)<\/code>/.exec(wikipedia)![1],
   }],
-});
+}, "5f4a20de70e095a2d73536055ce7c1dc620f2420ea1e9b71c9c1c5be9ae150be");

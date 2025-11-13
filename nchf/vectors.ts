@@ -3,10 +3,11 @@ import { get, set, zip } from "../test.ts";
 const [oaat, a5hash, halfsiphash, vectors] = await Promise.all([
   get`/rurban/smhasher/3931fd6f723f4fb2afab6ef9a628912220e90ce7/Hashes.cpp${6967}${7785}`,
   get`/avaneev/a5hash/b0ba799928c9aa8ef5ac764a1d3060e48b4797c3/a5hash.h`,
-  get`/veorq/SipHash/eee7d0d84dc7731df2359b243aa5e75d85f6eaef/halfsiphash.c${545}`,
+  get`/veorq/SipHash/eee7d0d84dc7731df2359b243aa5e75d85f6eaef/halfsiphash.c${565}`,
   get`/veorq/SipHash/371dd98e3508045bc8346da3ed8225b76ce536f6/vectors.h${23275}`,
 ]);
 
+const unsafe = halfsiphash.replace(/^\s*assert.*?\n/ms, "");
 const lib = await Promise.all([
   `#include <cstddef>
 #include <cstdint>
@@ -21,14 +22,14 @@ extern "C" uint32_t ffi(uint8_t *key, size_t len, uint32_t seed) {
 extern "C" uint64_t ffi(uint8_t *key, size_t len, uint64_t seed) {
   return a5hash(key, len, seed);
 }`,
-  `${halfsiphash}
+  `${unsafe}
 extern "C" uint32_t ffi(uint8_t *in, size_t inlen, uint8_t *key) {
   uint8_t out[4];
   halfsiphash(in, inlen, key, out, 4);
   return (uint32_t)out[0] | (uint32_t)out[1] << 8 | (uint32_t)out[2] << 16 |
          (uint32_t)out[3] << 24;
 }`,
-  `${halfsiphash}
+  `${unsafe}
 extern "C" uint64_t ffi(uint8_t *in, size_t inlen, uint8_t *key) {
   uint8_t out[8];
   halfsiphash(in, inlen, key, out, 8);
@@ -61,4 +62,4 @@ await set(import.meta, {
       $.match(/[\da-f]{2}/g)!.reverse().join("")
     )
   ),
-});
+}, "7139e7249dc669574ee4a2cb94deb0e1d41b8c9ad4bde17560dacc99e17b497d");
