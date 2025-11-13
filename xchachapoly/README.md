@@ -8,7 +8,7 @@ XChaCha20-Poly1305 authenticated encryption and XChaCha20 stream cipher.
 [extended nonces](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-xchacha).
 
 ```ts
-import { decrypt, encrypt } from "@libn/xchachapoly";
+import { cipher, decrypt, encrypt } from "@libn/xchachapoly";
 import { assert, assertEquals, assertNotEquals } from "@std/assert";
 
 const key = crypto.getRandomValues(new Uint8Array(32));
