@@ -1,6 +1,6 @@
 {
   "name": "@libn/hash",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "license": "0BSD",
   "exports": {
     "./sha2": "./sha2.ts",
