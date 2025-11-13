@@ -5,9 +5,7 @@ import fc from "fast-check";
 import { parseHTML } from "linkedom";
 import { fcStr, type } from "../test.ts";
 
-Deno.test.beforeAll(() => {
-  globalThis.document = parseHTML("").document;
-});
+globalThis.document = parseHTML("").document;
 Deno.test("h : tags", () => {
   const a = h("a");
   assertEquals(type<HTMLAnchorElement>()(a).outerHTML, "<a></a>");
