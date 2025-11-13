@@ -36,7 +36,7 @@ Deno.test("lowerCamel : vectors", () => {
     assertEquals(lowerCamel(key), value);
   }
 });
-Deno.test("lowerCamel : words", () => {
+Deno.test("lowerCamel : arbitrary words", () => {
   fc.assert(fc.property(fcWords, ({ all: [head = "", ...tail], one }) => {
     assertEquals(lowerCamel(one), tail.reduce(first(""), head.toLowerCase()));
   }));
@@ -46,7 +46,7 @@ Deno.test("upperCamel : vectors", () => {
     assertEquals(upperCamel(key), value);
   }
 });
-Deno.test("upperCamel : words", () => {
+Deno.test("upperCamel : arbitrary words", () => {
   fc.assert(fc.property(fcWords, ({ all, one }) => {
     assertEquals(upperCamel(one), all.reduce(first(""), ""));
   }));
@@ -57,7 +57,7 @@ Deno.test("lowerKebab : vectors", () => {
     assertEquals(lowerKebab(key), value);
   }
 });
-Deno.test("lowerKebab : words", () => {
+Deno.test("lowerKebab : arbitrary words", () => {
   fc.assert(fc.property(fcWords, ({ all, one }) => {
     assertEquals(lowerKebab(one), all.join("-").toLowerCase());
   }));
@@ -67,7 +67,7 @@ Deno.test("upperKebab : vectors", () => {
     assertEquals(upperKebab(key), value);
   }
 });
-Deno.test("upperKebab : words", () => {
+Deno.test("upperKebab : arbitrary words", () => {
   fc.assert(fc.property(fcWords, ({ all, one }) => {
     assertEquals(upperKebab(one), all.reduce(first("-"), "").slice(1));
   }));
@@ -78,7 +78,7 @@ Deno.test("lowerSnake : vectors", () => {
     assertEquals(lowerSnake(key), value);
   }
 });
-Deno.test("lowerSnake : words", () => {
+Deno.test("lowerSnake : arbitrary words", () => {
   fc.assert(fc.property(fcWords, ({ all, one }) => {
     assertEquals(lowerSnake(one), all.join("_").toLowerCase());
   }));
@@ -88,7 +88,7 @@ Deno.test("upperSnake : vectors", () => {
     assertEquals(upperSnake(key), value);
   }
 });
-Deno.test("upperSnake : words", () => {
+Deno.test("upperSnake : arbitrary words", () => {
   fc.assert(fc.property(fcWords, ({ all, one }) => {
     assertEquals(upperSnake(one), all.join("_").toUpperCase());
   }));
