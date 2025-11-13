@@ -1,6 +1,6 @@
 /** @module */
 import type { Hash } from "./lib.ts";
-import { sha256 } from "@libn/hash/sha2";
+import { sha256 } from "./sha2.ts";
 
 const OPAD = /* @__PURE__ */ new Uint8Array(96);
 /** Creates a hash-based message authentication code with SHA-256. */
