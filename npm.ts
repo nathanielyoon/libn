@@ -53,4 +53,4 @@ await Promise.all([
     stdout: "inherit",
     stderr: "inherit",
   }).output(), // deno-lint-ignore no-console
-]), console.log();
+]);
