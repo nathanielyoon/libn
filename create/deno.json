@@ -1,5 +1,5 @@
 {
-  "name": "@libn/element",
+  "name": "@libn/create",
   "version": "0.4.0",
   "license": "0BSD",
   "exports": "./mod.ts",

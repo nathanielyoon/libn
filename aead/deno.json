@@ -1,0 +1,6 @@
+{
+  "name": "@libn/aead",
+  "version": "0.4.1",
+  "license": "0BSD",
+  "exports": "./mod.ts"
+}

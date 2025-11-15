@@ -1,4 +1,4 @@
-import { cipher, decrypt, encrypt } from "@libn/xchachapoly";
+import { cipher, decrypt, encrypt } from "@libn/aead";
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { polyXchacha, xchachaPoly } from "./aead.ts";
