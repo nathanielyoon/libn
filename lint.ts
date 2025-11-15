@@ -1,5 +1,5 @@
-import { assertEquals } from "@std/assert";
 import { lowerCamel, upperCamel } from "@libn/words";
+import { assertEquals } from "@std/assert";
 
 /** Custom lint plugin. */
 const plugin: Deno.lint.Plugin = { name: "libn", rules: {} };
