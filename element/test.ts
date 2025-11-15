@@ -1,4 +1,4 @@
-import { h } from "@libn/create";
+import { h } from "@libn/element";
 import { lowerKebab } from "@libn/words";
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
