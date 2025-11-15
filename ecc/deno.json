@@ -1,6 +1,6 @@
 {
   "name": "@libn/ecc",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "license": "0BSD",
   "exports": {
     "./x25519": "./x25519.ts",

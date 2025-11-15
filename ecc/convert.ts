@@ -1,3 +1,4 @@
+/** @module */
 import { deBig, enBig, inv, mod, prune } from "./lib.ts";
 
 /** Converts an Ed25519 secret key to its X25519 equivalent. */
