@@ -5,7 +5,7 @@
     "./base",
     "./create",
     "./csv",
-    "./ecc"
+    "./ecc",
     "./fuzzy",
     "./hash",
     "./json",
@@ -14,7 +14,7 @@
     "./result",
     "./signal",
     "./utf",
-    "./words",
+    "./words"
   ],
   "imports": {
     "@deno/dnt": "jsr:@deno/dnt@^0.42.3",
