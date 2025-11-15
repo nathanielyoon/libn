@@ -1,4 +1,4 @@
-# @libn/xchachapoly
+# @libn/aead
 
 XChaCha20-Poly1305 authenticated encryption and XChaCha20 stream cipher.
 

@@ -1,4 +1,4 @@
-# @libn/25519
+# @libn/ecc
 
 Curve25519 key exchange and digital signatures.
 
