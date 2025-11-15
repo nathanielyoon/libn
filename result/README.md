@@ -2,20 +2,10 @@
 
 Functional result handling.
 
-```sh
-deno add jsr:@libn/result
-
-npx jsr add @libn/result
-npm install @libn/result
-
-bunx jsr add @libn/result
-bun add @libn/result
-```
-
-- [Rust std::result](https://doc.rust-lang.org/std/result/#the-question-mark-operator-)
-- [Purifree](https://github.com/nythrox/purifree)
-
 ## default
+
+Handle errors like
+[Rust's std::result](https://doc.rust-lang.org/std/result/#the-question-mark-operator-).
 
 ```ts ignore
 import { safe } from "@libn/result";
