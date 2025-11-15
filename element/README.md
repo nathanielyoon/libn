@@ -11,7 +11,7 @@ with a mostly-JSX-compatible interface.
 import { parseHTML } from "linkedom";
 globalThis.document = parseHTML("").document;
 
-import { h } from "@libn/create";
+import { h } from "@libn/element";
 import { assertEquals } from "@std/assert";
 
 const div = h("div", {

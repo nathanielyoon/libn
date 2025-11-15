@@ -3,9 +3,9 @@
   "workspace": [
     "./aead",
     "./base",
-    "./create",
     "./csv",
     "./ecc",
+    "./element",
     "./fuzzy",
     "./hash",
     "./json",
