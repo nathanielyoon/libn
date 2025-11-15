@@ -52,5 +52,5 @@ await Promise.all([
     args: ["run", "./npm/test_runner.js"],
     stdout: "inherit",
     stderr: "inherit",
-  }).output(), // deno-lint-ignore no-console
+  }).output(),
 ]);
