@@ -1,5 +1,5 @@
 /** @module */
-import type { Schema } from "@libn/json/schema";
+import type { Schema } from "./schema.ts";
 import { isArray, type Json } from "./lib.ts";
 
 /** @internal */
