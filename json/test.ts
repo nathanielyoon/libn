@@ -590,7 +590,18 @@ Deno.test("check.compile : Str schemas()", () => {
             noInvalidDate: true,
             min: new Date("0000"),
             max: new Date("9999-12-31T23:59:59.999Z"),
-          }).map(($) => $.toISOString().slice(min, max)),
+          }).map(($) => $.toISOString().slice(min, max)).chain(($) =>
+            fc.constantFrom(
+              ...new Set([
+                $,
+                $.replace("T", " "),
+                $.replace("Z", ""),
+                $.replace("Z", "+00:00"),
+                $.replace(/\.\d+/, ""),
+                $.replace(/(\.\d)\d*/, "$1"),
+              ]),
+            )
+          ),
         }),
         {} as { [_ in "date" | "time" | "date-time"]: fc.Arbitrary<string> },
       ),
