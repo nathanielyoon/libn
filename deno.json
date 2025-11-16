@@ -29,6 +29,7 @@
   },
   "lint": {
     "rules": {
+      "tags": ["recommended", "jsr", "workspace"],
       "include": [
         "camelcase",
         "eqeqeq",
@@ -48,8 +49,7 @@
         "no-control-regex",
         "no-explicit-any",
         "no-invalid-regexp"
-      ],
-      "tags": ["recommended", "jsr", "workspace"]
+      ]
     },
     "plugins": ["./lint.ts"]
   },
