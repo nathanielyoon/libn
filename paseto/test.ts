@@ -5,7 +5,7 @@ import { deUtf8, enUtf8 } from "@libn/utf";
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { fcBin } from "../test.ts";
-import { keyer, pae, type Use } from "./lib.ts";
+import { keyer, pae, USE, type Use } from "./lib.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 const wrong = (uses: Use[]) => (key: Uint8Array): fc.Arbitrary<any> =>
@@ -19,6 +19,8 @@ const fcRight = <A extends Use>(use: A) =>
       return true;
     },
   });
+const fcMaybe = <A>($: fc.Arbitrary<A>) =>
+  fc.option($, { nil: undefined, freq: 2 });
 
 Deno.test("lib.pae : vectors", () => {
   for (const $ of vectors.pae) {
@@ -46,6 +48,14 @@ Deno.test("local : vectors", () => {
     }
   }
 });
+Deno.test("local.keyLocal : arbitrary key", () => {
+  fc.assert(fc.property(fcMaybe(fcBin()), ($) => {
+    const key = keyLocal($);
+    assertEquals(key.length, 32);
+    assertEquals(key[USE], "local");
+    $ && assertEquals(key.subarray(0, $.length), $.subarray(0, 32));
+  }));
+});
 Deno.test("local.enLocal : wrong-use key", () => {
   fc.assert(fc.property(
     fcBin(32).chain(wrong(["secret", "public"])),
@@ -70,8 +80,8 @@ Deno.test("local : arbitrary binary", () => {
   fc.assert(fc.property(
     fcRight("local"),
     fcBin(),
-    fc.option(fcBin(), { nil: undefined }),
-    fc.option(fcBin(), { nil: undefined }),
+    fcMaybe(fcBin()),
+    fcMaybe(fcBin()),
     ([key0, key1], payload, footer, assertion) => {
       const token = enLocal(key0, payload, footer, assertion);
       assert(token);
@@ -111,6 +121,22 @@ Deno.test("public : vectors", () => {
     } else assert(!token);
   }
 });
+Deno.test("public.keyPublic : arbitrary key", () => {
+  fc.assert(fc.property(fcMaybe(fcBin()), ($) => {
+    const key = keyPublic($);
+    assertEquals(key.length, 32);
+    assertEquals(key[USE], "public");
+    $ && assertEquals(key.subarray(0, $.length), $.subarray(0, 32));
+  }));
+});
+Deno.test("public.keySecret : arbitrary key", () => {
+  fc.assert(fc.property(fcMaybe(fcBin()), ($) => {
+    const key = keySecret($);
+    assertEquals(key.length, 32);
+    assertEquals(key[USE], "secret");
+    $ && assertEquals(key.subarray(0, $.length), $.subarray(0, 32));
+  }));
+});
 Deno.test("public.enPublic : wrong-use key", () => {
   fc.assert(fc.property(
     fcBin().chain(wrong(["local", "public"])),
@@ -140,8 +166,8 @@ Deno.test("public : arbitrary binary", () => {
   fc.assert(fc.property(
     fcRight("secret"),
     fcBin(),
-    fc.option(fcBin(), { nil: undefined }),
-    fc.option(fcBin(), { nil: undefined }),
+    fcMaybe(fcBin()),
+    fcMaybe(fcBin()),
     ([secret0, secret1], payload, footer, assertion) => {
       const token = enPublic(secret0, payload, footer, assertion);
       assert(token);
