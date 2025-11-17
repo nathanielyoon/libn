@@ -13,6 +13,7 @@
     "./paseto",
     "./query",
     "./result",
+    "./router",
     "./signal",
     "./utf",
     "./words"
