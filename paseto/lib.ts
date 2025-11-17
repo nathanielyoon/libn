@@ -16,13 +16,11 @@ export const TO = {
 } as const;
 const hasUse = ($: any, use: Use) => $.length === 32 && $[USE] === use;
 /** Key type constructor. */
-export type Keyer<A extends Use> = <
-  B extends ArrayBufferLike = ArrayBufferLike,
->($: Uint8Array<B>) => Key<A, B>;
+export type Keyer<A extends Use> = (source?: Uint8Array) => Key<A, ArrayBuffer>;
 /** Creates a key type constructor. */
-export const keyer = <A extends Use>(value: A): Keyer<A> => ($) => {
-  const key = new Uint8Array(32);
-  key.set($.subarray(0, 32));
+export const keyer = <A extends Use>(value: A): Keyer<A> => (source) => {
+  const key = crypto.getRandomValues(new Uint8Array(32));
+  source && key.set(source.subarray(0, 32));
   return Object.defineProperty<any>(key, USE, { value, enumerable: true });
 };
 /** Uniquely encodes a list of binary pieces. */
