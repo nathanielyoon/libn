@@ -1,9 +1,10 @@
 import { h } from "@libn/element";
+import { type } from "@libn/types";
 import { lowerKebab } from "@libn/words";
 import { assertEquals } from "@std/assert";
 import fc from "fast-check";
 import { parseHTML } from "linkedom";
-import { fcStr, type } from "../test.ts";
+import { fcStr } from "../test.ts";
 
 globalThis.document = parseHTML("").document;
 Deno.test("h : tags", () => {

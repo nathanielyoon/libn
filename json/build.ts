@@ -1,6 +1,7 @@
 /** @module */
-import type { Arr, Bit, Int, Num, Obj, Schema, Str } from "./schema.ts";
-import { isArray, type Only, type Tuple, type Writable } from "./lib.ts";
+import type { Arr, Bit, Int, Num, Obj, Schema, Str } from "@libn/json/schema";
+import type { Tuple } from "@libn/types";
+import { isArray, type Only, type Writable } from "./lib.ts";
 
 /** Creates a null schema. */
 export const nil = (($?: Schema) => (
@@ -74,6 +75,8 @@ type ObjMeta<A> = Omit<
   Extract<Obj, A>,
   "type" | "properties" | "additionalProperties"
 >;
+/** @internal */
+type Keys<A> = Tuple<`${Exclude<keyof A, symbol>}`>;
 /** Creates an object schema. */
 export const obj = (($: any, meta?: any) => ({
   ...typeof $ === "string"
@@ -107,7 +110,7 @@ export const obj = (($: any, meta?: any) => ({
       additionalProperties: false;
       required: B["required"] extends infer C extends readonly string[]
         ? Writable<C>
-        : Tuple<`${Exclude<keyof A, symbol>}`>;
+        : Keys<A>;
     } & Omit<B, "required">
   >;
   <
@@ -116,7 +119,7 @@ export const obj = (($: any, meta?: any) => ({
   >(key: A, mapping: keyof B extends never ? never : B): {
     type: "object";
     required: [A];
-    oneOf: Tuple<keyof B> extends infer C extends (keyof B)[] ? {
+    oneOf: Keys<B> extends infer C extends (`${Exclude<keyof B, symbol>}`)[] ? {
         [D in keyof C]: Writable<
           Omit<B[C[D]], "properties"> & {
             properties: Writable<

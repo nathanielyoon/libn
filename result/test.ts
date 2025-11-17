@@ -10,13 +10,13 @@ import {
   some,
   type Yieldable,
 } from "@libn/result";
+import { type } from "@libn/types";
 import {
   assert,
   assertEquals,
   assertStrictEquals,
   assertThrows,
 } from "@std/assert";
-import { type } from "../test.ts";
 
 const S0 = Symbol("S0"), S1 = Symbol("S1");
 Deno.test("fail : failure", () => {

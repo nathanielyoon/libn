@@ -1,4 +1,6 @@
-import type { Json, Merge, Writable, Xor } from "./lib.ts";
+/** @module */
+import type { Json, Merge } from "@libn/types";
+import type { Writable, Xor } from "./lib.ts";
 
 /** Null schema. */
 export type Nil =
@@ -110,3 +112,4 @@ export type Instance<A extends Schema> = Schema extends A ? Json
       : never
     : never
   : never;
+export type { Json, Merge };

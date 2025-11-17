@@ -1,9 +1,10 @@
 import { h } from "@libn/element";
 import { queryEvery, queryFirst } from "@libn/query";
+import { type } from "@libn/types";
 import { assertStrictEquals } from "@std/assert";
 import fc from "fast-check";
 import { parseHTML } from "linkedom";
-import { fcStr, type } from "../test.ts";
+import { fcStr } from "../test.ts";
 
 globalThis.document = parseHTML("").document;
 const fcText = fcStr(/^[^'&"<>]*$/);

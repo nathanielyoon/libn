@@ -1,9 +1,5 @@
-/** JSON value. */
-export type Json = null | boolean | number | string | readonly Json[] | {
-  [_: string]: Json;
-};
-/** Condensed object intersection. */
-export type Merge<A> = A extends object ? { [B in keyof A]: A[B] } : A;
+import type { Merge } from "@libn/types";
+
 /** Non-readonly. */
 export type Writable<A> = A extends object ? { -readonly [B in keyof A]: A[B] }
   : A;
@@ -20,12 +16,6 @@ type Take<A, B> = Merge<
 export type Xor<A extends unknown[]> = {
   [B in keyof A]: A[B] extends object ? Take<A[B], A[number]> : A[B];
 }[number];
-/** Union to intersection. */
-export type And<A> = (A extends never ? never : (_: A) => void) extends
-  (_: infer B) => void ? B : never;
-/** Union to tuple. */
-export type Tuple<A> = And<A extends never ? never : (_: A) => A> extends
-  ((_: never) => infer B extends A) ? [...Tuple<Exclude<A, B>>, B] : [];
 /** Array type predicate. */
 export const isArray = /* @__PURE__ */
   (() => Array.isArray)() as ($: any) => $ is any[] | readonly any[];

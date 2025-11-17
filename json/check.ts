@@ -4,10 +4,11 @@ import { B32 } from "@libn/base/b32";
 import { B64 } from "@libn/base/b64";
 import { H32 } from "@libn/base/h32";
 import { U64 } from "@libn/base/u64";
-import { enToken, type Pointer } from "./pointer.ts";
-import type { Instance, Schema, Str } from "./schema.ts";
+import { enToken, type Pointer } from "@libn/json/pointer";
+import type { Instance, Schema, Str } from "@libn/json/schema";
 import type { Result } from "@libn/result";
-import { hasOwn, type Merge } from "./lib.ts";
+import type { Merge } from "@libn/types";
+import { hasOwn } from "./lib.ts";
 
 /** @internal */
 type Patterns<A extends string | undefined> = Merge<

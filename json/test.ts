@@ -31,40 +31,14 @@ import {
   fail,
 } from "@std/assert";
 import fc from "fast-check";
-import { fcBin, fcStr, type Is, type } from "../test.ts";
-import {
-  type And,
-  hasOwn,
-  isArray,
-  type Json,
-  type Merge,
-  type Tuple,
-  type Writable,
-  type Xor,
-} from "./lib.ts";
+import { type Is, type } from "@libn/types";
+import { fcBin, fcStr } from "../test.ts";
+import { hasOwn, isArray, type Writable, type Xor } from "./lib.ts";
+import type { Json } from "@libn/types";
 
-Deno.test("lib.Json : JSON values", () => {
-  type<Json>(null);
-  type<Json>(true), type<Json>(false);
-  type<Json>(0), type<Json>(0.1);
-  type<Json>("");
-  type<Json>([]), type<Json>([null]);
-  type<Json>({}), type<Json>({ "": "" });
-});
 type Sequence<A, B extends number, C extends A[] = []> = B extends B
   ? C["length"] extends B ? C : Sequence<A, B, [...C, A]>
   : never;
-Deno.test("lib.Merge : intersections", () => {
-  type<Is<Merge<{} & {}>, {}>>(true);
-  type<Is<Merge<{ 0: 0 } & {}>, { 0: 0 }>>(true);
-  type<Is<Merge<{ 0: 0 } & { 1: 1 }>, { 0: 0; 1: 1 }>>(true);
-  type<
-    Is<
-      Merge<{ 0: { 0: 0 } & { 1: 1 } } & { 1: { 0: 0 } & { 1: 1 } }>,
-      { 0: { 0: 0; 1: 1 }; 1: { 0: 0; 1: 1 } }
-    >
-  >(true);
-});
 Deno.test("lib.Writable : readonly", () => {
   type<Is<Writable<{}>, {}>>(true);
   type<Is<Writable<{ readonly 0: 0 }>, { 0: 0 }>>(true);
@@ -83,18 +57,6 @@ Deno.test("lib.Xor disallows non-shared properties", () => {
       { 0: 0; 1?: never; 2: 2 } | { 0?: never; 1: 1; 2: 2 }
     >
   >(true);
-});
-Deno.test("lib.And : union", () => {
-  type<Is<And<{} | {}>, {}>>(true);
-  type<Is<And<0 | never>, 0>>(true);
-  type<Is<And<0 | 1>, never>>(true);
-  type<Is<And<{ 0: 0 } | { 1: 1 }>, { 0: 0; 1: 1 }>>(true);
-});
-Deno.test("lib.Tuple : union", () => {
-  type<Is<Tuple<never>, []>>(true);
-  type<Is<Tuple<0>, [0]>>(true);
-  type<Is<Tuple<0 | 1>, [0, 1]>>(true);
-  type<Is<Tuple<keyof { 0: 0; 1: 1 }>, [0, 1]>>(true);
 });
 Deno.test("lib.isArray :: Array.isArray", () => {
   fc.assert(fc.property(fc.constantFrom<0 | readonly [1]>(0, [1]), ($) => {

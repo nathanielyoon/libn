@@ -46,22 +46,3 @@ export const fcBin: Fc<typeof fc.uint8Array, number> = ($) =>
       fc.uint8Array({ maxLength: ~$ }),
     )
     : fc.uint8Array({ size: "medium", ...$ });
-/** Whether two types are mutually assignable. */
-export type Are<A, B> = [A, B] extends [B, A] ? true : false;
-/** @internal */
-type Exact<A, B> = Are<
-  <C>(_: A) => C extends A & C | C ? true : false,
-  <C>(_: B) => C extends B & C | C ? true : false
->;
-/** @internal */
-type Delve<A> = A extends { [_: PropertyKey]: unknown }
-  ? { [B in keyof A]: Delve<A[B]> }
-  : A;
-/** Whether two types are exactly equal. */
-export type Is<A, B> = [A, B] extends [never, never] ? true
-  : [false, false] extends [true & A, true & B] ? true
-  : Exact<Delve<A>, Delve<B>>;
-/** Checks the type of a value and returns it. */
-export const type =
-  <const A>(_?: A): <B extends A>($: Is<A, B> extends true ? B : never) => B =>
-  <B extends A>($: B) => $;
