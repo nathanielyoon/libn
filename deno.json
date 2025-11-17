@@ -10,6 +10,7 @@
     "./hash",
     "./json",
     "./nchf",
+    "./paseto",
     "./query",
     "./result",
     "./signal",
