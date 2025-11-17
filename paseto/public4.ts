@@ -1,5 +1,5 @@
 /** @module */
-import { sign, verify } from "@libn/ecc/ed25519";
+import { generate, sign, verify } from "@libn/ecc/ed25519";
 import { enUtf8 } from "@libn/utf";
 import {
   type DeToken,
@@ -16,6 +16,15 @@ const BIN = /* @__PURE__ */ enUtf8("v4.public.");
 export const keySecret: Keyer<"secret"> = /* @__PURE__ */ keyer("secret");
 /** Constructs a public key. */
 export const keyPublic: Keyer<"public"> = /* @__PURE__ */ keyer("public");
+export { generate };
+/** Constructs a secret-public key pair. */
+export const keyPair = (source?: Uint8Array): {
+  secret: ReturnType<Keyer<"secret">>;
+  public: ReturnType<Keyer<"public">>;
+} => {
+  const secret = keySecret(source);
+  return { secret, public: keyPublic(generate(secret)) };
+};
 /** Signs and encodes a public PASETO. */
 export const enPublic: EnToken<"secret"> = /* @__PURE__ */
   enToken("secret", (key, payload, footer, assertion) => {

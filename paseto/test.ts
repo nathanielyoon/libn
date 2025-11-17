@@ -1,6 +1,12 @@
 import { generate } from "@libn/ecc/ed25519";
 import { deLocal, enLocal, keyLocal } from "@libn/paseto/local4";
-import { dePublic, enPublic, keyPublic, keySecret } from "@libn/paseto/public4";
+import {
+  dePublic,
+  enPublic,
+  keyPair,
+  keyPublic,
+  keySecret,
+} from "@libn/paseto/public4";
 import { deUtf8, enUtf8 } from "@libn/utf";
 import { assert, assertEquals } from "@std/assert";
 import fc from "fast-check";
@@ -135,6 +141,16 @@ Deno.test("public.keySecret : arbitrary key", () => {
     assertEquals(key.length, 32);
     assertEquals(key[USE], "secret");
     $ && assertEquals(key.subarray(0, $.length), $.subarray(0, 32));
+  }));
+});
+Deno.test("public.keyPair : arbitrary key", () => {
+  fc.assert(fc.property(fcMaybe(fcBin()), ($) => {
+    const keys = keyPair($);
+    assertEquals(keys.secret.length, 32);
+    assertEquals(keys.secret[USE], "secret");
+    assertEquals(keys.public.length, 32);
+    assertEquals(keys.public[USE], "public");
+    $ && assertEquals(keys.secret.subarray(0, $.length), $.subarray(0, 32));
   }));
 });
 Deno.test("public.enPublic : wrong-use key", () => {
