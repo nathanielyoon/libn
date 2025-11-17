@@ -13,9 +13,9 @@ import {
 
 const BIN = /* @__PURE__ */ enUtf8("v4.public.");
 /** Constructs a secret key. */
-export const secretKey: Keyer<"secret"> = /* @__PURE__ */ keyer("secret");
+export const keySecret: Keyer<"secret"> = /* @__PURE__ */ keyer("secret");
 /** Constructs a public key. */
-export const publicKey: Keyer<"public"> = /* @__PURE__ */ keyer("public");
+export const keyPublic: Keyer<"public"> = /* @__PURE__ */ keyer("public");
 /** Signs and encodes a public PASETO. */
 export const enPublic: EnToken<"secret"> = /* @__PURE__ */
   enToken("secret", (key, payload, footer, assertion) => {

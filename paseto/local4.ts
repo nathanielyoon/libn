@@ -37,7 +37,7 @@ const mac = (
   );
 };
 /** Local key constructor. */
-export const localKey: Keyer<"local"> = /* @__PURE__ */ keyer("local");
+export const keyLocal: Keyer<"local"> = /* @__PURE__ */ keyer("local");
 /** Encrypts and encodes a local PASETO. */
 export const enLocal: EnToken<"local"> = /* @__PURE__ */
   enToken("local", (key, payload, footer, assertion) => {

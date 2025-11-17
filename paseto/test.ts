@@ -1,12 +1,12 @@
-import { deLocal, enLocal, localKey } from "@libn/paseto/local4";
-import { dePublic, enPublic, publicKey, secretKey } from "@libn/paseto/public4";
+import { generate } from "@libn/ecc/ed25519";
+import { deLocal, enLocal, keyLocal } from "@libn/paseto/local4";
+import { dePublic, enPublic, keyPublic, keySecret } from "@libn/paseto/public4";
 import { deUtf8, enUtf8 } from "@libn/utf";
 import { assert, assertEquals } from "@std/assert";
-import { keyer, pae, type Use } from "./lib.ts";
-import vectors from "./vectors.json" with { type: "json" };
 import fc from "fast-check";
 import { fcBin } from "../test.ts";
-import { generate } from "@libn/ecc/ed25519";
+import { keyer, pae, type Use } from "./lib.ts";
+import vectors from "./vectors.json" with { type: "json" };
 
 const wrong = (uses: Use[]) => (key: Uint8Array): fc.Arbitrary<any> =>
   fc.constantFrom(key, ...uses.map((use) => keyer(use)(key)));
@@ -27,7 +27,7 @@ Deno.test("lib.pae : vectors", () => {
 });
 Deno.test("local : vectors", () => {
   for (const $ of vectors.local) {
-    const key = localKey(Uint8Array.fromHex($.key));
+    const key = keyLocal(Uint8Array.fromHex($.key));
     const assertion = enUtf8($.assertion);
     const token = deLocal(key, $.token, assertion);
     if ($.result) {
@@ -60,7 +60,7 @@ Deno.test("local.deLocal : wrong-use key", () => {
     fcBin().chain(wrong(["secret", "public"])),
     fcBin(),
     (key, payload) => {
-      const token = enLocal(localKey(key), payload);
+      const token = enLocal(keyLocal(key), payload);
       assert(token);
       assertEquals(deLocal(key, token), null);
     },
@@ -91,7 +91,7 @@ Deno.test("public : vectors", () => {
   for (const $ of vectors.public) {
     const assertion = enUtf8($.assertion);
     const token = dePublic(
-      publicKey(Uint8Array.fromHex($.publicKey)),
+      keyPublic(Uint8Array.fromHex($.publicKey)),
       $.token,
       assertion,
     );
@@ -100,7 +100,7 @@ Deno.test("public : vectors", () => {
       const footer = enUtf8($.footer);
       assertEquals(
         enPublic(
-          secretKey(Uint8Array.fromHex($.secretKey)),
+          keySecret(Uint8Array.fromHex($.secretKey)),
           payload,
           footer,
           assertion,
@@ -130,7 +130,7 @@ Deno.test("public.dePublic : wrong-use key", () => {
     ),
     fcBin(),
     (keys, payload) => {
-      const token = enPublic(secretKey(keys.secret), payload);
+      const token = enPublic(keySecret(keys.secret), payload);
       assert(token);
       assertEquals(dePublic(keys.public, token), null);
     },
@@ -145,13 +145,13 @@ Deno.test("public : arbitrary binary", () => {
     ([secret0, secret1], payload, footer, assertion) => {
       const token = enPublic(secret0, payload, footer, assertion);
       assert(token);
-      const public0 = publicKey(generate(secret0));
+      const public0 = keyPublic(generate(secret0));
       assertEquals(dePublic(public0, token, assertion), {
         payload,
         footer: footer ?? new Uint8Array(),
       });
       assertEquals(
-        dePublic(publicKey(generate(secret1)), token, assertion),
+        dePublic(keyPublic(generate(secret1)), token, assertion),
         null,
       );
       assertEquals(
