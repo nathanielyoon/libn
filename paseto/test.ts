@@ -1,5 +1,5 @@
-import { deLocal, enLocal, localKey } from "@libn/paseto/local";
-import { dePublic, enPublic, publicKey, secretKey } from "@libn/paseto/public";
+import { deLocal, enLocal, localKey } from "@libn/paseto/local4";
+import { dePublic, enPublic, publicKey, secretKey } from "@libn/paseto/public4";
 import { deUtf8, enUtf8 } from "@libn/utf";
 import { assert, assertEquals } from "@std/assert";
 import { keyer, pae, type Use } from "./lib.ts";

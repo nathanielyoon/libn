@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "license": "0BSD",
   "exports": {
-    "./local": "./local.ts",
-    "./public": "./public.ts"
+    "./local4": "./local4.ts",
+    "./public4": "./public4.ts"
   }
 }
