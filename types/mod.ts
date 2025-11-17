@@ -4,10 +4,6 @@ export type Json = null | boolean | number | string | readonly Json[] | {
 };
 /** Condensed object intersection. */
 export type Merge<A> = A extends object ? { [B in keyof A]: A[B] } : A;
-/** Generic constraint against excess properties. */
-export type Only<A, B extends A> =
-  & A
-  & { [C in keyof B]: C extends keyof A ? Only<A[C], B[C]> : never };
 /** Union to intersection. */
 export type And<A> = (A extends never ? never : (_: A) => void) extends
   (_: infer B) => void ? B : never;
