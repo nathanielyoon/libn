@@ -208,6 +208,11 @@
         "dependencies": [
           "jsr:@std/testing@^1.0.16"
         ]
+      },
+      "types": {
+        "dependencies": [
+          "jsr:@std/testing@^1.0.16"
+        ]
       }
     }
   }
