@@ -1,3 +1,4 @@
+/** @module */
 import { cipher } from "@libn/aead";
 import { blake2b } from "@libn/hash/blake2";
 import { enUtf8 } from "@libn/utf";

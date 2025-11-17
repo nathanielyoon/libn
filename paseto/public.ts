@@ -1,3 +1,4 @@
+/** @module */
 import { sign, verify } from "@libn/ecc/ed25519";
 import { enUtf8 } from "@libn/utf";
 import {
