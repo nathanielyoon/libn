@@ -1,6 +1,6 @@
 {
   "name": "@libn/paseto",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "0BSD",
   "exports": {
     "./local4": "./local4.ts",
