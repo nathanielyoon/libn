@@ -1,4 +1,4 @@
-import { type Is, type } from "@libn/types";
+import { type Accepts, type Is, type Next, type } from "@libn/types";
 import { assertEquals } from "@std/assert";
 import { assertType } from "@std/testing/types";
 
@@ -219,4 +219,33 @@ Deno.test("type : valid/invalid types", () => {
   assertEquals(type<0>()(0), 0);
   // @ts-expect-error incorrect
   type(0)(1);
+});
+Deno.test("Accepts : string pattern", () => {
+  type<Accepts<{ from: "0"; into: {}; exit: "0" }, "">>(true);
+  type<Accepts<{ from: "0"; into: {}; exit: "1" }, "">>(false);
+  type Zero1 = { from: 0; into: { 0: { "0": 1 } }; exit: 1 };
+  type<Accepts<Zero1, "">>(false);
+  type<Accepts<Zero1, "0">>(true);
+  type<Accepts<Zero1, "00">>(false);
+  type<Accepts<Zero1, "01">>(false);
+  // https://github.com/microsoft/TypeScript/issues/6579#issuecomment-710776922
+  type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  type Upper = "A" | "B" | "C" | "D" | "E" | "F";
+  type Hex = `${Digit}` | Upper | Lowercase<Upper>;
+  type Hex6 = {
+    from: 0;
+    into: {
+      0: Next<[[Hex, 1]]>;
+      1: Next<[[Hex, 2]]>;
+      2: Next<[[Hex, 3]]>;
+      3: Next<[[Hex, 4]]>;
+      4: Next<[[Hex, 5]]>;
+      5: Next<[[Hex, 6]]>;
+    };
+    exit: 6;
+  };
+  type<Accepts<Hex6, "000000">>(true);
+  type<Accepts<Hex6, "a312df">>(true);
+  type<Accepts<Hex6, "">>(false);
+  type<Accepts<Hex6, "1234567">>(false);
 });

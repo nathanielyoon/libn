@@ -29,3 +29,24 @@ export type Is<A, B> = [A, B] extends [never, never] ? true
 export const type =
   <const A>(_?: A): <B extends A>($: Is<A, B> extends true ? B : never) => B =>
   <B extends A>($: B) => $;
+type Head<A extends string> = A extends `${infer B}${string}` ? B : never;
+type Tail<A extends string> = A extends `${string}${infer B}` ? B : never;
+/** String pattern. */
+export interface Pattern {
+  /** Initial state. */
+  from: PropertyKey;
+  /** Valid next-character mappings for each possible state. */
+  into: { [_: PropertyKey]: { [_: string]: PropertyKey } };
+  /** Valid final state, others rejected. */
+  exit: PropertyKey;
+}
+/** @internal */
+type Eat<A extends Pattern, B extends PropertyKey, C extends string> = B extends
+  "" ? false : C extends "" ? B extends A["exit"] ? true : false
+: Eat<A, A["into"][B][Head<C>], Tail<C>>;
+/** State mapping. */
+export type Next<A extends [string, PropertyKey][]> = {
+  [B in A[number] as B[0]]: B[1];
+};
+/** Whether an automaton accepts or rejects an input string. */
+export type Accepts<A extends Pattern, B extends string> = Eat<A, A["from"], B>;
