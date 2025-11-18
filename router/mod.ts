@@ -25,8 +25,10 @@ type From<A extends Method, B extends string> = {
 };
 type Into = string | { [_: string]: unknown } | BufferSource | Blob | Response;
 /** @internal */
-type Handler<A extends unknown[], B extends Method, C extends string> =
-  B extends B ? (from: From<B, C>, ..._: A) => Into | Promise<Into> : never;
+type Handler<A extends unknown[], B extends Method, C extends string> = (
+  from: From<B, C>,
+  ..._: A
+) => Into | Promise<Into>;
 class Node<A extends unknown[]> {
   children: { [_: string]: Node<A> } = {};
   one?: { name: string; node: Node<A> };
