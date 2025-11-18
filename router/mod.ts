@@ -25,10 +25,9 @@ type From<A extends Method, B extends string> = {
 };
 type Into = string | { [_: string]: unknown } | BufferSource | Blob | Response;
 /** @internal */
-type Handler<A, B extends Method, C extends string> = B extends B
-  ? (this: A, from: From<B, C>) => Into | Promise<Into>
-  : never;
-class Node<A> {
+type Handler<A extends unknown[], B extends Method, C extends string> =
+  B extends B ? (from: From<B, C>, ..._: A) => Into | Promise<Into> : never;
+class Node<A extends unknown[]> {
   children: { [_: string]: Node<A> } = {};
   one?: { name: string; node: Node<A> };
   all?: Node<A>;
@@ -45,14 +44,14 @@ const fail = ($: unknown) =>
     headers: { "content-type": "application/json" },
   });
 /** HTTP router base class. */
-export class Router<A = never> {
+export class Router<A extends unknown[] = []> {
   private routes: { method: Method; path: string[]; handler: any }[] = [];
   private tree: Node<A> | null = null;
   private catcher: (
-    this: A,
     error: unknown,
     from: From<Method, string>,
-  ) => Response | Promise<Response> = ($) => fail(wrap($));
+    ...context: A
+  ) => Response | Promise<Response> = ($, ..._) => fail(wrap($));
   /** Adds a route handler. */
   if<B extends Method, C extends string>(
     method: B,
@@ -85,11 +84,11 @@ export class Router<A = never> {
     return this.tree = to;
   }
   /** Handles an incoming request. */
-  async fetch(request: Request, context: A): Promise<Response> {
+  async fetch(request: Request, ...context: A): Promise<Response> {
     const from = {
       url: new URL(request.url),
       path: {} as { [_: string]: string } & { "": string[] },
-      request: request as any,
+      request: request as never,
     };
     let node = this.router;
     for (let path = split(from.url.pathname), on, z = 0; z < path.length; ++z) {
@@ -104,10 +103,10 @@ export class Router<A = never> {
     if (!handler) return new Response(null, { status: 405 });
     let into, type;
     try {
-      into = await handler.call(context, from);
+      into = await handler(from, ...context);
     } catch (first) {
       try {
-        into = await this.catcher.call(context, first, from);
+        into = await this.catcher(first, from, ...context);
       } catch (second) { // uh oh!
         into = fail([wrap(first), wrap(second)]);
       }
