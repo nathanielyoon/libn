@@ -38,13 +38,13 @@ export class Router<A extends unknown[] = []> {
         } else node = node.sub[encodeURIComponent(part)] ??= new Node();
       }
       node.on[method] = to;
-    } else this.fixed[`${method} ${new URL(path, "http://_").pathname}`] = to;
+    } else this.fixed[method + new URL(path, "http://localhost").pathname] = to;
     return this;
   }
   /** Handles a request. */
   async fetch(request: Request, ...context: A): Promise<Response> {
     const url = new URL(request.url), path: { [_: string]: unknown } = {};
-    let to = this.fixed[`${request.method} ${url.pathname}`];
+    let to = this.fixed[request.method + url.pathname];
     if (!to) {
       let node = this.routes;
       for (let all = split(url.pathname), part, z = 0; z < all.length; ++z) {
