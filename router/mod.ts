@@ -23,7 +23,7 @@ type From<A extends Method, B extends string> = {
         : never)
     >;
 };
-type Into = string | { [_: string]: unknown } | BufferSource | Blob | Response;
+type Into = null | number | string | BufferSource | Blob | Response;
 /** @internal */
 type Handler<A extends unknown[], B extends Method, C extends string> = (
   from: From<B, C>,
@@ -35,7 +35,7 @@ class Node<A extends unknown[]> {
   all?: Node<A>;
   handlers: { [C in Method]?: Handler<A, C, string> } = {};
 }
-const split = ($: string) => $.match(/\/(?!$)[^/]*/g) ?? [];
+const split = ($: string) => $.match(/(?<=\/)(?!$)[^/]*/g) ?? [];
 const wrap = ($: unknown) =>
   $ instanceof Error
     ? { name: $.name, message: $.message, cause: $.cause, stack: $.stack }
@@ -53,7 +53,8 @@ export class Router<A extends unknown[] = []> {
     error: unknown,
     from: From<Method, string>,
     ...context: A
-  ) => Response | Promise<Response> = ($, ..._) => fail(wrap($));
+  ) => Response | Promise<Response> = ($, ..._) =>
+    Response.json(wrap($), { status: 500 });
   /** Adds a route handler. */
   if<B extends Method, C extends string>(
     method: B,
@@ -71,15 +72,15 @@ export class Router<A extends unknown[] = []> {
   private get router(): Node<A> {
     if (this.tree) return this.tree;
     const to = new Node();
-    for (let prev, next, use, z = 0, y; z < this.routes.length; ++z) {
-      for (prev = to, next = this.routes[z], y = 0; y < next.path.length; ++y) {
-        if (use = /^\/\?(.*)$/.exec(next.path[y])) {
-          if (use[1]) prev.one = { name: use[1], node: prev = new Node() };
-          else {
-            prev = prev.all = new Node();
-            break;
-          }
-        } else prev = prev.children[next.path[y]] ??= new Node();
+    for (let z = 0, y; z < this.routes.length; ++z) {
+      let prev = to, next = this.routes[z];
+      for (const $ of next.path) {
+        if ($ === "?") {
+          prev = prev.all = new Node();
+          break;
+        } else if ($.startsWith("?")) {
+          prev.one = { name: $.slice(1), node: prev = new Node() };
+        } else prev = prev.children[$] ??= new Node();
       }
       prev.handlers[next.method] = next.handler;
     }
@@ -87,39 +88,37 @@ export class Router<A extends unknown[] = []> {
   }
   /** Handles an incoming request. */
   async fetch(request: Request, ...context: A): Promise<Response> {
-    const from = {
-      url: new URL(request.url),
-      path: {} as { [_: string]: string } & { "": string[] },
-      request: request as never,
-    };
-    let node = this.router;
-    for (let path = split(from.url.pathname), on, z = 0; z < path.length; ++z) {
-      if (node.children[on = path[z]]) node = node.children[on];
-      else if (node.one) from.path[node.one.name] = on, node = node.one.node;
-      else if (node.all) {
-        from.path[""] = path.slice(z), node = node.all;
-        break;
-      } else return new Response(null, { status: 404 });
-    }
-    const handler = node.handlers[request.method as Method];
-    if (!handler) return new Response(null, { status: 405 });
-    let into, type;
     try {
-      into = await handler(from, ...context);
-    } catch (first) {
-      try {
-        into = await this.catcher(first, from, ...context);
-      } catch (second) { // uh oh!
-        into = fail([wrap(first), wrap(second)]);
+      const from = {
+        url: new URL(request.url),
+        path: {} as { [_: string]: string } & { "": string[] },
+        request: request as never,
+      };
+      let node = this.router;
+      for (let to = split(from.url.pathname), on, z = 0; z < to.length; ++z) {
+        if (node.children[on = to[z]]) node = node.children[on];
+        else if (node.one) from.path[node.one.name] = on, node = node.one.node;
+        else if (node.all) {
+          from.path[""] = to.slice(z), node = node.all;
+          break;
+        } else return new Response(null, { status: 404 });
       }
+      const handler = node.handlers[request.method as Method];
+      if (!handler) return new Response(null, { status: 405 });
+      try {
+        const out = await handler(from, ...context);
+        if (out instanceof Response) return out;
+        if (typeof out === "number") return new Response(null, { status: out });
+        if (typeof out === "string" || !out) return new Response(out);
+        if (out instanceof Blob) return new Response(out);
+        return new Response(out, {
+          headers: { "content-type": "application/octet-stream" },
+        });
+      } catch (first) {
+        return await this.catcher(first, from, ...context);
+      }
+    } catch (second) {
+      return Response.json(wrap(second), { status: 500 });
     }
-    if (into instanceof Response) return into;
-    if (into instanceof Blob) type = into.type;
-    else if (ArrayBuffer.isView(into) || into instanceof ArrayBuffer) {
-      type = "application/octet-stream";
-    } else if (typeof into === "object") {
-      into = JSON.stringify(into), type = "application/json";
-    } else type = "text/plain";
-    return new Response(into, { headers: { "content-type": type } });
   }
 }
