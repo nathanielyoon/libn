@@ -85,7 +85,7 @@ export class Router<A> {
     return this.tree = to;
   }
   /** Handles an incoming request. */
-  async route($: A, request: Request): Promise<Response> {
+  async fetch(request: Request, context: A): Promise<Response> {
     const from = {
       url: new URL(request.url),
       path: {} as { [_: string]: string } & { "": string[] },
@@ -104,10 +104,10 @@ export class Router<A> {
     if (!handler) return new Response(null, { status: 405 });
     let into, type;
     try {
-      into = await handler.call($, from);
+      into = await handler.call(context, from);
     } catch (first) {
       try {
-        into = await this.catcher.call($, first, from);
+        into = await this.catcher.call(context, first, from);
       } catch (second) { // uh oh!
         into = fail([wrap(first), wrap(second)]);
       }
