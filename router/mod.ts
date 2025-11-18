@@ -2,13 +2,11 @@
 export type Method =
   | ("GET" | "HEAD" | "CONNECT" | "TRACE") // has no body
   | ("POST" | "PUT" | "DELETE" | "OPTIONS" | "PATCH"); // (maybe) has body
-type Parameters<A extends string, B extends string> = string extends A
-  ? { [_: string]: string | undefined } & { ""?: string[] }
-  : A extends `?${infer C}`
-    ? C extends "" | `/${string}` ? { [_ in B]: string } & { "": string[] }
-    : C extends `${infer D}/${infer E}`
-      ? D extends B ? never : Parameters<E, B | D>
-    : { [_ in B | C]: string }
+type Parameters<A extends string, B extends string> = A extends `?${infer C}`
+  ? C extends "" | `/${string}` ? { [_ in B]: string } & { "": string[] }
+  : C extends `${infer D}/${infer E}`
+    ? D extends B ? never : Parameters<E, B | D>
+  : { [_ in B | C]: string }
   : A extends `${string}/${infer D}` ? Parameters<D, B>
   : { [_ in B]: string };
 type From<A extends Method, B extends string> = {
@@ -74,9 +72,12 @@ export class Router<A> {
     const to = new Node();
     for (let prev, next, use, z = 0, y; z < this.routes.length; ++z) {
       for (prev = to, next = this.routes[z], y = 0; y < next.path.length; ++y) {
-        if (use = /^\/\?(.*)/.exec(next.path[y])) {
+        if (use = /^\/\?(.*)$/.exec(next.path[y])) {
           if (use[1]) prev.one = { name: use[1], node: prev = new Node() };
-          else prev = prev.all = new Node();
+          else {
+            prev = prev.all = new Node();
+            break;
+          }
         } else prev = prev.children[next.path[y]] ??= new Node();
       }
       prev.handlers[next.method] = next.handler;
@@ -87,7 +88,7 @@ export class Router<A> {
   async route($: A, request: Request): Promise<Response> {
     const from = {
       url: new URL(request.url),
-      path: {} as Parameters<string, never>,
+      path: {} as { [_: string]: string } & { "": string[] },
       request: request as any,
     };
     let node = this.router;
