@@ -45,7 +45,7 @@ const fail = ($: unknown) =>
     headers: { "content-type": "application/json" },
   });
 /** HTTP router base class. */
-export class Router<A> {
+export class Router<A = never> {
   private routes: { method: Method; path: string[]; handler: any }[] = [];
   private tree: Node<A> | null = null;
   private catcher: (
