@@ -26,19 +26,20 @@ export class Router<A extends unknown[] = []> {
   private routes: Node<To<A, string>> = new Node();
   /** Adds a route. */
   route<B extends string>(method: string, path: `/${B}`, to: To<A, B>): this {
-    let fixed = true, node = this.routes;
-    for (const part of split(path)) {
-      if (part === "?") {
-        fixed = false, node = node.rest ??= new Node();
-        break;
-      } else if (part.startsWith("?")) {
-        fixed = false;
-        if (part.slice(1) === node.part?.name) node = node.part.node;
-        else node.part = { name: part.slice(1), node: node = new Node() };
-      } else node = node.sub[encodeURIComponent(part)] ??= new Node();
-    }
-    if (fixed) this.fixed[`${method} ${path}`] = to;
-    return node.on[method] = to, this;
+    if (/\/\?/.test(path)) {
+      let node = this.routes;
+      for (const part of split(path)) {
+        if (part === "?") {
+          node = node.rest ??= new Node();
+          break;
+        } else if (part.startsWith("?")) {
+          if (part.slice(1) === node.part?.name) node = node.part.node;
+          else node.part = { name: part.slice(1), node: node = new Node() };
+        } else node = node.sub[encodeURIComponent(part)] ??= new Node();
+      }
+      node.on[method] = to;
+    } else this.fixed[`${method} ${new URL(path, "http://_").pathname}`] = to;
+    return this;
   }
   /** Handles a request. */
   async fetch(request: Request, ...context: A): Promise<Response> {
