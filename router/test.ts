@@ -257,7 +257,7 @@ Deno.test("router.route : catch-all route", async () => {
         await new Router().route(
           "GET",
           join([...base, "?"]),
-          ($) => Response.json($.path),
+          ({ path, res }) => res.json(path),
         ).fetch(request(join([...base, ...rest]))),
         Response.json(
           { "": rest.map(decodeURIComponent) },
