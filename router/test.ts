@@ -142,12 +142,14 @@ Deno.test("router.route : catch-all route", async () => {
   ));
 });
 Deno.test("router.fetch : not found", async () => {
-  await fc.assert(fc.asyncProperty(fc.array(fcPart).map(join), async (path) => {
-    await assertResponse(
-      await new Router().fetch(request(path)),
-      new Response(null, { status: 404 }),
-    );
-  }));
+  await assertResponse(
+    await new class extends Router {
+      protected override 404() {
+        return new Response("404", { status: 404 });
+      }
+    }().fetch(request("/")),
+    new Response("404", { status: 404 }),
+  );
   await fc.assert(fc.asyncProperty(
     fc.array(fcPart),
     fcPart,
@@ -161,6 +163,14 @@ Deno.test("router.fetch : not found", async () => {
   ));
 });
 Deno.test("router.fetch : method not allowed", async () => {
+  await assertResponse(
+    await new class extends Router {
+      protected override 405() {
+        return new Response("405", { status: 405 });
+      }
+    }().route("POST", "/?", () => "").fetch(request("/")),
+    new Response("405", { status: 405 }),
+  );
   await fc.assert(fc.asyncProperty(
     fc.uniqueArray(fc.constantFrom(...METHODS), { minLength: 2 }),
     fc.array(fcPart).map(join),
@@ -178,4 +188,51 @@ Deno.test("router.fetch : method not allowed", async () => {
       }
     },
   ));
+});
+Deno.test("router.fetch : internal server error", async () => {
+  await assertResponse(
+    await new class extends Router {
+      protected override 500() {
+        return new Response("500", { status: 500 });
+      }
+    }().route("GET", "/", () => {
+      throw Error();
+    }).fetch(request("/")),
+    new Response("500", { status: 500 }),
+  );
+  await fc.assert(fc.asyncProperty(
+    fc.constantFrom<ErrorConstructor>(
+      Error,
+      EvalError,
+      RangeError,
+      ReferenceError,
+      SyntaxError,
+      TypeError,
+      URIError,
+    ),
+    fcStr(),
+    fc.jsonValue(),
+    async (constructor, message, cause) => {
+      const error = constructor(message, { cause });
+      await assertResponse(
+        await new Router().route("GET", "/", () => {
+          throw error;
+        }).fetch(request("/")),
+        Response.json({
+          name: error.name,
+          message: error.message,
+          cause: error.cause,
+          stack: error.stack,
+        }, { status: 500 }),
+      );
+    },
+  ));
+  await fc.assert(fc.asyncProperty(fc.jsonValue(), async ($) => {
+    await assertResponse(
+      await new Router().route("GET", "/", () => {
+        throw $;
+      }).fetch(request("/")),
+      Response.json({ name: null, message: `${$}`, cause: $ }, { status: 500 }),
+    );
+  }));
 });
