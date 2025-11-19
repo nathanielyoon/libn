@@ -38,9 +38,10 @@ const fcPath = fc.array(fcPart, { minLength: 1 }).map(($) => ({
 }));
 
 Deno.test("path.Path : valid/invalid paths", () => {
-  const ok = <A extends string>($: Path<A>) =>
-    assertEquals(new URL($, "http://localhost").pathname, $);
+  const ok = <A extends string>($: Path<A>, test = true) =>
+    test && assertEquals(new URL($, "http://localhost").pathname, $);
   const no = <A extends string>($: Path<A> extends never ? A : never) => {};
+  ok("/?a", false), ok("/?", false), ok("/?a/b/?c/d/?e/?", false);
   ok("/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x/y/z");
   ok("/A/B/C/D/E/F/G/H/I/J/K/L/M/N/O/P/Q/R/S/T/U/V/W/X/Y/Z");
   ok("/0/1/2/3/4/5/6/7/8/9");
@@ -73,7 +74,7 @@ Deno.test("path.Path : valid/invalid paths", () => {
       ] as const
     ) one === 2 && two.toLowerCase() === "e" || ok(`/%${one}${two}`);
   }
-  no(""), no("/"), no("a");
+  no(""), no("a");
   no("//a"), no("/a/"), no("/a//b");
   no("/?/"), no("/??a"), no("?/"), no("/a?"), no("/?a?");
 });
