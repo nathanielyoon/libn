@@ -1,17 +1,17 @@
 import { PATH, type Path } from "./path.ts";
 
 class Node<A> {
-  on: { [_: string]: A | undefined } = {};
   sub: { [_: string]: Node<A> } = Object.create(null);
   part?: { name: string; node: Node<A> };
   rest?: Node<A>;
+  on?: { [_: string]: A | undefined };
 }
 type Name<A extends string> = A extends `?${infer B}` ? B : never;
 /** @internal */
 type Parts<A extends string, B extends string> = A extends
   `${infer C}/${infer D}` ? Parts<D, B | Name<C>> : B | Name<A>;
 /** Request context. */
-export interface Source<A extends string> {
+export interface Source<A extends string = string> {
   /** Parsed URL. */
   url: URL;
   /** Path parameters, including an anonymous rest parameter if present. */
@@ -32,15 +32,15 @@ export class Router<A extends unknown[] = []> {
   private map: { [_: string]: To<A, string> | undefined } = {};
   private tree: Node<To<A, string>> = new Node();
   /** Default not-found handler. */
-  protected 404(_: Source<string>): Response | Promise<Response> {
+  protected 404(_: Source): Response | Promise<Response> {
     return new Response(null, { status: 404 });
   }
   /** Default method-not-allowed handler. */
-  protected 405(_: Source<string>): Response | Promise<Response> {
+  protected 405(_: Source): Response | Promise<Response> {
     return new Response(null, { status: 405 });
   }
   /** Default internal-server-error handler. */
-  protected 500(_: Source<string>, $: unknown): Response | Promise<Response> {
+  protected 500(_: Source, $: unknown): Response | Promise<Response> {
     return Response.json(
       $ instanceof Error
         ? { name: $.name, message: $.message, cause: $.cause, stack: $.stack }
@@ -62,7 +62,7 @@ export class Router<A extends unknown[] = []> {
           else node.part = { name: part.slice(1), node: node = new Node() };
         } else node = node.sub[decodeURIComponent(part)] ??= new Node();
       }
-      node.on[method] = to;
+      (node.on ??= Object.create(null))[method] = to;
     } else this.map[method + new URL(path, "http://localhost").pathname] = to;
     return this;
   }
@@ -72,9 +72,9 @@ export class Router<A extends unknown[] = []> {
       url: new URL(request.url),
       path: {} as { [_: string]: string } & { ""?: string[] },
       request,
-    };
+    } satisfies Source;
     let to = this.map[request.method + source.url.pathname];
-    if (!to) {
+    find: if (!to) {
       let at = this.tree;
       for (let all = split(source.url.pathname), z = 0; z < all.length; ++z) {
         const part = decodeURIComponent(all[z]);
@@ -85,11 +85,10 @@ export class Router<A extends unknown[] = []> {
           break;
         } else return await this[404](source);
       }
-      if (!(to = at.on[request.method])) {
-        if (!at.rest) return await this[405](source);
-        if (!(to = at.rest.on[request.method])) return await this[405](source);
-        source.path[""] ??= [];
-      }
+      if (to = at.on?.[request.method]) break find;
+      if (!at.rest?.on) return await this[at.on ? 405 : 404](source);
+      if (to = at.rest.on[request.method]) source.path[""] ??= [];
+      else return await this[405](source);
     }
     try {
       const out = await to.call(this, source, ...context);
