@@ -95,14 +95,18 @@ Deno.test("router.route : named route", async () => {
     fcStr(/^[^\s/?]+$/),
     fcPart,
     async (path, key, value) => {
-      await assertResponse(
-        await new Router().route(
-          "GET",
+      const router = new Router();
+      for (const method of ["PUT", "GET", "PATCH", "DELETE"]) {
+        router.route(
+          method,
           join([...path, `?${key}`]),
-          ($) => Response.json($.path),
-        ).fetch(request(join([...path, value]))),
-        Response.json({ [key]: decodeURIComponent(value) }),
-      );
+          ($) => Response.json({ method: $.request.method, path: $.path }),
+        );
+        await assertResponse(
+          await router.fetch(request(join([...path, value]), method)),
+          Response.json({ method, path: { [key]: decodeURIComponent(value) } }),
+        );
+      }
     },
   ));
 });
