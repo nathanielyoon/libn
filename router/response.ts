@@ -41,7 +41,7 @@ export class Responser {
   }
   /** Creates a JSON response. */
   json(body: any): Response {
-    return this.body(JSON.stringify(body), "application/json");
+    return this.body(JSON.stringify(body), "application/json;charset=UTF-8");
   }
   /** Creates a blob response. */
   blob(body: Blob): Response {
@@ -50,7 +50,7 @@ export class Responser {
   /** Creates a redirect response. */
   redirect(location: string | URL): Response {
     this.code ??= 302;
-    return this.header("location", `${new URL(location)}`).build(null);
+    return this.header("location", new URL(location).href).build(null);
   }
   /** Creates an error response. */
   error(cause: unknown): Response {

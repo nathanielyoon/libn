@@ -170,7 +170,7 @@ Deno.test("responser.body : content type", async () => {
 });
 Deno.test("responser.redirect : redirect", async () => {
   await fc.assert(fc.asyncProperty(
-    fc.webUrl(),
+    fc.webUrl().map(($) => new URL($)),
     fc.constantFrom(301, 302, 303, 307, 308),
     async (location, code) => {
       await assertResponse(
@@ -253,7 +253,9 @@ Deno.test("router.route : catch-all route", async () => {
     await new Router().route("GET", "/?", ({ res }) => res.text("")).fetch(
       request("/"),
     ),
-    new Response(""),
+    new Response("", {
+      headers: { "content-type": "text/plain;charset=UTF-8" },
+    }),
   );
   await fc.assert(fc.asyncProperty(
     fc.array(fcPart),
