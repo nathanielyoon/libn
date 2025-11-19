@@ -1,7 +1,8 @@
 import { assertEquals, assertMatch, assertThrows } from "@std/assert";
 import fc from "fast-check";
 import { Router } from "./mod.ts";
-import { fcStr } from "../test.ts";
+import { fcBin, fcStr } from "../test.ts";
+import { Responser } from "./response.ts";
 import { PATH, type Path } from "./path.ts";
 
 const METHODS = [
@@ -18,7 +19,7 @@ const request = (path: string, method: typeof METHODS[number] = "GET") =>
 const assertResponse = async (actual: Response, expected: Response) => {
   assertEquals(actual.url, expected.url);
   assertEquals(actual.status, expected.status);
-  assertEquals(actual.headers, expected.headers);
+  assertEquals([...actual.headers], [...expected.headers]);
   const all = await Promise.all([actual.text(), expected.text()]);
   assertEquals(all[0], all[1]);
 };
@@ -44,6 +45,15 @@ const fcPart = fcStr({
 });
 const join = (parts: string[]) =>
   parts.reduce((to, part) => `${to}/${part}`, "") || "/";
+const fcErrorConstructor = fc.constantFrom<ErrorConstructor>(
+  Error,
+  EvalError,
+  RangeError,
+  ReferenceError,
+  SyntaxError,
+  TypeError,
+  URIError,
+);
 
 Deno.test("path.Path : valid/invalid paths", () => {
   const ok = <A extends string>($: Path<A>, raw = true) => {
@@ -51,7 +61,7 @@ Deno.test("path.Path : valid/invalid paths", () => {
     raw && assertEquals(new URL($, "http://localhost").pathname, $);
   };
   const no = <A extends string>($: Path<A> extends never ? A : never) =>
-    assertThrows(() => new Router().route("GET", $, () => ""));
+    assertThrows(() => new Router().route("GET", $, ({ res }) => res.build()));
   ok("/?a", false), ok("/?", false), ok("/?a/b/?c/d/?e/?", false);
   ok("/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x/y/z");
   ok("/A/B/C/D/E/F/G/H/I/J/K/L/M/N/O/P/Q/R/S/T/U/V/W/X/Y/Z");
@@ -92,12 +102,126 @@ Deno.test("path.Path : valid/invalid paths", () => {
   no("/?/"), no("/??a"), no("?/"), no("/a?"), no("/?a?");
   no("/?__proto__");
 });
+Deno.test("responser.status : status code", async () => {
+  await fc.assert(fc.asyncProperty(
+    fc.integer({ min: 200, max: 599 }),
+    async (status) => {
+      await assertResponse(
+        new Responser().status(status).build(),
+        new Response(null, { status }),
+      );
+    },
+  ));
+});
+Deno.test("responser.headers : set/add/delete headers", async () => {
+  await fc.assert(fc.asyncProperty(
+    fcStr(/^[-a-z]+$/),
+    fcStr({ unit: "grapheme-ascii" }),
+    async (name, value) => {
+      const responser = new Responser();
+      const headers = new Headers([[name, value]]);
+      await assertResponse(
+        responser.header(name, value).build(),
+        new Response(null, { headers }),
+      );
+      headers.append(name, value);
+      await assertResponse(
+        responser.append(name, value).build(),
+        new Response(null, { headers }),
+      );
+      headers.delete(name);
+      await assertResponse(responser.delete(name).build(), new Response());
+    },
+  ));
+});
+Deno.test("responser.body : content type", async () => {
+  await fc.assert(fc.asyncProperty(
+    fcBin(),
+    fc.option(fcStr({ unit: "grapheme-ascii" }), { nil: undefined }),
+    async (body, type) => {
+      await assertResponse(
+        new Responser().body(body, type),
+        new Response(body, {
+          headers: { "content-type": type ?? "application/octet-stream" },
+        }),
+      );
+      await assertResponse(
+        new Responser().blob(new Blob([body], { type: type! })),
+        new Response(body, {
+          headers: {
+            "content-type": type?.toLowerCase() || "application/octet-stream",
+          },
+        }),
+      );
+    },
+  ));
+  await fc.assert(fc.asyncProperty(fcStr(), async (body) => {
+    await assertResponse(new Responser().text(body), new Response(body));
+    await assertResponse(
+      new Responser().html(body),
+      new Response(body, {
+        headers: { "content-type": "text/html;charset=UTF-8" },
+      }),
+    );
+  }));
+  await fc.assert(fc.asyncProperty(fc.jsonValue(), async (body) => {
+    await assertResponse(new Responser().json(body), Response.json(body));
+  }));
+});
+Deno.test("responser.redirect : redirect", async () => {
+  await fc.assert(fc.asyncProperty(
+    fc.webUrl(),
+    fc.constantFrom(301, 302, 303, 307, 308),
+    async (location, code) => {
+      await assertResponse(
+        new Responser().redirect(location),
+        Response.redirect(location),
+      );
+      await assertResponse(
+        new Responser().status(code).redirect(location),
+        Response.redirect(location, code),
+      );
+    },
+  ));
+});
+Deno.test("responser.error : error", async () => {
+  await fc.assert(fc.asyncProperty(
+    fcErrorConstructor,
+    fcStr(),
+    fc.jsonValue(),
+    fc.bigInt(),
+    async (constructor, message, cause, bigint) => {
+      const error = constructor(message, { cause });
+      await assertResponse(
+        new Responser().error(error),
+        Response.json({
+          name: error.name,
+          message: error.message,
+          cause: error.cause,
+          stack: error.stack,
+        }, { status: 500 }),
+      );
+      error.cause = bigint;
+      await assertResponse(
+        new Responser().error(error),
+        Response.json({
+          name: error.name,
+          message: error.message,
+          cause: `0x${bigint.toString(16)}`,
+          stack: error.stack,
+        }, { status: 500 }),
+      );
+    },
+  ));
+});
 Deno.test("router.route : fixed route", async () => {
   await fc.assert(fc.asyncProperty(
     fc.array(fcPart).map(join),
     async ($) => {
       await assertResponse(
-        await new Router().route("GET", $, () => $).fetch(request($)),
+        await new Router().route("GET", $, ({ res }) => res.text($)).fetch(
+          request($),
+        ),
         new Response($),
       );
     },
@@ -114,7 +238,7 @@ Deno.test("router.route : named route", async () => {
         router.route(
           method,
           join([...path, `?${key}`]),
-          ($) => Response.json({ method: $.request.method, path: $.path }),
+          ($) => Response.json({ method: $.req.method, path: $.path }),
         );
         await assertResponse(
           await router.fetch(request(join([...path, value]), method)),
@@ -126,7 +250,9 @@ Deno.test("router.route : named route", async () => {
 });
 Deno.test("router.route : catch-all route", async () => {
   await assertResponse(
-    await new Router().route("GET", "/?", () => "").fetch(request("/")),
+    await new Router().route("GET", "/?", ({ res }) => res.text("")).fetch(
+      request("/"),
+    ),
     new Response(""),
   );
   await fc.assert(fc.asyncProperty(
@@ -157,7 +283,11 @@ Deno.test("router.fetch : not found", async () => {
     fc.array(fcPart),
     fcPart,
     async (path, part) => {
-      const router = new Router().route("GET", join(path), () => "");
+      const router = new Router().route(
+        "GET",
+        join(path),
+        ({ res }) => res.build(),
+      );
       await assertResponse(
         await router.fetch(request(join([...path, part]))),
         new Response(null, { status: 404 }),
@@ -171,14 +301,18 @@ Deno.test("router.fetch : method not allowed", async () => {
       protected override 405() {
         return new Response("405", { status: 405 });
       }
-    }().route("POST", "/?", () => "").fetch(request("/")),
+    }().route("POST", "/?", ({ res }) => res.build()).fetch(request("/")),
     new Response("405", { status: 405 }),
   );
   await fc.assert(fc.asyncProperty(
     fc.uniqueArray(fc.constantFrom(...METHODS), { minLength: 2 }),
     fc.array(fcPart).map(join),
     async ([head, ...tail], path) => {
-      const router = new Router().route(head, path, () => 204);
+      const router = new Router().route(
+        head,
+        path,
+        ({ res }) => res.status(204).build(),
+      );
       await assertResponse(
         await router.fetch(request(path, head)),
         new Response(null, { status: 204 }),
@@ -204,15 +338,7 @@ Deno.test("router.fetch : internal server error", async () => {
     new Response("500", { status: 500 }),
   );
   await fc.assert(fc.asyncProperty(
-    fc.constantFrom<ErrorConstructor>(
-      Error,
-      EvalError,
-      RangeError,
-      ReferenceError,
-      SyntaxError,
-      TypeError,
-      URIError,
-    ),
+    fcErrorConstructor,
     fcStr(),
     fc.jsonValue(),
     async (constructor, message, cause) => {
@@ -234,6 +360,6 @@ Deno.test("router.fetch : internal server error", async () => {
     await new Router().route("GET", "/", () => {
       throw { toString: {} };
     }).fetch(request("/")),
-    Response.json(null, { status: 500 }),
+    new Response(null, { status: 500 }),
   );
 });

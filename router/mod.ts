@@ -1,5 +1,6 @@
 /** @module */
 import { PATH, type Path } from "./path.ts";
+import { Responser } from "./response.ts";
 
 export { PATH, type Path };
 /** @internal */
@@ -20,25 +21,17 @@ export interface Source<A extends string = string> {
   /** Path parameters, including an anonymous rest parameter if present. */
   path: { [B in Parts<A, never>]: B extends "" ? string[] : string };
   /** Original request. */
-  request: Request;
+  req: Request;
+  /** Response builder. */
+  res: Responser;
 }
-type Out = Response | number | ConstructorParameters<typeof Response>[0];
 /** @internal */
 type To<A extends unknown[], B extends string> = (
   this: Router<A>,
   source: Source<B>,
   ...context: A
-) => Out | Promise<Out>;
+) => Response | Promise<Response>;
 const split = ($: string) => $.match(/(?<=\/)(?:\??[^/?]+|\?$)/g) ?? [];
-const wrap = ($: unknown) => {
-  try {
-    return $ instanceof Error
-      ? { name: $.name, message: $.message, cause: $.cause, stack: $.stack }
-      : { name: null, message: `${$}`, cause: $ };
-  } catch {
-    return null;
-  }
-};
 /** HTTP router. */
 export class Router<A extends unknown[] = []> {
   /** Map of each static route's concatenated method and path to its handler. */
@@ -48,16 +41,16 @@ export class Router<A extends unknown[] = []> {
   /** Trie of parameterized routes and their handlers. */
   protected tree: Node<To<A, string>> = new Node();
   /** Default not-found handler. */
-  protected 404(_: Source): Response | Promise<Response> {
-    return new Response(null, { status: 404 });
+  protected 404({ res }: Source): Response | Promise<Response> {
+    return res.status(404).build();
   }
   /** Default method-not-allowed handler. */
-  protected 405(_: Source): Response | Promise<Response> {
-    return new Response(null, { status: 405 });
+  protected 405({ res }: Source): Response | Promise<Response> {
+    return res.status(405).build();
   }
   /** Default internal-server-error handler. */
-  protected 500(_: Source, $: unknown): Response | Promise<Response> {
-    return Response.json(wrap($), { status: 500 });
+  protected 500({ res }: Source, $: unknown): Response | Promise<Response> {
+    return res.status(500).error($);
   }
   /** Adds a route. */
   route<B extends string>(method: string, path: Path<B>, to: To<A, B>): this {
@@ -82,7 +75,12 @@ export class Router<A extends unknown[] = []> {
   }
   /** Handles a request. */
   async fetch(request: Request, ...context: A): Promise<Response> {
-    const source = { url: new URL(request.url), path: {} as any, request };
+    const source = {
+      url: new URL(request.url),
+      path: {} as { [_: string]: string } & { ""?: string[] },
+      req: request,
+      res: new Responser(),
+    } satisfies Source;
     const path = source.url.pathname;
     let to = this.map[request.method + path];
     find: if (!to) {
@@ -101,10 +99,7 @@ export class Router<A extends unknown[] = []> {
       else return await this[405](source);
     }
     try {
-      const out = await to.call(this, source, ...context);
-      if (out instanceof Response) return out;
-      if (typeof out === "number") return new Response(null, { status: out });
-      return new Response(out);
+      return await to.call(this, source, ...context);
     } catch ($) {
       return await this[500](source, $);
     }
