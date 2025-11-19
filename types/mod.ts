@@ -44,9 +44,9 @@ export interface Pattern {
 type Consume<A extends Pattern, B extends PropertyKey, C extends string> =
   B extends "" ? false : C extends "" ? B extends A["exit"] ? true : false
   : Consume<A, A["into"][B][Head<C>], Tail<C>>;
-/** State mapping. */
-export type Next<A extends [string, PropertyKey][]> = {
-  [B in A[number] as B[0]]: B[1];
+/** State mappings. */
+export type Next<A extends [PropertyKey, [string, PropertyKey][]][]> = {
+  [B in A[number] as B[0]]: { [C in B[1][number] as C[0]]: C[1] };
 };
 /** Whether an automaton accepts or rejects an input string. */
 export type Has<A extends Pattern, B extends string> =

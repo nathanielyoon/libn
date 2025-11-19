@@ -235,14 +235,14 @@ Deno.test("Has : string pattern", () => {
   type Hex = `${Digit}` | Upper | Lowercase<Upper>;
   type Hex6 = {
     from: 0;
-    into: {
-      0: Next<[[Hex, 1]]>;
-      1: Next<[[Hex, 2]]>;
-      2: Next<[[Hex, 3]]>;
-      3: Next<[[Hex, 4]]>;
-      4: Next<[[Hex, 5]]>;
-      5: Next<[[Hex, 6]]>;
-    };
+    into: Next<[
+      [0, [[Hex, 1]]],
+      [1, [[Hex, 2]]],
+      [2, [[Hex, 3]]],
+      [3, [[Hex, 4]]],
+      [4, [[Hex, 5]]],
+      [5, [[Hex, 6]]],
+    ]>;
     exit: 6;
   };
   type<Has<Hex6, "000000">>(true);
