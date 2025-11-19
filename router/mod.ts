@@ -1,6 +1,7 @@
 import { PATH, type Path } from "./path.ts";
 
 export { PATH, type Path };
+/** @internal */
 class Node<A> {
   sub: { [_: string]: Node<A> } = Object.create(null);
   part?: { name: string; node: Node<A> };
@@ -20,12 +21,13 @@ export interface Source<A extends string = string> {
   /** Original request. */
   request: Request;
 }
+type Out = Response | number | ConstructorParameters<typeof Response>[0];
 /** @internal */
 type To<A extends unknown[], B extends string> = (
   this: Router<A>,
   source: Source<B>,
   ...context: A
-) => number | BodyInit | Response | Promise<number | BodyInit | Response>;
+) => Out | Promise<Out>;
 const split = ($: string) => $.match(/(?<=\/)(?:\??[^/?]+|\?$)/g) ?? [];
 const wrap = ($: unknown) => {
   try {
@@ -36,10 +38,13 @@ const wrap = ($: unknown) => {
     return null;
   }
 };
-/** Simple tree router. */
+/** HTTP router. */
 export class Router<A extends unknown[] = []> {
-  protected keys: Set<string> = new Set();
+  /** Map of each static route's concatenated method and path to its handler. */
   protected map: { [_: string]: To<A, string> | undefined } = {};
+  /** Paths of static routes. */
+  protected keys: Set<string> = new Set();
+  /** Trie of parameterized routes and their handlers. */
   protected tree: Node<To<A, string>> = new Node();
   /** Default not-found handler. */
   protected 404(_: Source): Response | Promise<Response> {
