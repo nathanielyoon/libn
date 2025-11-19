@@ -18,16 +18,16 @@ export class Responser {
   delete(name: string): this {
     return this.headers.delete(name), this;
   }
-  /** Builds a response with a body and default status. */
-  build(body?: null | BodyInit, defaultStatus = 200): Response {
+  /** Builds a response. */
+  build(body?: ConstructorParameters<typeof Response>[0]): Response {
     return new Response(body, {
-      status: this.code ?? defaultStatus,
+      status: this.code ?? 200,
       headers: this.headers,
     });
   }
   /** Creates a response with a body and content type. */
   body(body: BodyInit, type = "application/octet-stream"): Response {
-    return this.header("content-type", type).build(body, 200);
+    return this.header("content-type", type).build(body);
   }
   /** Creates a plain text response. */
   text(body: string): Response {
@@ -47,7 +47,8 @@ export class Responser {
   }
   /** Creates a redirect response. */
   redirect(location: string | URL): Response {
-    return this.header("location", `${new URL(location)}`).build(null, 302);
+    this.code ??= 302;
+    return this.header("location", `${new URL(location)}`).build(null);
   }
   /** Creates an error response. */
   error(cause: unknown): Response {
@@ -59,9 +60,10 @@ export class Responser {
         cause: err.cause,
         stack: err.stack,
       }, (_, $) => typeof $ === "bigint" ? `0x${$.toString(16)}` : $);
-      return this.header("content-type", "application/json").build(json, 500);
+      this.code ??= 500;
+      return this.header("content-type", "application/json").build(json);
     } catch {
-      return this.build(null, 500);
+      return this.status(500).build(null);
     }
   }
 }
