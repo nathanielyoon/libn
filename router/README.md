@@ -31,7 +31,9 @@ router.route("POST", "/upload/?user/?", async ({ path, request }) => {
 Deno.serve((request, info) => router.fetch(request, info));
 
 // Export as `Deno.ServeDefaultExport` for `deno serve`
-export default router satisfies Deno.ServeDefaultExport;
+export default {
+  fetch: (request, info) => router.fetch(request, info),
+} satisfies Deno.ServeDefaultExport;
 
 // Use in `Bun.serve`
 Bun.serve(router);
