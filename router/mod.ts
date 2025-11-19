@@ -1,3 +1,4 @@
+/** @module */
 import { PATH, type Path } from "./path.ts";
 
 export { PATH, type Path };
