@@ -32,7 +32,9 @@ const wrap = ($: unknown) => {
     return $ instanceof Error
       ? { name: $.name, message: $.message, cause: $.cause, stack: $.stack }
       : { name: null, message: `${$}`, cause: $ };
-  } catch { /* empty */ }
+  } catch {
+    return null;
+  }
 };
 /** Simple tree router. */
 export class Router<A extends unknown[] = []> {
