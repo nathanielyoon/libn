@@ -1,4 +1,3 @@
-import { type } from "@libn/types";
 import { assertEquals, assertThrows } from "@std/assert";
 import fc from "fast-check";
 import { Router } from "./mod.ts";
