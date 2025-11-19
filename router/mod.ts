@@ -7,6 +7,7 @@ class Node<A> {
   rest?: Node<A>;
 }
 type Name<A extends string> = A extends `?${infer B}` ? B : never;
+/** @internal */
 type Parts<A extends string, B extends string> = A extends
   `${infer C}/${infer D}` ? Parts<D, B | Name<C>> : B | Name<A>;
 /** Request context. */
