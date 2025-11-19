@@ -111,6 +111,10 @@ Deno.test("router.route : named route", async () => {
   ));
 });
 Deno.test("router.route : catch-all route", async () => {
+  await assertResponse(
+    await new Router().route("GET", "/?", () => "").fetch(request("/")),
+    new Response(""),
+  );
   await fc.assert(fc.asyncProperty(
     fc.array(fcPart),
     fc.array(fcPart),
