@@ -49,5 +49,6 @@ export type Next<A extends [string, PropertyKey][]> = {
   [B in A[number] as B[0]]: B[1];
 };
 /** Whether an automaton accepts or rejects an input string. */
-export type Has<A extends Pattern, B extends string> = string extends B ? false
-  : Consume<A, A["from"], B>;
+export type Has<A extends Pattern, B extends string> =
+  Consume<A, A["from"], B> extends infer C ? [C] extends [never] ? false : C
+    : never;
