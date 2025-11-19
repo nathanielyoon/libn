@@ -1,4 +1,6 @@
-/** Respons builder. */
+/** @internal */
+type BodyInit = ConstructorParameters<typeof Response>[0];
+/** Response builder. */
 export class Responser {
   private code?: number;
   private headers: Headers = new Headers();
@@ -19,7 +21,7 @@ export class Responser {
     return this.headers.delete(name), this;
   }
   /** Builds a response. */
-  build(body?: ConstructorParameters<typeof Response>[0]): Response {
+  build(body?: BodyInit): Response {
     return new Response(body, {
       status: this.code ?? 200,
       headers: this.headers,
