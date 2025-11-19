@@ -1,22 +1,24 @@
+import type { Path } from "./path.ts";
+
 class Node<A> {
   on: { [_: string]: A | undefined } = {};
   sub: { [_: string]: Node<A> } = Object.create(null);
   part?: { name: string; node: Node<A> };
   rest?: Node<A>;
 }
-type Part<A extends string> = A extends `?${infer B}` ? B : never;
-type Path<A extends string, B extends string> = A extends
-  `${infer C}/${infer D}` ? C extends "?" ? B | "" : Path<D, B | Part<C>>
-  : B | Part<A>;
-/** Request conteext. */
+type Name<A extends string> = A extends `?${infer B}` ? B : never;
+type Parts<A extends string, B extends string> = A extends
+  `${infer C}/${infer D}` ? Parts<D, B | Name<C>> : B | Name<A>;
+/** Request context. */
 export interface Source<A extends string> {
   /** Parsed URL. */
   url: URL;
   /** Path parameters, including an anonymous rest parameter if present. */
-  path: { [B in Path<A, never>]: B extends "" ? string[] : string };
+  path: { [B in Parts<A, never>]: B extends "" ? string[] : string };
   /** Original request. */
   request: Request;
 }
+export type { Path };
 /** @internal */
 type To<A extends unknown[], B extends string> = (
   this: Router<A>,
@@ -29,8 +31,9 @@ export class Router<A extends unknown[] = []> {
   private map: { [_: string]: To<A, string> | undefined } = {};
   private tree: Node<To<A, string>> = new Node();
   /** Adds a route. */
-  route<B extends string>(method: string, path: `/${B}`, to: To<A, B>): this {
-    if (/\/\?/.test(path)) {
+  route<B extends string>(method: string, path: Path<B>, to: To<A, B>): this {
+    if (/^((?:\/)+|\/)$/.test(path)) {}
+    else if (/\/\?/.test(path)) {
       let node = this.tree;
       for (const part of split(path)) {
         if (part === "?") {
