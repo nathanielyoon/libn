@@ -65,7 +65,7 @@ export class Responser {
       this.code ??= 500;
       return this.header("content-type", "application/json").build(json);
     } catch {
-      return this.status(500).build(null);
+      return this.status(500).delete("content-type").build(null);
     }
   }
 }

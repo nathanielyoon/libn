@@ -229,7 +229,7 @@ Deno.test("router.route : named route", async () => {
         router.route(
           method,
           join([...path, `?${key}`]),
-          ($) => Response.json({ method: $.req.method, path: $.path }),
+          ({ path, req, res }) => res.json({ method: req.method, path }),
         );
         await assertResponse(
           await router.fetch(request(join([...path, value]), method)),
