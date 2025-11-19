@@ -45,7 +45,7 @@ export class Router<A extends unknown[] = []> {
     return Response.json(
       $ instanceof Error
         ? { name: $.name, message: $.message, cause: $.cause, stack: $.stack }
-        : { name: "", message: `${$}`, cause: $ },
+        : { name: null, message: `${$}`, cause: $ },
       { status: 500 },
     );
   }
