@@ -36,7 +36,7 @@ export default {
 } satisfies Deno.ServeDefaultExport;
 
 // Use in `Bun.serve`
-Bun.serve(router);
+Bun.serve({ fetch: (request) => router.fetch(request) });
 
 // Export as a Cloudflare Workers ES Module
 interface Env {
