@@ -38,9 +38,9 @@ const wrap = ($: unknown) => {
 };
 /** Simple tree router. */
 export class Router<A extends unknown[] = []> {
-  private keys = new Set<string>();
-  private map: { [_: string]: To<A, string> | undefined } = {};
-  private tree: Node<To<A, string>> = new Node();
+  protected keys: Set<string> = new Set();
+  protected map: { [_: string]: To<A, string> | undefined } = {};
+  protected tree: Node<To<A, string>> = new Node();
   /** Default not-found handler. */
   protected 404(_: Source): Response | Promise<Response> {
     return new Response(null, { status: 404 });
