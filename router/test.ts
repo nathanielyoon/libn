@@ -165,7 +165,12 @@ Deno.test("responser.body : content type", async () => {
     );
   }));
   await fc.assert(fc.asyncProperty(fc.jsonValue(), async (body) => {
-    await assertResponse(new Responser().json(body), Response.json(body));
+    await assertResponse(
+      new Responser().json(body),
+      Response.json(body, {
+        headers: { "content-type": "application/json;charset=UTF-8" },
+      }),
+    );
   }));
 });
 Deno.test("responser.redirect : redirect", async () => {
