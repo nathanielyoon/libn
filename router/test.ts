@@ -35,7 +35,7 @@ const fcPart = fcStr({
   minLength: 1,
 });
 const join = (parts: string[]) =>
-  parts.reduce((to, part) => `${to}/${part}`, "");
+  parts.reduce((to, part) => `${to}/${part}`, "") || "/";
 
 Deno.test("path.Path : valid/invalid paths", () => {
   const ok = <A extends string>($: Path<A>, test = true) =>
@@ -80,7 +80,7 @@ Deno.test("path.Path : valid/invalid paths", () => {
 });
 Deno.test("router.route : static routes", async () => {
   await fc.assert(fc.asyncProperty(
-    fc.array(fcPart, { minLength: 1 }).map(join),
+    fc.array(fcPart).map(join),
     async ($) => {
       await assertResponse(
         await new Router().route("GET", $, () => $).fetch(request($)),
@@ -91,16 +91,16 @@ Deno.test("router.route : static routes", async () => {
 });
 Deno.test("router.route : dynamic routes", async () => {
   await fc.assert(fc.asyncProperty(
-    fc.array(fcPart, { minLength: 1 }).map(join),
+    fc.array(fcPart),
     fcStr(/^[^\s/?]+$/),
     fcPart,
-    async ($, key, value) => {
+    async (path, key, value) => {
       await assertResponse(
         await new Router().route(
           "GET",
-          `${$}/?${key}`,
+          join([...path, `?${key}`]),
           ($) => Response.json($.path),
-        ).fetch(request(`${$}/${value}`)),
+        ).fetch(request(join([...path, value]))),
         Response.json({ [key]: decodeURIComponent(value) }),
       );
     },
