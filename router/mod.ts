@@ -1,6 +1,6 @@
 class Node<A> {
   on: { [_: string]: A | undefined } = {};
-  sub: { [_: string]: Node<A> } = {};
+  sub: { [_: string]: Node<A> } = Object.create(null);
   part?: { name: string; node: Node<A> };
   rest?: Node<A>;
 }
@@ -22,12 +22,12 @@ type To<A extends unknown[], B extends string> = (
 const split = ($: string) => $.match(/(?<=\/)\??[^/?]*/g) ?? [];
 /** Simple tree router. */
 export class Router<A extends unknown[] = []> {
-  private fixed: { [_: string]: To<A, string> | undefined } = {};
-  private routes: Node<To<A, string>> = new Node();
+  private map: { [_: string]: To<A, string> | undefined } = {};
+  private tree: Node<To<A, string>> = new Node();
   /** Adds a route. */
   route<B extends string>(method: string, path: `/${B}`, to: To<A, B>): this {
     if (/\/\?/.test(path)) {
-      let node = this.routes;
+      let node = this.tree;
       for (const part of split(path)) {
         if (part === "?") {
           node = node.rest ??= new Node();
@@ -35,18 +35,18 @@ export class Router<A extends unknown[] = []> {
         } else if (part.startsWith("?")) {
           if (part.slice(1) === node.part?.name) node = node.part.node;
           else node.part = { name: part.slice(1), node: node = new Node() };
-        } else node = node.sub[encodeURIComponent(part)] ??= new Node();
+        } else node = node.sub[decodeURIComponent(part)] ??= new Node();
       }
       node.on[method] = to;
-    } else this.fixed[method + new URL(path, "http://localhost").pathname] = to;
+    } else this.map[method + new URL(path, "http://localhost").pathname] = to;
     return this;
   }
   /** Handles a request. */
   async fetch(request: Request, ...context: A): Promise<Response> {
     const url = new URL(request.url), path: { [_: string]: unknown } = {};
-    let to = this.fixed[request.method + url.pathname];
+    let to = this.map[request.method + url.pathname];
     if (!to) {
-      let node = this.routes;
+      let node = this.tree;
       for (let all = split(url.pathname), part, z = 0; z < all.length; ++z) {
         if (node.sub[part = decodeURIComponent(all[z])]) node = node.sub[part];
         else if (node.part) path[node.part.name] = part, node = node.part.node;
