@@ -8,9 +8,13 @@ type Part<A extends string> = A extends `?${infer B}` ? B : never;
 type Path<A extends string, B extends string> = A extends
   `${infer C}/${infer D}` ? C extends "?" ? B | "" : Path<D, B | Part<C>>
   : B | Part<A>;
-interface Source<A extends string> {
+/** Request conteext. */
+export interface Source<A extends string> {
+  /** Parsed URL. */
   url: URL;
+  /** Path parameters, including an anonymous rest parameter if present. */
   path: { [B in Path<A, never>]: B extends "" ? string[] : string };
+  /** Original request. */
   request: Request;
 }
 /** @internal */
