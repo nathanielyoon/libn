@@ -31,6 +31,23 @@ const split = ($: string) => $.match(/(?<=\/)(?:\??[^/?]+|\?$)/g) ?? [];
 export class Router<A extends unknown[] = []> {
   private map: { [_: string]: To<A, string> | undefined } = {};
   private tree: Node<To<A, string>> = new Node();
+  /** Default not-found handler. */
+  protected 404(_: Source<string>): Response | Promise<Response> {
+    return new Response(null, { status: 404 });
+  }
+  /** Default method-not-allowed handler. */
+  protected 405(_: Source<string>): Response | Promise<Response> {
+    return new Response(null, { status: 405 });
+  }
+  /** Default internal-server-error handler. */
+  protected 500(_: Source<string>, $: unknown): Response | Promise<Response> {
+    return Response.json(
+      $ instanceof Error
+        ? { name: $.name, message: $.message, cause: $.cause, stack: $.stack }
+        : { name: "", message: `${$}`, cause: $ },
+      { status: 500 },
+    );
+  }
   /** Adds a route. */
   route<B extends string>(method: string, path: Path<B>, to: To<A, B>): this {
     if (!PATH.test(path)) throw Error(`Invalid path: ${JSON.stringify(path)}`);
@@ -51,36 +68,36 @@ export class Router<A extends unknown[] = []> {
   }
   /** Handles a request. */
   async fetch(request: Request, ...context: A): Promise<Response> {
-    const url = new URL(request.url), path: { [_: string]: unknown } = {};
-    let to = this.map[request.method + url.pathname];
+    const source = {
+      url: new URL(request.url),
+      path: {} as { [_: string]: string } & { ""?: string[] },
+      request,
+    };
+    let to = this.map[request.method + source.url.pathname];
     if (!to) {
-      let node = this.tree;
-      for (let all = split(url.pathname), part, z = 0; z < all.length; ++z) {
-        if (node.sub[part = decodeURIComponent(all[z])]) node = node.sub[part];
-        else if (node.part) path[node.part.name] = part, node = node.part.node;
-        else if (node.rest) {
-          path[""] = all.slice(z).map(decodeURIComponent), node = node.rest;
+      let at = this.tree;
+      for (let all = split(source.url.pathname), z = 0; z < all.length; ++z) {
+        const part = decodeURIComponent(all[z]);
+        if (at.sub[part]) at = at.sub[part];
+        else if (at.part) source.path[at.part.name] = part, at = at.part.node;
+        else if (at.rest) {
+          source.path[""] = all.slice(z).map(decodeURIComponent), at = at.rest;
           break;
-        } else return new Response(null, { status: 404 });
+        } else return await this[404](source);
       }
-      if (!(to = node.on[request.method])) {
-        to = node.rest?.on[request.method];
-        if (!to) return new Response(null, { status: 405 });
-        path[""] ??= [];
+      if (!(to = at.on[request.method])) {
+        if (!at.rest) return await this[405](source);
+        if (!(to = at.rest.on[request.method])) return await this[405](source);
+        source.path[""] ??= [];
       }
     }
     try {
-      const out = await to.call(this, { url, path, request }, ...context);
+      const out = await to.call(this, source, ...context);
       if (out instanceof Response) return out;
       if (typeof out === "number") return new Response(null, { status: out });
       return new Response(out);
     } catch ($) {
-      return Response.json(
-        $ instanceof Error
-          ? { name: $.name, message: $.message, cause: $.cause, stack: $.stack }
-          : { name: "", message: `${$}`, cause: $ },
-        { status: 500 },
-      );
+      return await this[500](source, $);
     }
   }
 }
