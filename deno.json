@@ -75,7 +75,7 @@
   "tasks": {
     "write": "deno run --permission-set=vectors --unstable-raw-imports \"$INIT_CWD/vectors.ts\";",
     "check": "deno check --doc",
-    "lint": "deno lint --compact && deno doc --lint **/*.ts",
+    "lint": "deno lint --compact; deno doc --lint **/*.ts",
     "test": "deno test --permission-set --quiet --unstable-raw-imports --doc --no-check --parallel --trace-leaks",
     "record": "deno task --quiet --cwd=. test --reporter=dot --clean --coverage=/tmp/deno-coverage --coverage-raw-data-only",
     "report": "deno coverage --detailed /tmp/deno-coverage --include=\"^file://$(pwd)\"",
