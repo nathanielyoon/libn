@@ -1,5 +1,6 @@
 import { PATH, type Path } from "./path.ts";
 
+export { PATH, type Path };
 class Node<A> {
   sub: { [_: string]: Node<A> } = Object.create(null);
   part?: { name: string; node: Node<A> };
@@ -19,7 +20,6 @@ export interface Source<A extends string = string> {
   /** Original request. */
   request: Request;
 }
-export type { Path };
 /** @internal */
 type To<A extends unknown[], B extends string> = (
   this: Router<A>,
