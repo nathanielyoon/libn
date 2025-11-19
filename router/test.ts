@@ -4,7 +4,16 @@ import { Router } from "./mod.ts";
 import { fcStr } from "../test.ts";
 import { PATH, type Path } from "./path.ts";
 
-const request = (path: string, method = "GET") =>
+const METHODS = [
+  "GET",
+  "HEAD",
+  "POST",
+  "PUT",
+  "DELETE",
+  "OPTIONS",
+  "PATCH",
+] as const;
+const request = (path: string, method: typeof METHODS[number] = "GET") =>
   new Request(new URL(path, "http://localhost"), { method });
 const assertResponse = async (actual: Response, expected: Response) => {
   assertEquals(actual.url, expected.url);
@@ -98,7 +107,7 @@ Deno.test("router.route : named route", async () => {
     fcPart,
     async (path, key, value) => {
       const router = new Router();
-      for (const method of ["PUT", "GET", "PATCH", "DELETE"]) {
+      for (const method of METHODS) {
         router.route(
           method,
           join([...path, `?${key}`]),
@@ -129,6 +138,44 @@ Deno.test("router.route : catch-all route", async () => {
         ).fetch(request(join([...base, ...rest]))),
         Response.json({ "": rest.map(decodeURIComponent) }),
       );
+    },
+  ));
+});
+Deno.test("router.fetch : not found", async () => {
+  await fc.assert(fc.asyncProperty(fc.array(fcPart).map(join), async (path) => {
+    await assertResponse(
+      await new Router().fetch(request(path)),
+      new Response(null, { status: 404 }),
+    );
+  }));
+  await fc.assert(fc.asyncProperty(
+    fc.array(fcPart),
+    fcPart,
+    async (path, part) => {
+      const router = new Router().route("GET", join(path), () => "");
+      await assertResponse(
+        await router.fetch(request(join([...path, part]))),
+        new Response(null, { status: 404 }),
+      );
+    },
+  ));
+});
+Deno.test("router.fetch : method not allowed", async () => {
+  await fc.assert(fc.asyncProperty(
+    fc.uniqueArray(fc.constantFrom(...METHODS), { minLength: 2 }),
+    fc.array(fcPart).map(join),
+    async ([head, ...tail], path) => {
+      const router = new Router().route(head, path, () => 204);
+      await assertResponse(
+        await router.fetch(request(path, head)),
+        new Response(null, { status: 204 }),
+      );
+      for (const method of tail) {
+        await assertResponse(
+          await router.fetch(request(path, method)),
+          new Response(null, { status: 405 }),
+        );
+      }
     },
   ));
 });
