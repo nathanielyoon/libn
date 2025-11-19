@@ -21,10 +21,12 @@ const fcPart = fcStr({
     ..."abcdefghijklmnopqrstuvwxyz",
     // DIGIT
     ..."0123456789",
-    // other unreserved
-    ..."-._~",
+    // other unreserved, excluding period
+    ..."-_~",
     // pct-encoded
-    ...Array(128).keys().map(($) => `%${$.toString(16).padStart(2, "0")}`),
+    ...Array(128).keys().filter(($) => $ !== 0x2e).map(($) =>
+      `%${$.toString(16).padStart(2, "0")}`
+    ),
     // sub-delims
     ..."!$&'()*+,;=",
     // others
