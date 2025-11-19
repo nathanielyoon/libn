@@ -85,9 +85,12 @@ Deno.test("path.Path : valid/invalid paths", () => {
       ] as const
     ) one === 2 && two.toLowerCase() === "e" || ok(`/%${one}${two}`);
   }
+  ok("/__proto__");
+  ok("/?__proto_!_", false);
   no(""), no("a");
   no("//a"), no("/a/"), no("/a//b");
   no("/?/"), no("/??a"), no("?/"), no("/a?"), no("/?a?");
+  no("/?__proto__");
 });
 Deno.test("router.route : fixed route", async () => {
   await fc.assert(fc.asyncProperty(
@@ -103,7 +106,7 @@ Deno.test("router.route : fixed route", async () => {
 Deno.test("router.route : named route", async () => {
   await fc.assert(fc.asyncProperty(
     fc.array(fcPart),
-    fcStr(/^[^\s/?]+$/),
+    fcStr(/^[^\s/?]+$/).filter(($) => $ !== "__proto__"),
     fcPart,
     async (path, key, value) => {
       const router = new Router();
