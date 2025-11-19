@@ -1,8 +1,8 @@
-import { assertEquals, assertThrows } from "@std/assert";
+import { assertEquals, assertMatch, assertThrows } from "@std/assert";
 import fc from "fast-check";
 import { Router } from "./mod.ts";
 import { fcStr } from "../test.ts";
-import type { Path } from "./path.ts";
+import { PATH, type Path } from "./path.ts";
 
 const request = (path: string, method = "GET") =>
   new Request(new URL(path, "http://localhost"), { method });
@@ -37,8 +37,10 @@ const join = (parts: string[]) =>
   parts.reduce((to, part) => `${to}/${part}`, "") || "/";
 
 Deno.test("path.Path : valid/invalid paths", () => {
-  const ok = <A extends string>($: Path<A>, test = true) =>
-    test && assertEquals(new URL($, "http://localhost").pathname, $);
+  const ok = <A extends string>($: Path<A>, raw = true) => {
+    assertMatch($, PATH);
+    raw && assertEquals(new URL($, "http://localhost").pathname, $);
+  };
   const no = <A extends string>($: Path<A> extends never ? A : never) =>
     assertThrows(() => new Router().route("GET", $, () => ""));
   ok("/?a", false), ok("/?", false), ok("/?a/b/?c/d/?e/?", false);
