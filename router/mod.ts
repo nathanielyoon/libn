@@ -4,7 +4,7 @@ class Node<A> {
   sub: { [_: string]: Node<A> } = Object.create(null);
   part?: { name: string; node: Node<A> };
   rest?: Node<A>;
-  on?: { [_: string]: A | undefined };
+  on: { [_: string]: A | undefined } = Object.create(null);
 }
 type Name<A extends string> = A extends `?${infer B}` ? B : never;
 /** @internal */
@@ -29,6 +29,7 @@ type To<A extends unknown[], B extends string> = (
 const split = ($: string) => $.match(/(?<=\/)(?:\??[^/?]+|\?$)/g) ?? [];
 /** Simple tree router. */
 export class Router<A extends unknown[] = []> {
+  private keys = new Set<string>();
   private map: { [_: string]: To<A, string> | undefined } = {};
   private tree: Node<To<A, string>> = new Node();
   /** Default not-found handler. */
@@ -62,31 +63,30 @@ export class Router<A extends unknown[] = []> {
           else node.part = { name: part.slice(1), node: node = new Node() };
         } else node = node.sub[decodeURIComponent(part)] ??= new Node();
       }
-      (node.on ??= Object.create(null))[method] = to;
-    } else this.map[method + new URL(path, "http://localhost").pathname] = to;
+      node.on[method] = to;
+    } else {
+      const key = new URL(path, "http://localhost").pathname;
+      this.keys.add(key), this.map[method + key] = to;
+    }
     return this;
   }
   /** Handles a request. */
   async fetch(request: Request, ...context: A): Promise<Response> {
-    const source = {
-      url: new URL(request.url),
-      path: {} as { [_: string]: string } & { ""?: string[] },
-      request,
-    } satisfies Source;
-    let to = this.map[request.method + source.url.pathname];
+    const source = { url: new URL(request.url), path: {} as any, request };
+    const path = source.url.pathname;
+    let to = this.map[request.method + path];
     find: if (!to) {
       let at = this.tree;
-      for (let all = split(source.url.pathname), z = 0; z < all.length; ++z) {
-        const part = decodeURIComponent(all[z]);
-        if (at.sub[part]) at = at.sub[part];
+      for (let all = split(path), part, z = 0; z < all.length; ++z) {
+        if (at.sub[part = decodeURIComponent(all[z])]) at = at.sub[part];
         else if (at.part) source.path[at.part.name] = part, at = at.part.node;
         else if (at.rest) {
           source.path[""] = all.slice(z).map(decodeURIComponent), at = at.rest;
           break;
-        } else return await this[404](source);
+        } else return this[this.keys.has(path) ? 405 : 404](source);
       }
-      if (to = at.on?.[request.method]) break find;
-      if (!at.rest?.on) return await this[at.on ? 405 : 404](source);
+      if (to = at.on[request.method]) break find;
+      if (!at.rest?.on) return this[this.keys.has(path) ? 405 : 404](source);
       if (to = at.rest.on[request.method]) source.path[""] ??= [];
       else return await this[405](source);
     }
