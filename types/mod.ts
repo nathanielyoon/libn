@@ -48,7 +48,5 @@ type Consume<A extends Pattern, B extends PropertyKey, C extends string> =
 export type Next<A extends [PropertyKey, [string, PropertyKey][]][]> = {
   [B in A[number] as B[0]]: { [C in B[1][number] as C[0]]: C[1] };
 };
-/** Whether an automaton accepts or rejects an input string. */
-export type Has<A extends Pattern, B extends string> =
-  Consume<A, A["from"], B> extends infer C ? [C] extends [never] ? false : C
-    : never;
+/** Whether an automaton accepts an input string (`never` if undecidable). */
+export type Has<A extends Pattern, B extends string> = Consume<A, A["from"], B>;

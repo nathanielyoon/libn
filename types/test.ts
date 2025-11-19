@@ -221,7 +221,7 @@ Deno.test("type : valid/invalid types", () => {
   type(0)(1);
 });
 Deno.test("Has : string pattern", () => {
-  type<Has<{ from: "0"; into: {}; exit: "0" }, string>>(false);
+  type<Has<{ from: "0"; into: {}; exit: "0" }, string>>(null as never);
   type<Has<{ from: "0"; into: {}; exit: "0" }, "">>(true);
   type<Has<{ from: "0"; into: {}; exit: "1" }, "">>(false);
   type Zero1 = { from: 0; into: { 0: { "0": 1 } }; exit: 1 };
