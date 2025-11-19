@@ -1,4 +1,4 @@
-import type { Path } from "./path.ts";
+import { PATH, type Path } from "./path.ts";
 
 class Node<A> {
   on: { [_: string]: A | undefined } = {};
@@ -32,7 +32,8 @@ export class Router<A extends unknown[] = []> {
   private tree: Node<To<A, string>> = new Node();
   /** Adds a route. */
   route<B extends string>(method: string, path: Path<B>, to: To<A, B>): this {
-    if (/\/\?/.test(path)) {
+    if (!PATH.test(path)) throw Error(`Invalid path: ${JSON.stringify(path)}`);
+    else if (/\/\?/.test(path)) {
       let node = this.tree;
       for (const part of split(path)) {
         if (part === "?") {

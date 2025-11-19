@@ -19,28 +19,31 @@ interface Pattern {
     ["empty", [
       ["/", "first"],
     ]],
-    ["first" | "/", [
+    ["first" | "start", [
       ["/", ""],
-      ["?", "?"],
-      ["%", "%"],
+      ["?", "name"],
+      ["%", "hex0"],
       [Character, "valid"],
     ]],
-    ["?", [
+    ["name", [
       ["/" | "?", ""],
       [string, "valid"],
     ]],
-    ["%", [
-      [Hex, "hex"],
+    ["hex0", [
+      [Hex, "hex1"],
     ]],
-    ["hex", [
+    ["hex1", [
       [Hex, "valid"],
     ]],
     ["valid", [
-      ["/", "/"],
+      ["/", "start"],
       [Character, "valid"],
     ]],
   ]>;
-  exit: "first" | "?" | "valid";
+  exit: "first" | "name" | "valid";
 }
-/** Valid URL path. */
+/** Valid URL path pattern. */
 export type Path<A extends string> = Has<Pattern, A> extends true ? A : never;
+/** Valid URL path pattern pattern. */
+export const PATH: RegExp =
+  /^(?:\/(?:[A-Za-z\d-_~!$&'()*+,;=:@]|%[\dA-Fa-f]{2})+|\/\?(?:[^/?]+|(?=$)))+$|^\/$/;
