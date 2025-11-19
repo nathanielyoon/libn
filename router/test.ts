@@ -227,12 +227,10 @@ Deno.test("router.fetch : internal server error", async () => {
       );
     },
   ));
-  await fc.assert(fc.asyncProperty(fc.jsonValue(), async ($) => {
-    await assertResponse(
-      await new Router().route("GET", "/", () => {
-        throw $;
-      }).fetch(request("/")),
-      Response.json({ name: null, message: `${$}`, cause: $ }, { status: 500 }),
-    );
-  }));
+  await assertResponse(
+    await new Router().route("GET", "/", () => {
+      throw { toString: {} };
+    }).fetch(request("/")),
+    Response.json(null, { status: 500 }),
+  );
 });
