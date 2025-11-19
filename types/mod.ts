@@ -41,12 +41,12 @@ export interface Pattern {
   exit: PropertyKey;
 }
 /** @internal */
-type Eat<A extends Pattern, B extends PropertyKey, C extends string> = B extends
-  "" ? false : C extends "" ? B extends A["exit"] ? true : false
-: Eat<A, A["into"][B][Head<C>], Tail<C>>;
+type Consume<A extends Pattern, B extends PropertyKey, C extends string> =
+  B extends "" ? false : C extends "" ? B extends A["exit"] ? true : false
+  : Consume<A, A["into"][B][Head<C>], Tail<C>>;
 /** State mapping. */
 export type Next<A extends [string, PropertyKey][]> = {
   [B in A[number] as B[0]]: B[1];
 };
 /** Whether an automaton accepts or rejects an input string. */
-export type Accepts<A extends Pattern, B extends string> = Eat<A, A["from"], B>;
+export type Has<A extends Pattern, B extends string> = Consume<A, A["from"], B>;

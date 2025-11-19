@@ -1,4 +1,4 @@
-import { type Accepts, type Is, type Next, type } from "@libn/types";
+import { type Has, type Is, type Next, type } from "@libn/types";
 import { assertEquals } from "@std/assert";
 import { assertType } from "@std/testing/types";
 
@@ -220,14 +220,14 @@ Deno.test("type : valid/invalid types", () => {
   // @ts-expect-error incorrect
   type(0)(1);
 });
-Deno.test("Accepts : string pattern", () => {
-  type<Accepts<{ from: "0"; into: {}; exit: "0" }, "">>(true);
-  type<Accepts<{ from: "0"; into: {}; exit: "1" }, "">>(false);
+Deno.test("Has : string pattern", () => {
+  type<Has<{ from: "0"; into: {}; exit: "0" }, "">>(true);
+  type<Has<{ from: "0"; into: {}; exit: "1" }, "">>(false);
   type Zero1 = { from: 0; into: { 0: { "0": 1 } }; exit: 1 };
-  type<Accepts<Zero1, "">>(false);
-  type<Accepts<Zero1, "0">>(true);
-  type<Accepts<Zero1, "00">>(false);
-  type<Accepts<Zero1, "01">>(false);
+  type<Has<Zero1, "">>(false);
+  type<Has<Zero1, "0">>(true);
+  type<Has<Zero1, "00">>(false);
+  type<Has<Zero1, "01">>(false);
   // https://github.com/microsoft/TypeScript/issues/6579#issuecomment-710776922
   type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
   type Upper = "A" | "B" | "C" | "D" | "E" | "F";
@@ -244,8 +244,8 @@ Deno.test("Accepts : string pattern", () => {
     };
     exit: 6;
   };
-  type<Accepts<Hex6, "000000">>(true);
-  type<Accepts<Hex6, "a312df">>(true);
-  type<Accepts<Hex6, "">>(false);
-  type<Accepts<Hex6, "1234567">>(false);
+  type<Has<Hex6, "000000">>(true);
+  type<Has<Hex6, "a312df">>(true);
+  type<Has<Hex6, "">>(false);
+  type<Has<Hex6, "1234567">>(false);
 });
