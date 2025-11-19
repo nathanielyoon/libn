@@ -27,6 +27,13 @@ type To<A extends unknown[], B extends string> = (
   ...context: A
 ) => number | BodyInit | Response | Promise<number | BodyInit | Response>;
 const split = ($: string) => $.match(/(?<=\/)(?:\??[^/?]+|\?$)/g) ?? [];
+const wrap = ($: unknown) => {
+  try {
+    return $ instanceof Error
+      ? { name: $.name, message: $.message, cause: $.cause, stack: $.stack }
+      : { name: null, message: `${$}`, cause: $ };
+  } catch {}
+};
 /** Simple tree router. */
 export class Router<A extends unknown[] = []> {
   private keys = new Set<string>();
@@ -42,12 +49,7 @@ export class Router<A extends unknown[] = []> {
   }
   /** Default internal-server-error handler. */
   protected 500(_: Source, $: unknown): Response | Promise<Response> {
-    return Response.json(
-      $ instanceof Error
-        ? { name: $.name, message: $.message, cause: $.cause, stack: $.stack }
-        : { name: null, message: `${$}`, cause: $ },
-      { status: 500 },
-    );
+    return Response.json(wrap($), { status: 500 });
   }
   /** Adds a route. */
   route<B extends string>(method: string, path: Path<B>, to: To<A, B>): this {
