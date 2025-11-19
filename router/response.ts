@@ -33,15 +33,15 @@ export class Responser {
   }
   /** Creates a plain text response. */
   text(body: string): Response {
-    return this.body(body, "text/plain;charset=UTF-8");
+    return this.body(body, "text/plain");
   }
   /** Creates an HTML response. */
   html(body: string): Response {
-    return this.body(body, "text/html;charset=UTF-8");
+    return this.body(body, "text/html");
   }
   /** Creates a JSON response. */
   json(body: any): Response {
-    return this.body(JSON.stringify(body), "application/json;charset=UTF-8");
+    return this.body(JSON.stringify(body), "application/json");
   }
   /** Creates a blob response. */
   blob(body: Blob): Response {
