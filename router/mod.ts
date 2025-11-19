@@ -32,8 +32,7 @@ export class Router<A extends unknown[] = []> {
   private tree: Node<To<A, string>> = new Node();
   /** Adds a route. */
   route<B extends string>(method: string, path: Path<B>, to: To<A, B>): this {
-    if (/^((?:\/)+|\/)$/.test(path)) {}
-    else if (/\/\?/.test(path)) {
+    if (/\/\?/.test(path)) {
       let node = this.tree;
       for (const part of split(path)) {
         if (part === "?") {
