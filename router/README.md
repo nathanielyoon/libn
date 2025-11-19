@@ -4,7 +4,7 @@ Simple HTTP router.
 
 ## default
 
-Prefix named path parameters with a `?`, and append a `?` for a catch-all.
+Define path parameters as `?name`, and append a `?` for a catch-all.
 
 ```ts ignore
 import { Router } from "@libn/router";
