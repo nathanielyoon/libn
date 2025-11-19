@@ -1,5 +1,5 @@
 import { type } from "@libn/types";
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertThrows } from "@std/assert";
 import fc from "fast-check";
 import { Router } from "./mod.ts";
 import { fcStr } from "../test.ts";
@@ -40,7 +40,8 @@ const join = (parts: string[]) =>
 Deno.test("path.Path : valid/invalid paths", () => {
   const ok = <A extends string>($: Path<A>, test = true) =>
     test && assertEquals(new URL($, "http://localhost").pathname, $);
-  const no = <A extends string>($: Path<A> extends never ? A : never) => {};
+  const no = <A extends string>($: Path<A> extends never ? A : never) =>
+    assertThrows(() => new Router().route("GET", $, () => ""));
   ok("/?a", false), ok("/?", false), ok("/?a/b/?c/d/?e/?", false);
   ok("/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x/y/z");
   ok("/A/B/C/D/E/F/G/H/I/J/K/L/M/N/O/P/Q/R/S/T/U/V/W/X/Y/Z");
@@ -78,7 +79,7 @@ Deno.test("path.Path : valid/invalid paths", () => {
   no("//a"), no("/a/"), no("/a//b");
   no("/?/"), no("/??a"), no("?/"), no("/a?"), no("/?a?");
 });
-Deno.test("router.route : static routes", async () => {
+Deno.test("router.route : fixed route", async () => {
   await fc.assert(fc.asyncProperty(
     fc.array(fcPart).map(join),
     async ($) => {
@@ -89,7 +90,7 @@ Deno.test("router.route : static routes", async () => {
     },
   ));
 });
-Deno.test("router.route : dynamic routes", async () => {
+Deno.test("router.route : named route", async () => {
   await fc.assert(fc.asyncProperty(
     fc.array(fcPart),
     fcStr(/^[^\s/?]+$/),
@@ -102,6 +103,22 @@ Deno.test("router.route : dynamic routes", async () => {
           ($) => Response.json($.path),
         ).fetch(request(join([...path, value]))),
         Response.json({ [key]: decodeURIComponent(value) }),
+      );
+    },
+  ));
+});
+Deno.test("router.route : catch-all route", async () => {
+  await fc.assert(fc.asyncProperty(
+    fc.array(fcPart),
+    fc.array(fcPart),
+    async (base, rest) => {
+      await assertResponse(
+        await new Router().route(
+          "GET",
+          join([...base, "?"]),
+          ($) => Response.json($.path),
+        ).fetch(request(join([...base, ...rest]))),
+        Response.json({ "": rest.map(decodeURIComponent) }),
       );
     },
   ));

@@ -25,7 +25,7 @@ type To<A extends unknown[], B extends string> = (
   source: Source<B>,
   ...context: A
 ) => number | BodyInit | Response | Promise<number | BodyInit | Response>;
-const split = ($: string) => $.match(/(?<=\/)\??[^/?]*/g)!;
+const split = ($: string) => $.match(/(?<=\/)(?:\??[^/?]+|\?$)/g) ?? [];
 /** Simple tree router. */
 export class Router<A extends unknown[] = []> {
   private map: { [_: string]: To<A, string> | undefined } = {};
@@ -58,12 +58,15 @@ export class Router<A extends unknown[] = []> {
         if (node.sub[part = decodeURIComponent(all[z])]) node = node.sub[part];
         else if (node.part) path[node.part.name] = part, node = node.part.node;
         else if (node.rest) {
-          path[""] = all.slice(z), node = node.rest;
+          path[""] = all.slice(z).map(decodeURIComponent), node = node.rest;
           break;
         } else return new Response(null, { status: 404 });
       }
-      to = node.on[request.method];
-      if (!to) return new Response(null, { status: 405 });
+      if (!(to = node.on[request.method])) {
+        to = node.rest?.on[request.method];
+        if (!to) return new Response(null, { status: 405 });
+        path[""] ??= [];
+      }
     }
     try {
       const out = await to.call(this, { url, path, request }, ...context);
