@@ -1,3 +1,4 @@
+/** @module */
 /** JSON value. */
 export type Json = null | boolean | number | string | readonly Json[] | {
   [_: string]: Json;

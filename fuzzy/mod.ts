@@ -1,3 +1,5 @@
+/** @module */
+
 /** Checks whether one string sorta-includes another. */
 export const includes = (source: string, target: string): boolean => {
   const max = source.length, min = target.length;
