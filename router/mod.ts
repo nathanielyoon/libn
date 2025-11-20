@@ -9,7 +9,7 @@ interface Source<A extends string = string> {
   request: Request;
 }
 /** @internal */
-type To<A extends unknown[], B extends string> = (
+type Handler<A extends unknown[], B extends string> = (
   this: Router<A>,
   source: Source<B>,
   ...context: A
@@ -29,17 +29,18 @@ export const error = ($: Error, status: number): Response =>
   }, { status });
 /** HTTP router. */
 export class Router<A extends unknown[] = []> {
-  private tree: Node<To<A, string>> = new Node();
+  private tree: Node<Handler<A, string>> = new Node();
   /** Adds a route. */
-  route<B extends string>(method: string, path: `/${B}`, to: To<A, B>): this {
-    if (!PATH.test(path)) throw Error(`Invalid path: ${JSON.stringify(path)}`);
+  route<B extends string>($: `${string} /${B}`, handler: Handler<A, B>): this {
+    const [, method, path] = /^(\S+) (\S+)$/.exec($) ?? [];
+    if (!PATH.test(path)) throw Error(`Invalid route: ${JSON.stringify($)}`);
     let at = this.tree;
     for (const [part, name] of path.matchAll(/#([^/#]+)|[^/]+/g)) {
       if (!name) at = at.rest[decodeURIComponent(part)] ??= new Node();
       else if (name === at.next?.name) at = at.next.node;
       else at.next = { name, node: at = new Node() };
     }
-    return at.self[method] = to, this;
+    return at.self[method] = handler, this;
   }
   /** Handles a request. */
   async fetch(request: Request, ...context: A): Promise<any> {

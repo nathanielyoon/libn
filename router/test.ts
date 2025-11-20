@@ -54,12 +54,12 @@ const fcErrorConstructor = fc.constantFrom<ErrorConstructor>(
 );
 
 Deno.test("router.route : fixed route", async () => {
-  assertThrows(() => new Router().route("", "//", () => new Response()));
+  assertThrows(() => new Router().route(" //", () => new Response()));
   await fc.assert(fc.asyncProperty(
     fc.array(fcPart).map(join),
     async ($) => {
       await assertResponse(
-        await new Router().route("GET", $, () => new Response($)).fetch(
+        await new Router().route(`GET ${$}`, () => new Response($)).fetch(
           request($),
         ),
         new Response($),
@@ -68,7 +68,7 @@ Deno.test("router.route : fixed route", async () => {
   ));
 });
 Deno.test("router.route : named route", async () => {
-  assertThrows(() => new Router().route("", "/#", () => new Response()));
+  assertThrows(() => new Router().route(" /#", () => new Response()));
   await fc.assert(fc.asyncProperty(
     fc.array(fcPart),
     fcStr(/^[^\s/#]+$/).filter(($) => $ !== "__proto__"),
@@ -77,8 +77,7 @@ Deno.test("router.route : named route", async () => {
       const router = new Router();
       for (const method of METHODS) {
         router.route(
-          method,
-          join([...path, `#${key}`]),
+          `${method} ${join([...path, `#${key}`])}`,
           ({ path, request }) =>
             Response.json({ method: request.method, path }),
         );
@@ -96,8 +95,7 @@ Deno.test("router.fetch : not found", async () => {
     fcPart,
     async (path, part) => {
       const router = new Router().route(
-        "GET",
-        join(path),
+        `GET ${join(path)}`,
         () => new Response(),
       );
       await assertResponse(
@@ -113,8 +111,7 @@ Deno.test("router.fetch : method not allowed", async () => {
     fc.array(fcPart).map(join),
     async ([head, ...tail], path) => {
       const router = new Router().route(
-        head,
-        path,
+        `${head} ${path}`,
         () => new Response(),
       );
       await assertResponse(
@@ -138,7 +135,7 @@ Deno.test("router.fetch : internal server error", async () => {
     async (constructor, message, cause) => {
       const error = constructor(message, { cause });
       await assertResponse(
-        await new Router().route("GET", "/", () => {
+        await new Router().route("GET /", () => {
           throw error;
         }).fetch(request("/")),
         Response.json({
@@ -151,7 +148,7 @@ Deno.test("router.fetch : internal server error", async () => {
     },
   ));
   assertRejects(() =>
-    new Router().route("GET", "/", () => {
+    new Router().route("GET /", () => {
       throw { toString: {} };
     }).fetch(request("/"))
   );
