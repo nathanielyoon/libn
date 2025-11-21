@@ -2,15 +2,11 @@
 import codes from "./codes.json" with { type: "json" };
 
 /** Converts UTF-8 to binary. */
-export const enUtf8: typeof TextEncoder.prototype.encode =
-  /* @__PURE__ */ TextEncoder.prototype.encode.bind(
-    /* @__PURE__ */ new TextEncoder(),
-  );
+export const enUtf8: typeof TextEncoder.prototype.encode = /* @__PURE__ */
+  TextEncoder.prototype.encode.bind(/* @__PURE__ */ new TextEncoder());
 /** Converts binary to UTF-8. */
-export const deUtf8: typeof TextDecoder.prototype.decode =
-  /* @__PURE__ */ TextDecoder.prototype.decode.bind(
-    /* @__PURE__ */ new TextDecoder("utf-8"),
-  );
+export const deUtf8: typeof TextDecoder.prototype.decode = /* @__PURE__ */
+  TextDecoder.prototype.decode.bind(/* @__PURE__ */ new TextDecoder("utf-8"));
 /** Escapes a string as HTML text. */
 export const unhtml = ($: string): string => {
   if (/^[^"&'<>]*$/.test($)) return $;
@@ -58,32 +54,29 @@ export const unmark = ($: string): string =>
   $.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").normalize("NFKC");
 const args = /* @__PURE__ */ (() => {
   const hex = ($: number) => `\\u{${$.toString(16)}}`;
-  let regex = "";
+  let all = "", to: string[] = [];
   const map: { [_: string]: string } = {};
   for (const [code, mapping, length] of codes.ranges) {
-    regex += `${hex(code)}-${hex(code + length)}`;
+    all += `${hex(code)}-${hex(code + length)}`;
     for (let z = 0; z <= length; ++z) {
       map[String.fromCodePoint(code + z)] = String.fromCodePoint(mapping + z);
     }
   }
   const bytes = Uint8Array.from(atob(codes.utf8), at);
-  let use: string[] = [];
   for (const $ of deUtf8(bytes.subarray(0, 3214))) {
-    if (use.length) {
-      regex += hex(at(use[0])), map[use[0]] = $, use = [];
-    } else use.push($);
+    if (to.length) all += hex(at(to[0])), map[to[0]] = $, to = [];
+    else to.push($);
   }
   for (const $ of deUtf8(bytes.subarray(3214, 3854))) {
-    if (use.length === 2) {
-      regex += hex(at(use[0])), map[use[0]] = use[1] + $, use = [];
-    } else use.push($);
+    if (to.length === 2) all += hex(at(to[0])), map[to[0]] = to[1] + $, to = [];
+    else to.push($);
   }
   for (const $ of deUtf8(bytes.subarray(3854))) {
-    if (use.length === 3) {
-      regex += hex(at(use[0])), map[use[0]] = use[1] + use[2] + $, use = [];
-    } else use.push($);
+    if (to.length === 3) {
+      all += hex(at(to[0])), map[to[0]] = to[1] + to[2] + $, to = [];
+    } else to.push($);
   }
-  return [RegExp(`[${regex}]`, "gu"), Reflect.get.bind(Reflect, map)] as const;
+  return { from: RegExp(`[${all}]`, "gu"), to: Reflect.get.bind(Reflect, map) };
 })();
 /** Case-folds. */
-export const uncase = ($: string): string => $.replace(args[0], args[1]);
+export const uncase = ($: string): string => $.replace(args.from, args.to);
