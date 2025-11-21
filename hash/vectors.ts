@@ -16,7 +16,9 @@ const [sha224, sha256, sha384, sha512, hmac, hkdf, blake2s, blake2b, blake3] =
 const nist = ($: string) =>
   JSON.parse($).testGroups[0].tests
     .filter(($: { len: number }) => $.len % 8 === 0)
-    .map(($: { msg: string; md: string }) => $.msg + $.md);
+    .map(($: { msg: string; md: string }) =>
+      Uint8Array.fromHex($.msg + $.md).toBase64()
+    );
 const blake2 = ($: string) =>
   $.trim().split("\n\n").map((chunk) =>
     Object.fromEntries(chunk.split("\n").map((line) => line.split(":\t")))
@@ -78,4 +80,4 @@ await set(import.meta, {
       derive: $.derive_key,
     })),
   },
-}, "585d95b057f3a9eca93cb3ee2f6b14e4ee1843a81e7a2b6a3a0159d5b6834be7");
+}, "191de098badbfa40431950e892479e10700825d39a9bed673cd43c1b0a6f8746");

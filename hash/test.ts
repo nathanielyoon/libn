@@ -10,34 +10,26 @@ import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("sha2.sha224 : vectors", () => {
   for (const $ of vectors.sha224) {
-    assertEquals(
-      sha224(Uint8Array.fromHex($.data)),
-      Uint8Array.fromHex($.digest),
-    );
+    const vector = Uint8Array.fromBase64($);
+    assertEquals(sha224(vector.subarray(0, -28)), vector.subarray(-28));
   }
 });
 Deno.test("sha2.sha256 : vectors", () => {
   for (const $ of vectors.sha256) {
-    assertEquals(
-      sha256(Uint8Array.fromHex($.data)),
-      Uint8Array.fromHex($.digest),
-    );
+    const vector = Uint8Array.fromBase64($);
+    assertEquals(sha256(vector.subarray(0, -32)), vector.subarray(-32));
   }
 });
 Deno.test("sha2.sha384 : vectors", () => {
   for (const $ of vectors.sha384) {
-    assertEquals(
-      sha384(Uint8Array.fromHex($.data)),
-      Uint8Array.fromHex($.digest),
-    );
+    const vector = Uint8Array.fromBase64($);
+    assertEquals(sha384(vector.subarray(0, -48)), vector.subarray(-48));
   }
 });
 Deno.test("sha2.sha512 : vectors", () => {
   for (const $ of vectors.sha512) {
-    assertEquals(
-      sha512(Uint8Array.fromHex($.data)),
-      Uint8Array.fromHex($.digest),
-    );
+    const vector = Uint8Array.fromBase64($);
+    assertEquals(sha512(vector.subarray(0, -64)), vector.subarray(-64));
   }
 });
 Deno.test("sha2.sha256 :: built-in digest", async () => {
