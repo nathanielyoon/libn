@@ -43,7 +43,7 @@ export class Router<A extends unknown[] = []> {
     return at.self[method] = handler, this;
   }
   /** Handles a request. */
-  async fetch(request: Request, ...context: A): Promise<any> {
+  fetch = async (request: Request, ...context: A): Promise<Response> => {
     const source = { url: new URL(request.url), path: {} as any, request };
     let at = this.tree;
     for (let part of source.url.pathname.match(/(?<=\/)[^/]+/g) ?? []) {
@@ -61,5 +61,5 @@ export class Router<A extends unknown[] = []> {
         500,
       );
     }
-  }
+  };
 }
