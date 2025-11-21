@@ -31,13 +31,13 @@ export const unhtml = ($: string): string => {
   return out + $.slice(y + 1);
 };
 const at = ($: string) => $.codePointAt(0)!;
-const h2 = ($: string) => `\\x${at($).toString(16).padStart(2, "0")}`;
 const u4 = ($: string) => `\\u${at($).toString(16).padStart(4, "0")}`;
 /** Escapes a string as a regular expression literal. */
 export const unrexp = ($: string): string =>
-  $.replace(/[$(-+./?[-^{|}]/g, "\\$&")
-    .replace(/[\0-#%&',\-:->@_`~\x7f\x85\xa0]|^[\dA-Za-z]/g, h2)
-    .replace(/[\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\uffef]/g, u4);
+  $.replace(/[$(-+./?[-^{|}]/g, "\\$&").replace(
+    /[\0-#%&',\-:->@_`~\x7f\x85\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\uffef]|^[\dA-Za-z]/g,
+    u4,
+  );
 /** Replaces lone surrogates. */
 export const unlone = ($: string): string => $.replace(/\p{Cs}/gu, "\ufffd");
 /** Restricts to Unicode Assignables (RFC9839.4.3). */
@@ -53,30 +53,18 @@ export const unline = ($: string): string =>
 export const unmark = ($: string): string =>
   $.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").normalize("NFKC");
 const args = /* @__PURE__ */ (() => {
-  const hex = ($: number) => `\\u{${$.toString(16)}}`;
-  let all = "", to: string[] = [];
-  const map: { [_: string]: string } = {};
-  for (const [code, mapping, length] of codes.ranges) {
-    all += `${hex(code)}-${hex(code + length)}`;
-    for (let z = 0; z <= length; ++z) {
-      map[String.fromCodePoint(code + z)] = String.fromCodePoint(mapping + z);
-    }
+  const en = ($: number) => `\\u{${$.toString(16)}}`, de = String.fromCodePoint;
+  let from = "", z = 0;
+  const to: { [_: string]: string } = {};
+  const raw = deUtf8(Uint8Array.from(atob(codes.utf8), at));
+  while (z < 1280) from += en(at(raw[z])), to[raw[z++]] = raw[z++];
+  while (z < 1544) from += en(at(raw[z])), to[raw[z++]] = raw.slice(z, z += 2);
+  while (z < 1608) from += en(at(raw[z])), to[raw[z++]] = raw.slice(z, z += 3);
+  for (const [lower, upper, size] of codes.ranges) {
+    z = size, from += `${en(lower)}-${en(lower + size)}`;
+    do to[de(lower + z)] = de(upper + z); while (z--);
   }
-  const bytes = Uint8Array.from(atob(codes.utf8), at);
-  for (const $ of deUtf8(bytes.subarray(0, 3214))) {
-    if (to.length) all += hex(at(to[0])), map[to[0]] = $, to = [];
-    else to.push($);
-  }
-  for (const $ of deUtf8(bytes.subarray(3214, 3854))) {
-    if (to.length === 2) all += hex(at(to[0])), map[to[0]] = to[1] + $, to = [];
-    else to.push($);
-  }
-  for (const $ of deUtf8(bytes.subarray(3854))) {
-    if (to.length === 3) {
-      all += hex(at(to[0])), map[to[0]] = to[1] + to[2] + $, to = [];
-    } else to.push($);
-  }
-  return { from: RegExp(`[${all}]`, "gu"), to: Reflect.get.bind(Reflect, map) };
+  return { from: RegExp(`[${from}]`, "gu"), to: Reflect.get.bind(Reflect, to) };
 })();
 /** Case-folds. */
 export const uncase = ($: string): string => $.replace(args.from, args.to);

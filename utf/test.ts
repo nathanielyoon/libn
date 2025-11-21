@@ -47,33 +47,31 @@ Deno.test("unhtml : special entities", () => {
 Deno.test("unrexp : regex syntax characters", () => {
   for (const $ of "/^$\\*+?{}()[]|") assertEquals(unrexp($), `\\${$}`);
 });
-Deno.test("unrexp : hex-escaped characters", () => {
-  for (let z = 0; z <= 0x23; ++z) {
-    assertEquals(
-      unrexp(String.fromCharCode(z)),
-      `\\x${z.toString(16).padStart(2, "0")}`,
-    );
-  }
-  for (const $ of "&',-:;<=>@_`~\x7f\x85\xa0") {
-    assertEquals(unrexp($), `\\x${$.charCodeAt(0).toString(16)}`);
-  }
-  for (let z = 0x2000; z <= 0x200a; ++z) {
-    assertEquals(unrexp(String.fromCodePoint(z)), `\\u${z.toString(16)}`);
-  }
-  for (const $ of "\u1680\u2028\u2029\u202f\u205f\u3000\uffef") {
-    assertEquals(unrexp($), `\\u${$.charCodeAt(0).toString(16)}`);
-  }
+const assertEscaped = ($: number | string) => {
+  const character = typeof $ === "number" ? String.fromCharCode($) : $;
+  assertEquals(
+    unrexp(character),
+    `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
+  );
+};
+Deno.test("unrexp : weird characters", () => {
+  // c0 control codes
+  for (let z = 0; z <= 0x23; ++z) assertEscaped(z);
+  // punctuation
+  for (const $ of "&',-:;<=>@_`~") assertEscaped($);
+  // other control codes
+  for (const $ of "\x7f\x85\xa0\uffef") assertEscaped($);
+  // separators
+  for (let z = 0x2000; z <= 0x200a; ++z) assertEscaped(z);
+  for (const $ of "\u1680\u2028\u2029\u202f\u205f\u3000") assertEscaped($);
 });
 Deno.test("unrexp : leading alphanumeric character", () => {
-  for (let z = 0; z <= 9; ++z) {
-    assertEquals(
-      unrexp(`${z}${z}`),
-      `\\x${`${z}`.charCodeAt(0).toString(16)}${z}`,
-    );
-  }
-  for (const $ of "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") {
-    assertEquals(unrexp(`${$}${$}`), `\\x${$.charCodeAt(0).toString(16)}${$}`);
-  }
+  for (
+    const $ of [
+      ...Array(10).keys().map(String),
+      ..."ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+    ]
+  ) assertEscaped($), assertEquals(` ${$}`, ` ${$}`);
 });
 
 Deno.test("unlone :: built-in toWellFormed", () => {
