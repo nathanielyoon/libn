@@ -8,35 +8,20 @@ const [sha224, sha256, sha384, sha512, hmac, hkdf, blake2s, blake2b, blake3] =
     get`/usnistgov/ACVP-Server/fb44dce5257aba23088256e63c9b950db6967610/gen-val/json-files/SHA2-512-1.0/internalProjection.json`,
     get`/C2SP/wycheproof/427a648c39e2edea11b75bcdcd72eea3da482d6f/testvectors_v1/hmac_sha256_test.json`,
     get`/C2SP/wycheproof/427a648c39e2edea11b75bcdcd72eea3da482d6f/testvectors_v1/hkdf_sha256_test.json`,
-    ...["s", "b"].map((flavor) =>
-      get([
-        `/BLAKE2/BLAKE2/eec32b7170d8dbe4eb59c9afad2ee9297393fb5b/testvectors/blake2${flavor}-kat.txt`,
-      ])
-    ) as [Promise<string>, Promise<string>],
-    get`/BLAKE3-team/BLAKE3/ae3e8e6b3a5ae3190ca5d62820789b17886a0038/test_vectors/test_vectors.json`
-      .then<{
-        key: string;
-        context_string: string;
-        cases: {
-          input_len: number;
-          hash: string;
-          keyed_hash: string;
-          derive_key: string;
-        }[];
-      }>(JSON.parse),
+    get`/BLAKE2/BLAKE2/eec32b7170d8dbe4eb59c9afad2ee9297393fb5b/testvectors/blake2s-kat.txt`,
+    get`/BLAKE2/BLAKE2/eec32b7170d8dbe4eb59c9afad2ee9297393fb5b/testvectors/blake2b-kat.txt`,
+    get`/BLAKE3-team/BLAKE3/ae3e8e6b3a5ae3190ca5d62820789b17886a0038/test_vectors/test_vectors.json`,
   ]);
 
 const nist = ($: string) =>
   JSON.parse($).testGroups[0].tests
     .filter(($: { len: number }) => $.len % 8 === 0)
-    .map(($: { msg: string; md: string }) => ({
-      data: $.msg,
-      digest: $.md,
-    }));
+    .map(($: { msg: string; md: string }) => $.msg + $.md);
 const blake2 = ($: string) =>
   $.trim().split("\n\n").map((chunk) =>
     Object.fromEntries(chunk.split("\n").map((line) => line.split(":\t")))
   );
+const { key, context_string, cases } = JSON.parse(blake3);
 await set(import.meta, {
   sha224: nist(sha224),
   sha256: nist(sha256),
@@ -78,14 +63,19 @@ await set(import.meta, {
   blake2s: blake2(blake2s),
   blake2b: blake2(blake2b),
   blake3: {
-    key: blake3.key,
-    context: blake3.context_string,
-    length: blake3.cases[0].hash.length >> 1,
-    cases: blake3.cases.map(($) => ({
+    key,
+    context: context_string,
+    length: cases[0].hash.length >> 1,
+    cases: cases.map(($: {
+      input_len: number;
+      hash: string;
+      keyed_hash: string;
+      derive_key: string;
+    }) => ({
       input: $.input_len,
       hash: $.hash,
       keyed: $.keyed_hash,
       derive: $.derive_key,
     })),
   },
-}, "80f3435e51d8a44e06d3f8552db208e8d7bcdc264f6cbf992c5d47145ec090dd");
+}, "585d95b057f3a9eca93cb3ee2f6b14e4ee1843a81e7a2b6a3a0159d5b6834be7");
