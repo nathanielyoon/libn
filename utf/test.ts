@@ -11,7 +11,7 @@ import {
 } from "@libn/utf";
 import { assertEquals, assertMatch, assertNotEquals } from "@std/assert";
 import fc from "fast-check";
-import { fcBin, fcStr } from "../test.ts";
+import { fcBin, fcStr, zip } from "../test.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("enUtf8 :: built-in TextEncoder", () => {
@@ -87,8 +87,13 @@ Deno.test("unlone :: built-in toWellFormed", () => {
   ));
 });
 
-Deno.test("uncode : vectors", () => {
-  const mapping = new Uint32Array(Uint8Array.fromBase64(vectors.uncode).buffer);
+Deno.test("uncode : vectors", async () => {
+  const mapping = new Uint32Array(
+    (await zip(
+      Uint8Array.fromBase64(vectors.uncode),
+      new DecompressionStream("gzip"),
+    )).buffer,
+  );
   for (let z = 0; z < 0x11000; ++z) {
     assertEquals(uncode(String.fromCodePoint(z)).codePointAt(0), mapping[z]);
   }
