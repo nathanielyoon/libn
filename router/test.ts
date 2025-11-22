@@ -21,7 +21,7 @@ const assertResponse = async (actual: Response, expected: Response) => {
   const text = await Promise.all([actual.text(), expected.text()]);
   let all;
   try {
-    let one = JSON.parse(text[0]), two = JSON.parse(text[1]);
+    const one = JSON.parse(text[0]), two = JSON.parse(text[1]);
     if (!actual.ok && !expected.ok) delete one.stack, delete two.stack;
     all = [one, two];
   } catch {
@@ -151,6 +151,7 @@ Deno.test("router.fetch : internal server error", async () => {
   ));
   await assertResponse(
     await new Router().route("GET /", () => {
+      // deno-lint-ignore no-throw-literal
       throw 0;
     }).fetch(request("/")),
     error(Error("0", { cause: 0 }), 500),
