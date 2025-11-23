@@ -1,6 +1,36 @@
-import { type Has, type Is, type Next, type } from "@libn/types";
 import { assertEquals } from "@std/assert";
 import { assertType } from "@std/testing/types";
+import {
+  type And,
+  type Is,
+  type Json,
+  type Merge,
+  type Tuple,
+  type,
+} from "./mod.ts";
+
+Deno.test("Json : all JSON types", () => {
+  type<Json>(null), type<Json>(true), type<Json>(false);
+  type<Json>(0), type<Json>(0.1), type<Json>("");
+  type<Json>([]), type<Json>([[0]]);
+  type<Json>({}), type<Json>({ "": { "": 0 } });
+});
+
+Deno.test("Merge : intersection", () => {
+  type<Is<Merge<{}>, {}>>(true);
+  type<Is<Merge<{ a: 1 } & { b: 2 }>, { a: 1; b: 2 }>>(true);
+  type<Merge<{ a: { a: 1 } } & { a: { b: 2 } }>>()({ a: { a: 1, b: 2 } });
+});
+
+Deno.test("And : union", () => {
+  type<Is<And<{ 0: 0 } | { 1: 1 }>, { 0: 0; 1: 1 }>>(true);
+  type<Is<And<1 | 2>, never>>(true);
+});
+
+Deno.test("Tuple : union", () => {
+  type<Is<Tuple<0 | 1>, [0, 1]>>(true);
+  type<Is<Tuple<keyof { 0: 0; 1: 1 }>, [0, 1]>>(true);
+});
 
 Deno.test("Is : @std/testing IsExact tests", () => {
   // https://github.com/denoland/std/blob/b5a5fe4f96b91c1fe8dba5cc0270092dd11d3287/testing/types_test.ts
@@ -219,34 +249,4 @@ Deno.test("type : valid/invalid types", () => {
   assertEquals(type<0>()(0), 0);
   // @ts-expect-error incorrect
   type(0)(1);
-});
-Deno.test("Has : string pattern", () => {
-  type<Has<{ from: "0"; into: {}; exit: "0" }, string>>(null as never);
-  type<Has<{ from: "0"; into: {}; exit: "0" }, "">>(true);
-  type<Has<{ from: "0"; into: {}; exit: "1" }, "">>(false);
-  type Zero1 = { from: 0; into: { 0: { "0": 1 } }; exit: 1 };
-  type<Has<Zero1, "">>(false);
-  type<Has<Zero1, "0">>(true);
-  type<Has<Zero1, "00">>(false);
-  type<Has<Zero1, "01">>(false);
-  // https://github.com/microsoft/TypeScript/issues/6579#issuecomment-710776922
-  type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
-  type Upper = "A" | "B" | "C" | "D" | "E" | "F";
-  type Hex = `${Digit}` | Upper | Lowercase<Upper>;
-  type Hex6 = {
-    from: 0;
-    into: Next<[
-      [0, [[Hex, 1]]],
-      [1, [[Hex, 2]]],
-      [2, [[Hex, 3]]],
-      [3, [[Hex, 4]]],
-      [4, [[Hex, 5]]],
-      [5, [[Hex, 6]]],
-    ]>;
-    exit: 6;
-  };
-  type<Has<Hex6, "000000">>(true);
-  type<Has<Hex6, "a312df">>(true);
-  type<Has<Hex6, "">>(false);
-  type<Has<Hex6, "1234567">>(false);
 });
