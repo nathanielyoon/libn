@@ -1,3 +1,6 @@
+import { assertEquals, assertMatch, assertNotEquals } from "@std/assert";
+import fc from "fast-check";
+import { fcBin, fcStr, zip } from "../test.ts";
 import {
   deUtf8,
   enUtf8,
@@ -8,10 +11,7 @@ import {
   unlone,
   unmark,
   unrexp,
-} from "@libn/utf";
-import { assertEquals, assertMatch, assertNotEquals } from "@std/assert";
-import fc from "fast-check";
-import { fcBin, fcStr, zip } from "../test.ts";
+} from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 Deno.test("enUtf8 :: built-in TextEncoder", () => {
