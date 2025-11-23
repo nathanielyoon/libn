@@ -1,42 +1,44 @@
 /** @module */
-import type { Json, Merge } from "@libn/types";
-import type { Writable, Xor } from "./lib.ts";
+/** @internal */
+import type { Json, Merge, Tuple } from "@libn/types";
+import { isArray, type Only, type Writable, type Xor } from "./lib.ts";
 
-/** Null schema. */
+/** Null or nullable schema. */
 export type Nil =
   | { type: "null" }
-  | { type: ["null", "boolean"]; oneOf: [{ type: "null" }, Bit] }
-  | { type: ["null", "integer"]; oneOf: [{ type: "null" }, Int] }
-  | { type: ["null", "number"]; oneOf: [{ type: "null" }, Num] }
-  | { type: ["null", "string"]; oneOf: [{ type: "null" }, Str] }
-  | { type: ["null", "array"]; oneOf: [{ type: "null" }, Arr] }
-  | { type: ["null", "object"]; oneOf: [{ type: "null" }, Obj] };
-/** Boolean schema. */
-export type Bit =
-  & { type: "boolean" }
-  & Xor<[{ const: boolean }, { enum: readonly [boolean, ...boolean[]] }, {}]>;
+  | (Bit | Int | Num | Str | Arr | Obj extends infer A
+    ? A extends { type: infer B }
+      ? { type: ["null", B]; oneOf: [{ type: "null" }, A] }
+    : never
+    : never);
 /** @internal */
-type Numer = Xor<[{ const: number }, { enum: readonly [number, ...number[]] }, {
+type Primitive<A, B, C> =
+  & { type: A }
+  & Xor<[{ const: B }, { enum: readonly [B, ...B[]] }, C]>;
+/** @internal */
+interface Numeric {
   minimum?: number;
   maximum?: number;
   exclusiveMinimum?: number;
   exclusiveMaximum?: number;
   multipleOf?: number;
-}]>;
+}
+/** @internal */
+interface Stringy {
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  format?: "date" | "time" | "date-time" | "email" | "uri" | "uuid";
+  contentEncoding?: `base${"16" | "32" | "32hex" | "64" | "64url"}`;
+}
+/** Boolean schema. */
+export type Bit = Primitive<"boolean", boolean, {}>;
 /** Integer schema. */
-export type Int = { type: "integer" } & Numer;
+export type Int = Primitive<"integer", number, Numeric>;
 /** Number schema. */
-export type Num = { type: "number" } & Numer;
+export type Num = Primitive<"number", number, Numeric>;
 /** String schema. */
-export type Str =
-  & { type: "string" }
-  & Xor<[{ const: string }, { enum: readonly [string, ...string[]] }, {
-    minLength?: number;
-    maxLength?: number;
-    pattern?: string;
-    format?: "date" | "time" | "date-time" | "email" | "uri" | "uuid";
-    contentEncoding?: `base${"16" | "32" | "32hex" | "64" | "64url"}`;
-  }]>;
+export type Str = Primitive<"string", string, Stringy>;
 /** Array schema. */
 export type Arr =
   & { type: "array"; uniqueItems?: boolean }
@@ -112,4 +114,131 @@ export type Instance<A extends Schema> = Schema extends A ? Json
       : never
     : never
   : never;
-export type { Json, Merge };
+/** Creates a null schema. */
+export const nil = (($?: Schema) => (
+  $
+    ? { type: ["null", $.type], oneOf: [nil(), structuredClone($)] }
+    : { type: "null" }
+)) as {
+  (): { type: "null" };
+  <const A extends Schema>(
+    $: A,
+  ): { type: ["null", A["type"]]; oneOf: [{ type: "null" }, A] };
+};
+const typer = (type: string, $?: any) => ($ === undefined ? { type } : {
+  ...typeof $ !== "object" ? { const: $ } : isArray($) ? { enum: [...$] } : $,
+  type,
+});
+/** @internal */
+interface Typer<A, B, C> {
+  (): { type: A };
+  <const D extends B>($: D): { type: A; const: D };
+  <const D extends readonly [B, ...B[]]>($: D): { type: A; enum: Writable<D> };
+  <const D extends Only<C, D>>($: D): Writable<{ type: A } & D>;
+}
+/** Creates a boolean schema. */
+export const bit: Typer<"boolean", boolean, never> = /* @__PURE__ */
+  typer.bind(null, "boolean");
+/** Creates an integer schema. */
+export const int: Typer<"integer", number, Numeric> = /* @__PURE__ */
+  typer.bind(null, "integer");
+/** Creates a number schema. */
+export const num: Typer<"number", number, Numeric> = /* @__PURE__ */
+  typer.bind(null, "number");
+/** Creates a string schema. */
+export const str: Typer<"string", string, Stringy> = /* @__PURE__ */
+  typer.bind(null, "string");
+/** @internal */
+type ArrMeta<A> = Omit<Extract<Arr, A>, "type" | "items" | "prefixItems">;
+/** Creates an array schema. */
+export const arr = (($: Schema | Schema[], meta?: {}) => ({
+  ...isArray($)
+    ? {
+      minItems: $.length,
+      ...meta,
+      prefixItems: structuredClone($),
+      items: false,
+    }
+    : { ...meta, items: structuredClone($) },
+  type: "array",
+})) as {
+  <
+    const A extends Schema,
+    const B extends Only<ArrMeta<{ items: Schema }>, B> = {},
+  >($: A, meta?: B): Writable<{ type: "array"; items: A } & B>;
+  <
+    const A extends readonly Schema[],
+    const B extends Only<Partial<ArrMeta<{ items: false }>>, B> = {},
+  >($: A, meta?: B): Writable<
+    {
+      type: "array";
+      prefixItems: Writable<A>;
+      items: false;
+      minItems: B["minItems"] extends infer C extends number ? C : A["length"];
+    } & Omit<B, "minItems">
+  >;
+};
+/** @internal */
+type ObjMeta<A> = Omit<
+  Extract<Obj, A>,
+  "type" | "properties" | "additionalProperties"
+>;
+/** @internal */
+type Keys<A> = Tuple<`${Exclude<keyof A, symbol>}`>;
+/** Creates an object schema. */
+export const obj = (($: any, { required, ...meta }: any = {}) => ({
+  ...typeof $ === "string"
+    ? {
+      required: [$],
+      oneOf: Object.entries<Extract<Obj, { properties: {} }>>(meta).map((
+        [key, { properties, required }],
+      ) => obj({ ...properties, [$]: str(key) }, { required })),
+    }
+    : typeof $.type !== "string"
+    ? {
+      ...meta,
+      required: required ? [...required] : Object.keys($),
+      properties: structuredClone($),
+      additionalProperties: false,
+    }
+    : { ...meta, additionalProperties: structuredClone($) },
+  type: "object",
+})) as {
+  <
+    const A extends Schema,
+    const B extends Only<ObjMeta<{ additionalProperties: Schema }>, B> = {},
+  >($: A, meta?: B): Writable<{ type: "object"; additionalProperties: A } & B>;
+  <
+    const A extends { [_: string]: Schema },
+    const B extends Only<Partial<ObjMeta<{ properties: {} }>>, B> = {},
+  >($: A, meta?: B): Writable<
+    {
+      type: "object";
+      properties: Writable<A>;
+      additionalProperties: false;
+      required: B["required"] extends infer C extends readonly string[]
+        ? Writable<C>
+        : Keys<A>;
+    } & Omit<B, "required">
+  >;
+  <
+    const A extends string,
+    const B extends { [_: string]: Extract<Obj, { properties: {} }> },
+  >(key: A, mapping: keyof B extends never ? never : B): {
+    type: "object";
+    required: [A];
+    oneOf: Keys<B> extends infer C extends (`${Exclude<keyof B, symbol>}`)[] ? {
+        [D in keyof C]: Writable<
+          Omit<B[C[D]], "properties"> & {
+            properties: Writable<
+              & {
+                [_ in A]: { type: "string"; const: `${Exclude<C[D], symbol>}` };
+              }
+              & Omit<B[C[D]]["properties"], A>
+            >;
+          }
+        >;
+      }
+      : never;
+  };
+};

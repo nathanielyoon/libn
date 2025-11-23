@@ -20,42 +20,11 @@ assertEquals(dereference({ a: 0 }, "/b"), undefined);
 
 ## schema
 
-Types for a subset of [Draft 2020-12](https://json-schema.org/draft/2020-12).
+Types and builders for a subset of
+[Draft 2020-12](https://json-schema.org/draft/2020-12).
 
 ```ts
-import type { Instance, Int, Schema } from "@libn/json/schema";
-
-const integerSchema = {
-  type: "integer",
-  // @ts-expect-error
-  enum: [],
-  // @ts-expect-error
-  const: "4",
-} satisfies Int;
-const schema = {
-  type: "array",
-  prefixItems: [
-    { type: "boolean", const: false },
-    { type: "number", enum: [1, 2] },
-  ],
-  items: false,
-  minItems: 1,
-} as const satisfies Schema;
-const pass = [false] satisfies Instance<typeof schema>;
-const fail = [
-  // @ts-expect-error
-  true,
-  // @ts-expect-error
-  3,
-] satisfies Instance<typeof schema>;
-```
-
-## build
-
-Schema builder functions.
-
-```ts
-import { arr, bit, int, nil, num, obj, str } from "@libn/json/build";
+import { arr, bit, int, nil, num, obj, str } from "@libn/json/schema";
 import { assertEquals } from "@std/assert";
 
 const schema = obj("tag", {
@@ -71,6 +40,8 @@ const schema = obj("tag", {
     arr: arr(obj(str({ format: "date-time" })), { maxItems: 3 }),
   }, { required: ["arr"] }),
 });
+
+// Every builder returns the schema as a plain object
 assertEquals(schema, {
   type: "object",
   required: ["tag"],
@@ -137,7 +108,8 @@ const check = compile({
   type: "array",
   items: { type: "integer", enum: [2, 4, 6] },
 });
+// Parse a deep copy or an array of error pointers
 assertEquals(parse(check, [true]), { state: false, value: ["/items/type~/0"] });
+// Fast type predicate
 assertEquals(is(check, [4, 4]), true);
-assertThrows(() => assert(check, [1]));
 ```

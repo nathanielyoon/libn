@@ -186,19 +186,18 @@ const body = ($: Schema): string => {
   return `${to}}else${no("type")}`;
 };
 /** Pointer-generating validator. */
-export type Check<A extends Schema> = ($: unknown) => Generator<
-  Pointer<A>,
-  Instance<A>
->;
+export type Check<A extends Schema> = (
+  $: unknown,
+) => Generator<Pointer<A>, Instance<A>>;
 /** Compiles a schema to a validator. */
 export const compile = <const A extends Schema>($: A): Check<A> =>
   Function(`return function*(I){const S="",V="";let O;${body($)}return O}`)();
 /** Uses a validator as a type parser. */
 export const parse = <A extends Schema>(
   check: Check<A>,
-  unknown: unknown,
+  $: unknown,
 ): Result<Pointer<A>[], Instance<A>> => {
-  const iterator = check(unknown), cause: Pointer<A>[] = [];
+  const iterator = check($), cause: Pointer<A>[] = [];
   let next = iterator.next();
   while (!next.done) cause.push(next.value), next = iterator.next();
   if (cause.length) return { state: false, value: cause };
@@ -207,13 +206,5 @@ export const parse = <A extends Schema>(
 /** Uses a validator as a type predicate. */
 export const is = <A extends Schema>(
   check: Check<A>,
-  unknown: unknown,
-): unknown is Instance<A> => check(unknown).next().done!;
-/** Uses a validator as a type asserter. */
-export function assert<A extends Schema>(
-  check: Check<A>,
-  unknown: unknown,
-): asserts unknown is Instance<A> {
-  const cause = [...check(unknown)];
-  if (cause.length) throw Error(`${cause.length}`, { cause });
-}
+  $: unknown,
+): $ is Instance<A> => check($).next().done!;

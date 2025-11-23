@@ -3,42 +3,39 @@ import { enB32 } from "@libn/base/b32";
 import { enB64 } from "@libn/base/b64";
 import { enH32 } from "@libn/base/h32";
 import { enU64 } from "@libn/base/u64";
-import { arr, bit, int, nil, num, obj, str } from "@libn/json/build";
-import { assert, BASES, compile, FORMATS, is, parse } from "@libn/json/check";
+import { BASES, compile, FORMATS, is, parse } from "@libn/json/check";
 import {
   dereference,
   deToken,
   enToken,
   type Pointer,
 } from "@libn/json/pointer";
-import type {
-  Arr,
-  Bit,
-  Instance,
-  Int,
-  Nil,
-  Num,
-  Obj,
-  Schema,
-  Str,
-} from "@libn/json/schema";
-import { unrexp } from "@libn/utf";
 import {
-  assertEquals,
-  assertInstanceOf,
-  assertMatch,
-  assertStrictEquals,
-  fail,
-} from "@std/assert";
-import fc from "fast-check";
+  type Arr,
+  arr,
+  type Bit,
+  bit,
+  type Instance,
+  type Int,
+  int,
+  type Nil,
+  nil,
+  type Num,
+  num,
+  type Obj,
+  obj,
+  type Schema,
+  type Str,
+  str,
+} from "@libn/json/schema";
+import type { Json } from "@libn/types";
 import { type Is, type } from "@libn/types";
+import { unrexp } from "@libn/utf";
+import { assertEquals, assertMatch, assertStrictEquals } from "@std/assert";
+import fc from "fast-check";
 import { fcBin, fcStr } from "../test.ts";
 import { hasOwn, isArray, type Writable, type Xor } from "./lib.ts";
-import type { Json } from "@libn/types";
 
-type Sequence<A, B extends number, C extends A[] = []> = B extends B
-  ? C["length"] extends B ? C : Sequence<A, B, [...C, A]>
-  : never;
 Deno.test("lib.Writable : readonly", () => {
   type<Is<Writable<{}>, {}>>(true);
   type<Is<Writable<{ readonly 0: 0 }>, { 0: 0 }>>(true);
@@ -151,20 +148,19 @@ Deno.test("pointer.dereference : missing indices", () => {
   }));
 });
 
-Deno.test("build.nil :: Nil schemas", () => {
+Deno.test("schema.nil :: Nil schemas", () => {
   type(nil() satisfies Nil)({ type: "null" });
   type(nil(bit()) satisfies Nil)({
     type: ["null", "boolean"],
     oneOf: [{ type: "null" }, { type: "boolean" }],
   });
 });
-Deno.test("build.bit :: Bit schemas", () => {
+Deno.test("schema.bit :: Bit schemas", () => {
   type(bit() satisfies Bit)({ type: "boolean" });
   type(bit(false) satisfies Bit)({ type: "boolean", const: false });
   type(bit([true]) satisfies Bit)({ type: "boolean", enum: [true] as const });
-  type(bit({}) satisfies Bit)({ type: "boolean" });
 });
-Deno.test("build.int :: Int schemas", () => {
+Deno.test("schema.int :: Int schemas", () => {
   type(int() satisfies Int)({ type: "integer" });
   type(int(0) satisfies Int)({ type: "integer", const: 0 });
   type(int([1]) satisfies Int)({ type: "integer", enum: [1] as const });
@@ -185,7 +181,7 @@ Deno.test("build.int :: Int schemas", () => {
     multipleOf: 6,
   });
 });
-Deno.test("build.num :: Num schemas", () => {
+Deno.test("schema.num :: Num schemas", () => {
   type(num() satisfies Num)({ type: "number" });
   type(num(0) satisfies Num)({ type: "number", const: 0 });
   type(num([1]) satisfies Num)({ type: "number", enum: [1] as const });
@@ -206,7 +202,7 @@ Deno.test("build.num :: Num schemas", () => {
     multipleOf: 6,
   });
 });
-Deno.test("build.str :: Str schemas", () => {
+Deno.test("schema.str :: Str schemas", () => {
   type(str() satisfies Str)({ type: "string" });
   type(str("0") satisfies Str)({ type: "string", const: "0" });
   type(str(["1"]) satisfies Str)({ type: "string", enum: ["1"] as const });
@@ -227,11 +223,12 @@ Deno.test("build.str :: Str schemas", () => {
     contentEncoding: "base16",
   });
 });
-Deno.test("build.arr :: Arr schemas", () => {
+Deno.test("schema.arr :: Arr schemas", () => {
   type(arr(nil(), {}) satisfies Arr)({
     type: "array",
     items: { type: "null" },
   });
+  arr(nil(), { minItems: 0, maxItems: 1, uniqueItems: false });
   type(
     arr(nil(), { minItems: 0, maxItems: 1, uniqueItems: false }) satisfies Arr,
   )({
@@ -261,7 +258,7 @@ Deno.test("build.arr :: Arr schemas", () => {
     uniqueItems: true,
   });
 });
-Deno.test("build.obj :: Obj schemas", () => {
+Deno.test("schema.obj :: Obj schemas", () => {
   type(obj(nil(), {}) satisfies Obj)({
     type: "object",
     additionalProperties: { type: "null" },
@@ -341,21 +338,11 @@ const assertCheck = <const A>(
       for (const $ of ok) {
         assertEquals(parse(check, $), { state: true, value: $ });
         assertEquals(is(check, $), true);
-        assert(check, $);
       }
       for (const key of Object.keys(no) as (keyof typeof no)[]) {
         for (const $ of no[key]) {
           assertEquals(parse(check, $), { state: false, value: [key] });
           assertEquals(is(check, $), false);
-          try {
-            assert(check, $);
-          } catch (thrown) {
-            assertInstanceOf(thrown, Error);
-            assertEquals(thrown.message, "1");
-            assertEquals(thrown.cause, [key]);
-            continue;
-          }
-          fail();
         }
       }
     }),
@@ -377,6 +364,9 @@ const fcUnique = <A>($: fc.Arbitrary<A>) =>
     minLength: 2,
     comparator: "SameValueZero",
   }) as fc.Arbitrary<[A, A, ...A[]]>;
+type Sequence<A, B extends number, C extends A[] = []> = B extends B
+  ? C["length"] extends B ? C : Sequence<A, B, [...C, A]>
+  : never;
 const fcOrdered = <A extends number>(size: A, value?: fc.Arbitrary<number>) =>
   fc.uniqueArray(value ?? fcNumber, {
     minLength: size,
