@@ -4,10 +4,10 @@ import { B32 } from "@libn/base/b32";
 import { B64 } from "@libn/base/b64";
 import { H32 } from "@libn/base/h32";
 import { U64 } from "@libn/base/u64";
-import type { Data, Str, Type } from "@libn/json/schema";
 import type { Result } from "@libn/result";
 import type { Json, Merge } from "@libn/types";
 import { hasOwn, isArray } from "./lib.ts";
+import type { Data, Str, Type } from "./schema.ts";
 
 /** @internal */
 type Patterns<A extends string | undefined> = Merge<

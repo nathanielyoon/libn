@@ -3,14 +3,13 @@ import { enB32 } from "@libn/base/b32";
 import { enB64 } from "@libn/base/b64";
 import { enH32 } from "@libn/base/h32";
 import { enU64 } from "@libn/base/u64";
-import {
-  BASES,
-  compile,
-  dereference,
-  FORMATS,
-  is,
-  parse,
-} from "@libn/json/check";
+import type { Json } from "@libn/types";
+import { type Is, type } from "@libn/types";
+import { unrexp } from "@libn/utf";
+import { assertEquals, assertStrictEquals } from "@std/assert";
+import fc from "fast-check";
+import { fcBin, fcStr } from "../test.ts";
+import { hasOwn, isArray, type Writable, type Xor } from "./lib.ts";
 import {
   type Arr,
   arr,
@@ -28,14 +27,8 @@ import {
   type Str,
   str,
   type Type,
-} from "@libn/json/schema";
-import type { Json } from "@libn/types";
-import { type Is, type } from "@libn/types";
-import { unrexp } from "@libn/utf";
-import { assertEquals, assertStrictEquals } from "@std/assert";
-import fc from "fast-check";
-import { fcBin, fcStr } from "../test.ts";
-import { hasOwn, isArray, type Writable, type Xor } from "./lib.ts";
+} from "./schema.ts";
+import { BASES, compile, dereference, FORMATS, is, parse } from "./check.ts";
 
 Deno.test("lib.Writable : readonly", () => {
   type<Is<Writable<{}>, {}>>(true);
