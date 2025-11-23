@@ -47,23 +47,26 @@ Deno.test("unhtml : special entities", () => {
 Deno.test("unrexp : regex syntax characters", () => {
   for (const $ of "/^$\\*+?{}()[]|") assertEquals(unrexp($), `\\${$}`);
 });
-const assertEscaped = ($: number | string) => {
+const assertEscaped = ($: number | string, size: 2 | 4) => {
   const character = typeof $ === "number" ? String.fromCharCode($) : $;
   assertEquals(
     unrexp(character),
-    `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
+    `\\${size === 2 ? "x" : "u"}${
+      character.charCodeAt(0).toString(16).padStart(size, "0")
+    }`,
   );
 };
 Deno.test("unrexp : weird characters", () => {
   // c0 control codes
-  for (let z = 0; z <= 0x23; ++z) assertEscaped(z);
+  for (let z = 0; z <= 0x23; ++z) assertEscaped(z, 2);
   // punctuation
-  for (const $ of "&',-:;<=>@_`~") assertEscaped($);
+  for (const $ of "&',-:;<=>@_`~") assertEscaped($, 2);
   // other control codes
-  for (const $ of "\x7f\x85\xa0\uffef") assertEscaped($);
+  for (const $ of "\x7f\x85\xa0") assertEscaped($, 2);
+  assertEscaped("\uffef", 4);
   // separators
-  for (let z = 0x2000; z <= 0x200a; ++z) assertEscaped(z);
-  for (const $ of "\u1680\u2028\u2029\u202f\u205f\u3000") assertEscaped($);
+  for (let z = 0x2000; z <= 0x200a; ++z) assertEscaped(z, 4);
+  for (const $ of "\u1680\u2028\u2029\u202f\u205f\u3000") assertEscaped($, 4);
 });
 Deno.test("unrexp : leading alphanumeric character", () => {
   for (
@@ -71,7 +74,7 @@ Deno.test("unrexp : leading alphanumeric character", () => {
       ...Array(10).keys().map(String),
       ..."ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
     ]
-  ) assertEscaped($), assertEquals(` ${$}`, ` ${$}`);
+  ) assertEscaped($, 2), assertEquals(` ${$}`, ` ${$}`);
 });
 
 Deno.test("unlone :: built-in toWellFormed", () => {

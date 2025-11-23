@@ -16,7 +16,7 @@ await set(import.meta, {
       }, new Uint32Array(0x110000).fill(0xfffd)).buffer,
     ),
     new CompressionStream("gzip"),
-  )).toBase64(),
+  )).toBase64({ omitPadding: true }),
   uncase: fold.matchAll(/^([\dA-F]{4,}); [CF]; ([^;]+)/gm).reduce((to, $) => [
     to[0] + String.fromCodePoint(parseInt($[1], 16)),
     $[2].split(" ").reduce(
@@ -24,4 +24,4 @@ await set(import.meta, {
       to[1],
     ),
   ], ["", ""]),
-}, "66d3266a7857ccca0956d725aa572d2866ccf53472639d21baea713b3f6756ab");
+}, "144b8569d5f84863bd6d274a596b32f64a9f62f59c7abbe064c32cc045beb54e");
