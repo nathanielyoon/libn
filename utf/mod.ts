@@ -37,7 +37,10 @@ const u4 = ($: string) => `\\u${at($).toString(16).padStart(4, "0")}`;
 export const unrexp = ($: string): string =>
   $.replace(/[$(-+./?[-^{|}]/g, "\\$&")
     .replace(/[\0-#%&',\-:->@_`~\x7f\x85\xa0]|^[\dA-Za-z]/g, x2)
-    .replace(/[\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\uffef]/g, u4);
+    .replace(
+      /[\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\uffef\uffff\p{Cs}]/gu,
+      u4,
+    );
 /** Replaces lone surrogates. */
 export const unlone = ($: string): string => $.replace(/\p{Cs}/gu, "\ufffd");
 /** Restricts to Unicode Assignables (RFC9839.4.3). */

@@ -60,13 +60,16 @@ Deno.test("unrexp : weird characters", () => {
   // c0 control codes
   for (let z = 0; z <= 0x23; ++z) assertEscaped(z, 2);
   // punctuation
-  for (const $ of "&',-:;<=>@_`~") assertEscaped($, 2);
+  for (const $ of "!#&',-:;<=>@_`~") assertEscaped($, 2);
   // other control codes
   for (const $ of "\x7f\x85\xa0") assertEscaped($, 2);
-  assertEscaped("\uffef", 4);
   // separators
+  assertEscaped(" ", 2);
   for (let z = 0x2000; z <= 0x200a; ++z) assertEscaped(z, 4);
   for (const $ of "\u1680\u2028\u2029\u202f\u205f\u3000") assertEscaped($, 4);
+  // noncharacters
+  for (let z = 0xd800; z < 0xe000; ++z) assertEscaped(z, 4);
+  assertEscaped("\uffef", 4), assertEscaped("\uffff", 4);
 });
 Deno.test("unrexp : leading alphanumeric character", () => {
   for (
@@ -77,6 +80,11 @@ Deno.test("unrexp : leading alphanumeric character", () => {
   ) assertEscaped($, 2), assertEquals(` ${$}`, ` ${$}`);
 });
 
+Deno.test("unlone : lone surrogates", () => {
+  for (let z = 0xd800; z < 0xe000; ++z) {
+    assertEquals(unlone(String.fromCharCode(z)), "\ufffd");
+  }
+});
 Deno.test("unlone :: built-in toWellFormed", () => {
   fc.assert(fc.property(
     fc.uint16Array().map(($) =>
@@ -88,6 +96,8 @@ Deno.test("unlone :: built-in toWellFormed", () => {
   ));
 });
 
+const assertReplaced = ($: number) =>
+  assertEquals(uncode(String.fromCodePoint($)), "\ufffd");
 Deno.test("uncode : vectors", async () => {
   const mapping = new Uint32Array(
     (await zip(
@@ -99,15 +109,13 @@ Deno.test("uncode : vectors", async () => {
     assertEquals(uncode(String.fromCodePoint(z)).codePointAt(0), mapping[z]);
   }
 });
-const assertReplaced = ($: number) =>
-  assertEquals(uncode(String.fromCodePoint($)), "\ufffd");
 Deno.test("uncode : c0/c1 control codes", () => {
   for (let z = 0; z <= 0x1f; ++z) {
     z !== 0x9 && z !== 0xa && z !== 0xd && assertReplaced(z);
   }
   for (let z = 0x7f; z <= 0x9f; ++z) assertReplaced(z);
 });
-Deno.test("uncode : lone surrogatees", () => {
+Deno.test("uncode : lone surrogates", () => {
   for (let z = 0xd800; z <= 0xdfff; ++z) assertReplaced(z);
 });
 Deno.test("uncode : noncharacters", () => {
