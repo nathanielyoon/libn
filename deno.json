@@ -83,7 +83,7 @@
     "cover": "deno task --quiet --cwd=. record && deno task --quiet --cwd=. report",
     "ok": "deno task --cwd=. check; deno task --cwd=. lint; deno task --cwd=. cover; deno publish --dry-run --allow-dirty",
     "exports": "cd \"$INIT_CWD\" || exit 1; bash -c 'jq -r \"if (.exports | type) == \\\"object\\\" then .exports | to_entries[] | \\\"\\(.key) \\(.value)\\\" else \\\". \\(.exports)\\\" end\" ./deno.json | while read line; do echo \"# $(cut -d\" \" -f1 <<<\"$line\") ($(deno bundle --quiet --unstable-raw-imports --minify $(cut -d\" \" -f2 <<<\"$line\") | brotli | wc --bytes))\"; echo \"import \\\"$(cut -d\" \" -f2 <<<\"$line\")\\\";\" >bundle.ts && deno bundle --quiet --unstable-raw-imports bundle.ts; rm -f bundle.ts; echo; done'",
-    "npm": "cd \"$INIT_CWD\" || exit 1; deno run --allow-env --allow-run=npm,bun --allow-read --allow-write ../npm.ts",
+    "npm": "cd \"$INIT_CWD\" || exit 1; deno run --allow-env --allow-run=npm,bun --allow-read --allow-write --allow-net=jsr.io ../npm.ts",
     "publish": "cd \"$INIT_CWD\" || exit 1; deno publish --allow-dirty; cd npm && npm publish --access=public && cd .. && rm -r npm;"
   }
 }
