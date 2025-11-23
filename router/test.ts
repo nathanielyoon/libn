@@ -1,6 +1,6 @@
 import { assertEquals, assertThrows } from "@std/assert";
 import fc from "fast-check";
-import { error, Router } from "./mod.ts";
+import { Router } from "./mod.ts";
 import { fcStr } from "../test.ts";
 
 const METHODS = [
@@ -154,7 +154,7 @@ Deno.test("router.fetch : internal server error", async () => {
       // deno-lint-ignore no-throw-literal
       throw 0;
     }).fetch(request("/")),
-    error(Error("0", { cause: 0 }), 500),
+    Response.json({ name: "Error", message: "0", cause: 0 }, { status: 500 }),
   );
 });
 Deno.test("router.fetch : result", async () => {

@@ -22,12 +22,6 @@ class Node<A> {
   next?: { name: string; node: Node<A> };
   rest: { [_: string]: Node<A> } = Object.create(null);
 }
-/** Wraps an `Error` in a `Response`. */
-export const error = ($: Error, status = 400): Response =>
-  Response.json(
-    { name: $.name, message: $.message, cause: $.cause, stack: $.stack },
-    { status },
-  );
 /** HTTP router. */
 export class Router<A extends unknown[] = []> {
   private tree: Node<Handler<A, string>> = new Node();
@@ -65,7 +59,13 @@ export class Router<A extends unknown[] = []> {
     }
     if (to instanceof Response) return to;
     else if (typeof to === "number") return new Response(null, { status: to });
-    else if (to instanceof Error) return error(to, status);
-    else return new Response(to, { status: status ?? 200 });
+    else if (to instanceof Error) {
+      return Response.json({
+        name: to.name,
+        message: to.message,
+        cause: to.cause,
+        stack: to.stack,
+      }, { status: status ?? 400 });
+    } else return new Response(to, { status: status ?? 200 });
   };
 }
