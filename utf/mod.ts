@@ -31,19 +31,19 @@ export const unhtml = ($: string): string => {
   return out + $.slice(y + 1);
 };
 const at = ($: string) => $.codePointAt(0)!;
-const u4 = ($: string) => `\\u${at($).toString(16).padStart(4, "0")}`;
+const code = ($: string) => `\\u${at($).toString(16).padStart(4, "0")}`;
 /** Escapes a string as a regular expression literal. */
 export const unrexp = ($: string): string =>
   $.replace(/[$(-+./?[-^{|}]/g, "\\$&").replace(
     /[\0-#%&',\-:->@_`~\x7f\x85\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\uffef]|^[\dA-Za-z]/g,
-    u4,
+    code,
   );
 /** Replaces lone surrogates. */
 export const unlone = ($: string): string => $.replace(/\p{Cs}/gu, "\ufffd");
 /** Restricts to Unicode Assignables (RFC9839.4.3). */
 export const uncode = ($: string): string =>
   $.replace(
-    /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\p{Cs}\ufdd0-\ufdef\ufffe\uffff\u{1fffe}\u{1ffff}\u{2fffe}\u{2ffff}\u{3fffe}\u{3ffff}\u{4fffe}\u{4ffff}\u{5fffe}\u{5ffff}\u{6fffe}\u{6ffff}\u{7fffe}\u{7ffff}\u{8fffe}\u{8ffff}\u{9fffe}\u{9ffff}\u{afffe}\u{affff}\u{bfffe}\u{bffff}\u{cfffe}\u{cffff}\u{dfffe}\u{dffff}\u{efffe}\u{effff}\u{ffffe}\u{fffff}\u{10fffe}\u{10ffff}]/gu,
+    /[\0-\x08\v\f\x0e-\x1f\x7f-\x9f\p{Cs}\ufdd0-\ufdef\ufffe\uffff\u{1fffe}\u{1ffff}\u{2fffe}\u{2ffff}\u{3fffe}\u{3ffff}\u{4fffe}\u{4ffff}\u{5fffe}\u{5ffff}\u{6fffe}\u{6ffff}\u{7fffe}\u{7ffff}\u{8fffe}\u{8ffff}\u{9fffe}\u{9ffff}\u{afffe}\u{affff}\u{bfffe}\u{bffff}\u{cfffe}\u{cffff}\u{dfffe}\u{dffff}\u{efffe}\u{effff}\u{ffffe}\u{fffff}\u{10fffe}\u{10ffff}]/gu,
     "\ufffd",
   );
 /** Replaces breaks with linefeeds. */
