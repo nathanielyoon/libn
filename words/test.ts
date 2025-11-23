@@ -1,3 +1,5 @@
+import { assertEquals } from "@std/assert";
+import fc from "fast-check";
 import {
   lowerCamel,
   lowerKebab,
@@ -5,9 +7,7 @@ import {
   upperCamel,
   upperKebab,
   upperSnake,
-} from "@libn/words";
-import { assertEquals } from "@std/assert";
-import fc from "fast-check";
+} from "./mod.ts";
 import vectors from "./vectors.json" with { type: "json" };
 
 const codes = (["Lu", "Ll", "Lt", "L", "N"] as const).reduce((to, key) => ({
