@@ -43,19 +43,19 @@ export type Str = Primitive<"string", string, Stringy>;
 export type Arr =
   & { type: "array"; uniqueItems?: boolean }
   & Xor<[
-    { items: Schema; minItems?: number; maxItems?: number },
-    { prefixItems: readonly Schema[]; items: false; minItems: number },
+    { items: Type; minItems?: number; maxItems?: number },
+    { prefixItems: readonly Type[]; items: false; minItems: number },
   ]>;
 /** Object schema. */
 export type Obj =
   & { type: "object" }
   & Xor<[{
-    additionalProperties: Schema;
+    additionalProperties: Type;
     propertyNames?: Str;
     minProperties?: number;
     maxProperties?: number;
   }, {
-    properties: { [_: string]: Schema };
+    properties: { [_: string]: Type };
     additionalProperties: false;
     required: readonly string[];
   }, {
@@ -66,62 +66,62 @@ export type Obj =
     ];
   }]>;
 /** JSON schema subset. */
-export type Schema = Nil | Bit | Int | Num | Str | Arr | Obj;
+export type Type = Nil | Bit | Int | Num | Str | Arr | Obj;
 /** @internal */
 type Prefix<
-  A extends readonly Schema[],
+  A extends readonly Type[],
   B extends number,
   D extends unknown[] = [],
-> = A extends readonly [infer E extends Schema, ...infer F extends Schema[]]
+> = A extends readonly [infer E extends Type, ...infer F extends Type[]]
   ? Prefix<
     F,
     B,
-    B extends D["length"] ? [...D, Instance<E>?] : [...D, Instance<E>]
+    B extends D["length"] ? [...D, Data<E>?] : [...D, Data<E>]
   >
   : D;
 /** @internal */
 type Natural<A extends number> = `${A}` extends `-${string}` ? 0 : A;
 /** Typed JSON value. */
-export type Instance<A extends Schema> = Schema extends A ? Json
+export type Data<A extends Type> = Type extends A ? Json
   : A extends { const: infer B } ? B
   : A extends { enum: readonly (infer B)[] } ? B
-  : A extends { oneOf: [Nil, infer B extends Schema] } ? null | Instance<B>
+  : A extends { oneOf: [Nil, infer B extends Type] } ? null | Data<B>
   : A["type"] extends "null" ? null
   : A["type"] extends "boolean" ? boolean
   : A["type"] extends "integer" | "number" ? number
   : A["type"] extends "string" ? string
   : A["type"] extends "array"
-    ? A extends { items: infer B extends Schema } ? readonly Instance<B>[]
+    ? A extends { items: infer B extends Type } ? readonly Data<B>[]
     : A extends {
-      prefixItems: infer B extends readonly Schema[];
+      prefixItems: infer B extends readonly Type[];
       minItems: infer C extends number;
     } ? Prefix<B, Natural<C>>
     : never
-  : A extends { additionalProperties: infer B extends Schema }
-    ? { [_: string]: Instance<B> }
+  : A extends { additionalProperties: infer B extends Type }
+    ? { [_: string]: Data<B> }
   : A extends {
-    properties: infer B extends { [_: string]: Schema };
+    properties: infer B extends { [_: string]: Type };
     required: readonly (infer C extends string)[];
   } ? Writable<
-      & { [D in Extract<`${Exclude<keyof B, symbol>}`, C>]: Instance<B[D]> }
-      & { [D in Exclude<`${Exclude<keyof B, symbol>}`, C>]?: Instance<B[D]> }
+      & { [D in Extract<`${Exclude<keyof B, symbol>}`, C>]: Data<B[D]> }
+      & { [D in Exclude<`${Exclude<keyof B, symbol>}`, C>]?: Data<B[D]> }
     >
   : A extends
     { required: readonly [infer B extends string]; oneOf: readonly (infer C)[] }
-    ? C extends Schema
-      ? Instance<C> extends infer D extends { [_ in B]?: Json }
+    ? C extends Type
+      ? Data<C> extends infer D extends { [_ in B]?: Json }
         ? Merge<Omit<D, B> & { [E in B]: Exclude<D[E], undefined> }>
       : never
     : never
   : never;
 /** Creates a null schema. */
-export const nil = (($?: Schema) => (
+export const nil = (($?: Type) => (
   $
     ? { type: ["null", $.type], oneOf: [nil(), structuredClone($)] }
     : { type: "null" }
 )) as {
   (): { type: "null" };
-  <const A extends Schema>(
+  <const A extends Type>(
     $: A,
   ): { type: ["null", A["type"]]; oneOf: [{ type: "null" }, A] };
 };
@@ -151,7 +151,7 @@ export const str: Typer<"string", string, Stringy> = /* @__PURE__ */
 /** @internal */
 type ArrMeta<A> = Omit<Extract<Arr, A>, "type" | "items" | "prefixItems">;
 /** Creates an array schema. */
-export const arr = (($: Schema | Schema[], meta?: {}) => ({
+export const arr = (($: Type | Type[], meta?: {}) => ({
   ...isArray($)
     ? {
       minItems: $.length,
@@ -163,11 +163,11 @@ export const arr = (($: Schema | Schema[], meta?: {}) => ({
   type: "array",
 })) as {
   <
-    const A extends Schema,
-    const B extends Only<ArrMeta<{ items: Schema }>, B> = {},
+    const A extends Type,
+    const B extends Only<ArrMeta<{ items: Type }>, B> = {},
   >($: A, meta?: B): Writable<{ type: "array"; items: A } & B>;
   <
-    const A extends readonly Schema[],
+    const A extends readonly Type[],
     const B extends Only<Partial<ArrMeta<{ items: false }>>, B> = {},
   >($: A, meta?: B): Writable<
     {
@@ -205,11 +205,11 @@ export const obj = (($: any, { required, ...meta }: any = {}) => ({
   type: "object",
 })) as {
   <
-    const A extends Schema,
-    const B extends Only<ObjMeta<{ additionalProperties: Schema }>, B> = {},
+    const A extends Type,
+    const B extends Only<ObjMeta<{ additionalProperties: Type }>, B> = {},
   >($: A, meta?: B): Writable<{ type: "object"; additionalProperties: A } & B>;
   <
-    const A extends { [_: string]: Schema },
+    const A extends { [_: string]: Type },
     const B extends Only<Partial<ObjMeta<{ properties: {} }>>, B> = {},
   >($: A, meta?: B): Writable<
     {

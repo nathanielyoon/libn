@@ -4,11 +4,10 @@ import { B32 } from "@libn/base/b32";
 import { B64 } from "@libn/base/b64";
 import { H32 } from "@libn/base/h32";
 import { U64 } from "@libn/base/u64";
-import { enToken, type Pointer } from "@libn/json/pointer";
-import type { Instance, Schema, Str } from "@libn/json/schema";
+import type { Data, Str, Type } from "@libn/json/schema";
 import type { Result } from "@libn/result";
-import type { Merge } from "@libn/types";
-import { hasOwn } from "./lib.ts";
+import type { Json, Merge } from "@libn/types";
+import { hasOwn, isArray } from "./lib.ts";
 
 /** @internal */
 type Patterns<A extends string | undefined> = Merge<
@@ -37,8 +36,24 @@ export const BASES: Patterns<Str["contentEncoding"]> = {
   base64: B64,
   base64url: U64,
 };
+/** Resolves a JSON pointer. */
+export const dereference = ($: Json, pointer: string): Json | undefined => {
+  if (!pointer) return $;
+  const [head, ...tail] = pointer.split("/");
+  if (head) return;
+  for (let z = 0; z < tail.length; ++z) {
+    if (typeof $ !== "object" || !$) return;
+    const token = tail[z].replaceAll("~1", "/").replaceAll("~0", "~");
+    if (isArray($)) {
+      if (!/^(?:[1-9]\d*|0)$/.test(token)) return;
+      $ = $[+token];
+    } else $ = $[token];
+    if ($ === undefined) return;
+  }
+  return $;
+};
 const no = (
-  $: `${Schema extends infer A ? A extends A ? keyof A : never : never}${any}`,
+  $: `${Type extends infer A ? A extends A ? keyof A : never : never}${any}`,
 ) => `(yield\`\${S}/${$}~\${V}\`);`;
 const TYPE = {
   null: "I===null",
@@ -48,8 +63,8 @@ const TYPE = {
   string: 'typeof I==="string"',
   array: "Array.isArray(I)",
   object: 'typeof I==="object"&&I&&!Array.isArray(I)',
-} satisfies { [_ in Extract<Schema["type"], string>]: string };
-const body = ($: Schema): string => {
+} satisfies { [_ in Extract<Type["type"], string>]: string };
+const body = ($: Type): string => {
   if (typeof $.type !== "string") {
     return `{const s=S;if(I===null)O=I;else{const S=\`\${s}/oneOf/1\`;${
       body($.oneOf[1])
@@ -169,8 +184,8 @@ const body = ($: Schema): string => {
             "const s=`${S}/properties`,v=V,i=I,o=O={},k=new Set(Object.keys(i));";
           let z = 0;
           do {
-            const key = JSON.stringify(keys[z]);
-            const token = enToken(key.slice(1, -1));
+            const key = JSON.stringify(keys[z]), inner = key.slice(1, -1);
+            const token = inner.replaceAll("~", "~0").replaceAll("/", "~1");
             to +=
               `if(Object.hasOwn(i,${key})){k.delete(${key});const S=\`\${s}/${token}\`,V=\`\${v}/${token}\`,I=i[${key}];let O;${
                 body($.properties[keys[z]])
@@ -185,26 +200,22 @@ const body = ($: Schema): string => {
   }
   return `${to}}else${no("type")}`;
 };
-/** Pointer-generating validator. */
-export type Check<A extends Schema> = (
-  $: unknown,
-) => Generator<Pointer<A>, Instance<A>>;
+/** Pointer-generating, clone-returning validator. */
+export type Check<A extends Type> = ($: unknown) => Generator<string, Data<A>>;
 /** Compiles a schema to a validator. */
-export const compile = <const A extends Schema>($: A): Check<A> =>
+export const compile = <const A extends Type>($: A): Check<A> =>
   Function(`return function*(I){const S="",V="";let O;${body($)}return O}`)();
 /** Uses a validator as a type parser. */
-export const parse = <A extends Schema>(
+export const parse = <A extends Type>(
   check: Check<A>,
   $: unknown,
-): Result<Pointer<A>[], Instance<A>> => {
-  const iterator = check($), cause: Pointer<A>[] = [];
+): Result<string[], Data<A>> => {
+  const iterator = check($), cause = [];
   let next = iterator.next();
   while (!next.done) cause.push(next.value), next = iterator.next();
   if (cause.length) return { state: false, value: cause };
   else return { state: true, value: next.value };
 };
 /** Uses a validator as a type predicate. */
-export const is = <A extends Schema>(
-  check: Check<A>,
-  $: unknown,
-): $ is Instance<A> => check($).next().done!;
+export const is = <A extends Type>(check: Check<A>, $: unknown): $ is Data<A> =>
+  check($).next().done!;

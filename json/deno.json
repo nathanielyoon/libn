@@ -3,7 +3,6 @@
   "version": "0.4.3",
   "license": "0BSD",
   "exports": {
-    "./pointer": "./pointer.ts",
     "./schema": "./schema.ts",
     "./check": "./check.ts"
   }

@@ -2,22 +2,6 @@
 
 JSON Schema building and checking, with JSON pointer errors.
 
-## pointer
-
-[JSON pointer](https://www.rfc-editor.org/rfc/rfc6901) getter.
-
-```ts
-import { dereference } from "@libn/json/pointer";
-import { assertEquals } from "@std/assert";
-
-// Resolve valid JSON pointers
-assertEquals(dereference({ a: [{ b: [0, 1] }] }, "/a/0/b/1"), 1);
-
-// Invalid pointers or missing keys/indices resolve to `undefined`
-assertEquals(dereference({ a: 0 }, "a"), undefined);
-assertEquals(dereference({ a: 0 }, "/b"), undefined);
-```
-
 ## schema
 
 Types and builders for a subset of
@@ -98,7 +82,7 @@ assertEquals(schema, {
 
 ## check
 
-Validator compiler and wrappers.
+Parse to valid data or error [pointers](https://www.rfc-editor.org/rfc/rfc6901).
 
 ```ts
 import { assert, compile, is, parse } from "@libn/json/check";
