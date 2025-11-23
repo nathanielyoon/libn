@@ -12,39 +12,34 @@ import { Router } from "@libn/router";
 // Parameterize if passing extra arguments to `app.fetch`
 const router = new Router<[Deno.Addr]>()
   // Method-chain routes
-  .route("GET", "/hello", ({ url }) => {
+  .route("GET /hello", ({ url }) => {
     const name = url.searchParams.get("name");
     return name ? `Hello, ${name}!` : 400;
   });
 // Or add them later, order is irrelevant
-router.route("POST", "/upload/?user/?", async ({ path, request }) => {
+router.route("POST /upload/#user", async ({ path, request }) => {
   const result = await uploadFile({
     user: path.user,
     blob: await request.blob(),
-    path: path[""].join("/"),
   });
-  if (!result.state) return Response.json({ error: result }, { status: 400 });
-  return null;
+  if (!result.state) return Error(result.value);
 });
 
 // Use in `Deno.serve` callback
-Deno.serve((request, info) => router.fetch(request, info));
+Deno.serve(router.fetch);
 
 // Export as `Deno.ServeDefaultExport` for `deno serve`
-export default {
-  fetch: (request, info) => router.fetch(request, info),
-} satisfies Deno.ServeDefaultExport;
+export default router satisfies Deno.ServeDefaultExport;
 
 // Use in `Bun.serve`
-Bun.serve({ fetch: (request) => router.fetch(request) });
+Bun.serve(router);
 
 // Export as a Cloudflare Workers ES Module
 interface Env {
   SECRET_KEY: string;
 }
 export default new Router<[Env, ExecutionContext]>().route(
-  "GET",
-  "/key",
+  "GET /key",
   (_, env) => env.SECRET_KEY,
 ) satisfies ExportedHandler<Env>;
 ```
