@@ -1,6 +1,6 @@
 {
   "name": "@libn/base",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "license": "0BSD",
   "exports": {
     "./b16": "./b16.ts",

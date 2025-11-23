@@ -2,7 +2,7 @@
 export type Encode = (binary: Uint8Array) => string;
 /** String-to-binary function. */
 export type Decode = (string: string) => Uint8Array<ArrayBuffer>;
-/** UTF-16 character code encoder. */
+/** UTF-16 character code getter. */
 export const en: (this: string, index?: number) => number =
   /* @__PURE__ */ (() =>
     String.prototype.charCodeAt as (this: string, index?: number) => number)();
