@@ -131,7 +131,7 @@ interface Typer<A, B, C> {
   (): { type: A };
   <const D extends B>($: D): { type: A; const: D };
   <const D extends readonly [B, ...B[]]>($: D): { type: A; enum: Writable<D> };
-  <const D extends Only<C, D>>($: D): Writable<{ type: A } & D>;
+  <const D extends C>($: D): Writable<{ type: A } & D>;
 }
 /** Creates a boolean schema. */
 export const bit: Typer<"boolean", boolean, never> = /* @__PURE__ */
