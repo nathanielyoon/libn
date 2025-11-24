@@ -4,19 +4,16 @@ Simple HTTP router.
 
 ## default
 
-Define path parameters as `?name`, and append a `?` for a catch-all.
+Define path parameters with `#name`. Only one handler runs per request.
 
 ```ts ignore
 import { Router } from "@libn/router";
 
-// Parameterize if passing extra arguments to `app.fetch`
-const router = new Router<[Deno.Addr]>()
-  // Method-chain routes
-  .route("GET /hello", ({ url }) => {
-    const name = url.searchParams.get("name");
-    return name ? `Hello, ${name}!` : 400;
-  });
-// Or add them later, order is irrelevant
+// Parameterize if passing extra arguments to `router.fetch`
+const router = new Router<[Deno.Addr]>().route("GET /hello", ({ url }) => {
+  const name = url.searchParams.get("name");
+  return name ? `Hello, ${name}!` : 400;
+});
 router.route("POST /upload/#user", async ({ path, request }) => {
   const result = await uploadFile({
     user: path.user,
