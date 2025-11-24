@@ -3,22 +3,16 @@ import { assertEquals } from "@std/assert";
 
 /** Custom lint plugin. */
 const plugin: Deno.lint.Plugin = { name: "libn", rules: {} };
-export default plugin;
-const rule = (name: string, create: Deno.lint.Rule["create"]) => {
-  plugin.rules[name] = { create };
-  return (
+const rule = (name: string, create: Deno.lint.Rule["create"]) => (
+  plugin.rules[name] = { create }, (
     raw: TemplateStringsArray,
-    ...$: [
-      bad: string,
-      message: string,
-      ...fix: [] | [string, Deno.lint.Range?],
-    ][]
+    ...errors: [string, string, ...[] | [string, Deno.lint.Range?]][]
   ) =>
     Deno.test(name, () => {
       let source = raw[0];
-      const diagnostics = Array($.length);
-      for (let z = 0; z < $.length; ++z) {
-        const [bad, message, fix, to] = $[z];
+      const diagnostics = Array(errors.length);
+      for (let z = 0; z < errors.length; source += raw[++z]) {
+        const [bad, message, fix, to] = errors[z];
         const range: Deno.lint.Range = [source.length, (source += bad).length];
         diagnostics[z] = {
           id: `libn/${name}`,
@@ -27,11 +21,10 @@ const rule = (name: string, create: Deno.lint.Rule["create"]) => {
           fix: fix !== undefined ? [{ range: to ?? range, text: fix }] : [],
           hint: undefined,
         };
-        source += raw[z + 1];
       }
       assertEquals(Deno.lint.runPlugin(plugin, "main.ts", source), diagnostics);
-    });
-};
+    })
+);
 
 rule("error-messages", (ctx) => {
   const visit = (node: Deno.lint.NewExpression | Deno.lint.CallExpression) => {
@@ -418,3 +411,5 @@ ${["parseInt()", "Expected 2 arguments, but got 0."]};
 ${['parseInt("0", 0, 0)', "Expected 2 arguments, but got 3."]};
 ${['parseInt("0")', "Missing radix argument.", ", 10", [141, 141]]};
 parseInt("0", ${["0", "Radix is not an integer from 2-36."]});`;
+
+export default plugin;
