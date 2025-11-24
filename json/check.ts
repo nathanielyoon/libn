@@ -151,8 +151,8 @@ const body = ($: Type): string => {
           to += `const s=S;switch(I[${JSON.stringify(key)}]){`;
           for (let z = 0; z < $.oneOf.length; ++z) {
             const option = $.oneOf[z], property = option.properties[key];
-            if (property?.type === "string" && property.const !== undefined) {
-              to += `case${
+            if (hasOwn(property, "const")) {
+              to += `case ${
                 JSON.stringify(property.const)
               }:{const S=\`\${s}/oneOf/${z}\`;${body(option)}break}`;
             }

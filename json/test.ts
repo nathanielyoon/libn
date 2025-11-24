@@ -282,6 +282,14 @@ Deno.test("schema.obj :: Obj schemas", () => {
     additionalProperties: false,
     required: [""],
   });
+  type(obj("0", [obj({}), obj({})]) satisfies Obj)({
+    type: "object",
+    required: ["0"],
+    oneOf: [
+      obj({ 0: bit(false) }, { required: [] }),
+      obj({ 0: bit(true) }, { required: [] }),
+    ],
+  });
   type(obj("0", { 1: obj({}) }) satisfies Obj)({
     type: "object",
     required: ["0"],
@@ -479,7 +487,7 @@ Deno.test("check.compile : Num schemas", () => {
     })),
   );
 });
-Deno.test("check.compile : Str schemas()", () => {
+Deno.test("check.compile : Str schemas", () => {
   assertCheck({ type: str(), ok: [""], no: { "/type~": not("string") } });
   const fcEnum = fcUnique(fcStr());
   assertCheck(fcEnum.map(([head, ...tail]) => ({
@@ -689,6 +697,19 @@ Deno.test("check.compile : Obj schemas", () => {
       "/type~": not("object"),
       "/properties//type~/": [{ "": not("null") }],
       "/required/0~": [{}],
+    },
+  });
+  assertCheck({
+    type: obj("", [obj({ 0: nil() }), obj({ 1: nil() })]),
+    ok: [{ "": false, 0: null }, { "": true, 1: null }],
+    no: {
+      "/type~": not("object"),
+      "/required/0~": [{}, { 0: null }, { 1: null }],
+      "/oneOf~": [{ "": "" }, { "": not("boolean") }],
+      "/oneOf/0/properties/0/type~/0": [{ "": false, 0: not("null") }],
+      "/oneOf/1/properties/1/type~/1": [{ "": true, 1: not("null") }],
+      "/oneOf/0/required/0~": [{ "": false }],
+      "/oneOf/1/required/0~": [{ "": true }],
     },
   });
   assertCheck({

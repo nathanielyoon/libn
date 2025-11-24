@@ -46,6 +46,8 @@ export type Arr =
     { items: Type; minItems?: number; maxItems?: number },
     { prefixItems: readonly Type[]; items: false; minItems: number },
   ]>;
+/** @internal */
+type Properties = Extract<Obj, { properties: {} }>;
 /** Object schema. */
 export type Obj =
   & { type: "object" }
@@ -60,10 +62,7 @@ export type Obj =
     required: readonly string[];
   }, {
     required: readonly [string];
-    oneOf: readonly [
-      Extract<Obj, { properties: {} }>,
-      ...Extract<Obj, { properties: {} }>[],
-    ];
+    oneOf: readonly [Properties, ...Properties[]];
   }]>;
 /** JSON schema subset. */
 export type Type = Nil | Bit | Int | Num | Str | Arr | Obj;
@@ -116,9 +115,7 @@ export type Data<A extends Type> = Type extends A ? Json
   : never;
 /** Creates a null schema. */
 export const nil = (($?: Type) => (
-  $
-    ? { type: ["null", $.type], oneOf: [nil(), structuredClone($)] }
-    : { type: "null" }
+  $ ? { type: ["null", $.type], oneOf: [nil(), $] } : { type: "null" }
 )) as {
   (): { type: "null" };
   <const A extends Type>(
@@ -153,13 +150,8 @@ type ArrMeta<A> = Omit<Extract<Arr, A>, "type" | "items" | "prefixItems">;
 /** Creates an array schema. */
 export const arr = (($: Type | Type[], meta?: {}) => ({
   ...isArray($)
-    ? {
-      minItems: $.length,
-      ...meta,
-      prefixItems: structuredClone($),
-      items: false,
-    }
-    : { ...meta, items: structuredClone($) },
+    ? { minItems: $.length, ...meta, prefixItems: $, items: false }
+    : { ...meta, items: $ },
   type: "array",
 })) as {
   <
@@ -184,24 +176,41 @@ type ObjMeta<A> = Omit<
   "type" | "properties" | "additionalProperties"
 >;
 /** @internal */
+type One<A extends string, B extends Properties, C> = Writable<
+  Omit<B, "properties"> & {
+    properties: Writable<{ [_ in A]: C } & Omit<B["properties"], A>>;
+  }
+>;
+/** @internal */
 type Keys<A> = Tuple<`${Exclude<keyof A, symbol>}`>;
 /** Creates an object schema. */
-export const obj = (($: any, { required, ...meta }: any = {}) => ({
+export const obj = (($: any, meta?: any) => ({
   ...typeof $ === "string"
     ? {
       required: [$],
-      oneOf: Object.entries<Extract<Obj, { properties: {} }>>(meta).map((
-        [key, { properties, required }],
-      ) => obj({ ...properties, [$]: str(key) }, { required })),
+      oneOf: isArray(meta)
+        ? [
+          obj({ ...meta[0].properties, [$]: bit(false) }, {
+            required: meta[0].required,
+          }),
+          obj({ ...meta[1].properties, [$]: bit(true) }, {
+            required: meta[1].required,
+          }),
+        ]
+        : Object.entries<any>(meta).map(([key, value]) =>
+          obj({ ...value.properties, [$]: str(key) }, {
+            required: value.required,
+          })
+        ),
     }
     : typeof $.type !== "string"
     ? {
       ...meta,
-      required: required ? [...required] : Object.keys($),
-      properties: structuredClone($),
+      required: meta?.required ? [...meta.required] : Object.keys($),
+      properties: $,
       additionalProperties: false,
     }
-    : { ...meta, additionalProperties: structuredClone($) },
+    : { ...meta, additionalProperties: $ },
   type: "object",
 })) as {
   <
@@ -223,20 +232,26 @@ export const obj = (($: any, { required, ...meta }: any = {}) => ({
   >;
   <
     const A extends string,
-    const B extends { [_: string]: Extract<Obj, { properties: {} }> },
+    const B extends [Properties, Properties],
+  >(key: A, mapping: B): {
+    type: "object";
+    required: [A];
+    oneOf: [
+      One<A, B[0], { type: "boolean"; const: false }>,
+      One<A, B[1], { type: "boolean"; const: true }>,
+    ];
+  };
+  <
+    const A extends string,
+    const B extends { [_: string]: Properties },
   >(key: A, mapping: keyof B extends never ? never : B): {
     type: "object";
     required: [A];
     oneOf: Keys<B> extends infer C extends (`${Exclude<keyof B, symbol>}`)[] ? {
-        [D in keyof C]: Writable<
-          Omit<B[C[D]], "properties"> & {
-            properties: Writable<
-              & {
-                [_ in A]: { type: "string"; const: `${Exclude<C[D], symbol>}` };
-              }
-              & Omit<B[C[D]]["properties"], A>
-            >;
-          }
+        [D in keyof C]: One<
+          A,
+          B[C[D]],
+          { type: "string"; const: `${Exclude<C[D], symbol>}` }
         >;
       }
       : never;
