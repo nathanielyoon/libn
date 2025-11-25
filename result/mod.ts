@@ -1,99 +1,78 @@
-/** @module */
-/** Failure/success discriminated union. */
-export type Result<A = any, B = any> =
-  | { state: false; value: A }
-  | { state: true; value: B };
-/** Result that can also be delegated to in a generator function. */
-export type Yieldable<A = any, B = any> = Result<A, B> & {
-  [Symbol.iterator](): Generator<Yieldable<A, B>, B>;
-};
-/** Failure value. */
-export type No<A extends Result> = Extract<A, { state: false }>["value"];
-/** Success value. */
-export type Ok<A extends Result> = Extract<A, { state: true }>["value"];
-function* generate<A, B>(this: Yieldable<A, B>): Generator<Yieldable<A, B>, B> {
-  return yield this;
+/** @internal */
+import type { Json } from "@libn/types";
+
+/** Failure or success. */
+export type Result<A = any, B = unknown> = Ok<A> | Err<B>;
+/** Success wrapper. */
+export interface Ok<A> {
+  /** Tag for result type. */
+  state: true;
+  /** Inner value. */
+  value: A;
 }
-/** Creates a yieldable failure. */
-export const fail = <const A = undefined>($?: A): Yieldable<A, never> => (
-  { state: false, value: $!, [Symbol.iterator]: generate }
-);
-/** Creates a yieldable success. */
-export const pass = <const A = undefined>($?: A): Yieldable<never, A> => (
-  { state: true, value: $!, [Symbol.iterator]: generate }
-);
-/** Extracts a result's value, optionally throwing if the state is wrong. */
-export const open = <A extends Result, B extends boolean>($: A, only?: B):
-  | (false extends B ? No<A> : never)
-  | (true extends B ? Ok<A> : never) => {
-  if (!$.state === only) throw Error(`${$.state}`, { cause: $ });
-  return $.value;
+const toJson = <A>($: A) => {
+  try { // could throw
+    return JSON.parse(JSON.stringify($));
+  } catch { /* empty */ }
 };
-/** Coerced-to-false values (except `NaN`, which isn't representable here). */
-export type Falsy = undefined | null | false | 0 | 0n | "";
-/** Creates a failure if falsy or a success if truthy. */
-export const some = <const A>($: A): Yieldable<
-  Extract<Falsy, A>,
-  Exclude<A, Falsy>
-> => $ ? pass($ as Exclude<A, Falsy>) : fail($ as Extract<Falsy, A>);
-/** Aggregates results. */
-export const join = <const A extends [Result, ...Result[]]>(
-  $: A,
-): Yieldable<A, { [B in keyof A]: Ok<A[B]> }> => {
-  const ok = Array($.length) as { [B in keyof A]: Ok<A[B]> };
-  let z = 0;
-  do if ($[z].state) ok[z] = $[z].value;
-  else return fail($); while (++z < $.length);
-  return pass(ok);
-};
-const sync = <A, B, C = never>(
-  $: A | Promise<A>,
-  use: ($: A) => B | Promise<B>,
-  or?: ($: unknown) => C,
-) => $ instanceof Promise ? $.then(use).catch(or) : use($);
-/** Try-catches a possibly-throwing function. */
-export const safe =
-  ((unsafe: (...$: any[]) => any, or?: (error: Error, ...$: any[]) => any) =>
-  (...$: any[]) => {
+/** Failure wrapper. */
+export class Err<A> extends Error {
+  /** Wraps a thrown value. */
+  static catch($: unknown): Err<unknown> {
+    if (!($ instanceof Error)) return new Err($);
+    const err = new Err($.cause, $.message);
+    if ($.stack) err.stack = $.stack;
+    return err;
+  }
+  /** Wraps an unsafe function. */
+  static try<A>(unsafe: () => A): Result<A> {
     try {
-      return sync(unsafe(...$), pass, async (cause) => {
-        const error = cause instanceof Error ? cause : Error("", { cause });
-        return fail(or ? await or(error, ...$) : error);
-      });
-    } catch (cause) {
-      const error = cause instanceof Error ? cause : Error("", { cause });
-      return or ? sync(or(error, ...$), fail) : fail(error);
+      return { state: true, value: unsafe() };
+    } catch (thrown) {
+      return Err.catch(thrown);
     }
-  }) as {
-    <A extends unknown[], B, C = Error>(
-      unsafe: (...$: A) => B extends Promise<any> ? never : B,
-      or?: (error: Error, ...$: A) => C extends Promise<any> ? never : C,
-    ): (...$: A) => Yieldable<C, B>;
-    <A extends unknown[], B, C = Error>(
-      unsafe: (...$: A) => Promise<B>,
-      or?: (error: Error, ...$: A) => C | Promise<C>,
-    ): (...$: A) => Promise<Yieldable<C, B>>;
-  };
-/** Wraps an imperative block and returns failures early. */
-export const exec =
-  ((block: (...$: any[]) => Generator<Yieldable> | AsyncGenerator<Yieldable>) =>
-  (...$) => {
-    const generator = block(...$);
-    const next = (prev?: any): Yieldable | Promise<Yieldable> =>
-      sync(
-        generator.next(prev),
-        ({ done, value }): Yieldable | Promise<Yieldable> => {
-          if (done) return pass(value);
-          else if (value.state) return next(value.value);
-          return value;
-        },
-      );
-    return next();
-  }) as {
-    <A extends unknown[], B, C, D>(
-      block: (...$: A) => Generator<Yieldable<B, C>, D, C>,
-    ): (...$: A) => Yieldable<B, D>;
-    <A extends unknown[], B, C, D>(
-      $: (...$: A) => AsyncGenerator<Yieldable<B, C>, D, C>,
-    ): (...$: A) => Promise<Yieldable<B, D>>;
-  };
+  }
+  /** Wraps an unsafe asynchronous function. */
+  static async tryAsync<A>(unsafe: () => Promise<A>): Promise<Result<A>> {
+    try {
+      return { state: true, value: await unsafe() };
+    } catch (thrown) {
+      return Err.catch(thrown);
+    }
+  }
+  /** Tag for result type. */
+  readonly state = false;
+  /** Throws itself. */
+  get value(): never {
+    throw this;
+  }
+  /** Initial value. */
+  declare cause: A;
+  /** Information attached while bubbling up. */
+  context: { info: string; data?: Json }[] = [];
+  /** Creates a new error. */
+  constructor(cause: A, message?: string) {
+    super(message, { cause });
+    this.name = Err.name;
+  }
+  /** Attaches context. */
+  with(info: string, data: Json = null): this {
+    return this.context.push({ info, data }), this;
+  }
+  /** Serializes. */
+  toJSON(): {
+    name: string;
+    message: string;
+    cause: A | undefined;
+    context: Err<A>["context"];
+    stack: string | undefined;
+  } {
+    return {
+      name: this.name,
+      message: this.message,
+      cause: toJson(this.cause),
+      context: this.context,
+      stack: this.stack,
+    };
+  }
+}
