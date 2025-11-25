@@ -1,83 +1,30 @@
 # @libn/json
 
-JSON Schema building and checking, with JSON pointer errors.
+JSON schema types and checks.
 
 ## schema
 
-Types and builders for a subset of
-[Draft 2020-12](https://json-schema.org/draft/2020-12).
+Types for a subset of [Draft 2020-12](https://json-schema.org/draft/2020-12).
 
 ```ts
-import { arr, bit, int, nil, num, obj, str } from "@libn/json/schema";
+import type { Instance, Schema } from "@libn/json/schema";
 import { assertEquals } from "@std/assert";
 
-const schema = obj("tag", {
-  tuple: obj({
-    nullable: nil(bit()),
-    arr: arr([
-      obj({ const: int(0) }),
-      obj({ enum: num([0.1, 0.2, 0.30000000000000004]) }),
-    ], { minItems: 1 }),
-  }),
-  array: obj({
-    null: nil(),
-    arr: arr(obj(str({ format: "date-time" })), { maxItems: 3 }),
-  }, { required: ["arr"] }),
-});
-
-// Every builder returns the schema as a plain object
-assertEquals(schema, {
+const schema = {
   type: "object",
-  required: ["tag"],
-  oneOf: [{
-    type: "object",
-    properties: {
-      tag: { type: "string", const: "tuple" },
-      nullable: {
-        type: ["null", "boolean"],
-        oneOf: [{ type: "null" }, { type: "boolean" }],
-      },
-      arr: {
-        type: "array",
-        prefixItems: [{
-          type: "object",
-          properties: {
-            const: { type: "integer", const: 0 },
-          },
-          additionalProperties: false,
-          required: ["const"],
-        }, {
-          type: "object",
-          properties: {
-            enum: { type: "number", enum: [0.1, 0.2, 0.30000000000000004] },
-          },
-          additionalProperties: false,
-          required: ["enum"],
-        }],
-        items: false,
-        minItems: 1,
-      },
-    },
-    additionalProperties: false,
-    required: ["nullable", "arr"],
-  }, {
-    type: "object",
-    properties: {
-      tag: { type: "string", const: "array" },
-      null: { type: "null" },
-      arr: {
-        type: "array",
-        items: {
-          type: "object",
-          additionalProperties: { type: "string", format: "date-time" },
-        },
-        maxItems: 3,
-      },
-    },
-    additionalProperties: false,
-    required: ["arr"],
-  }],
-});
+  properties: {
+    small: { oneOf: [{ type: "null" }, { enum: [0, 1, 2] }] },
+    large: { type: "string", maxLength: 65535 },
+    array: { type: "array", items: { type: "boolean" } },
+  },
+  additionalProperties: false,
+  required: ["small", "array"],
+} satisfies Schema;
+
+const instance = {
+  small: null,
+  array: [false, true],
+} satisfies Instance<typeof schema>;
 ```
 
 ## check
@@ -85,15 +32,27 @@ assertEquals(schema, {
 Parse to valid data or error [pointers](https://www.rfc-editor.org/rfc/rfc6901).
 
 ```ts
-import { assert, compile, is, parse } from "@libn/json/check";
-import { assertEquals, assertThrows } from "@std/assert";
+import { compile, is, point, to } from "@libn/json/check";
+import { Err } from "@libn/result";
+import { assert, assertEquals } from "@std/assert";
 
-const check = compile({
+const schema = {
   type: "array",
-  items: { type: "integer", enum: [2, 4, 6] },
-});
+  items: { type: "number", multipleOf: 2 },
+} as const;
+const check = compile(schema);
+
+// Fast-path type predicate
+assertEquals(is(check, [4, 24]), true);
+
 // Parse a deep copy or an array of error pointers
-assertEquals(parse(check, [true]), { state: false, value: ["/items/type~/0"] });
-// Fast type predicate
-assertEquals(is(check, [4, 4]), true);
+const instance = [0, true];
+const result = to(check, instance);
+assert(!result.state);
+assertEquals(result.cause, [{
+  type: "/items/type", // path to failed constraint
+  data: "/1", // path to invalid value
+}]);
+assertEquals(point(schema, result.cause[0].type), "number"); // expected number
+assertEquals(point(instance, result.cause[0].data), true); // but got this
 ```
