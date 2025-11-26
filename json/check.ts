@@ -112,6 +112,12 @@ const body = ($: Schema): string => {
     case "object":
       to +=
         'typeof I==="object"&&I&&!Array.isArray(I)){const s=`${S}/properties`,v=V,i=I,o=O={},k=new Set(Object.keys(i));';
+      if ($.minProperties! > 0) {
+        to += `k.size<${$.minProperties}&&${no("minProperties")}`;
+      }
+      if ($.maxProperties !== undefined) {
+        to += `k.size>${$.maxProperties}&&${no("maxProperties")}`;
+      }
       for (const key of Object.keys($.properties).sort()) {
         const raw = JSON.stringify(key);
         const en = raw.slice(1, -1).replaceAll("~", "~0").replaceAll("/", "~1");

@@ -1,5 +1,5 @@
 /** @internal */
-import type { Json, Merge } from "@libn/types";
+import type { Json, Merge, Tuple } from "@libn/types";
 
 /** @internal */
 interface Nil {
@@ -45,6 +45,8 @@ interface Obj {
   properties: { [_: string]: Schema };
   additionalProperties: false;
   required: readonly string[];
+  minProperties?: number;
+  maxProperties?: number;
 }
 /** JSON schema. */
 export type Schema = Nil | Opt | Bit | Num | Str | Arr | Obj;
@@ -65,3 +67,96 @@ export type Instance<A extends Schema> = Schema extends A ? Json
   : A extends { oneOf: readonly [{ type: "null" }, infer B extends Schema] }
     ? null | Instance<B>
   : never;
+type Writable<A> = A extends A ? { -readonly [B in keyof A]: A[B] } : never;
+type Readable<A> = A extends A ? { readonly [B in keyof A]: A[B] } : never;
+type Assign<A, B> = Writable<B & Omit<A, keyof B>>;
+/** @internal */
+type Meta<A, B extends string> =
+  & Omit<Extract<Schema, { type: A }>, "type" | B>
+  & { [_: string]: Json };
+/** Creates a nullable schema. */
+export const nil = ((schema: {}, $?: {}) => ({
+  ...$,
+  oneOf: [{ type: "null" }, structuredClone(schema)],
+})) as {
+  <const A extends Exclude<Schema, { oneOf: {} }>>(
+    schema: A,
+  ): { oneOf: [{ type: "null" }, Writable<A>] };
+  <
+    const A extends Exclude<Schema, { oneOf: {} }>,
+    const B extends { [_: string]: Json },
+  >(schema: A, $: B): Assign<B, { oneOf: [{ type: "null" }, Writable<A>] }>;
+};
+/** Creates an enum schema. */
+export const opt = ((options: Json[], $?: {}) => ({ ...$, enum: options })) as {
+  <const A extends Opt["enum"]>(options: A): { enum: Readable<A> };
+  <
+    const A extends Opt["enum"],
+    const B extends { [_: string]: Json },
+  >(options: A, $: B): Assign<B, { enum: Readable<A> }>;
+};
+/** Creates a boolean schema. */
+export const bit = (($?: {}) => ({ ...$, type: "boolean" })) as {
+  (): { type: "boolean" };
+  <const A extends { [_: string]: Json }>($: A): Assign<A, { type: "boolean" }>;
+};
+/** Creates a number schema. */
+export const num = (($?: any) => ({ ...$, type: "number" })) as {
+  (): { type: "number" };
+  <const A extends Meta<"number", never>>($: A): Assign<A, { type: "number" }>;
+};
+/** Creates a string schema. */
+export const str = (($?: any) => ({ ...$, type: "string" })) as {
+  (): { type: "string" };
+  <const A extends Meta<"string", never>>($: A): Assign<A, { type: "string" }>;
+};
+/** Creates an array schema. */
+export const arr = ((items: Schema, $?: any) => (
+  { ...$, type: "array", items: structuredClone(items) }
+)) as {
+  <const A extends Schema>(items: A): { type: "array"; items: Writable<A> };
+  <const A extends Schema, const B extends Meta<"array", "items">>(
+    items: A,
+    $: B,
+  ): Assign<B, { type: "array"; items: Writable<A> }>;
+};
+/** Creates an object schema. */
+export const obj = ((properties: {}, { required, ...$ }: any = {}) => ({
+  ...$,
+  type: "object",
+  properties: structuredClone(properties),
+  additionalProperties: false,
+  required: required ? [...required] : Object.keys(properties),
+})) as {
+  <const A extends { [_: string]: Schema }>(properties: A): {
+    type: "object";
+    properties: Writable<A>;
+    additionalProperties: false;
+    required: readonly Tuple<`${Exclude<keyof A, symbol>}`>[number][];
+  };
+  <
+    const A extends { [_: string]: Schema },
+    const B extends Meta<
+      "object",
+      "properties" | "additionalProperties" | "required"
+    >,
+    const C extends readonly (keyof A & string)[],
+  >(properties: A, $: B & { required: C }): Assign<B, {
+    type: "object";
+    properties: Writable<A>;
+    additionalProperties: false;
+    required: Readable<C>;
+  }>;
+  <
+    const A extends { [_: string]: Schema },
+    const B extends Meta<
+      "object",
+      "properties" | "additionalProperties" | "required"
+    >,
+  >(properties: A, $: "required" extends keyof B ? never : B): Assign<B, {
+    type: "object";
+    properties: Writable<A>;
+    additionalProperties: false;
+    required: readonly Tuple<`${Exclude<keyof A, symbol>}`>[number][];
+  }>;
+};

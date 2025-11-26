@@ -7,8 +7,17 @@ import { enH32, H32 } from "@libn/base/h32";
 import { B64, enB64 } from "@libn/base/b64";
 import { enU64, U64 } from "@libn/base/u64";
 import { compile, is, point, to } from "./check.ts";
-import { arr, bit, nil, num, obj, opt, str } from "./build.ts";
-import type { Instance, Schema } from "./schema.ts";
+import {
+  arr,
+  bit,
+  type Instance,
+  nil,
+  num,
+  obj,
+  opt,
+  type Schema,
+  str,
+} from "./schema.ts";
 import { fcBin, fcStr } from "../test.ts";
 
 const fcJson = fc.jsonValue() as fc.Arbitrary<Json>;
@@ -154,10 +163,21 @@ Deno.test("build.obj :: Obj", () => {
     required: [],
   });
   assertEquals(
-    obj({
-      bit: bit(),
-      num: num(),
-      str: str(),
+    obj({ bit: bit(), num: num(), str: str() }) satisfies Schema,
+    {
+      type: "object",
+      properties: {
+        bit: { type: "boolean" },
+        num: { type: "number" },
+        str: { type: "string" },
+      },
+      additionalProperties: false,
+      required: ["bit", "num", "str"],
+    },
+  );
+  assertEquals(
+    obj({ bit: bit(), num: num(), str: str() }, {
+      required: ["bit", "num", "str"],
     }) satisfies Schema,
     {
       type: "object",
@@ -171,28 +191,9 @@ Deno.test("build.obj :: Obj", () => {
     },
   );
   assertEquals(
-    obj({
-      bit: bit(),
-      num: num(),
-      str: str(),
-    }, ["bit", "num", "str"]) satisfies Schema,
-    {
-      type: "object",
-      properties: {
-        bit: { type: "boolean" },
-        num: { type: "number" },
-        str: { type: "string" },
-      },
-      additionalProperties: false,
-      required: ["bit", "num", "str"],
-    },
-  );
-  assertEquals(
-    obj({
-      bit: bit(),
-      num: num(),
-      str: str(),
-    }, ["num"]) satisfies Schema,
+    obj({ bit: bit(), num: num(), str: str() }, {
+      required: ["num"],
+    }) satisfies Schema,
     {
       type: "object",
       properties: {
@@ -450,8 +451,24 @@ Deno.test("check.compile : Arr", () => {
 });
 Deno.test("check.compile : Obj", () => {
   assertBase(obj({}));
+  fc.assert(fc.property(fcLength, (length) => {
+    const keys = Array(length).keys().map(String).toArray();
+    const properties = Object.fromEntries(keys.map((key) => [key, bit()]));
+    const more = Object.fromEntries(keys.map((key) => [key, true]));
+    const less = Object.fromEntries(keys.slice(1).map((key) => [key, true]));
+    assertCheck({
+      schema: obj(properties, { required: [], minProperties: length }),
+      pass: [more],
+      fail: [[less, "/minProperties"]],
+    });
+    assertCheck({
+      schema: obj(properties, { required: [], maxProperties: length - 1 }),
+      pass: [less],
+      fail: [[more, "/maxProperties"]],
+    });
+  }));
   assertCheck({
-    schema: obj({ "0": bit() }, []),
+    schema: obj({ "0": bit() }, { required: [] }),
     pass: [{}, { "0": true }],
     fail: [[{ "0": null }, "/properties/0/type", "/0"], [
       { "1": true },

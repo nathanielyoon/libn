@@ -4,39 +4,14 @@ JSON schema types, builders, and validators.
 
 ## schema
 
-Types for a subset of [Draft 2020-12](https://json-schema.org/draft/2020-12).
+Subset of [Draft 2020-12](https://json-schema.org/draft/2020-12).
 
 ```ts
-import type { Instance, Schema } from "@libn/json/schema";
+import { arr, bit, nil, num, obj, opt, str } from "@libn/json/schema";
 import { assertEquals } from "@std/assert";
 
-const schema = {
-  type: "object",
-  properties: {
-    small: { oneOf: [{ type: "null" }, { enum: [0, 1, 2] }] },
-    large: { type: "string", maxLength: 65535 },
-    array: { type: "array", items: { type: "boolean" } },
-  },
-  additionalProperties: false,
-  required: ["small", "array"],
-} satisfies Schema;
-
-const instance = {
-  small: null,
-  array: [false, true],
-} satisfies Instance<typeof schema>;
-```
-
-## build
-
-Plain schema builders.
-
-```ts
-import { arr, bit, nil, num, obj, opt, str } from "@libn/json/build";
-import { assertEquals } from "@std/assert";
-
-// Each function returns a regular object
 assertEquals(
+  // Each function returns a regular object
   obj({
     boolean: bit(),
     integer: num({ multipleOf: 1 }),
@@ -56,6 +31,7 @@ assertEquals(
       },
     },
     additionalProperties: false,
+    // All properties are required unless specified otherwise
     required: ["boolean", "integer", "nullable", "datetimes"],
   },
 );
@@ -63,7 +39,8 @@ assertEquals(
 
 ## check
 
-Parse to valid data or error [pointers](https://www.rfc-editor.org/rfc/rfc6901).
+Validate, or parse to either valid data or error
+[pointers](https://www.rfc-editor.org/rfc/rfc6901).
 
 ```ts
 import { compile, is, point, to } from "@libn/json/check";
