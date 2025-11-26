@@ -3,11 +3,11 @@ import type { Json, Merge } from "@libn/types";
 
 /** @internal */
 interface Nil {
-  oneOf: [{ type: "null" }, Exclude<Schema, Nil>];
+  oneOf: readonly [{ type: "null" }, Exclude<Schema, Nil>];
 }
 /** @internal */
 interface Opt {
-  enum: [boolean | number | string, ...(boolean | number | string)[]];
+  enum: readonly [boolean | number | string, ...(boolean | number | string)[]];
 }
 /** @internal */
 interface Bit {
@@ -44,9 +44,7 @@ interface Obj {
   type: "object";
   properties: { [_: string]: Schema };
   additionalProperties: false;
-  required?: readonly string[];
-  minProperties?: number;
-  maxProperties?: number;
+  required: readonly string[];
 }
 /** JSON schema. */
 export type Schema = Nil | Opt | Bit | Num | Str | Arr | Obj;
@@ -57,12 +55,13 @@ export type Instance<A extends Schema> = Schema extends A ? Json
   : A extends { type: "number" } ? number
   : A extends { type: "string" } ? string
   : A extends { items: infer B extends Schema } ? readonly Instance<B>[]
-  : A extends { properties: infer B extends { [_: string]: Schema } }
-    ? A extends { required: readonly (infer C extends string)[] } ? Merge<
-        & { [D in Extract<`${Exclude<keyof B, symbol>}`, C>]: Instance<B[D]> }
-        & { [D in Exclude<`${Exclude<keyof B, symbol>}`, C>]?: Instance<B[D]> }
-      >
-    : { [C in `${Exclude<keyof B, symbol>}`]?: Instance<B[C]> }
-  : A extends { oneOf: [{ type: "null" }, infer B extends Schema] }
+  : A extends {
+    properties: infer B extends { [_: string]: Schema };
+    required: readonly (infer C extends string)[];
+  } ? Merge<
+      & { [D in Extract<`${Exclude<keyof B, symbol>}`, C>]: Instance<B[D]> }
+      & { [D in Exclude<`${Exclude<keyof B, symbol>}`, C>]?: Instance<B[D]> }
+    >
+  : A extends { oneOf: readonly [{ type: "null" }, infer B extends Schema] }
     ? null | Instance<B>
   : never;

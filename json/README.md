@@ -1,6 +1,6 @@
 # @libn/json
 
-JSON schema types and checks.
+JSON schema types, builders, and validators.
 
 ## schema
 
@@ -25,6 +25,40 @@ const instance = {
   small: null,
   array: [false, true],
 } satisfies Instance<typeof schema>;
+```
+
+## build
+
+Plain schema builders.
+
+```ts
+import { arr, bit, nil, num, obj, opt, str } from "@libn/json/build";
+import { assertEquals } from "@std/assert";
+
+// Each function returns a regular object
+assertEquals(
+  obj({
+    boolean: bit(),
+    integer: num({ multipleOf: 1 }),
+    nullable: nil(opt([false, 0, ""])),
+    datetimes: arr(str({ format: "date-time" }), { uniqueItems: true }),
+  }),
+  {
+    type: "object",
+    properties: {
+      boolean: { type: "boolean" },
+      integer: { type: "number", multipleOf: 1 },
+      nullable: { oneOf: [{ type: "null" }, { enum: [false, 0, ""] }] },
+      datetimes: {
+        type: "array",
+        items: { type: "string", format: "date-time" },
+        uniqueItems: true,
+      },
+    },
+    additionalProperties: false,
+    required: ["boolean", "integer", "nullable", "datetimes"],
+  },
+);
 ```
 
 ## check

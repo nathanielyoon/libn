@@ -4,6 +4,7 @@
   "license": "0BSD",
   "exports": {
     "./schema": "./schema.ts",
+    "./build": "./build.ts",
     "./check": "./check.ts"
   }
 }

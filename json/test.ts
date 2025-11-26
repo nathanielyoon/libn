@@ -7,6 +7,7 @@ import { enH32, H32 } from "@libn/base/h32";
 import { B64, enB64 } from "@libn/base/b64";
 import { enU64, U64 } from "@libn/base/u64";
 import { compile, is, point, to } from "./check.ts";
+import { arr, bit, nil, num, obj, opt, str } from "./build.ts";
 import type { Instance, Schema } from "./schema.ts";
 import { fcBin, fcStr } from "../test.ts";
 
@@ -72,6 +73,139 @@ Deno.test("check.point : missing keys/indices", () => {
   }));
 });
 
+Deno.test("build.nil :: Nil", () => {
+  assertEquals(nil(bit()) satisfies Schema, {
+    oneOf: [{ type: "null" }, { type: "boolean" }],
+  });
+});
+Deno.test("build.opt :: Opt", () => {
+  assertEquals(opt([false, 0, ""]) satisfies Schema, { enum: [false, 0, ""] });
+});
+Deno.test("build.bit :: Bit", () => {
+  assertEquals(bit() satisfies Schema, { type: "boolean" });
+});
+Deno.test("build.num :: Num", () => {
+  assertEquals(
+    num({
+      minimum: 0,
+      maximum: 1,
+      exclusiveMinimum: 2,
+      exclusiveMaximum: 3,
+      multipleOf: 4,
+    }) satisfies Schema,
+    {
+      type: "number",
+      minimum: 0,
+      maximum: 1,
+      exclusiveMinimum: 2,
+      exclusiveMaximum: 3,
+      multipleOf: 4,
+    },
+  );
+});
+Deno.test("build.str :: Str", () => {
+  assertEquals(
+    str({
+      minLength: 0,
+      maxLength: 1,
+      pattern: "",
+      format: "date",
+      contentEncoding: "base16",
+    }) satisfies Schema,
+    {
+      type: "string",
+      minLength: 0,
+      maxLength: 1,
+      pattern: "",
+      format: "date",
+      contentEncoding: "base16",
+    },
+  );
+});
+Deno.test("build.arr :: Arr", () => {
+  assertEquals(arr(bit()) satisfies Schema, {
+    type: "array",
+    items: { type: "boolean" },
+  });
+  assertEquals(arr(num(), {}) satisfies Schema, {
+    type: "array",
+    items: { type: "number" },
+  });
+  assertEquals(
+    arr(str(), {
+      minItems: 0,
+      maxItems: 1,
+      uniqueItems: true,
+    }) satisfies Schema,
+    {
+      type: "array",
+      items: { type: "string" },
+      minItems: 0,
+      maxItems: 1,
+      uniqueItems: true,
+    },
+  );
+});
+Deno.test("build.obj :: Obj", () => {
+  assertEquals(obj({}) satisfies Schema, {
+    type: "object",
+    properties: {},
+    additionalProperties: false,
+    required: [],
+  });
+  assertEquals(
+    obj({
+      bit: bit(),
+      num: num(),
+      str: str(),
+    }) satisfies Schema,
+    {
+      type: "object",
+      properties: {
+        bit: { type: "boolean" },
+        num: { type: "number" },
+        str: { type: "string" },
+      },
+      additionalProperties: false,
+      required: ["bit", "num", "str"],
+    },
+  );
+  assertEquals(
+    obj({
+      bit: bit(),
+      num: num(),
+      str: str(),
+    }, ["bit", "num", "str"]) satisfies Schema,
+    {
+      type: "object",
+      properties: {
+        bit: { type: "boolean" },
+        num: { type: "number" },
+        str: { type: "string" },
+      },
+      additionalProperties: false,
+      required: ["bit", "num", "str"],
+    },
+  );
+  assertEquals(
+    obj({
+      bit: bit(),
+      num: num(),
+      str: str(),
+    }, ["num"]) satisfies Schema,
+    {
+      type: "object",
+      properties: {
+        bit: { type: "boolean" },
+        num: { type: "number" },
+        str: { type: "string" },
+      },
+      additionalProperties: false,
+      required: ["num"],
+    },
+  );
+});
+
 const assertCheck = <A extends Schema>({ schema, pass, fail }: {
   schema: A;
   pass: readonly Instance<A>[];
@@ -132,7 +266,7 @@ const fcOrdered = <A extends number>(size: A, value?: fc.Arbitrary<number>) =>
 const fcLength = fc.integer({ min: 1, max: 64 });
 Deno.test("check.compile : Nil", () => {
   assertCheck({
-    schema: { oneOf: [{ type: "null" }, { type: "boolean" }] },
+    schema: nil({ type: "boolean" }),
     pass: [null, false, true],
     fail: [0, "", [], {}].map(($) => [$, "/oneOf/1/type"] as const),
   });
@@ -144,44 +278,42 @@ Deno.test("check.compile : Opt", () => {
       fcUnique(fcNumber),
       fcUnique(fcStr()),
       fcUnique(fc.oneof(fc.boolean(), fcNumber, fcStr())),
-    ),
-    ([head, ...tail]) => {
-      assertCheck({
-        schema: { enum: tail },
-        pass: tail,
-        fail: [[head, "/enum"]],
-      });
-    },
+    ).map(([head, ...tail]) => ({
+      schema: opt(tail),
+      pass: tail,
+      fail: [[head, "/enum"]],
+    } as const)),
+    assertCheck,
   ));
 });
 Deno.test("check.compile : Bit", () => {
-  assertBase({ type: "boolean" });
+  assertBase(bit());
 });
 Deno.test("check.compile : Num", () => {
-  assertBase({ type: "number" });
+  assertBase(num());
   assertCheck({
-    schema: { type: "number" },
+    schema: num(),
     pass: [-Number.MAX_VALUE, Number.MIN_VALUE, Number.MAX_VALUE],
     fail: [-Infinity, NaN, Infinity].map(($) => [$, "/type"] as const),
   });
   fc.assert(fc.property(fcOrdered(2), ([lower, upper]) => {
     assertCheck({
-      schema: { type: "number", minimum: upper },
+      schema: num({ minimum: upper }),
       pass: [upper],
       fail: [[lower, "/minimum"]],
     });
     assertCheck({
-      schema: { type: "number", maximum: lower },
+      schema: num({ maximum: lower }),
       pass: [lower],
       fail: [[upper, "/maximum"]],
     });
     assertCheck({
-      schema: { type: "number", exclusiveMinimum: lower },
+      schema: num({ exclusiveMinimum: lower }),
       pass: [upper],
       fail: [[lower, "/exclusiveMinimum"]],
     });
     assertCheck({
-      schema: { type: "number", exclusiveMaximum: upper },
+      schema: num({ exclusiveMaximum: upper }),
       pass: [lower],
       fail: [[upper, "/exclusiveMaximum"]],
     });
@@ -190,7 +322,7 @@ Deno.test("check.compile : Num", () => {
     fcOrdered(2, fc.integer({ min: 1 })).filter(($) => $[1] % $[0] !== 0),
     ([divisor, dividend]) => {
       assertCheck({
-        schema: { type: "number", multipleOf: divisor },
+        schema: num({ multipleOf: divisor }),
         pass: [divisor],
         fail: [[dividend, "/multipleOf"]],
       });
@@ -198,32 +330,28 @@ Deno.test("check.compile : Num", () => {
   ));
 });
 Deno.test("check.compile : Str", () => {
-  assertBase({ type: "string" });
+  assertBase(str());
   fc.assert(fc.property(fcLength, (length) => {
     const pass = ["\0".repeat(length)];
     assertCheck({
-      schema: { type: "string", minLength: length },
+      schema: str({ minLength: length }),
       pass,
       fail: [["\0".repeat(length - 1), "/minLength"]],
     });
     assertCheck({
-      schema: { type: "string", maxLength: length },
+      schema: str({ maxLength: length }),
       pass,
       fail: [["\0".repeat(length + 1), "/maxLength"]],
     });
     assertCheck({
-      schema: { type: "string", pattern: `^\\0{${length}}$` },
+      schema: str({ pattern: `^\\0{${length}}$` }),
       pass,
       fail: [length - 1, length + 1].map(($) =>
         ["\0".repeat($), "/pattern"] as const
       ),
     });
   }));
-  assertCheck({
-    schema: { type: "string", pattern: "\\" },
-    pass: [""],
-    fail: [],
-  });
+  assertCheck({ schema: str({ pattern: "\\" }), pass: [""], fail: [] });
   const assertStr = (
     schema: Omit<Extract<Schema, { type: "string" }>, "type">,
     pattern: RegExp,
@@ -231,7 +359,7 @@ Deno.test("check.compile : Str", () => {
   ) =>
     fc.assert(fc.property(
       fc.tuple(pass, fcStr().filter(($) => !pattern.test($))).map(($) => ({
-        schema: { type: "string", ...schema },
+        schema: str(schema),
         pass: [$[0]],
         fail: [[$[1], `/${Object.keys(schema)[0]}`]],
       } as const)),
@@ -290,21 +418,21 @@ Deno.test("check.compile : Str", () => {
   ) assertStr({ contentEncoding: base }, pattern, fcBin().map(encode));
 });
 Deno.test("check.compile : Arr", () => {
-  assertBase({ type: "array", items: { type: "boolean" } });
+  assertBase(arr(bit()));
   fc.assert(fc.property(fcLength, (length) => {
     assertCheck({
-      schema: { type: "array", items: { type: "boolean" } },
+      schema: arr(bit()),
       pass: [[], [false], [true, true]],
       fail: [[[null], "/items/type", "/0"], [[true, ""], "/items/type", "/1"]],
     });
     const pass = [Array(length).keys().toArray()];
     assertCheck({
-      schema: { type: "array", items: { type: "number" }, minItems: length },
+      schema: arr(num(), { minItems: length }),
       pass,
       fail: [[Array(length - 1).fill(0), "/minItems"]],
     });
     assertCheck({
-      schema: { type: "array", items: { type: "number" }, maxItems: length },
+      schema: arr(num(), { maxItems: length }),
       pass,
       fail: [[Array(length + 1).fill(0), "/maxItems"]],
     });
@@ -312,7 +440,7 @@ Deno.test("check.compile : Arr", () => {
   fc.assert(fc.property(
     fcUnique(fcStr()).chain(($) =>
       fc.subarray($, { minLength: 1 }).map((subarray) => ({
-        schema: { type: "array", items: { type: "string" }, uniqueItems: true },
+        schema: arr(str(), { uniqueItems: true }),
         pass: [$],
         fail: [[[...$, ...subarray], "/uniqueItems"]],
       } as const))
@@ -321,55 +449,19 @@ Deno.test("check.compile : Arr", () => {
   ));
 });
 Deno.test("check.compile : Obj", () => {
-  assertBase({ type: "object", properties: {}, additionalProperties: false });
-  fc.assert(fc.property(fcLength, (length) => {
-    assertCheck({
-      schema: {
-        type: "object",
-        properties: { "0": { type: "boolean" } },
-        additionalProperties: false,
-      },
-      pass: [{}, { "0": true }],
-      fail: [[{ "0": null }, "/properties/0/type", "/0"], [
-        { "1": true },
-        "/additionalProperties",
-        "/1",
-      ]],
-    });
-    const keys = Array(length).keys().map(String).toArray();
-    const properties = Object.fromEntries(
-      [...keys, ""].map(($) => [$, { type: "boolean" } as const]),
-    );
-    const data = Object.fromEntries(keys.map(($, z) => [$, !(z & 1)]));
-    assertCheck({
-      schema: {
-        type: "object",
-        properties,
-        additionalProperties: false,
-        minProperties: length + 1,
-      },
-      pass: [{ ...data, "": true }],
-      fail: [[data, "/minProperties"]],
-    });
-    assertCheck({
-      schema: {
-        type: "object",
-        properties,
-        additionalProperties: false,
-        maxProperties: length,
-      },
-      pass: [data],
-      fail: [[{ ...data, "": true }, "/maxProperties"]],
-    });
-    assertCheck({
-      schema: {
-        type: "object",
-        properties,
-        additionalProperties: false,
-        required: [""],
-      },
-      pass: [{ "": true }, { ...data, "": true }],
-      fail: [[data, "/required/0"]],
-    });
-  }));
+  assertBase(obj({}));
+  assertCheck({
+    schema: obj({ "0": bit() }, []),
+    pass: [{}, { "0": true }],
+    fail: [[{ "0": null }, "/properties/0/type", "/0"], [
+      { "1": true },
+      "/additionalProperties",
+      "/1",
+    ]],
+  });
+  assertCheck({
+    schema: obj({ "0": bit() }),
+    pass: [{ "0": true }],
+    fail: [[{}, "/required/0"]],
+  });
 });
