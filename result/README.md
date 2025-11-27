@@ -11,10 +11,7 @@ Handle errors like
 import { define, wrap } from "@libn/result";
 
 // Define possible errors and their associated values
-export interface Errors {
-  NotArray: unknown;
-  TooLong: number;
-}
+export type Errors = { NotArray: unknown; TooLong: number };
 export const parse = (json: string) =>
   wrap(
     // Use them to parameterize the symbol
