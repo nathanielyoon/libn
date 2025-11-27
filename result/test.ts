@@ -1,80 +1,149 @@
-import { assertEquals, assertThrows } from "@std/assert";
-import fc from "fast-check";
-import { fcStr } from "../test.ts";
-import { Err } from "@libn/result";
-import type { Json } from "@libn/types";
+import {
+  assertEquals,
+  assertInstanceOf,
+  assertRejects,
+  assertThrows,
+  fail,
+} from "@std/assert";
+import { type } from "@libn/types";
+import { define, type Result, wait, wrap } from "./mod.ts";
 
-Deno.test("Err : error parameters", () => {
-  fc.assert(fc.property(fcStr(), fc.anything(), (message, cause) => {
-    const err = new Err(cause, message);
-    assertEquals(err.message, message);
-    assertEquals(err.cause, cause);
-    assertEquals(err.name, Err.name);
-    assertEquals(err.context, []);
-  }));
+Deno.test("wrap : local", () => {
+  assertEquals(
+    type<Result<0, { 1: 1 }>>()(wrap(define<{ 1: 1 }>(), () => {
+      return 0;
+    })),
+    { error: null, value: 0 },
+  );
+  assertEquals(
+    type<Result<0, { 1: 1 }>>()(
+      wrap(define<{ 1: 1 }>(), (no) => {
+        no("1", 1);
+        return 0;
+      }),
+    ),
+    { error: "1", value: 1 },
+  );
 });
-Deno.test("Err.catch : Error", () => {
-  fc.assert(fc.property(fcStr(), fc.anything(), (message, cause) => {
-    const error = new Error(message, { cause }), err = Err.catch(error);
-    assertEquals(err.message, error.message);
-    assertEquals(err.cause, error.cause);
-    assertEquals(err.stack, error.stack);
-  }));
+Deno.test("wrap : nested", () => {
+  assertEquals(
+    type<Result<0, { 1: 1 }>>()(wrap(define<{ 1: 1 }>(), (no) => {
+      type<Result<2, { 3: 3 }>>()(
+        wrap(define<{ 3: 3 }>(), () => {
+          no("1", 1);
+          return 2;
+        }),
+      );
+      fail();
+      return 0;
+    })),
+    { error: "1", value: 1 },
+  );
+  assertEquals(
+    type<Result<0, { 1: 1 }>>()(wrap(define<{ 1: 1 }>(), () => {
+      assertEquals(
+        type<Result<2, { 3: 3 }>>()(wrap(define<{ 3: 3 }>(), (no) => {
+          no("3", 3);
+          return 2;
+        })),
+        { error: "3", value: 3 },
+      );
+      return 0;
+    })),
+    { error: null, value: 0 },
+  );
 });
-Deno.test("Err.catch : non-Error", () => {
-  fc.assert(fc.property(fc.jsonValue(), ($) => {
-    const err = Err.catch($);
-    assertEquals(err.message, "");
-    assertEquals(err.cause, $);
-  }));
+Deno.test("wrap : error", () => {
+  assertThrows(() =>
+    wrap(define(), () => {
+      // deno-lint-ignore no-throw-literal
+      throw null;
+    })
+  );
+  assertThrows(() =>
+    wrap(define(), () => {
+      throw Error();
+    }), Error);
+  const value = Error();
+  assertEquals(
+    type<Result<never, {}, "error">>()(wrap(define(), () => {
+      throw value;
+    }, "error")),
+    { error: "error", value },
+  );
 });
-Deno.test("Err.try : unsafe", () => {
-  fc.assert(fc.property(fcStr().map(($) => `"${$}"`), ($) => {
-    const result = Err.try<Json>(() => JSON.parse($));
-    if (result.state) assertEquals(result.value, JSON.parse($));
-    else assertThrows(() => result.value, Err);
-  }));
+
+const assertResolves = async <A>(actual: Promise<A>, expected: A) => {
+  assertInstanceOf(actual, Promise);
+  assertEquals(await actual, expected);
+};
+Deno.test("wait : local", async () => {
+  await assertResolves(
+    type<Promise<Result<0, { 1: 1 }>>>()(
+      wait(define<{ 1: 1 }>(), () => {
+        return 0;
+      }),
+    ),
+    { error: null, value: 0 },
+  );
+  await assertResolves(
+    type<Promise<Result<0, { 1: 1 }>>>()(
+      wait(define<{ 1: 1 }>(), async (no) => {
+        no("1", 1);
+        return await Promise.resolve(0);
+      }),
+    ),
+    { error: "1", value: 1 },
+  );
 });
-Deno.test("Err.tryAsync : unsafe", async () => {
-  await fc.assert(fc.asyncProperty(
-    fcStr().map(($) => new Response(`"${$}"`)),
-    async ($) => {
-      const result = await Err.tryAsync<Json>(() => $.clone().json());
-      if (result.state) assertEquals(result.value, await $.json());
-      else assertThrows(() => result.value, Err);
-    },
-  ));
+Deno.test("wait : nested", async () => {
+  await assertResolves(
+    type<Promise<Result<0, { 1: 1 }, "error">>>()(
+      wait(define<{ 1: 1 }>(), async (no) => {
+        await type<Promise<Result<2, { 3: 3 }>>>()(
+          wait(define<{ 3: 3 }>(), async () => {
+            no("1", 1);
+            return await Promise.resolve(2);
+          }),
+        );
+        fail();
+        return 0 as const;
+      }, "error"),
+    ),
+    { error: "1", value: 1 },
+  );
+  await assertResolves(
+    type<Promise<Result<0, { 1: 1 }>>>()(wait(define<{ 1: 1 }>(), async () => {
+      await assertResolves(
+        type<Promise<Result<2, { 3: 3 }>>>()(
+          wait(define<{ 3: 3 }>(), async (no) => {
+            no("3", 3);
+            return await Promise.resolve(2);
+          }),
+        ),
+        { error: "3", value: 3 },
+      );
+      return await Promise.resolve(0);
+    })),
+    { error: null, value: 0 },
+  );
 });
-Deno.test("err.with : context", () => {
-  fc.assert(fc.property(
-    fcStr(),
-    fc.jsonValue() as fc.Arbitrary<Json>,
-    (info, data) => {
-      assertEquals(new Err(null).with(info, data).context, [{ info, data }]);
-    },
-  ));
-});
-Deno.test("err.toJSON : safe", () => {
-  fc.assert(fc.property(fc.jsonValue(), ($) => {
-    const err = new Err($);
-    assertEquals(err.toJSON(), {
-      name: Err.name,
-      message: "",
-      cause: $,
-      context: [],
-      stack: err.stack,
-    });
-  }));
-});
-Deno.test("err.toJSON : unsafe", () => {
-  fc.assert(fc.property(fc.bigInt(), ($) => {
-    const err = new Err($);
-    assertEquals(err.toJSON(), {
-      name: Err.name,
-      message: "",
-      cause: undefined,
-      context: [],
-      stack: err.stack,
-    });
-  }));
+Deno.test("wait : error", async () => {
+  await assertRejects(() =>
+    wait(define(), () => {
+      // deno-lint-ignore no-throw-literal
+      throw null;
+    })
+  );
+  await assertRejects(() =>
+    wait(define(), async () => {
+      throw await Promise.resolve(Error());
+    }), Error);
+  const value = Error();
+  await assertResolves(
+    type<Promise<Result<never, {}, "error">>>()(wait(define(), () => {
+      throw value;
+    }, "error")),
+    { error: "error", value },
+  );
 });

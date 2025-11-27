@@ -5,20 +5,27 @@ Simple result handling.
 ## default
 
 Handle errors like
-[Rust's std::result](https://doc.rust-lang.org/std/result/#the-question-mark-operator-)
-and [Go's `if err != nil`](https://go.dev/blog/errors-are-values).
+[Rust's std::result](https://doc.rust-lang.org/std/result/#the-question-mark-operator-).
 
 ```ts
-import { Err } from "@libn/result";
-import { assertThrows } from "@std/assert";
+import { define, wrap } from "@libn/result";
 
-// `JSON.parse` can fail
-const parseUnsafe = (json: string) => JSON.parse(json);
-assertThrows(() => parseUnsafe(""));
-
-// Wrap in a `Result`
-const parseSafe = (json: string) => Err.try(() => JSON.parse(json));
-const result = parseSafe("");
-if (result.state) result.value; // narrow type
-else result.with("Parsing failed"); // attach context
+// Define possible errors and their associated values
+export interface Errors {
+  NotArray: unknown;
+  TooLong: number;
+}
+export const parse = (json: string) =>
+  wrap(
+    // Use them to parameterize the symbol
+    define<Errors>(),
+    // Do stuff unsafely with throw helper
+    (no) => {
+      const parsed = JSON.parse(json);
+      if (!Array.isArray(parsed)) return no("NotArray", parsed);
+      return parsed.length < 10 ? parsed : no("TooLong", parsed.length);
+    },
+    // Name to capture thrown `Error`s
+    "InvalidJson",
+  );
 ```
