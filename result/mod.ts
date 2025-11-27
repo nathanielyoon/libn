@@ -27,7 +27,7 @@ const unwrap = (key: symbol, $: any, or?: string) => {
 export const wrap = <A, B extends Union, C extends string = never>(
   key: Key<B>,
   unsafe: (no: No<B>) => A,
-  or?: string,
+  or?: C,
 ): Result<A, B, C> => {
   try {
     return { error: null, value: unsafe(no.bind(key)) };
