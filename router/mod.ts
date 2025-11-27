@@ -12,11 +12,9 @@ interface On<A extends string = string> {
 }
 type To = number | Error | ConstructorParameters<typeof Response>[0] | Response;
 /** @internal */
-type Handler<A extends unknown[], B extends string> = (
-  this: Router<A>,
-  on: On<B>,
-  ...rest: A
-) => To | Result<To, To> | Promise<To | Result<To, To>>;
+type Handler<A extends unknown[], B extends string> = (on: On<B>, ...rest: A) =>
+  | (To | Result<To, { [_: number]: To }>)
+  | Promise<To | Result<To, { [_: number]: To }>>;
 class Node<A> {
   self: { [_: string]: A | undefined } = Object.create(null);
   next?: { name: string; node: Node<A> };
@@ -38,10 +36,10 @@ export class Router<A extends unknown[] = []> {
     for (const $ of method.split(",")) node.self[$] = handler;
     return this;
   }
-  /** Handles a request. */
+  /** Handles a request (as an unbound arrow function). */
   fetch = async (request: Request, ...rest: A): Promise<Response> => {
     const on = { url: new URL(request.url), path: {} as any, request };
-    let node = this.tree, to, status;
+    let node = this.tree, to: any, status;
     for (let part of on.url.pathname.match(/(?<=\/)[^/]+/g) ?? []) {
       if (node.rest[part = decodeURIComponent(part)]) node = node.rest[part];
       else if (node.next) on.path[node.next.name] = part, node = node.next.node;
@@ -50,10 +48,8 @@ export class Router<A extends unknown[] = []> {
     const handler = node.self[request.method];
     if (!handler) return new Response(null, { status: 405 });
     try {
-      to = await handler.call(this, on, ...rest);
-      if (typeof to === "object" && to !== null && "state" in to) {
-        status = to.state ? 200 : 400, to = to.value;
-      }
+      to = await handler(on, ...rest);
+      if (Object.hasOwn(to ?? {}, "error")) status = to.error, to = to.value;
     } catch ($) {
       to = $ instanceof Error ? $ : Error(`${$}`, { cause: $ }), status = 500;
     }

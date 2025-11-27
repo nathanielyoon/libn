@@ -1,7 +1,7 @@
 import { assertEquals, assertThrows } from "@std/assert";
 import fc from "fast-check";
-import { Router } from "./mod.ts";
 import { fcStr } from "../test.ts";
+import { Router } from "./mod.ts";
 
 const METHODS = [
   "GET",
@@ -159,12 +159,12 @@ Deno.test("router.fetch : internal server error", async () => {
 });
 Deno.test("router.fetch : result", async () => {
   const router = new Router().route("GET /#name", ({ path }) => ({
-    state: !(path.name.length & 1),
+    error: path.name.length & 1 ? 422 : null,
     value: path.name,
   }));
   await assertResponse(
     await router.fetch(request("/odd")),
-    new Response("odd", { status: 400 }),
+    new Response("odd", { status: 422 }),
   );
   await assertResponse(
     await router.fetch(request("/even")),

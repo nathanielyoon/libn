@@ -4,7 +4,8 @@ Simple HTTP router.
 
 ## default
 
-Define path parameters with `#name`. Only one handler runs per request.
+Define path parameters by prefixing their names with a `#`. Only one handler
+runs per request.
 
 ```ts ignore
 import { Router } from "@libn/router";
