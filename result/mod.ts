@@ -9,12 +9,10 @@ export type Result<A = any, B extends Union = Union, C extends string = never> =
   | (C extends never ? never : { error: C; value: Error });
 /** @internal */
 declare const KEY: unique symbol;
-/** @internal */
 type Key<A extends Union> = symbol & { [KEY]: A };
 /** Creates a unique symbol associated with an error union. */
 export const define: <A extends Union = {}>(description?: string) => Key<A> =
   Symbol as any;
-type No<A> = <B extends keyof A>(error: Tag<B>, value: A[B]) => never;
 function no(this: symbol, error: string, value: unknown): never {
   throw { [this]: { error, value } };
 }
@@ -26,7 +24,7 @@ const unwrap = (key: symbol, $: any, or?: string) => {
 /** Wraps an unsafe function in a `Result`. */
 export const wrap = <A, B extends Union, C extends string = never>(
   key: Key<B>,
-  unsafe: (no: No<B>) => A,
+  unsafe: (no: <C extends keyof B>(error: Tag<C>, value: B[C]) => never) => A,
   or?: C,
 ): Result<A, B, C> => {
   try {
@@ -38,9 +36,9 @@ export const wrap = <A, B extends Union, C extends string = never>(
 /** Wraps an unsafe async function in a promised `Result`. */
 export const wait = async <A, B extends Union, C extends string = never>(
   key: Key<B>,
-  unsafe: (use: No<B>) => A | Promise<A>,
+  unsafe: (no: <C extends keyof B>(error: Tag<C>, value: B[C]) => never) => A,
   or?: C,
-): Promise<Result<A, B, C>> => {
+): Promise<Result<Awaited<A>, B, C>> => {
   try {
     return { error: null, value: await unsafe(no.bind(key)) };
   } catch (thrown) {
