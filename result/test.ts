@@ -17,7 +17,7 @@ Deno.test("wrap : local", () => {
   );
   assertEquals(
     type<Result<0, { 1: 1 }>>()(
-      wrap(define<{ 1: 1 }>(), (no) => {
+      wrap(define<{ 1: 1 }>(), ({ no }) => {
         no("1", 1);
         return 0;
       }),
@@ -27,7 +27,7 @@ Deno.test("wrap : local", () => {
 });
 Deno.test("wrap : nested", () => {
   assertEquals(
-    type<Result<0, { 1: 1 }>>()(wrap(define<{ 1: 1 }>(), (no) => {
+    type<Result<0, { 1: 1 }>>()(wrap(define<{ 1: 1 }>(), ({ no }) => {
       type<Result<2, { 3: 3 }>>()(
         wrap(define<{ 3: 3 }>(), () => {
           no("1", 1);
@@ -42,7 +42,7 @@ Deno.test("wrap : nested", () => {
   assertEquals(
     type<Result<0, { 1: 1 }>>()(wrap(define<{ 1: 1 }>(), () => {
       assertEquals(
-        type<Result<2, { 3: 3 }>>()(wrap(define<{ 3: 3 }>(), (no) => {
+        type<Result<2, { 3: 3 }>>()(wrap(define<{ 3: 3 }>(), ({ no }) => {
           no("3", 3);
           return 2;
         })),
@@ -88,7 +88,7 @@ Deno.test("wait : local", async () => {
   );
   await assertResolves(
     type<Promise<Result<0, { 1: 1 }>>>()(
-      wait(define<{ 1: 1 }>(), async (no) => {
+      wait(define<{ 1: 1 }>(), async ({ no }) => {
         no("1", 1);
         return await Promise.resolve(0);
       }),
@@ -99,7 +99,7 @@ Deno.test("wait : local", async () => {
 Deno.test("wait : nested", async () => {
   await assertResolves(
     type<Promise<Result<0, { 1: 1 }, "error">>>()(
-      wait(define<{ 1: 1 }>(), async (no) => {
+      wait(define<{ 1: 1 }>(), async ({ no }) => {
         await type<Promise<Result<2, { 3: 3 }>>>()(
           wait(define<{ 3: 3 }>(), async () => {
             no("1", 1);
@@ -116,7 +116,7 @@ Deno.test("wait : nested", async () => {
     type<Promise<Result<0, { 1: 1 }>>>()(wait(define<{ 1: 1 }>(), async () => {
       await assertResolves(
         type<Promise<Result<2, { 3: 3 }>>>()(
-          wait(define<{ 3: 3 }>(), async (no) => {
+          wait(define<{ 3: 3 }>(), async ({ no }) => {
             no("3", 3);
             return await Promise.resolve(2);
           }),
