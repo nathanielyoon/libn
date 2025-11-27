@@ -44,7 +44,6 @@ Validate, or parse to either valid data or error
 
 ```ts
 import { compile, is, point, to } from "@libn/json/check";
-import { Err } from "@libn/result";
 import { assert, assertEquals } from "@std/assert";
 
 const schema = {
@@ -59,11 +58,11 @@ assertEquals(is(check, [4, 24]), true);
 // Parse a deep copy or an array of error pointers
 const instance = [0, true];
 const result = to(check, instance);
-assert(!result.state);
-assertEquals(result.cause, [{
+assert(result.error);
+assertEquals(result.value, [{
   type: "/items/type", // path to failed constraint
   data: "/1", // path to invalid value
 }]);
-assertEquals(point(schema, result.cause[0].type), "number"); // expected number
-assertEquals(point(instance, result.cause[0].data), true); // but got this
+assertEquals(point(schema, result.value[0].type), "number"); // expected number
+assertEquals(point(instance, result.value[0].data), true); // but got this
 ```

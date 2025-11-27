@@ -216,15 +216,15 @@ const assertCheck = <A extends Schema>({ schema, pass, fail }: {
   for (const $ of pass) {
     assertEquals(is(check, $), true);
     const result = to(check, $);
-    assert(result.state);
+    assertEquals(result.error, null);
     assertEquals(result.value, $);
     typeof $ === "object" && $ && assert(result.value !== $);
   }
   for (const [$, type, data] of fail) {
     assertEquals(is(check, $), false);
     const result = to(check, $);
-    assert(!result.state);
-    assertEquals(result.cause, [{ type, data: data ?? "" }]);
+    assertEquals(result.error, "Invalid");
+    assertEquals(result.value, [{ type, data: data ?? "" }]);
   }
 };
 const FC_BASE = {

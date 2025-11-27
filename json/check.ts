@@ -3,7 +3,7 @@ import { B32 } from "@libn/base/b32";
 import { B64 } from "@libn/base/b64";
 import { H32 } from "@libn/base/h32";
 import { U64 } from "@libn/base/u64";
-import { Err, type Result } from "@libn/result";
+import type { Result } from "@libn/result";
 import type { Json } from "@libn/types";
 import type { Instance, Schema } from "./schema.ts";
 
@@ -152,13 +152,13 @@ export const is = <A extends Schema>(
 export const to = <A extends Schema>(
   check: Check<A>,
   $: unknown,
-): Result<Instance<A>, { type: string; data: string }[]> => {
+): Result<Instance<A>, { Invalid: { type: string; data: string }[] }> => {
   const iterator = check($), cause = [];
   let next = iterator.next();
   while (!next.done) {
     const paths = next.value.split(/~(?=\/|$)/);
     cause.push({ type: paths[0], data: paths[1] }), next = iterator.next();
   }
-  if (cause.length) return new Err(cause);
-  else return { state: true, value: next.value };
+  if (cause.length) return { error: "Invalid", value: cause };
+  else return { error: null, value: next.value };
 };

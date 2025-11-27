@@ -1,6 +1,6 @@
 {
   "name": "@libn/json",
-  "version": "0.4.8",
+  "version": "0.5.0",
   "license": "0BSD",
   "exports": {
     "./schema": "./schema.ts",
