@@ -13,7 +13,7 @@ import { assertEquals } from "@std/assert";
 
 assertEquals(
   deCsv("aaa,bbb,ccc\nzzz,yyy,xxx\n"),
-  [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]],
+  { error: null, value: [["aaa", "bbb", "ccc"], ["zzz", "yyy", "xxx"]] },
 );
 ```
 

@@ -6,33 +6,51 @@ import vectors from "./vectors.json" with { type: "json" };
 import { fcStr } from "../test.ts";
 
 Deno.test("parse.deCsv : vectors", () => {
-  for (const $ of vectors) assertEquals(deCsv($.csv, { empty: "" }), $.json);
+  for (const $ of vectors) {
+    assertEquals(deCsv($.csv, { empty: "" }), { error: null, value: $.json });
+  }
 });
 Deno.test("parse.deCsv : byte-order marker", () => {
-  assertEquals(deCsv("\ufeff"), []);
-  assertEquals(deCsv("\ufeffa"), [["a"]]);
+  assertEquals(deCsv("\ufeff"), { error: null, value: [] });
+  assertEquals(deCsv("\ufeffa"), { error: null, value: [["a"]] });
 });
-Deno.test("parse.deCsv : unclosed quoted fields", () => {
-  assertEquals(deCsv('"'), null);
-  assertEquals(deCsv('"a'), null);
-  assertEquals(deCsv('a\n"'), null);
+Deno.test("parse.deCsv : unclosed quoted field", () => {
+  assertEquals(deCsv('",'), { error: "UnclosedQuotedField", value: [0, 2] });
+  assertEquals(deCsv('"a'), { error: "UnclosedQuotedField", value: [0, 2] });
+  assertEquals(deCsv('a\n",'), { error: "UnclosedQuotedField", value: [2, 3] });
 });
-Deno.test("parse.deCsv : quote inside unquoted fields", () => {
-  assertEquals(deCsv('a"'), null);
+Deno.test("parse.deCsv : quote in unquoted field", () => {
+  assertEquals(deCsv('a"'), { error: "QuoteInUnquotedField", value: [0, 2] });
+  assertEquals(deCsv(',\na",'), { error: null, value: [[null, null], ['a"']] });
+  assertEquals(
+    deCsv(',\na",', { eager: false }),
+    { error: "QuoteInUnquotedField", value: [2, 4] },
+  );
+  assertEquals(deCsv('\na"'), { error: "QuoteInUnquotedField", value: [1, 3] });
 });
-Deno.test("parse.deCsv : quote after quoted fields", () => {
-  assertEquals(deCsv('""a"'), null);
-  assertEquals(deCsv('"a"\n"a""'), null);
+Deno.test("parse.deCsv : stuff after quoted fields", () => {
+  assertEquals(
+    deCsv('""a'),
+    { error: "NonSeparatorAfterClosingQuote", value: [2, 3] },
+  );
+  assertEquals(
+    deCsv('"a"\n""a'),
+    { error: "NonSeparatorAfterClosingQuote", value: [6, 7] },
+  );
+  assertEquals(
+    deCsv(',\n""a,\n'),
+    { error: "NonSeparatorAfterClosingQuote", value: [4, 5] },
+  );
 });
 Deno.test("parse.deCsv : quoted and unquoted empty fields", () => {
-  assertEquals(deCsv('""'), [[""]]);
-  assertEquals(deCsv(",a"), [[null, "a"]]);
+  assertEquals(deCsv('""'), { error: null, value: [[""]] });
+  assertEquals(deCsv(",a"), { error: null, value: [[null, "a"]] });
 });
 Deno.test("parse.deCsv : trailing newlines", () => {
-  assertEquals(deCsv("a\r\n"), [["a"]]);
+  assertEquals(deCsv("a\r\n"), { error: null, value: [["a"]] });
 });
 Deno.test("parse.deCsv : leading newlines", () => {
-  assertEquals(deCsv("\r\na"), [[null], ["a"]]);
+  assertEquals(deCsv("\r\na"), { error: null, value: [[null], ["a"]] });
 });
 const fcRows = <A>($: A, row?: fc.ArrayConstraints) =>
   fc.array(
@@ -66,16 +84,22 @@ Deno.test("parse.deCsv : same-length rows", () => {
     ),
     ($) => {
       const csv = enCsv($);
-      assertEquals(deCsv(csv), $);
-      assertEquals(deCsv(csv, { empty: "" }), parse(csv));
+      assertEquals(deCsv(csv), { error: null, value: $ });
+      assertEquals(
+        deCsv(csv, { empty: "" }),
+        { error: null, value: parse(csv) },
+      );
     },
   ));
 });
 Deno.test("parse.deCsv : different-length rows", () => {
   fc.assert(fc.property(fcRows(null), ($) => {
     const csv = enCsv($);
-    assertEquals(deCsv(csv, { eager: false }), $);
-    assertEquals(deCsv(csv, { eager: false, empty: "" }), parse(csv));
+    assertEquals(deCsv(csv, { eager: false }), { error: null, value: $ });
+    assertEquals(
+      deCsv(csv, { eager: false, empty: "" }),
+      { error: null, value: parse(csv) },
+    );
   }));
 });
 
@@ -97,12 +121,12 @@ Deno.test("stringify.enCsv : custom empty predicate", () => {
   fc.assert(fc.property(
     fcStr().chain(($) => fc.record({ nil: fc.constant($), rows: fcRows($) })),
     ({ nil, rows }) => {
-      assert(
-        deCsv(
-          enCsv(rows, ($): $ is typeof nil => $ === nil),
-          { eager: false },
-        )?.flat().every(($) => $ !== nil),
+      const result = deCsv(
+        enCsv(rows, ($): $ is typeof nil => $ === nil),
+        { eager: false },
       );
+      assert(result.error === null);
+      assert(result.value.flat().every(($) => $ !== nil));
     },
   ));
 });
