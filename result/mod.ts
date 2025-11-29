@@ -1,71 +1,63 @@
+/** @internal */
+type Union = { [_: PropertyKey]: unknown };
 /** Success or tagged failure. */
-export type Result<A, B extends { [_: PropertyKey]: unknown }> =
+export type Result<A = any, B extends Union = Union> =
   | { error: null; value: A }
-  | { [D in keyof B]: { error: D; value: B[D] } }[keyof B];
+  | { [C in keyof B]: { error: C; value: B[C] } }[keyof B];
 /** @internal */
-declare const KEY: unique symbol;
-/** @internal */
-type Key<A extends { [_: PropertyKey]: unknown }> = symbol & { [KEY]: A };
+type Key<A extends Union> = symbol & { [B in keyof A]: A[B] };
 /** Creates a unique symbol associated with an error union. */
-export const define: <A extends { [_: PropertyKey]: unknown } = {}>(
-  description?: string,
-) => Key<A> = Symbol as any;
-type Sync<A, B extends { [_: PropertyKey]: unknown }> = A extends A
-  ? A extends Promise<infer C> ? Promise<Result<C, B>> : Result<A, B>
-  : never;
+export const as: <A extends Union = {}>() => Key<A> = Symbol as any;
 function no(this: symbol, error: PropertyKey, value: unknown): never {
-  throw { [this]: { error, value } };
+  throw Object.defineProperty({}, this, { value: { error, value } });
 }
-function or(this: symbol, result: any, map?: { [_: PropertyKey]: any }) {
-  if (result.error === null) return result.value;
-  const mapper = map?.[result.error];
-  if (mapper) return mapper(result.value);
-  throw { [this]: result };
-}
-function open(this: symbol, value: any) {
-  if (Object.hasOwn(value ?? {}, this)) return value[this];
-  throw value;
-}
-/** Wraps throws in a `Result`. */
-export const wrap = <A, B extends { [_: PropertyKey]: unknown }>(
+/** Creates a result synchronously. */
+export const wrap = <A, B extends Union>(
   key: Key<B>,
-  unsafe: (no: <C extends keyof B>(error: C, value: B[C]) => never, or: {
-    <C>(result: Result<C, B>): C;
-    <C, D extends { [_: PropertyKey]: unknown }, E>(
-      result: Result<C, D>,
-      map:
-        & { [F in Exclude<keyof D, keyof B>]: (value: D[F]) => E }
-        & { [F in Extract<keyof D, keyof B>]?: (value: D[F]) => E },
-    ): C | E;
-  }) => A,
-): Sync<A, B> => {
+  use: (no: <C extends keyof B>(error: C, value: B[C]) => never) => A,
+): Result<A, B> => {
   try {
-    const value = unsafe(no.bind(key), or.bind(key));
-    return (value instanceof Promise
-      ? value.then(($) => ({ error: null, value: $ })).catch(open.bind(key))
-      : { error: null, value }) as Sync<A, B>;
+    return { error: null, value: use(no.bind(key)) };
   } catch (value) {
-    return open.call(key, value);
+    if (Object.hasOwn(value ?? {}, key)) return (value as any)[key];
+    throw value;
   }
 };
-function pass(this: PropertyKey, value: unknown) {
-  if (value instanceof Error) return { error: this, value };
-  throw value;
-}
-/** Wraps an unsafe function. */
-export const trap = <A extends unknown[], B, C extends PropertyKey = "error">(
+/** Creates a result asynchronously. */
+export const wait = async <A, B extends Union>(
+  key: Key<B>,
+  use: (no: <C extends keyof B>(error: C, value: B[C]) => never) => A,
+): Promise<Result<Awaited<A>, B>> => {
+  try {
+    return { error: null, value: await use(no.bind(key)) };
+  } catch (value) {
+    if (Object.hasOwn(value ?? {}, key)) return (value as any)[key];
+    throw value;
+  }
+};
+/** Catches errors thrown from an unsafe function. */
+export const seal = <A extends unknown[], B, C extends PropertyKey = "Error">(
   unsafe: (...$: A) => B,
   error?: C,
-): (...$: A) => Sync<B, { [_ in C]: Error }> =>
+): (...$: A) => Result<B, { [_ in C]: Error }> =>
 (...$) => {
   try {
-    const value = unsafe(...$);
-    return (value instanceof Promise
-      ? value.then(($) => ({ error: null, value: $ })).catch(
-        pass.bind(error! ?? "error"),
-      )
-      : { error: null, value }) as Sync<B, { [_ in C]: Error }>;
+    return { error: null, value: unsafe(...$) };
   } catch (value) {
-    return pass.call(error! ?? "error", value) as Sync<B, { [_ in C]: Error }>;
+    if (value instanceof Error) return { error: error! ?? "Error", value };
+    throw value;
   }
 };
+/** Unwraps a result. */
+export const open = <
+  A extends Result,
+  B extends {
+    [C in NonNullable<A["error"]>]: (
+      error: C,
+      value: Extract<A, { error: C }>["value"],
+    ) => any;
+  },
+>($: A, or: B): Extract<A, { error: null }>["value"] | ReturnType<B[keyof B]> =>
+  $.error === null
+    ? $.value
+    : or[$.error as keyof B]($.error as never, $.value);

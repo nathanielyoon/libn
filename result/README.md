@@ -5,24 +5,25 @@ Simple result handling.
 ## default
 
 Handle errors like
-[Rust's std::result](https://doc.rust-lang.org/std/result/#the-question-mark-operator-).
+[Rust's `std::result`](https://doc.rust-lang.org/std/result/#the-question-mark-operator-)
+and [Go's (in)famous `if err != nil`](https://go.dev/blog/errors-are-values).
 
 ```ts
-import { define, wrap } from "@libn/result";
+import { as, open, seal, wrap } from "@libn/result";
 
-// Define possible errors and their associated values
-export type Errors = { NotArray: unknown; TooLong: number };
-export const parse = (json: string) =>
-  wrap(
-    // Use them to parameterize the symbol
-    define<Errors>(),
-    // Do stuff unsafely with throw helper
-    (no) => {
-      const parsed = JSON.parse(json);
-      if (!Array.isArray(parsed)) return no("NotArray", parsed);
-      return parsed.length < 10 ? parsed : no("TooLong", parsed.length);
-    },
-    // Name to capture thrown `Error`s
-    "InvalidJson",
-  );
+// Define possible errors and their corresponding values
+type Errors = {
+  NonStringInput: unknown;
+  InvalidJson: Error;
+};
+const parse = (raw: unknown) =>
+  // Parameterize symbol with errors
+  wrap(as<Errors>(), (no) => {
+    // Throw as expression
+    const json = typeof raw === "string" ? raw : no("NonStringInput", raw);
+    // Wrap unsafe functions
+    const result = seal(JSON.parse, "InvalidJson")(json);
+    // Re-throw when types are compatible
+    return open(result, { InvalidJson: no });
+  });
 ```
