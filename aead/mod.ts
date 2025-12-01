@@ -13,8 +13,7 @@ export const encrypt = (
   const result = xchachaPoly(key, iv, ciphertext, associatedData);
   if (!result) return null;
   const out = new Uint8Array(ciphertext.length + 40);
-  out.set(iv), out.set(result, 24), out.set(ciphertext, 40);
-  return out;
+  return out.set(iv), out.set(result, 24), out.set(ciphertext, 40), out;
 };
 /** Decrypts with XChaCha20-Poly1305. */
 export const decrypt = (
