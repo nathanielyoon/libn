@@ -28,8 +28,8 @@ const reset = ($: Signal) => (
 );
 const reget = ($: Derive) => {
   const prev = on;
-  on = $, ++step, $.head = null, $.flags = 0b0010001;
   try {
+    on = $, ++step, $.head = null, $.flags = 0b0010001;
     return !$.is($.prev, $.prev = $.next($.prev));
   } finally {
     on = prev, drop($);
@@ -130,15 +130,16 @@ const make = <A extends Kind>(kind: A, flags: number, $: any) => {
 /** Reactive getter. */
 export type Getter<A> = () => A;
 /** Reactive setter. */
-export type Setter<A> = <const B extends A>(next: B | ((prev: A) => B)) => B;
+export type Setter<A> = {
+  <const B extends A>(next: (prev: A) => B): B;
+  <const B extends A>(next: B extends Function ? never : B): B;
+};
 // deno-lint-ignore libn/naming-convention
 function Signal<A>(this: Signal<A>, ...$: [A]) {
   // Checking the rest parameter's length distinguishes between setting an
   // explicit undefined or getting by calling without arguments.
   if ($.length) {
     const next = typeof $[0] === "function" ? $[0](this.next) : $[0];
-    // Passing through fulfills the setter type's const generic, and matches how
-    // the native assignment operator works.
     if (this.is(next, this.next)) return next;
     this.next = next, this.flags = 0b0001001;
     if (this.subs) deep(this.subs), depth || pull();
@@ -148,13 +149,15 @@ function Signal<A>(this: Signal<A>, ...$: [A]) {
       if (sub.flags & 0b0000011) return enlink(this, sub, step), this.next;
     }
   }
+  // Passing through fulfills the setter type's generic, and matches how the
+  // native assignment operator works.
   return this.next;
 }
 /** Creates a mutable data source. */
 export const signal =
-  (($: any, { is }: { is?: Is<any, any> } = {}) =>
-    Signal.bind(make(0, 0b0000001, { next: $, prev: $, is }))) as {
-      <A>($: A, options?: { is?: Is<A, A> }): Getter<A> & Setter<A>;
+  ((initial: any, { is }: { is?: Is<any, any> } = {}) =>
+    Signal.bind(make(0, 0b0000001, { next: initial, prev: initial, is }))) as {
+      <A>(initial: A, options?: { is?: Is<A, A> }): Getter<A> & Setter<A>;
       <A>(
         _?: A,
         options?: { is?: Is<A | undefined, A | undefined> },
@@ -177,23 +180,23 @@ function Derive<A>(this: Derive<A>) {
 }
 /** Creates a computed derivation. */
 export const derive =
-  (($: any, { initial, is }: { initial?: any; is?: Is<any, any> } = {}) =>
-    Derive.bind(make(1, 0b0001001, { next: $, prev: initial, is }))) as {
+  ((next: any, { initial, is }: { initial?: any; is?: Is<any, any> } = {}) =>
+    Derive.bind(make(1, 0b0001001, { next, prev: initial, is }))) as {
       // Omitting the initial value limits inference for the deriver's parameter
       // (see <https://github.com/microsoft/TypeScript/issues/47599>), so it'll
       // need an explicit type.
       <A>(
-        $: (prev: A | undefined) => A,
+        next: (prev: A | undefined) => A,
         options?: { initial?: undefined; is?: Is<A | undefined, A> },
       ): Getter<A>;
       <A>(
-        $: (prev: A) => A,
+        next: (prev: A) => A,
         options: { initial: A; is?: Is<A, A> },
       ): Getter<A>;
     };
 /** Creates a disposable side-effectual sink. */
-export const effect = ($: () => void): () => void =>
-  dispose.bind(null, make(2, 0b0000010, { run: $ }));
+export const effect = (run: () => void): () => void =>
+  dispose.bind(make(2, 0b0000010, { run }));
 /** Creates a disposable effects group owner. */
-export const scoper = ($: () => void): () => void =>
-  dispose.bind(null, make(3, 0b0000000, { run: $ }));
+export const scoper = (run: () => void): () => void =>
+  dispose.bind(make(3, 0b0000000, { run }));

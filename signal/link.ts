@@ -39,16 +39,16 @@ const delink = ($: Link, to: Node) => {
       case 0:
         break;
       default:
-        dispose(dep);
+        dispose.call(dep);
     }
   }
   return next;
 };
 /** Cleans up effects. */
-export const dispose = ($: Effect | Scoper): void => {
-  for (let a = $.deps; a; a = delink(a, $));
-  $.subs && delink($.subs, $.subs.sub), $.flags = 0;
-};
+export function dispose(this: Effect | Scoper): void {
+  for (let a = this.deps; a; a = delink(a, this));
+  this.subs && delink(this.subs, this.subs.sub), this.flags = 0;
+}
 /** Clears a node from its dependencies. */
 export const drop = ($: Node): void => {
   $.flags &= ~0b0010000;
