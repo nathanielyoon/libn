@@ -1,6 +1,0 @@
-{
-  "name": "@libn/router",
-  "version": "0.5.0",
-  "license": "0BSD",
-  "exports": "./mod.ts"
-}

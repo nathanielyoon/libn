@@ -1,6 +1,0 @@
-{
-  "name": "@libn/fuzzy",
-  "version": "0.4.0",
-  "license": "0BSD",
-  "exports": "./mod.ts"
-}

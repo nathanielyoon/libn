@@ -1,14 +1,35 @@
 import { build, emptyDir } from "@deno/dnt";
 import root from "./deno.json" with { type: "json" };
 
+const shim = `Uint8Array.prototype.toHex ??= function () {
+  return this.reduce((to, byte) => to + byte.toString(16).padStart(2, "0"), "");
+};
+Uint8Array.fromHex ??= (hex) =>
+  Uint8Array.from(hex.match(/../g) ?? [], (byte) => parseInt(byte, 16));
+Uint8Array.prototype.toBase64 ??= function (options) {
+  let out = btoa(this.reduce((to, code) => to + String.fromCharCode(code), ""));
+  if (options?.alphabet === "base64url") {
+    out = out.replaceAll("+", "-").replaceAll("/", "_");
+  }
+  if (options?.omitPadding) out = out.replace(/=+$/, "");
+  return out;
+};
+Uint8Array.fromBase64 ??= (base64, options) =>
+  Uint8Array.from(
+    atob(
+      options?.alphabet === "base64url"
+        ? base64.replaceAll("-", "+").replaceAll("_", "/")
+        : base64,
+    ),
+    (char) => char.charCodeAt(0),
+  );
+`;
 const [config] = await Promise.all([
   Deno.readTextFile("./deno.json"),
-  emptyDir("./npm"),
+  emptyDir("./npm"), // creates if needed
 ]);
 const { name, version, exports, compilerOptions = {} } = JSON.parse(config);
-const directory = name.slice(name.indexOf("/") + 1), lib = ["ESNext"] as const;
-compilerOptions.lib &&= compilerOptions.lib
-  .filter(RegExp.prototype.test.bind(/^(?!deno)/)).concat(lib);
+const directory = name.slice(name.indexOf("/") + 1);
 await build({
   outDir: "./npm",
   entryPoints: typeof exports === "string"
@@ -17,7 +38,13 @@ await build({
   shims: { deno: "dev" },
   skipSourceOutput: true,
   typeCheck: "both",
-  compilerOptions: { lib, ...root.compilerOptions, ...compilerOptions },
+  compilerOptions: {
+    ...root.compilerOptions,
+    ...compilerOptions,
+    lib: compilerOptions.lib?.filter(
+      RegExp.prototype.test.bind(/^(?!deno|esnext)/i),
+    ) ?? ["ESNext"],
+  },
   filterDiagnostic: ($) => !/\/jsr\.io|test\.ts$/.test($.file?.fileName ?? ""),
   package: {
     name,
@@ -31,22 +58,17 @@ await build({
     },
   },
   postBuild: async () =>
-    void await Promise.all(["esm", "script"].map(async ($) => {
-      const { path, text } = await Deno.readTextFile(`./npm/${$}/test.js`)
-        .then((text) => ({ path: `./npm/${$}/test.js`, text }))
-        .catch(async (thrown) => {
-          if (!(thrown instanceof Deno.errors.NotFound)) throw thrown;
-          const path = `./npm/${$}/${directory}/test.js`;
-          return { path, text: await Deno.readTextFile(path) };
-        });
-      await Deno.writeTextFile(
-        path,
-        `Uint8Array.prototype.toHex??=function(){return this.reduce((t,r)=>t+r.toString(16).padStart(2,"0"),"")};Uint8Array.fromHex??=t=>Uint8Array.from(t.match(/../g)??[],r=>parseInt(r,16));Uint8Array.prototype.toBase64??=function(t){let r=btoa(this.reduce((e,a)=>e+String.fromCharCode(a),""));return t?.alphabet==="base64url"&&(r=r.replaceAll("+","-").replaceAll("/","_")),t?.omitPadding&&(r=r.replace(/=+$/,"")),r};Uint8Array.fromBase64??=(t,r)=>Uint8Array.from(atob(r?.alphabet==="base64url"?t.replaceAll("-","+").replaceAll("_","/"):t),e=>e.charCodeAt(0));${text}`,
-      );
+    void await Promise.all(["esm", "script"].map(async (type: string) => {
+      let path = `./npm/${type}/test.js`;
+      const text = await Deno.readTextFile(path).catch((thrown) => {
+        if (!(thrown instanceof Deno.errors.NotFound)) throw thrown;
+        return Deno.readTextFile(path = `./npm/${type}/${directory}/test.js`);
+      });
+      await Deno.writeTextFile(path, shim + text);
     })),
 });
 await Promise.all([
-  Deno.copyFile("../LICENSE", "./npm/LICENSE"),
+  Deno.copyFile(new URL(import.meta.resolve("./LICENSE")), "./npm/LICENSE"),
   Deno.copyFile("./README.md", "./npm/README.md"),
   new Deno.Command("bun", {
     args: ["run", "./npm/test_runner.js"],

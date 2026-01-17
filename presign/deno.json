@@ -1,6 +1,0 @@
-{
-  "name": "@libn/presign",
-  "version": "0.1.0",
-  "license": "0BSD",
-  "exports": "./mod.ts"
-}
