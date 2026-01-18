@@ -5,10 +5,12 @@ export type Json = null | boolean | number | string | readonly Json[] | {
   [_: string]: Json;
 };
 type Are<A, B> = [A, B] extends [B, A] ? true : false;
+/** @internal */
 type Exact<A, B> = Are<
   <C>(_: A) => C extends A & C | C ? true : false,
   <C>(_: B) => C extends B & C | C ? true : false
 >;
+/** @internal */
 type Delve<A> = A extends { [_: PropertyKey]: unknown }
   ? { [B in keyof A]: Delve<A[B]> }
   : A;
@@ -40,7 +42,9 @@ export const set = async (url: string, $: Json, sum: string): Promise<void> => {
   await Deno.writeFile(new URL(url), bytes);
 };
 
+/** @internal */
 type Fc<A, B> = A extends ($?: infer C) => infer D ? ($?: C | B) => D : never;
+/** Creates a number arbitrary. */
 export const fcNum: Fc<typeof fc.double, number> = ($) =>
   typeof $ === "number"
     ? fc.nat({ max: $ })
