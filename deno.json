@@ -1,7 +1,8 @@
 {
   "license": "0BSD",
   "workspace": [
-    "./result"
+    "./result",
+    "./utf"
   ],
   "compilerOptions": {
     "erasableSyntaxOnly": true,
@@ -33,6 +34,10 @@
     "fast-check": "npm:fast-check@^4.5.3"
   },
   "permissions": {
+    "vectors": {
+      "net": true,
+      "write": ["vectors.json"]
+    },
     "npm": {
       "net": ["jsr.io"],
       "env": true,
@@ -47,6 +52,10 @@
   },
   "tasks": {
     "cwd": "cd \"$INIT_CWD\" || exit 1;",
+    "vectors": {
+      "dependencies": ["cwd"],
+      "command": "deno run --permission-set"
+    },
     "check": "deno check --doc",
     "lint": "deno lint --compact",
     "doc": "deno doc --lint **/*.ts",
