@@ -1,0 +1,5 @@
+{
+  "name": "@libn/result",
+  "version": "0.6.0",
+  "exports": "./mod.ts"
+}
