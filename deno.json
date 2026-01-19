@@ -2,7 +2,8 @@
   "license": "0BSD",
   "workspace": [
     "./result",
-    "./utf"
+    "./utf",
+    "./base"
   ],
   "compilerOptions": {
     "erasableSyntaxOnly": true,
