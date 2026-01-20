@@ -52,49 +52,18 @@
     }
   },
   "tasks": {
-    "cwd": "cd \"$INIT_CWD\" || exit 1;",
-    "vectors": {
-      "dependencies": ["cwd"],
-      "command": "deno run --permission-set=vectors --quiet"
-    },
-    "check": {
-      "dependencies": ["cwd"],
-      "command": "deno check --doc"
-    },
-    "lint": {
-      "dependencies": ["cwd"],
-      "command": "deno lint --compact"
-    },
-    "doc": {
-      "dependencies": ["cwd"],
-      "command": "deno doc --lint **/*.ts"
-    },
-    "test": {
-      "dependencies": ["cwd"],
-      "command": "deno test --permission-set=test --quiet --doc --no-check --parallel"
-    },
-    "record": {
-      "dependencies": ["cwd"],
-      "command": "deno task --quiet --cwd=. test --reporter=dot --clean --coverage=/tmp/deno-coverage --coverage-raw-data-only"
-    },
-    "report": {
-      "dependencies": ["cwd"],
-      "command": "deno coverage --detailed /tmp/deno-coverage --include=\"^file://$INIT_CWD\""
-    },
-    "cover": {
-      "dependencies": ["cwd"],
-      "command": "deno task --quiet --cwd=. record && deno task --quiet --cwd=. report"
-    },
+    "vectors": "deno run --permission-set=vectors --quiet",
+    "check": "deno check --doc",
+    "lint": "deno lint --compact",
+    "doc": "deno doc --lint **/*.ts",
+    "test": "deno test --permission-set=test --quiet --doc --no-check --parallel",
+    "record": "deno task --quiet --cwd=. test --reporter=dot --clean --coverage=/tmp/deno-coverage --coverage-raw-data-only",
+    "report": "deno coverage --detailed /tmp/deno-coverage --include=\"^file://$INIT_CWD\"",
+    "cover": "deno task --quiet --cwd=. record && deno task --quiet --cwd=. report",
     "ok": {
       "dependencies": ["check", "lint", "doc", "cover"]
     },
-    "npm": {
-      "dependencies": ["cwd"],
-      "command": "deno run --permission-set=npm --quiet ../npm.ts"
-    },
-    "publish": {
-      "dependencies": ["cwd"],
-      "command": "deno publish --allow-dirty; cd npm && npm publish --access=public && cd .. && rm -r npm;"
-    }
+    "npm": "deno run --permission-set=npm --quiet ../npm.ts",
+    "publish": "deno publish --allow-dirty; cd npm && npm publish --access=public && cd .. && rm -r npm;"
   }
 }
