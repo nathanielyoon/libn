@@ -28,12 +28,8 @@ Deno.test("unlone :: built-in toWellFormed", () => {
 
 const assertReplaced = ($: number) =>
   assertEquals(uncode(String.fromCodePoint($)), "\ufffd");
-Deno.test("uncode : vectors", async () => {
-  const mapping = new Uint32Array(
-    (
-      Uint8Array.fromBase64(vectors.uncode)
-    ).buffer,
-  );
+Deno.test("uncode : vectors", () => {
+  const mapping = new Uint32Array(Uint8Array.fromBase64(vectors.uncode).buffer);
   for (let z = 0; z < 0x11000; ++z) {
     assertEquals(uncode(String.fromCodePoint(z)).codePointAt(0), mapping[z]);
   }
