@@ -4,7 +4,8 @@
     "./result",
     "./utf",
     "./words",
-    "./base"
+    "./base",
+    "./csv"
   ],
   "compilerOptions": {
     "erasableSyntaxOnly": true,
