@@ -1,3 +1,4 @@
+/** @module */
 import { type De, type Decode, type En, type Encode, from } from "./lib.ts";
 
 const en: En = ($) => $ + 48 + (9 - $ >> 8 & 7);

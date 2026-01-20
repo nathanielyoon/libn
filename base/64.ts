@@ -1,3 +1,4 @@
+/** @module */
 import { type De, type Decode, type En, type Encode, from } from "./lib.ts";
 
 const en64 = (en: En, binary: Uint8Array) => {
