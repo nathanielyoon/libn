@@ -3,6 +3,7 @@
   "workspace": [
     "./result",
     "./utf",
+    "./words",
     "./base"
   ],
   "compilerOptions": {
