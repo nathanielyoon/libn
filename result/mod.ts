@@ -1,5 +1,5 @@
-/** @internal */
-type Union = { [_: PropertyKey]: unknown };
+/** Error union. */
+export type Union = { [_: PropertyKey]: unknown };
 /** Success or tagged failure. */
 export type Result<A = any, B extends Union = Union> =
   | { error: null; value: A }
