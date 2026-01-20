@@ -1,4 +1,6 @@
+import { assertEquals } from "@std/assert";
 import fc from "fast-check";
+import type { Result, Union } from "@libn/result";
 
 /** JSON value. */
 export type Json = null | boolean | number | string | readonly Json[] | {
@@ -62,3 +64,14 @@ export const fcBin: Fc<typeof fc.uint8Array, number> = ($) =>
       fc.uint8Array({ maxLength: -$ - 1 }),
     )
     : fc.uint8Array({ size: "medium", ...$ });
+
+/** Asserts a result passes with the expected value. */
+export const assertPass = <A, B extends Union>(
+  actual: Result<A, B>,
+  expected: A,
+): void => assertEquals(actual, { error: null, value: expected });
+/** Asserts a result fails with one of the expected errors. */
+export const assertFail = <A, B extends Union>(
+  { error, value }: Result<A, B>,
+  expected: Partial<B>,
+): void => assertEquals({ error, value }, { error, value: expected[error!] });
