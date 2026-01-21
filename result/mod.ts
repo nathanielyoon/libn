@@ -13,10 +13,11 @@ export const as: <A extends Union = {}>() => Key<A> = Symbol as any;
 function no(this: symbol, error: PropertyKey, value: unknown): never {
   throw Object.defineProperty({}, this, { value: { error, value } });
 }
+type No<A extends Union> = <B extends keyof A>(error: B, value: A[B]) => never;
 /** Creates a result synchronously. */
 export const wrap = <A, B extends Union>(
   key: Key<B>,
-  use: (no: <C extends keyof B>(error: C, value: B[C]) => never) => A,
+  use: (no: No<B>) => A,
 ): Result<A, B> => {
   try {
     return { error: null, value: use(no.bind(key)) };
@@ -28,7 +29,7 @@ export const wrap = <A, B extends Union>(
 /** Creates a result asynchronously. */
 export const wait = async <A, B extends Union>(
   key: Key<B>,
-  use: (no: <C extends keyof B>(error: C, value: B[C]) => never) => A,
+  use: (no: No<B>) => A,
 ): Promise<Result<Awaited<A>, B>> => {
   try {
     return { error: null, value: await use(no.bind(key)) };
