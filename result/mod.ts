@@ -37,3 +37,16 @@ export const wait = async <A, B extends Union>(
     throw value;
   }
 };
+/** Catches errors thrown from an unsafe function. */
+export const seal = <A extends unknown[], B, C extends PropertyKey = "Error">(
+  unsafe: (...$: A) => B,
+  error?: C,
+): (...$: A) => Result<B, { [_ in C]: Error }> =>
+(...$) => {
+  try {
+    return { error: null, value: unsafe(...$) };
+  } catch (value) {
+    if (value instanceof Error) return { error: error! ?? "Error", value };
+    throw value;
+  }
+};

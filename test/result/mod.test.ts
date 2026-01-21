@@ -1,4 +1,4 @@
-import { as, type Result, wait, wrap } from "@libn/result";
+import { as, type Result, seal, wait, wrap } from "@libn/result";
 import { assertEquals, assertRejects, assertThrows, fail } from "@std/assert";
 import { type } from "../test.ts";
 
@@ -131,5 +131,51 @@ Deno.test("wait : nesting", async () => {
       }),
     ),
     { error: null, value: 0 },
+  );
+});
+
+Deno.test("seal : thrown error", () => {
+  const value = Error();
+  assertEquals(
+    type<Result<never, { Error: Error }>>()(
+      seal(() => {
+        throw value;
+      })(),
+    ),
+    { error: "Error", value },
+  );
+  assertEquals(
+    type<Result<0, { Error: Error }>>()(
+      seal(<A>($: A) => {
+        return $;
+      })(0),
+    ),
+    { error: null, value: 0 },
+  );
+});
+Deno.test("seal : custom identifier", () => {
+  const value = Error();
+  assertEquals(
+    type<Result<never, { error: Error }>>()(
+      seal(() => {
+        throw value;
+      }, "error")(),
+    ),
+    { error: "error", value },
+  );
+  assertEquals(
+    type<Result<0, { error: Error }>>()(
+      seal(<A>($: A) => {
+        return $;
+      }, "error")(0),
+    ),
+    { error: null, value: 0 },
+  );
+});
+Deno.test("seal : other throws", () => {
+  assertThrows(() =>
+    seal(() => {
+      throw null;
+    })()
   );
 });
