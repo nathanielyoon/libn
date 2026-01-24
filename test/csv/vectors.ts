@@ -19,10 +19,10 @@ import.meta.main && await Promise.all([
     "trailing-newline",
     "trailing-space",
     "utf8",
-  ].flatMap(($) =>
+  ].flatMap((name) =>
     ["csv", "json"].map((type) =>
       get([
-        `/sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/${type}/${$}.${type}`,
+        `/sineemore/csv-test-data/e4c25ebd65902671bc53eedc67275c2328067dbe/${type}/${name}.${type}`,
       ])
     )
   ),
