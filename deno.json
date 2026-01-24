@@ -37,14 +37,6 @@
     "fast-check": "npm:fast-check@^4.5.3"
   },
   "permissions": {
-    "vectors": {
-      "net": true,
-      "write": true
-    },
-    "test": {
-      "read": true,
-      "write": true
-    },
     "npm": {
       "net": ["jsr.io"],
       "env": true,
@@ -54,17 +46,14 @@
     }
   },
   "tasks": {
-    "vectors": "deno run --permission-set=vectors --quiet",
     "check": "deno check --doc",
-    "lint": "deno lint --compact",
+    "lint": "deno lint",
     "doc": "deno doc --lint **/*.ts",
-    "test": "deno test --permission-set=test --quiet --doc --no-check --parallel",
+    "test": "deno test --doc",
     "record": "deno task --quiet --cwd=. test --reporter=dot --clean --coverage=/tmp/deno-coverage --coverage-raw-data-only",
     "report": "deno coverage --detailed /tmp/deno-coverage --include=\"^file://$INIT_CWD\"",
     "cover": "deno task --quiet --cwd=. record && deno task --quiet --cwd=. report",
-    "ok": {
-      "dependencies": ["check", "lint", "doc", "cover"]
-    },
+    "ok": { "dependencies": ["check", "lint", "doc", "cover"] },
     "npm": "deno run --permission-set=npm --quiet ../npm.ts",
     "publish": "deno publish --allow-dirty; cd npm && npm publish --access=public && cd .. && rm -r npm;"
   }
