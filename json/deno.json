@@ -1,0 +1,9 @@
+{
+  "name": "@libn/json",
+  "version": "0.6.0",
+  "exports": {
+    "./schema": "./schema.ts",
+    "./check": "./check.ts",
+    "./interpret": "./interpret.ts"
+  }
+}

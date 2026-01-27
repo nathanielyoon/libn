@@ -5,7 +5,8 @@
     "./utf",
     "./words",
     "./base",
-    "./csv"
+    "./csv",
+    "./json"
   ],
   "compilerOptions": {
     "erasableSyntaxOnly": true,
